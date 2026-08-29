@@ -1,0 +1,358 @@
+<mat-card class="modern-card noticeboard-card shadow-sm">
+  <!-- Card Header Menu -->
+  <div class="header-menu d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <mat-icon class="header-icon me-2 text-primary material-icons-outlined">campaign</mat-icon>
+      <h5 class="font-18 font-weight-bold mb-0">Noticeboard & Announcements</h5>
+      @if (getUnreadCount() > 0) {
+      <span class="badge bg-danger-subtle text-danger font-11 py-1 px-2 ms-2 rounded-pill">
+        {{ getUnreadCount() }} New
+      </span>
+      }
+    </div>
+
+    <div class="actions d-flex align-items-center gap-2">
+      @if (selectedCategory !== 'All') {
+      <span class="badge bg-primary-subtle text-primary font-11 py-1 px-2 rounded-pill">
+        {{ selectedCategory }}
+      </span>
+      }
+      <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Filter announcements" class="header-action-btn">
+        <mat-icon>filter_list</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        @for (category of categories; track category) {
+        <button mat-menu-item (click)="setCategory(category)" [class.active-category]="selectedCategory === category">
+          <mat-icon class="font-16 text-muted align-middle me-2">label</mat-icon>
+          {{ category }}
+        </button>
+        }
+      </mat-menu>
+    </div>
+  </div>
+
+  <!-- Card Body with Tabs -->
+  <mat-card-content class="pt-2 card-content-flex">
+    <mat-tab-group [(selectedIndex)]="activeTab" class="modern-tabs" animationDuration="200ms">
+
+      <!-- TAB 1: ALL ANNOUNCEMENTS -->
+      <mat-tab label="All ({{announcements.length}})">
+        <div class="announcements-container pt-3">
+          <ng-scrollbar style="height: 350px" visibility="hover">
+            <div class="pe-2 ps-1 py-1">
+              @for (announcement of getFilteredAnnouncements(); track announcement.id) {
+              <div class="announcement-item p-3 mb-3 border rounded position-relative"
+                [ngClass]="{'unread-item': !announcement.isRead}" (click)="markAsRead(announcement)">
+
+                <div class="d-flex align-items-start gap-3">
+                  <!-- Sender Initials Avatar -->
+                  @if (announcement.sender) {
+                  <div
+                    class="sender-avatar rounded-circle d-flex align-items-center justify-content-center text-white font-weight-bold shadow-sm"
+                    [style.background-color]="getSenderAvatarColor(announcement.sender)">
+                    {{ getSenderInitials(announcement.sender) }}
+                  </div>
+                  } @else {
+                  <div
+                    class="sender-avatar rounded-circle d-flex align-items-center justify-content-center bg-secondary text-white font-weight-bold shadow-sm">
+                    AN
+                  </div>
+                  }
+
+                  <!-- Announcement Core Content -->
+                  <div class="flex-grow-1 min-width-0">
+                    <!-- Urgency Badge and Time Meta -->
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="badge font-10 py-1 px-2 rounded-pill urgency-badge text-uppercase"
+                          [ngClass]="getUrgencyColor(announcement.urgency)">
+                          {{ announcement.urgency }}
+                        </span>
+                        <span class="badge category-badge">
+                          {{ announcement.category }}
+                        </span>
+                      </div>
+
+                      <div class="d-flex align-items-center text-muted font-12 gap-1 meta-time">
+                        <mat-icon class="meta-icon">calendar_today</mat-icon>
+                        <span>{{ formatDate(announcement.date) }}</span>
+                        <span class="bullet-separator mx-1">•</span>
+                        <span class="days-ago text-italic font-weight-500">{{ getDaysAgo(announcement.date) }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Title -->
+                    <h6
+                      class="mb-2 font-weight-bold font-15 text-dark-white d-flex align-items-center text-truncate-custom">
+                      {{ announcement.title }}
+                      @if (!announcement.isRead) {
+                      <span class="unread-dot ms-2" matTooltip="New Announcement" matTooltipPosition="above"></span>
+                      }
+                    </h6>
+
+                    <!-- Content Body (Truncated at 2 lines in CSS) -->
+                    <p class="mb-2 text-muted font-13 announcement-body">
+                      {{ announcement.content }}
+                    </p>
+
+                    <!-- Footer Metadata: Sender name & Attachments -->
+                    <div
+                      class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top border-light-subtle">
+                      <div class="d-flex align-items-center text-muted font-12">
+                        <mat-icon class="text-primary me-1 sender-icon">person_outline</mat-icon>
+                        <span class="font-weight-500">By {{ announcement.sender || 'System Administrator' }}</span>
+                      </div>
+
+                      <!-- Attachments Section -->
+                      @if (announcement.attachments && announcement.attachments.length > 0) {
+                      <div class="d-flex flex-wrap gap-2 align-items-center">
+                        @for (attachment of announcement.attachments; track attachment) {
+                        <a href="javascript:void(0)"
+                          class="attachment-pill d-inline-flex align-items-center text-decoration-none py-1 px-2 rounded border"
+                          (click)="downloadAttachment(attachment); $event.stopPropagation()"
+                          matTooltip="Download attachment" matTooltipPosition="above">
+                          <mat-icon class="text-primary me-1 attachment-icon">attach_file</mat-icon>
+                          <span class="font-11 text-truncate attachment-filename">{{ attachment }}</span>
+                          <span class="badge bg-primary text-white font-9 ms-1 rounded-sm py-0 px-1 text-uppercase">
+                            {{ getAttachmentExtension(attachment) }}
+                          </span>
+                        </a>
+                        }
+                      </div>
+                      }
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+              }
+              @if (getFilteredAnnouncements().length === 0) {
+              <div class="no-announcements text-center py-5">
+                <mat-icon class="font-48 text-muted mb-3">campaign</mat-icon>
+                <h6 class="font-weight-bold font-16 text-muted">No Announcements Found</h6>
+                <p class="text-muted font-13 mb-0">No announcements match the chosen category.</p>
+              </div>
+              }
+            </div>
+          </ng-scrollbar>
+        </div>
+      </mat-tab>
+
+      <!-- TAB 2: UNREAD ANNOUNCEMENTS -->
+      <mat-tab label="Unread ({{getUnreadCount()}})">
+        <div class="announcements-container pt-3">
+          <ng-scrollbar style="height: 380px" visibility="hover">
+            <div class="pe-2 ps-1 py-1">
+              @for (announcement of getUnreadAnnouncements(); track announcement.id) {
+              <div class="announcement-item p-3 mb-3 border rounded position-relative unread-item"
+                (click)="markAsRead(announcement)">
+
+                <div class="d-flex align-items-start gap-3">
+                  <!-- Sender Initials Avatar -->
+                  @if (announcement.sender) {
+                  <div
+                    class="sender-avatar rounded-circle d-flex align-items-center justify-content-center text-white font-weight-bold shadow-sm"
+                    [style.background-color]="getSenderAvatarColor(announcement.sender)">
+                    {{ getSenderInitials(announcement.sender) }}
+                  </div>
+                  } @else {
+                  <div
+                    class="sender-avatar rounded-circle d-flex align-items-center justify-content-center bg-secondary text-white font-weight-bold shadow-sm">
+                    AN
+                  </div>
+                  }
+
+                  <!-- Announcement Core Content -->
+                  <div class="flex-grow-1 min-width-0">
+                    <!-- Urgency Badge and Time Meta -->
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="badge font-10 py-1 px-2 rounded-pill urgency-badge text-uppercase"
+                          [ngClass]="getUrgencyColor(announcement.urgency)">
+                          {{ announcement.urgency }}
+                        </span>
+                        <span class="badge category-badge">
+                          {{ announcement.category }}
+                        </span>
+                      </div>
+
+                      <div class="d-flex align-items-center text-muted font-12 gap-1 meta-time">
+                        <mat-icon class="meta-icon">calendar_today</mat-icon>
+                        <span>{{ formatDate(announcement.date) }}</span>
+                        <span class="bullet-separator mx-1">•</span>
+                        <span class="days-ago text-italic font-weight-500">{{ getDaysAgo(announcement.date) }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Title -->
+                    <h6
+                      class="mb-2 font-weight-bold font-15 text-dark-white d-flex align-items-center text-truncate-custom">
+                      {{ announcement.title }}
+                      <span class="unread-dot ms-2" matTooltip="New Announcement" matTooltipPosition="above"></span>
+                    </h6>
+
+                    <!-- Content Body (Truncated at 2 lines in CSS) -->
+                    <p class="mb-2 text-muted font-13 announcement-body">
+                      {{ announcement.content }}
+                    </p>
+
+                    <!-- Footer Metadata: Sender name & Attachments -->
+                    <div
+                      class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top border-light-subtle">
+                      <div class="d-flex align-items-center text-muted font-12">
+                        <mat-icon class="text-primary me-1 sender-icon">person_outline</mat-icon>
+                        <span class="font-weight-500">By {{ announcement.sender || 'System Administrator' }}</span>
+                      </div>
+
+                      <!-- Attachments Section -->
+                      @if (announcement.attachments && announcement.attachments.length > 0) {
+                      <div class="d-flex flex-wrap gap-2 align-items-center">
+                        @for (attachment of announcement.attachments; track attachment) {
+                        <a href="javascript:void(0)"
+                          class="attachment-pill d-inline-flex align-items-center text-decoration-none py-1 px-2 rounded border"
+                          (click)="downloadAttachment(attachment); $event.stopPropagation()"
+                          matTooltip="Download attachment" matTooltipPosition="above">
+                          <mat-icon class="text-primary me-1 attachment-icon">attach_file</mat-icon>
+                          <span class="font-11 text-truncate attachment-filename">{{ attachment }}</span>
+                          <span class="badge bg-primary text-white font-9 ms-1 rounded-sm py-0 px-1 text-uppercase">
+                            {{ getAttachmentExtension(attachment) }}
+                          </span>
+                        </a>
+                        }
+                      </div>
+                      }
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+              }
+              @if (getUnreadAnnouncements().length === 0) {
+              <div class="no-announcements text-center py-5">
+                <mat-icon class="font-48 text-muted mb-3">done_all</mat-icon>
+                <h6 class="font-weight-bold font-16 text-muted">All Caught Up!</h6>
+                <p class="text-muted font-13 mb-0">You have read all announcements.</p>
+              </div>
+              }
+            </div>
+          </ng-scrollbar>
+        </div>
+      </mat-tab>
+
+      <!-- TAB 3: URGENT ANNOUNCEMENTS -->
+      <mat-tab label="Urgent ({{getUrgentCount()}})">
+        <div class="announcements-container pt-3">
+          <ng-scrollbar style="height: 380px" visibility="hover">
+            <div class="pe-2 ps-1 py-1">
+              @for (announcement of getUrgentAnnouncements(); track announcement.id) {
+              <div class="announcement-item p-3 mb-3 border rounded position-relative"
+                [ngClass]="{'unread-item': !announcement.isRead}" (click)="markAsRead(announcement)">
+
+                <div class="d-flex align-items-start gap-3">
+                  <!-- Sender Initials Avatar -->
+                  @if (announcement.sender) {
+                  <div
+                    class="sender-avatar rounded-circle d-flex align-items-center justify-content-center text-white font-weight-bold shadow-sm"
+                    [style.background-color]="getSenderAvatarColor(announcement.sender)">
+                    {{ getSenderInitials(announcement.sender) }}
+                  </div>
+                  } @else {
+                  <div
+                    class="sender-avatar rounded-circle d-flex align-items-center justify-content-center bg-secondary text-white font-weight-bold shadow-sm">
+                    AN
+                  </div>
+                  }
+
+                  <!-- Announcement Core Content -->
+                  <div class="flex-grow-1 min-width-0">
+                    <!-- Urgency Badge and Time Meta -->
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="badge font-10 py-1 px-2 rounded-pill urgency-badge text-uppercase"
+                          [ngClass]="getUrgencyColor(announcement.urgency)">
+                          {{ announcement.urgency }}
+                        </span>
+                        <span class="badge category-badge">
+                          {{ announcement.category }}
+                        </span>
+                      </div>
+
+                      <div class="d-flex align-items-center text-muted font-12 gap-1 meta-time">
+                        <mat-icon class="meta-icon">calendar_today</mat-icon>
+                        <span>{{ formatDate(announcement.date) }}</span>
+                        <span class="bullet-separator mx-1">•</span>
+                        <span class="days-ago text-italic font-weight-500">{{ getDaysAgo(announcement.date) }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Title -->
+                    <h6
+                      class="mb-2 font-weight-bold font-15 text-dark-white d-flex align-items-center text-truncate-custom">
+                      {{ announcement.title }}
+                      @if (!announcement.isRead) {
+                      <span class="unread-dot ms-2" matTooltip="New Announcement" matTooltipPosition="above"></span>
+                      }
+                    </h6>
+
+                    <!-- Content Body (Truncated at 2 lines in CSS) -->
+                    <p class="mb-2 text-muted font-13 announcement-body">
+                      {{ announcement.content }}
+                    </p>
+
+                    <!-- Footer Metadata: Sender name & Attachments -->
+                    <div
+                      class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top border-light-subtle">
+                      <div class="d-flex align-items-center text-muted font-12">
+                        <mat-icon class="text-primary me-1 sender-icon">person_outline</mat-icon>
+                        <span class="font-weight-500">By {{ announcement.sender || 'System Administrator' }}</span>
+                      </div>
+
+                      <!-- Attachments Section -->
+                      @if (announcement.attachments && announcement.attachments.length > 0) {
+                      <div class="d-flex flex-wrap gap-2 align-items-center">
+                        @for (attachment of announcement.attachments; track attachment) {
+                        <a href="javascript:void(0)"
+                          class="attachment-pill d-inline-flex align-items-center text-decoration-none py-1 px-2 rounded border"
+                          (click)="downloadAttachment(attachment); $event.stopPropagation()"
+                          matTooltip="Download attachment" matTooltipPosition="above">
+                          <mat-icon class="text-primary me-1 attachment-icon">attach_file</mat-icon>
+                          <span class="font-11 text-truncate attachment-filename">{{ attachment }}</span>
+                          <span class="badge bg-primary text-white font-9 ms-1 rounded-sm py-0 px-1 text-uppercase">
+                            {{ getAttachmentExtension(attachment) }}
+                          </span>
+                        </a>
+                        }
+                      </div>
+                      }
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+              }
+              @if (getUrgentAnnouncements().length === 0) {
+              <div class="no-announcements text-center py-5">
+                <mat-icon class="font-48 text-muted mb-3">check_circle</mat-icon>
+                <h6 class="font-weight-bold font-16 text-muted">No Urgent Announcements</h6>
+                <p class="text-muted font-13 mb-0">There are no urgent notices at this time.</p>
+              </div>
+              }
+            </div>
+          </ng-scrollbar>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </mat-card-content>
+
+  <!-- Card Footer Actions -->
+  <div class="footer-actions d-flex justify-content-between align-items-center p-3 border-top">
+    <button mat-flat-button color="primary" class="footer-btn action-new-btn shadow-sm">
+      <mat-icon class="font-16 align-middle me-1">add</mat-icon> New Announcement
+    </button>
+    <button mat-stroked-button color="accent" class="footer-btn action-read-btn"
+      (click)="markAllAsRead(); $event.stopPropagation()">
+      <mat-icon class="font-16 align-middle me-1">mark_email_read</mat-icon> Mark All Read
+    </button>
+  </div>
+</mat-card>

@@ -1,0 +1,134 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+mat-card {
+  height: 100%;
+}
+
+.custom-html-table {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: collapse;
+  
+  th {
+    border-top: none;
+    border-bottom: 2px solid rgba(154, 160, 172, 0.15) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: #9aa0ac;
+    padding: 12px 16px;
+  }
+
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(154, 160, 172, 0.08);
+    vertical-align: middle;
+    color: inherit;
+  }
+
+  tr:hover {
+    background-color: rgba(154, 160, 172, 0.03);
+    transition: background-color 0.2s ease-in-out;
+  }
+}
+
+.avatar-sm {
+  border: 1px solid rgba(154, 160, 172, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.bg-danger-subtle {
+  background-color: rgba(226, 90, 102, 0.15) !important;
+}
+
+.bg-warning-subtle {
+  background-color: rgba(253, 162, 76, 0.15) !important;
+}
+
+.bg-success-subtle {
+  background-color: rgba(62, 190, 119, 0.15) !important;
+}
+
+// ==========================================
+// GLASSMORPHISM LAYOUT THEME OVERRIDES
+// ==========================================
+::ng-deep body.layout-glassmorphism {
+  app-disciplinary-incidents-table {
+    mat-card {
+      background: rgba(255, 255, 255, 0.45) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.5) !important;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05) !important;
+    }
+
+    .table-responsive,
+    .custom-html-table,
+    .custom-html-table thead,
+    .custom-html-table tbody,
+    .custom-html-table tr,
+    .custom-html-table th,
+    .custom-html-table td {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    .custom-html-table {
+      th {
+        border-bottom-color: rgba(255, 255, 255, 0.3) !important;
+        color: #272c34 !important;
+      }
+      
+      td {
+        border-bottom-color: rgba(255, 255, 255, 0.2) !important;
+        color: #272c34 !important;
+      }
+
+      tr:hover {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+      }
+    }
+  }
+
+  &.dark {
+    app-disciplinary-incidents-table {
+      mat-card {
+        background: rgba(15, 23, 42, 0.55) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+      }
+
+      .table-responsive,
+      .custom-html-table,
+      .custom-html-table thead,
+      .custom-html-table tbody,
+      .custom-html-table tr,
+      .custom-html-table th,
+      .custom-html-table td {
+        background: transparent !important;
+        background-color: transparent !important;
+      }
+
+      .custom-html-table {
+        th {
+          border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+          color: #e5e7eb !important;
+        }
+
+        td {
+          border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+          color: #e5e7eb !important;
+        }
+
+        tr:hover {
+          background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+      }
+    }
+  }
+}
+

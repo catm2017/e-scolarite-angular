@@ -1,0 +1,423 @@
+.transport-overview-card {
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+
+  .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    .title {
+      font-size: 18px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+
+      mat-icon {
+        margin-right: 8px;
+      }
+    }
+  }
+
+  .transport-card-content {
+    padding: 16px;
+
+    h3 {
+      font-size: 16px;
+      font-weight: 500;
+      margin: 0 0 16px 0;
+      text-align: center;
+    }
+
+    h4 {
+      font-size: 14px;
+      font-weight: 500;
+      margin: 0 0 12px 0;
+    }
+
+    .transport-stats {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 50px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 16px;
+
+      .stat-item {
+        flex: 1;
+        min-width: 100px;
+        text-align: center;
+        padding: 0 10px;
+
+        .stat-value {
+          font-size: 24px;
+          font-weight: 500;
+          color: #2196f3;
+          margin-bottom: 4px;
+        }
+
+        .stat-label {
+          font-size: 12px;
+          color: #757575;
+          text-transform: uppercase;
+        }
+      }
+    }
+
+    .transport-content {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      gap: 20px;
+
+      .routes-list {
+        flex: 1;
+        min-width: 300px;
+
+        .routes-container {
+          overflow-y: auto;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+
+          .route-item {
+            padding: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+
+            &:last-child {
+              border-bottom: none;
+            }
+
+            &:hover {
+              background-color: #f9f9f9;
+            }
+
+            &.selected {
+              background-color: rgba(33, 150, 243, 0.1);
+              border-left: 4px solid #2196f3;
+            }
+
+            &.active {
+              border-left: 4px solid #4caf50;
+            }
+
+            &.delayed {
+              border-left: 4px solid #ff9800;
+            }
+
+            &.inactive {
+              border-left: 4px solid #f44336;
+              opacity: 0.7;
+            }
+
+            .route-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 8px;
+
+              .route-title {
+                display: flex;
+                align-items: center;
+
+                mat-icon {
+                  margin-right: 8px;
+                  font-size: 18px;
+                  height: 18px;
+                  width: 18px;
+                }
+
+                span {
+                  font-weight: 500;
+                }
+              }
+
+              .route-bus {
+                font-size: 12px;
+                color: #757575;
+                background-color: #f0f0f0;
+                padding: 2px 6px;
+                border-radius: 4px;
+              }
+            }
+
+            .route-details {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-end;
+
+              .route-info {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+
+                .info-item {
+                  display: flex;
+                  align-items: center;
+                  font-size: 12px;
+                  color: #757575;
+
+                  mat-icon {
+                    font-size: 14px;
+                    height: 14px;
+                    width: 14px;
+                    margin-right: 4px;
+                  }
+                }
+              }
+
+              .route-time {
+                text-align: right;
+
+                .time-range {
+                  font-size: 12px;
+                  font-weight: 500;
+                  color: #555;
+                }
+
+                .last-updated {
+                  font-size: 10px;
+                  color: #9e9e9e;
+                  font-style: italic;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      .route-details-section {
+        flex: 2;
+        min-width: 400px;
+
+        .route-overview {
+          .route-info-card {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 25px;
+            margin-top: 25px;
+
+            .info-section {
+              flex: 1;
+              min-width: 200px;
+
+              .info-row {
+                display: flex;
+                margin-bottom: 8px;
+
+                .info-label {
+                  width: 120px;
+                  font-weight: 500;
+                  color: #757575;
+                }
+
+                .info-value {
+                  flex: 1;
+                  display: flex;
+                  align-items: center;
+
+                  mat-icon {
+                    font-size: 16px;
+                    height: 16px;
+                    width: 16px;
+                    margin-right: 4px;
+                  }
+                }
+              }
+            }
+            .route-actions {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 10px;
+
+              button {
+                flex: 1;
+                min-width: 150px;
+              }
+            }
+          }
+        }
+
+        .stops-list {
+          .stop-item {
+            display: flex;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+
+            &:last-child {
+              border-bottom: none;
+            }
+
+            .stop-number {
+              width: 30px;
+              height: 30px;
+              border-radius: 50%;
+              background-color: #2196f3;
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 500;
+              margin-right: 12px;
+            }
+
+            .stop-content {
+              flex: 1;
+
+              .stop-name {
+                font-weight: 500;
+                margin-bottom: 4px;
+              }
+
+              .stop-details {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 16px;
+
+                .stop-time,
+                .stop-students {
+                  display: flex;
+                  align-items: center;
+                  font-size: 12px;
+                  color: #757575;
+
+                  mat-icon {
+                    font-size: 14px;
+                    height: 14px;
+                    width: 14px;
+                    margin-right: 4px;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        .students-info {
+          .no-data-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            color: #9e9e9e;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+
+            mat-icon {
+              margin-right: 8px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .transport-card-actions {
+    display: flex;
+    padding: 8px 16px 16px;
+    justify-content: flex-start;
+
+    button {
+      margin-right: 8px;
+
+      mat-icon {
+        margin-right: 4px;
+      }
+    }
+  }
+}
+
+// Status colors
+.status-active {
+  color: #4caf50;
+}
+
+.status-inactive {
+  color: #f44336;
+}
+
+.status-delayed {
+  color: #ff9800;
+}
+
+// Responsive adjustments
+@media (max-width: 960px) {
+  .transport-overview-card {
+    .transport-content {
+      flex-direction: column;
+    }
+
+    .charts-section {
+      flex-direction: column;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .transport-overview-card {
+    .header-container {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .title {
+        margin-bottom: 10px;
+      }
+    }
+
+    .transport-stats {
+      .stat-item {
+        min-width: calc(50% - 10px);
+        margin-bottom: 10px;
+      }
+    }
+
+    mat-card-actions {
+      flex-wrap: wrap;
+
+      button {
+        margin-bottom: 8px;
+        width: 100%;
+      }
+    }
+  }
+}
+::ng-deep .dark {
+  .transport-overview-card
+    .transport-card-content
+    .transport-content
+    .routes-list
+    .routes-container
+    .route-item:hover {
+    background-color: #101010 !important;
+  }
+  .transport-overview-card .transport-card-content .transport-stats {
+    background-color: #11131c !important;
+  }
+  .transport-overview-card
+    .transport-card-content
+    .transport-content
+    .route-details-section
+    .students-info
+    .no-data-message {
+    background-color: #11131c !important;
+  }
+  .transport-overview-card
+    .transport-card-content
+    .transport-content
+    .route-details-section
+    .stops-list
+    .stop-item {
+    border-bottom: 1px solid #22232c !important;
+  }
+  .transport-overview-card
+    .transport-card-content
+    .transport-content
+    .routes-list
+    .routes-container {
+    border: 1px solid #464965 !important;
+  }
+}

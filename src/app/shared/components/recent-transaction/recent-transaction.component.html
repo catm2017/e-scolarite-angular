@@ -1,0 +1,36 @@
+<mat-card class="fee-payment-card">
+  <mat-card-header class="header-menu">
+    <mat-card-title>Recent Transaction</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <!-- Quick Links -->
+    <div class="quick-links-container">
+      <h3>Recent Transactions</h3>
+      <div class="transactions-list">
+        @for (transaction of recentTransactions; track transaction) {
+          <div class="transaction-item">
+            <div class="transaction-details">
+              <div class="transaction-id">{{transaction.id}}</div>
+              <div class="transaction-student">{{transaction.student}}</div>
+            </div>
+            <div class="transaction-info">
+              <div class="transaction-amount">{{formatCurrency(transaction.amount)}}</div>
+              <div class="transaction-date">{{formatDate(transaction.date)}}</div>
+            </div>
+            <div class="transaction-status {{transaction.status}}">
+              @if (transaction.status === 'completed') {
+                <mat-icon>check_circle</mat-icon>
+              }
+              @if (transaction.status === 'pending') {
+                <mat-icon>schedule</mat-icon>
+              }
+              @if (transaction.status === 'failed') {
+                <mat-icon>error</mat-icon>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>

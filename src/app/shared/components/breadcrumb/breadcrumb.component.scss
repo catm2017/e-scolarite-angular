@@ -1,0 +1,32 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-height: 34px;
+  margin: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+
+  .breadcrumb-item {
+    color: #7b8294;
+    font-size: 13px;
+    font-weight: 500;
+
+    &.active {
+      color: #3d4354;
+      font-weight: 700;
+    }
+  }
+
+  > li {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+
+  .bcrumb-1 a {
+    display: inline-flex;
+    align-items: center;
+    color: #6777ef;
+  }
+}

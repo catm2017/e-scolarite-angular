@@ -1,0 +1,37 @@
+.countdown-wrapper {
+  .time-box {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 15px 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    min-width: 80px;
+    
+    .time-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #673ab7;
+      line-height: 1.2;
+    }
+    
+    .time-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-top: 5px;
+    }
+  }
+}
+
+.notify-form {
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+  
+  .notify-btn {
+    height: 56px; /* Match form-field height */
+    border-radius: 8px;
+    padding: 0 30px;
+    font-weight: 600;
+  }
+}

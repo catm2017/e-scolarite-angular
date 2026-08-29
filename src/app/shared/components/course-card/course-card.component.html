@@ -1,0 +1,31 @@
+<div class="course-card">
+    <div class="course-card-image">
+        <img class="img" [src]="course().image" [alt]="course().title">
+        <div class="course-category">{{ course().category }}</div>
+    </div>
+    <div class="course-content">
+        <div class="course-info">
+            <div class="course-duration">
+                <mat-icon>access_time</mat-icon>
+                <span>{{ course().duration }}</span>
+            </div>
+            <div class="course-rating">
+                <mat-icon class="star-icon">star</mat-icon>
+                <span>{{ course().rating }}</span>
+            </div>
+        </div>
+        <h5 class="course-title">{{ course().title }}</h5>
+        <p class="course-description">{{ course().description }}</p>
+        <div class="instructor-info">
+            <img class="instructor-avatar" [src]="course().instructor.avatar" [alt]="course().instructor.name">
+            <span class="instructor-name">{{ course().instructor.name }}</span>
+        </div>
+        <div class="course-actions">
+            <button mat-button color="primary" class="view-course-btn">View Details</button>
+            <div class="course-stats">
+                <span class="likes"><mat-icon>favorite</mat-icon> {{ course().likes }}</span>
+                <span class="comments"><mat-icon>comment</mat-icon> {{ course().comments }}</span>
+            </div>
+        </div>
+    </div>
+</div>

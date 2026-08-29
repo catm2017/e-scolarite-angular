@@ -1,0 +1,51 @@
+<mat-card class="modern-card attendance-overview">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">co_present</mat-icon> {{ title() }}</mat-card-title>
+    <mat-form-field appearance="outline" class="class-selector">
+      <mat-select [(ngModel)]="selectedClass" (selectionChange)="onClassChange()">
+        @for (className of classes; track className) {
+        <mat-option [value]="className">{{ className }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </mat-card-header>
+  
+  <mat-card-content>
+    <div class="chart-container">
+      <apx-chart
+        #chart
+        [series]="chartOptions.series!"
+        [chart]="chartOptions.chart!"
+        [labels]="chartOptions.labels!"
+        [responsive]="chartOptions.responsive!"
+        [dataLabels]="chartOptions.dataLabels!"
+        [legend]="chartOptions.legend!"
+        [colors]="chartOptions.colors!"
+        [plotOptions]="chartOptions.plotOptions!">
+      </apx-chart>
+    </div>
+    
+    <div class="attendance-stats">
+      <div class="stat-item present">
+        <div class="stat-value">{{ currentData.present }}%</div>
+        <div class="stat-label">Present</div>
+      </div>
+      <div class="stat-item absent">
+        <div class="stat-value">{{ currentData.absent }}%</div>
+        <div class="stat-label">Absent</div>
+      </div>
+      <div class="stat-item late">
+        <div class="stat-value">{{ currentData.late }}%</div>
+        <div class="stat-label">Late</div>
+      </div>
+    </div>
+    
+    <div class="total-students">
+      <span>Total Students: {{ getTotalStudents() }}</span>
+    </div>
+  </mat-card-content>
+  
+  <mat-card-actions align="end">
+    <button mat-button color="primary">VIEW DETAILS</button>
+  </mat-card-actions>
+</mat-card>

@@ -1,0 +1,130 @@
+<nav #navbar class="navbar active">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a href="#" onClick="return false;" class="navbar-toggle collapsed"
+        (click)="isNavbarCollapsed = !isNavbarCollapsed" aria-expanded="false"></a>
+      <a href="#" onClick="return false;" class="bars" (click)="mobileMenuSidebarOpen($event,'overlay-open')"></a>
+      <a class="navbar-brand" routerLink={{homePage}}>
+        <img style="width: 40px;" src="assets/images/logo.png" alt="" />
+        <span class="logo-name">E-Scolarité</span>
+      </a>
+    </div>
+    <div class="collapse navbar-collapse" [ngClass]="isNavbarCollapsed ? '' : 'show'">
+      <ul class="float-start collapse-menu-icon d-flex align-items-center mb-0">
+        <li>
+          <button mat-icon-button (click)="callSidemenuCollapse()" class="sidemenu-collapse nav-notification-icons"> 
+            <i class="material-icons-outlined icon-color">menu</i>
+          </button>
+        </li>
+        <!-- Spotlight Standalone Search Bar Component -->
+        @if (!isEstablishmentWorkspace && !isInstituteWorkspace) {
+        <li class="ms-4 search-bar-list-item">
+          <app-search-bar></app-search-bar>
+        </li>
+        }
+      </ul>
+      @if (isEstablishmentWorkspace) {
+      <div class="workspace-nav-controls">
+        <label class="workspace-campus-switcher">
+          <i class="material-icons-outlined">location_city</i>
+          <span>
+            <small>Campus actif</small>
+            <select
+              aria-label="Campus actif"
+              [value]="primaryWorkspace.selectedCampusId()"
+              (change)="changeCampus($event)">
+              <option value="keur-massar">Keur Massar</option>
+              <option value="plateau">Dakar Plateau</option>
+              <option value="rufisque">Rufisque</option>
+            </select>
+          </span>
+        </label>
+
+        <div class="workspace-period-controls" aria-label="Contexte scolaire actif">
+          <label class="workspace-context-select establishment-type-select">
+            <small>Type d’établissement</small>
+            <select
+              aria-label="Type d’établissement"
+              [value]="primaryWorkspace.establishmentType()"
+              disabled>
+              <option value="primary">École primaire</option>
+              <option value="college">Collège</option>
+              <option value="lycee">Lycée</option>
+            </select>
+          </label>
+          <label class="workspace-context-select academic-year-select">
+            <small>Année scolaire</small>
+            <select
+              aria-label="Année scolaire"
+              [value]="primaryWorkspace.selectedAcademicYear()"
+              (change)="changeAcademicYear($event)">
+              @for (academicYear of primaryWorkspace.academicYears(); track academicYear) {
+                <option [value]="academicYear">{{ academicYear }}</option>
+              }
+            </select>
+          </label>
+          <label class="workspace-context-select active-period-select">
+            <small>Période active</small>
+            <select
+              aria-label="Période active"
+              [value]="primaryWorkspace.selectedPeriod()"
+              (change)="changePeriod($event)">
+              @if (primaryWorkspace.establishmentType() !== 'primary') {
+                <option value="Semestre 1">Semestre 1</option>
+                <option value="Semestre 2">Semestre 2</option>
+              } @else {
+                <option value="Trimestre 1">Trimestre 1</option>
+                <option value="Trimestre 2">Trimestre 2</option>
+                <option value="Trimestre 3">Trimestre 3</option>
+              }
+            </select>
+          </label>
+        </div>
+      </div>
+      }
+      @if (isInstituteWorkspace) {
+      <div class="workspace-nav-controls institute-nav-controls">
+        <div class="workspace-campus-switcher institute-context-switcher">
+          <i class="material-icons-outlined">corporate_fare</i>
+          <span><small>Institut client</small><strong>Joyau du Savoir</strong></span>
+        </div>
+        <div class="workspace-context-select institute-summary">
+          <small>Périmètre actif</small>
+          <strong>Vue consolidée · 3 campus</strong>
+        </div>
+        <div class="workspace-context-select institute-summary">
+          <small>Année scolaire</small>
+          <strong>2026–2027</strong>
+        </div>
+      </div>
+      }
+      <ul class="nav navbar-nav navbar-right">
+        <!-- Full Screen Button -->
+        <li class="fullscreen">
+          <button mat-icon-button class="nav-notification-icons" (click)="callFullscreen()"> <i
+              class="material-icons-outlined icon-color">
+              fullscreen
+            </i></button>
+        </li>
+        <!-- #END# Full Screen Button -->
+        <!-- #START# Notifications-->
+        <li>
+          <app-notification-list [notifications]="notifications" (markAllAsRead)="onMarkAllNotificationsRead()"
+            (readAll)="onReadAllNotifications()" (closeNotification)="onRemoveNotification($event)"
+            (actionClick)="onNotificationActionClick($event)">
+          </app-notification-list>
+        </li>
+        <!-- #END# Notifications-->
+        <!-- Global platform language -->
+        <li class="nav-item">
+          <app-platform-language-switcher />
+        </li>
+        <li class="nav-item user_profile">
+          <app-user-profile-menu [userName]="'Aminata Ndiaye'" [userImg]="userImg!" (accountClicked)="onAccountClicked()"
+            (inboxClicked)="onInboxClicked()" (settingsClicked)="onSettingsClicked()" (logoutClicked)="logout()">
+          </app-user-profile-menu>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

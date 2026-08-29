@@ -1,0 +1,64 @@
+<div class="auth-container modern-auth">
+  <div class="h-100 w-100 d-flex justify-content-center align-items-center position-relative"
+    style="background: linear-gradient(135deg, #fef2f2 0%, #f1f5f9 50%, #eff6ff 100%); overflow: hidden;">
+
+    <!-- Decorative Background Shapes -->
+    <div class="shape"
+      style="position: absolute; width: 350px; height: 350px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); filter: blur(80px); top: -10%; left: -5%;">
+    </div>
+    <div class="shape"
+      style="position: absolute; width: 400px; height: 400px; border-radius: 50%; background: rgba(139, 92, 246, 0.1); filter: blur(80px); bottom: -10%; right: -5%;">
+    </div>
+
+    <div class="auth-form-section w-100 d-flex justify-content-center px-3 position-relative" style="z-index: 10;">
+      <div class="auth-glass-panel w-100 text-center"
+        style="max-width: 500px; padding: 2.5rem; border-radius: 24px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);">
+        <div class="auth-wrapper text-center">
+          <div class="mb-4">
+            <h2 class="welcome-msg mb-2">Two-Step Verification</h2>
+            <p class="auth-signup-text text-muted">Please enter the 6-digit code sent to your registered email address
+              or phone number.</p>
+          </div>
+
+          <form class="validate-form" [formGroup]="authForm" (ngSubmit)="onSubmit()">
+
+            <div class="d-flex justify-content-center otp-input-group mb-4 gap-2">
+              <input type="text" maxlength="1" class="form-control otp-input text-center" formControlName="digit1"
+                id="digit1" (keyup)="moveToNext($event, 'digit2', '')" autocomplete="off" autofocus>
+              <input type="text" maxlength="1" class="form-control otp-input text-center" formControlName="digit2"
+                id="digit2" (keyup)="moveToNext($event, 'digit3', 'digit1')" autocomplete="off">
+              <input type="text" maxlength="1" class="form-control otp-input text-center" formControlName="digit3"
+                id="digit3" (keyup)="moveToNext($event, 'digit4', 'digit2')" autocomplete="off">
+              <input type="text" maxlength="1" class="form-control otp-input text-center" formControlName="digit4"
+                id="digit4" (keyup)="moveToNext($event, 'digit5', 'digit3')" autocomplete="off">
+              <input type="text" maxlength="1" class="form-control otp-input text-center" formControlName="digit5"
+                id="digit5" (keyup)="moveToNext($event, 'digit6', 'digit4')" autocomplete="off">
+              <input type="text" maxlength="1" class="form-control otp-input text-center" formControlName="digit6"
+                id="digit6" (keyup)="moveToNext($event, '', 'digit5')" autocomplete="off">
+            </div>
+
+            <div class="container-auth-form-btn">
+              <button mat-flat-button color="primary" class="auth-form-btn" [disabled]="!authForm.valid" type="submit">
+                Verify
+              </button>
+            </div>
+          </form>
+
+          <div class="text-center mt-4 pt-2">
+            <span class="txt1">Didn't receive the code?</span>
+            <a class="txt2" href="javascript:void(0);">
+              Resend
+            </a>
+          </div>
+
+          <div class="w-full text-center mt-3">
+            <a routerLink="/authentication/signin" class="txt2 d-inline-flex align-items-center">
+              <mat-icon class="me-1" style="font-size: 16px; width: 16px; height: 16px;">arrow_back</mat-icon> Back to
+              login
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

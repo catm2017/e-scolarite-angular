@@ -1,0 +1,333 @@
+<section class="content primary-shell parent-console-shell">
+  <div class="content-block primary-workspace parent-workspace">
+    <div class="block-header">
+      <app-breadcrumb
+        [title]="breadcrumbActive()"
+        [items]="[]"
+        [active_item]="breadcrumbActive()"
+        homeLink="/institut"
+        [showTitle]="false"
+        (homeClicked)="setView('overview')">
+      </app-breadcrumb>
+    </div>
+
+    <div class="primary-context-bar card parent-context-bar">
+      <div>
+        <span class="primary-context-icon material-icons-outlined">corporate_fare</span>
+        <p><small>ESPACE PARENT · INSTITUT</small><strong>Joyau du Savoir</strong></p>
+      </div>
+      <span>7 établissements</span>
+      <span>3 campus</span>
+      <span>2026–2027</span>
+      <b><i></i>Vue consolidée</b>
+    </div>
+
+    <main class="primary-content parent-content">
+      @if (activeView() === 'overview') {
+        <div class="page-title">
+          <div><small>ESPACE PARENT · INSTITUT</small><h1>Pilotage de l’institut</h1><p>Une vision simple de toutes vos structures, implantations et ressources.</p></div>
+          <div class="title-actions">
+            <button (click)="setView('campuses')"><i>add_location_alt</i>Nouveau campus</button>
+            <button class="primary-action" (click)="setView('establishments')"><i>add_business</i>Ajouter un établissement</button>
+          </div>
+        </div>
+
+        <section class="metric-grid parent-metrics">
+          <article><span class="metric-icon green"><i>account_balance</i></span><div><small>Types d’établissement</small><strong>7</strong><em>6 actifs · 1 à configurer</em></div><b>Voir</b></article>
+          <article><span class="metric-icon blue"><i>location_city</i></span><div><small>Campus</small><strong>3</strong><em>97 salles et espaces</em></div><b class="neutral">3 villes</b></article>
+          <article><span class="metric-icon violet"><i>groups</i></span><div><small>Effectif consolidé</small><strong>4 280</strong><em>Tous enseignements</em></div><b>+8,6%</b></article>
+          <article><span class="metric-icon orange"><i>badge</i></span><div><small>Collaborateurs</small><strong>286</strong><em>224 enseignants · 62 agents</em></div><b class="neutral">Global</b></article>
+        </section>
+
+        <section class="parent-dashboard-grid">
+          <article class="panel establishments-panel">
+            <header>
+              <div><h2>Vos établissements</h2><p>Chaque espace disposera de son propre métier et de sa propre navigation.</p></div>
+              <button class="link-button" (click)="setView('establishments')">Tout afficher →</button>
+            </header>
+            <div class="establishment-list">
+              @for (item of establishments; track item.type) {
+                <button class="establishment-row" (click)="openEstablishmentSpace(item.type)" [attr.aria-label]="'Ouvrir ' + item.name">
+                  <span class="establishment-icon" [style.background]="item.color"><i>{{ item.icon }}</i></span>
+                  <span class="establishment-name"><small>{{ item.type }}</small><strong>{{ item.name }}</strong></span>
+                  <span class="establishment-count"><strong>{{ item.learners }}</strong><small>apprenants</small></span>
+                  <span class="campus-count">{{ item.campuses }} campus</span>
+                  <em [class.pending]="item.status !== 'Actif'">{{ item.status }}</em>
+                  <i class="row-arrow">arrow_forward</i>
+                </button>
+              }
+            </div>
+          </article>
+
+          <div class="side-stack">
+            <article class="panel campus-summary">
+              <header><div><h2>Répartition par campus</h2><p>Effectif et structures actives</p></div><button class="link-button" (click)="setView('campuses')">Gérer</button></header>
+              @for (campus of campuses(); track campus.name) {
+                <button class="campus-line" (click)="setView('campuses')">
+                  <span>{{ campus.name.slice(7, 9).toUpperCase() }}</span>
+                  <div><strong>{{ campus.name }}</strong><small>{{ campus.establishments }} structures · {{ campus.rooms }} salles</small></div>
+                  <b>{{ campus.learners }}</b>
+                </button>
+              }
+            </article>
+
+            <article class="panel parent-actions">
+              <header><div><h2>Actions rapides</h2><p>Administration transversale</p></div></header>
+              <div>
+                <button (click)="setView('users')"><i>person_add</i><span>Inviter un utilisateur<small>Définir son périmètre</small></span></button>
+                <button (click)="setView('staff')"><i>badge</i><span>Ajouter un personnel<small>Institut ou campus</small></span></button>
+                <a routerLink="/institut/site-web"><i>language</i><span>Modifier le site web<small>Pages et actualités</small></span></a>
+                <button (click)="setView('subscription')"><i>extension</i><span>Gérer les modules<small>Types et fonctionnalités</small></span></button>
+              </div>
+            </article>
+          </div>
+        </section>
+      }
+
+      @if (activeView() === 'establishments') {
+        <div class="page-title">
+          <div><small>STRUCTURES PÉDAGOGIQUES</small><h1>Établissements</h1><p>Créez un espace métier distinct pour chaque type d’enseignement proposé.</p></div>
+          <button class="primary-action"><i>add_business</i>Nouvel établissement</button>
+        </div>
+        <div class="scope-note"><i>account_tree</i><p><strong>Principe de fonctionnement</strong>Un établissement peut être présent sur plusieurs campus. Son espace métier, ses rôles et ses fonctionnalités restent indépendants.</p></div>
+        <section class="establishment-cards">
+          @for (item of establishments; track item.type) {
+            <article class="panel establishment-card">
+              <header>
+                <span class="establishment-icon" [style.background]="item.color"><i>{{ item.icon }}</i></span>
+                <em [class.pending]="item.status !== 'Actif'">{{ item.status }}</em>
+              </header>
+              <small>{{ item.type }}</small>
+              <h2>{{ item.name }}</h2>
+              <p>{{ item.levels }}</p>
+              <dl>
+                <div><dt>Effectif</dt><dd>{{ item.learners }}</dd></div>
+                <div><dt>Implantations</dt><dd>{{ item.campuses }} campus</dd></div>
+              </dl>
+              <footer>
+                <button>Configurer</button>
+                @if (item.type === 'École primaire') {
+                  <a class="open-workspace" routerLink="/institut/etablissements/primaire">Ouvrir l’espace <i>arrow_forward</i></a>
+                } @else if (item.type === 'Collège') {
+                  <a class="open-workspace" routerLink="/institut/etablissements/college">Ouvrir l’espace <i>arrow_forward</i></a>
+                } @else if (item.type === 'Lycée') {
+                  <a class="open-workspace" routerLink="/institut/etablissements/lycee">Ouvrir l’espace <i>arrow_forward</i></a>
+                } @else {
+                  <button class="open-workspace">Ouvrir l’espace <i>arrow_forward</i></button>
+                }
+              </footer>
+            </article>
+          }
+          <button class="add-establishment-card"><i>add</i><strong>Ajouter un type d’établissement</strong><span>Choisir son métier et ses fonctionnalités</span></button>
+        </section>
+      }
+
+      @if (activeView() === 'campuses') {
+        <div class="page-title">
+          <div><small>IMPLANTATIONS PHYSIQUES</small><h1>Campus</h1><p>Gérez les lieux dans lesquels vos établissements exercent leurs activités.</p></div>
+          <button type="button" class="primary-action" (click)="openCampusForm()"><i>add_location_alt</i>Nouveau campus</button>
+        </div>
+        <section class="campus-grid">
+          @for (campus of campuses(); track campus.name; let index = $index) {
+            <article class="panel campus-card">
+              <div class="campus-visual"><span>location_city</span><em>{{ campus.status }}</em><b>0{{ index + 1 }}</b></div>
+              <div class="campus-body">
+                <small>{{ campus.city }}</small><h2>{{ campus.name }}</h2>
+                <p><i>person</i>Responsable : {{ campus.manager }}</p>
+                <dl><div><dt>Structures</dt><dd>{{ campus.establishments }}</dd></div><div><dt>Effectif</dt><dd>{{ campus.learners }}</dd></div><div><dt>Salles</dt><dd>{{ campus.rooms }}</dd></div></dl>
+                <button>Voir le campus <i>arrow_forward</i></button>
+              </div>
+            </article>
+          }
+          <button type="button" class="add-campus-card" (click)="openCampusForm()"><i>add_location_alt</i><strong>Créer un campus</strong><span>Adresse, responsable et établissements accueillis</span></button>
+        </section>
+        @if (campusFormOpen()) {
+          <section class="panel campus-form-card">
+            <header>
+              <div><span><i>add_location_alt</i></span><div><h2>Nouveau campus</h2><p>Commencez par son nom et son adresse. Les responsables, salles et établissements seront ajoutés ensuite.</p></div></div>
+              <button type="button" aria-label="Fermer le formulaire" (click)="closeCampusForm()"><i>close</i></button>
+            </header>
+            <form (ngSubmit)="saveCampus()">
+              <div class="campus-form-grid">
+                <label><span>Nom du campus <b>*</b></span><input name="campusName" [(ngModel)]="campusForm.name" placeholder="Ex. Campus Diamniadio" required /></label>
+                <label><span>Adresse <b>*</b></span><input name="campusAddress" [(ngModel)]="campusForm.address" placeholder="Ex. Diamniadio, Dakar" required /></label>
+              </div>
+              <footer><span>Les champs marqués d’un <b>*</b> sont obligatoires.</span><div><button type="button" (click)="closeCampusForm()">Annuler</button><button type="submit" class="primary-action" [disabled]="!campusForm.name.trim() || !campusForm.address.trim()"><i>save</i>Créer le campus</button></div></footer>
+            </form>
+          </section>
+        }
+      }
+
+      @if (activeView() === 'user-detail') {
+        @if (selectedUserRecord(); as user) {
+          <div class="page-title record-page-title"><div><small>DOSSIER UTILISATEUR</small><h1>{{ user.name }}</h1><p>Rôles, permissions, périmètre d’accès, sécurité et traçabilité du compte.</p></div><div class="title-actions"><button type="button" (click)="setView('users')"><i>arrow_back</i>Retour aux utilisateurs</button><button type="button" class="primary-action" [class.user-disabled-action]="user.status === 'Désactivé'" (click)="setUserAccountStatus(user.status === 'Désactivé' ? 'Actif' : 'Désactivé')"><i>{{ user.status === 'Désactivé' ? 'check_circle' : 'block' }}</i>{{ user.status === 'Désactivé' ? 'Activer le compte' : 'Désactiver le compte' }}</button></div></div>
+          <section class="directory-record-layout user-record-layout"><aside class="panel directory-profile-card"><span>{{ user.name.slice(0, 1) }}</span><h2>{{ user.name }}</h2><p>{{ user.type }}</p><em [class.account-disabled]="user.status === 'Désactivé'"><i></i>{{ user.status }}</em><dl><div><dt>Référence</dt><dd>{{ user.matricule }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ user.email || 'Non renseignée' }}</dd></div><div><dt>Dernière connexion</dt><dd>28 août 2026 · 09:18</dd></div></dl></aside><div class="directory-record-main"><nav class="record-tabs panel" aria-label="Sections du dossier utilisateur"><button type="button" [class.active]="userRecordTab() === 'roles'" (click)="setUserRecordTab('roles')"><i>admin_panel_settings</i>Rôles & permissions</button><button type="button" [class.active]="userRecordTab() === 'scope'" (click)="setUserRecordTab('scope')"><i>domain</i>Périmètre d’accès</button><button type="button" [class.active]="userRecordTab() === 'security'" (click)="setUserRecordTab('security')"><i>security</i>Sécurité</button><button type="button" [class.active]="userRecordTab() === 'activity'" (click)="setUserRecordTab('activity')"><i>history</i>Activité</button></nav>
+            @if (userRecordTab() === 'roles') {<article class="panel directory-detail-card user-role-card"><header><div><h3>Rôles et permissions</h3><p>Affectez un ou plusieurs rôles. Leurs permissions sont visibles avant validation ; des exceptions peuvent être ajoutées directement.</p></div><button type="button" class="manage-roles-link" (click)="setView('roles')"><i>admin_panel_settings</i>Gérer les rôles</button></header><div class="role-assignment-bar"><label><span>Affecter un rôle</span><select [ngModel]="userRoleAssignmentDraft()" (ngModelChange)="userRoleAssignmentDraft.set($event)"><option value="">Choisir un rôle</option>@for (role of instituteRoles(); track role.id) {<option [value]="role.id">{{ role.label }}</option>}</select></label><button type="button" (click)="assignRoleToUser()" [disabled]="!userRoleAssignmentDraft()"><i>add</i>Affecter</button></div><section class="assigned-role-list"><h4>Rôles affectés</h4>@for (roleId of userAssignedRoles(); track roleId) {@if (roleById(roleId); as role) {<article><div><strong>{{ role.label }}</strong><p>{{ role.description }}</p><span>@for (permission of permissionsForRole(roleId); track permission.code) {<em>{{ permission.label }}</em>}</span></div><button type="button" (click)="removeRoleFromUser(roleId)" aria-label="Retirer ce rôle"><i>close</i></button></article>}} @empty {<p class="empty-role-state">Aucun rôle affecté. Le compte n’aura accès à aucune fonctionnalité tant qu’un rôle ou une permission directe n’est pas attribué.</p>}</section><section class="direct-permission-section"><h4>Permissions directes</h4><p>Ces exceptions s’ajoutent aux permissions héritées des rôles.</p><div class="permission-grid">@for (permission of permissionCatalogue(); track permission.code) {<label><input type="checkbox" [checked]="userDirectPermissions().includes(permission.code)" (change)="toggleUserPermission(permission.code)" /><span><strong>{{ permission.label }}</strong><small>{{ permission.module }} · {{ permission.description }}</small></span></label>}</div></section></article>}
+            @if (userRecordTab() === 'scope') {<article class="panel directory-detail-card user-scope-card"><header><div><h3>Périmètre d’accès</h3><p>Choisissez les campus et les types d’établissement visibles pour ce compte.</p></div></header><section><h4>Campus autorisés</h4><div class="access-choice-grid">@for (campus of campuses(); track campus.name) {<label><input type="checkbox" [checked]="userCampusAccess().includes(campus.name)" (change)="toggleUserCampus(campus.name)" /><span><i>location_city</i><strong>{{ campus.name }}</strong><small>{{ campus.city }}</small></span></label>}</div></section><section><h4>Établissements / types d’enseignement</h4><div class="access-choice-grid establishment-access-grid">@for (type of subscriptionTypes(); track type.type) {@if (type.enabled) {<label><input type="checkbox" [checked]="userEstablishmentAccess().includes(type.type)" (change)="toggleUserEstablishment(type.type)" /><span><i>{{ type.icon }}</i><strong>{{ type.type }}</strong><small>Accès métier</small></span></label>}}</div></section></article>}
+            @if (userRecordTab() === 'security') {<article class="panel directory-detail-card user-security-card"><header><div><h3>Sécurité du compte</h3><p>Gérez l’état du compte, l’invitation et la réinitialisation du mot de passe.</p></div></header><div class="security-state"><span [class.disabled]="user.status === 'Désactivé'"><i>{{ user.status === 'Désactivé' ? 'block' : 'verified_user' }}</i></span><div><small>État actuel</small><strong>{{ user.status }}</strong><p>{{ user.status === 'Désactivé' ? 'Le compte ne peut plus se connecter à la plateforme.' : 'Le compte peut accéder à son périmètre autorisé.' }}</p></div><button type="button" (click)="setUserAccountStatus(user.status === 'Désactivé' ? 'Actif' : 'Désactivé')">{{ user.status === 'Désactivé' ? 'Activer' : 'Désactiver' }}</button></div><div class="account-actions"><button type="button" (click)="sendPasswordReset()"><i>lock_reset</i><span><strong>Réinitialiser le mot de passe</strong><small>{{ passwordResetSent() ? 'Lien envoyé à ' + user.email : 'Envoyer un lien sécurisé par e-mail' }}</small></span></button><button type="button"><i>mark_email_unread</i><span><strong>Renvoyer l’invitation</strong><small>Utile si le compte n’a jamais été activé</small></span></button></div></article>}
+            @if (userRecordTab() === 'activity') {<article class="panel directory-detail-card user-activity-card"><header><div><h3>Traçabilité des activités</h3><p>Les actions et authentifications de {{ user.name }} sont conservées selon la configuration de suivi.</p></div><button type="button" (click)="setView('activity-log')"><i>manage_history</i>Voir le journal complet</button></header><div class="user-activity-list">@for (entry of selectedUserActivityEntries(); track entry.date) {<article><span [class.refused]="entry.status === 'Refusée'"><i>{{ entry.status === 'Réussie' ? 'check_circle' : 'error' }}</i></span><div><strong>{{ entry.action }}</strong><p>{{ entry.description }}</p><small>{{ entry.date }} · {{ entry.scope }}</small></div></article>}</div></article>}
+          </div></section>
+        }
+      }
+
+      @if (activeView() === 'roles') {
+        <div class="page-title"><div><small>ADMINISTRATION DES ACCÈS</small><h1>Rôles & permissions</h1><p>Les permissions proviennent automatiquement des fonctionnalités actives de la plateforme ; elles ne sont jamais créées manuellement.</p></div></div>
+        <nav class="class-tabs institute-tabs" aria-label="Rôles et permissions"><button type="button" [class.active]="roleManagementTab() === 'roles'" (click)="roleManagementTab.set('roles')"><i>admin_panel_settings</i>Rôles</button><button type="button" [class.active]="roleManagementTab() === 'permissions'" (click)="roleManagementTab.set('permissions')"><i>key</i>Catalogue des permissions</button></nav>
+        @if (roleManagementTab() === 'roles') {<section class="role-card-grid">@for (role of instituteRoles(); track role.id) {<article class="panel role-card"><header><span><i>security</i></span><em>{{ role.users }} utilisateurs</em></header><h2>{{ role.label }}</h2><p>{{ role.description }}</p><div><i>key</i><strong>{{ role.permissions.length }} permissions</strong><span>héritées par les utilisateurs affectés</span></div><footer><button type="button" (click)="openRoleDetail(role)">Voir le détail <i>arrow_forward</i></button></footer></article>}</section>} @else {<section class="panel permission-catalogue-card"><header><div><h2>Catalogue des permissions</h2><p>Généré à partir des modules et fonctionnalités livrés dans E‑Scolarité.</p></div><button type="button" (click)="synchronizePermissions()"><i>sync</i>Synchroniser les permissions</button></header><div class="sync-notice"><i>verified</i>{{ permissionSyncMessage() }}</div><div class="permission-catalogue-head"><span>Permission</span><span>Module</span><span>Description</span></div>@for (permission of permissionCatalogue(); track permission.code) {<article><strong>{{ permission.label }}<small>{{ permission.code }}</small></strong><em>{{ permission.module }}</em><span>{{ permission.description }}</span></article>}</section>}
+      }
+
+      @if (activeView() === 'role-detail') {
+        @if (selectedRole(); as role) {
+          <div class="page-title record-page-title"><div><small>DÉTAIL DU RÔLE</small><h1>{{ role.label }}</h1><p>{{ role.description }}</p></div><div class="title-actions"><button type="button" (click)="setView('roles')"><i>arrow_back</i>Retour aux rôles</button></div></div>
+          <section class="role-detail-layout"><aside class="panel role-detail-summary"><span><i>security</i></span><h2>{{ role.label }}</h2><p>{{ role.users }} utilisateurs affectés</p><strong>{{ role.permissions.length }}</strong><small>permissions activées</small></aside><article class="panel role-permissions-editor"><header><div><h2>Permissions associées au rôle</h2><p>Cochez uniquement les accès que chaque utilisateur possédant ce rôle doit hériter.</p></div><em><i>sync</i>Catalogue synchronisé</em></header><div class="role-permission-list">@for (permission of permissionCatalogue(); track permission.code) {<label><input type="checkbox" [checked]="role.permissions.includes(permission.code)" (change)="toggleRolePermission(permission.code)" /><span><i>key</i><strong>{{ permission.label }}</strong><small>{{ permission.module }} · {{ permission.description }}</small></span></label>}</div></article></section>
+        }
+      }
+
+      @if (activeView() === 'staff-detail') {
+        @if (selectedStaffRecord(); as staff) {
+          <div class="page-title record-page-title"><div><small>DOSSIER PERSONNEL</small><h1>{{ staff.name }}</h1><p>Identité, affectation et autorisations de ce personnel.</p></div><div class="title-actions"><button type="button" (click)="setView('staff')"><i>arrow_back</i>Retour au personnel</button><button type="button" class="primary-action" (click)="startStaffForm(staff)"><i>edit</i>Modifier le dossier</button></div></div>
+          <section class="directory-record-layout"><aside class="panel directory-profile-card"><span>{{ staff.name.slice(0, 1) }}</span><h2>{{ staff.name }}</h2><p>{{ staff.function }}</p><em><i></i>{{ staff.status }}</em><dl><div><dt>Matricule</dt><dd>{{ staff.matricule }}</dd></div><div><dt>Campus</dt><dd>{{ staff.campus }}</dd></div><div><dt>Téléphone</dt><dd>{{ staff.phone || 'Non renseigné' }}</dd></div></dl></aside><div class="directory-record-main"><nav class="record-tabs panel"><button type="button" [class.active]="staffRecordTab() === 'identity'" (click)="setStaffRecordTab('identity')"><i>person</i>Identité</button><button type="button" [class.active]="staffRecordTab() === 'assignment'" (click)="setStaffRecordTab('assignment')"><i>location_city</i>Affectation</button><button type="button" [class.active]="staffRecordTab() === 'access'" (click)="setStaffRecordTab('access')"><i>lock_person</i>Accès</button></nav>@if (staffRecordTab() === 'identity') {<article class="panel directory-detail-card"><h3>Identité et contacts</h3><dl><div><dt>Prénom(s) et nom</dt><dd>{{ staff.name }}</dd></div><div><dt>Fonction</dt><dd>{{ staff.function }}</dd></div><div><dt>Téléphone</dt><dd>{{ staff.phone || 'Non renseigné' }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ staff.email || 'Non renseignée' }}</dd></div></dl></article>} @if (staffRecordTab() === 'assignment') {<article class="panel directory-detail-card"><h3>Rattachement</h3><dl><div><dt>Campus principal</dt><dd>{{ staff.campus }}</dd></div><div><dt>Périmètre</dt><dd>Institut et campus rattaché</dd></div><div><dt>Statut administratif</dt><dd>{{ staff.status }}</dd></div></dl></article>} @if (staffRecordTab() === 'access') {<article class="panel directory-detail-card access-detail"><h3>Compte et autorisations</h3><p>Un compte personnel permettra d’accéder uniquement aux établissements et campus autorisés.</p><button type="button"><i>mark_email_unread</i>Envoyer une invitation de compte</button><button type="button"><i>lock_reset</i>Réinitialiser le mot de passe</button></article>}</div></section>
+        }
+      }
+
+      @if (activeView() === 'teacher-detail') {
+        @if (selectedTeacherRecord(); as teacher) {
+          <div class="page-title record-page-title"><div><small>DOSSIER ENSEIGNANT</small><h1>{{ teacher.name }}</h1><p>Identité, intervention pédagogique et autorisations de cet enseignant.</p></div><div class="title-actions"><button type="button" (click)="setView('teachers')"><i>arrow_back</i>Retour aux enseignants</button><button type="button" class="primary-action" (click)="startTeacherForm(teacher)"><i>edit</i>Modifier le dossier</button></div></div>
+          <section class="directory-record-layout"><aside class="panel directory-profile-card"><span>{{ teacher.name.slice(0, 1) }}</span><h2>{{ teacher.name }}</h2><p>{{ teacher.subject }}</p><em><i></i>{{ teacher.status }}</em><dl><div><dt>Matricule</dt><dd>{{ teacher.matricule }}</dd></div><div><dt>Cycle</dt><dd>{{ teacher.establishment }}</dd></div><div><dt>Campus</dt><dd>{{ teacher.campus }}</dd></div></dl></aside><div class="directory-record-main"><nav class="record-tabs panel"><button type="button" [class.active]="teacherRecordTab() === 'identity'" (click)="setTeacherRecordTab('identity')"><i>person</i>Identité</button><button type="button" [class.active]="teacherRecordTab() === 'teaching'" (click)="setTeacherRecordTab('teaching')"><i>menu_book</i>Intervention</button><button type="button" [class.active]="teacherRecordTab() === 'access'" (click)="setTeacherRecordTab('access')"><i>lock_person</i>Accès</button></nav>@if (teacherRecordTab() === 'identity') {<article class="panel directory-detail-card"><h3>Identité et contacts</h3><dl><div><dt>Prénom(s) et nom</dt><dd>{{ teacher.name }}</dd></div><div><dt>Téléphone</dt><dd>{{ teacher.phone || 'Non renseigné' }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ teacher.email || 'Non renseignée' }}</dd></div></dl></article>} @if (teacherRecordTab() === 'teaching') {<article class="panel directory-detail-card"><h3>Intervention pédagogique</h3><dl><div><dt>Établissement / cycle</dt><dd>{{ teacher.establishment }}</dd></div><div><dt>Matière principale</dt><dd>{{ teacher.subject }}</dd></div><div><dt>Campus principal</dt><dd>{{ teacher.campus }}</dd></div><div><dt>Emploi du temps</dt><dd>À consulter dans l’espace {{ teacher.establishment }}</dd></div></dl></article>} @if (teacherRecordTab() === 'access') {<article class="panel directory-detail-card access-detail"><h3>Compte et autorisations</h3><p>Le compte enseignant donnera accès aux classes, matières et emplois du temps de son périmètre d’intervention.</p><button type="button"><i>mark_email_unread</i>Envoyer une invitation de compte</button><button type="button"><i>lock_reset</i>Réinitialiser le mot de passe</button></article>}</div></section>
+        }
+      }
+
+      @if (activeView() === 'users' || activeView() === 'staff' || activeView() === 'teachers') {
+        <div class="page-title">
+          <div>
+            <small>ÉQUIPE DE L’INSTITUT</small>
+            <h1>{{ directoryTitle() }}</h1>
+            <p>{{ directoryDescription() }}</p>
+          </div>
+          <button type="button" class="primary-action" (click)="openDirectoryForm()"><i>person_add</i>{{ directoryAddLabel() }}</button>
+        </div>
+        @if (activeView() === 'users') {
+          <nav class="class-tabs institute-tabs" aria-label="Types d’utilisateur">
+            <button type="button" [class.active]="userCategory() === 'all'" (click)="selectUserCategory('all')">Tous <b>{{ userRows.length }}</b></button>
+            <button type="button" [class.active]="userCategory() === 'teachers'" (click)="selectUserCategory('teachers')">Enseignants <b>2</b></button>
+            <button type="button" [class.active]="userCategory() === 'staff'" (click)="selectUserCategory('staff')">Personnel <b>2</b></button>
+            <button type="button" [class.active]="userCategory() === 'guardians'" (click)="selectUserCategory('guardians')">Tuteurs <b>2</b></button>
+            <button type="button" [class.active]="userCategory() === 'learners'" (click)="selectUserCategory('learners')">Élèves <b>2</b></button>
+          </nav>
+          <app-master-table title="Utilisateurs de l’institut" [columnDefinitions]="userColumns" [dataSource]="userDataSource" [isLoading]="false" exportFileName="utilisateurs_institut" [showAdd]="true" [showDelete]="true" [showEdit]="true" [showDetails]="true" [showBulkDelete]="true" [showCheckbox]="true" [disableRowClickToEdit]="true" (details)="viewUser($event)" (rowClick)="viewUser($event)" (refresh)="refreshDirectory()"></app-master-table>
+        } @else if (activeView() === 'staff') {
+          <nav class="class-tabs institute-tabs" aria-label="Personnel par campus">
+            <button type="button" [class.active]="selectedStaffCampus() === 'all'" (click)="selectStaffCampus('all')">Tous les campus <b>{{ staffRows.length }}</b></button>
+            @for (campus of campuses(); track campus.name) {
+              <button type="button" [class.active]="selectedStaffCampus() === campus.name" (click)="selectStaffCampus(campus.name)">{{ shortCampusName(campus.name) }} <b>{{ staffCampusCount(campus.name) }}</b></button>
+            }
+          </nav>
+          <app-master-table title="Personnel de l’institut" [columnDefinitions]="staffColumns" [dataSource]="staffDataSource" [isLoading]="false" exportFileName="personnel_institut" [showAdd]="true" [showDelete]="true" [showEdit]="true" [showDetails]="true" [showBulkDelete]="true" [showCheckbox]="true" [disableRowClickToEdit]="true" (add)="startStaffForm()" (edit)="startStaffForm($event)" (details)="viewStaff($event)" (rowClick)="viewStaff($event)" (delete)="removeStaff($event)"></app-master-table>
+          @if (staffEditorOpen()) {
+            <section class="panel directory-form-card">
+              <header><div><span><i>badge</i></span><div><h2>{{ staffForm.matricule ? 'Modifier le personnel' : 'Nouveau personnel' }}</h2><p>Identité, fonction et rattachement au campus dans un seul dossier.</p></div></div><button type="button" aria-label="Fermer" (click)="staffEditorOpen.set(false)"><i>close</i></button></header>
+              <form (ngSubmit)="saveStaff()"><div class="directory-form-grid"><label><span>Matricule</span><input name="staffMatricule" [(ngModel)]="staffForm.matricule" placeholder="Généré automatiquement si vide" /></label><label><span>Prénom(s) et nom <b>*</b></span><input name="staffName" [(ngModel)]="staffForm.name" required /></label><label><span>Fonction <b>*</b></span><input name="staffFunction" [(ngModel)]="staffForm.function" placeholder="Ex. Comptable" required /></label><label><span>Campus de rattachement <b>*</b></span><select name="staffCampus" [(ngModel)]="staffForm.campus" required><option value="" disabled>Choisir un campus</option>@for (campus of campuses(); track campus.name) {<option [value]="campus.name">{{ campus.name }}</option>}</select></label><label><span>Téléphone</span><input name="staffPhone" [(ngModel)]="staffForm.phone" placeholder="77 000 00 00" /></label><label><span>Adresse e-mail</span><input type="email" name="staffEmail" [(ngModel)]="staffForm.email" placeholder="nom@ecole.sn" /></label></div><footer><span><b>*</b> Champs obligatoires</span><div><button type="button" (click)="staffEditorOpen.set(false)">Annuler</button><button type="submit" class="primary-action"><i>save</i>Enregistrer le dossier</button></div></footer></form>
+            </section>
+          }
+          @if (activeView() === 'staff-detail' && selectedStaffRecord(); as staff) {
+            <section class="directory-record-layout"><aside class="panel directory-profile-card"><span>{{ staff.name.slice(0, 1) }}</span><h2>{{ staff.name }}</h2><p>{{ staff.function }}</p><em><i></i>{{ staff.status }}</em><dl><div><dt>Matricule</dt><dd>{{ staff.matricule }}</dd></div><div><dt>Campus</dt><dd>{{ staff.campus }}</dd></div><div><dt>Téléphone</dt><dd>{{ staff.phone || 'Non renseigné' }}</dd></div></dl></aside><div class="directory-record-main"><header class="directory-record-header"><div><small>DOSSIER PERSONNEL</small><h2>{{ staff.name }}</h2><p>Informations administratives, affectation et accès à la plateforme.</p></div><button type="button" class="primary-action" (click)="startStaffForm(staff)"><i>edit</i>Modifier</button></header><nav class="record-tabs panel"><button type="button" [class.active]="staffRecordTab() === 'identity'" (click)="setStaffRecordTab('identity')"><i>person</i>Identité</button><button type="button" [class.active]="staffRecordTab() === 'assignment'" (click)="setStaffRecordTab('assignment')"><i>location_city</i>Affectation</button><button type="button" [class.active]="staffRecordTab() === 'access'" (click)="setStaffRecordTab('access')"><i>lock_person</i>Accès</button></nav>@if (staffRecordTab() === 'identity') {<article class="panel directory-detail-card"><h3>Identité et contacts</h3><dl><div><dt>Prénom(s) et nom</dt><dd>{{ staff.name }}</dd></div><div><dt>Fonction</dt><dd>{{ staff.function }}</dd></div><div><dt>Téléphone</dt><dd>{{ staff.phone || 'Non renseigné' }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ staff.email || 'Non renseignée' }}</dd></div></dl></article>} @if (staffRecordTab() === 'assignment') {<article class="panel directory-detail-card"><h3>Rattachement</h3><dl><div><dt>Campus principal</dt><dd>{{ staff.campus }}</dd></div><div><dt>Périmètre</dt><dd>Institut et campus rattaché</dd></div><div><dt>Statut administratif</dt><dd>{{ staff.status }}</dd></div></dl></article>} @if (staffRecordTab() === 'access') {<article class="panel directory-detail-card access-detail"><h3>Compte et autorisations</h3><p>Un compte personnel permettra d’accéder uniquement aux établissements et campus autorisés.</p><button type="button"><i>mark_email_unread</i>Envoyer une invitation de compte</button><button type="button"><i>lock_reset</i>Réinitialiser le mot de passe</button></article>}</div></section>
+          }
+        } @else {
+          <nav class="class-tabs institute-tabs" aria-label="Enseignants par établissement d’intervention">
+            <button type="button" [class.active]="selectedTeacherEstablishment() === 'all'" (click)="selectTeacherEstablishment('all')">Tous <b>{{ teacherRows.length }}</b></button>
+            @for (type of teacherInterventionTabs(); track type.label) {
+              <button type="button" [class.active]="selectedTeacherEstablishment() === type.label" (click)="selectTeacherEstablishment(type.label)">{{ type.label }} <b>{{ type.count }}</b></button>
+            }
+          </nav>
+          <app-master-table title="Enseignants de l’institut" [columnDefinitions]="teacherColumns" [dataSource]="teacherDataSource" [isLoading]="false" exportFileName="enseignants_institut" [showAdd]="true" [showDelete]="true" [showEdit]="true" [showDetails]="true" [showSchedule]="true" [showBulkDelete]="true" [showCheckbox]="true" [disableRowClickToEdit]="true" (add)="startTeacherForm()" (edit)="startTeacherForm($event)" (details)="viewTeacher($event)" (rowClick)="viewTeacher($event)" (delete)="removeTeacher($event)"></app-master-table>
+          @if (teacherEditorOpen()) {
+            <section class="panel directory-form-card">
+              <header><div><span><i>co_present</i></span><div><h2>{{ teacherForm.matricule ? 'Modifier l’enseignant' : 'Nouvel enseignant' }}</h2><p>Identité, matière et périmètre d’intervention dans l’institut.</p></div></div><button type="button" aria-label="Fermer" (click)="teacherEditorOpen.set(false)"><i>close</i></button></header>
+              <form (ngSubmit)="saveTeacher()"><div class="directory-form-grid"><label><span>Matricule</span><input name="teacherMatricule" [(ngModel)]="teacherForm.matricule" placeholder="Généré automatiquement si vide" /></label><label><span>Prénom(s) et nom <b>*</b></span><input name="teacherName" [(ngModel)]="teacherForm.name" required /></label><label><span>Établissement / cycle <b>*</b></span><select name="teacherEstablishment" [(ngModel)]="teacherForm.establishment" required><option value="" disabled>Choisir un établissement</option>@for (type of teacherInterventionTabs(); track type.label) {<option [value]="type.label">{{ type.label }}</option>}</select></label><label><span>Matière principale <b>*</b></span><input name="teacherSubject" [(ngModel)]="teacherForm.subject" placeholder="Ex. Mathématiques" required /></label><label><span>Campus principal <b>*</b></span><select name="teacherCampus" [(ngModel)]="teacherForm.campus" required><option value="" disabled>Choisir un campus</option>@for (campus of campuses(); track campus.name) {<option [value]="campus.name">{{ campus.name }}</option>}</select></label><label><span>Téléphone</span><input name="teacherPhone" [(ngModel)]="teacherForm.phone" placeholder="77 000 00 00" /></label><label><span>Adresse e-mail</span><input type="email" name="teacherEmail" [(ngModel)]="teacherForm.email" placeholder="nom@ecole.sn" /></label></div><footer><span><b>*</b> Champs obligatoires</span><div><button type="button" (click)="teacherEditorOpen.set(false)">Annuler</button><button type="submit" class="primary-action"><i>save</i>Enregistrer le dossier</button></div></footer></form>
+            </section>
+          }
+          @if (activeView() === 'teacher-detail' && selectedTeacherRecord(); as teacher) {
+            <section class="directory-record-layout"><aside class="panel directory-profile-card"><span>{{ teacher.name.slice(0, 1) }}</span><h2>{{ teacher.name }}</h2><p>{{ teacher.subject }}</p><em><i></i>{{ teacher.status }}</em><dl><div><dt>Matricule</dt><dd>{{ teacher.matricule }}</dd></div><div><dt>Cycle</dt><dd>{{ teacher.establishment }}</dd></div><div><dt>Campus</dt><dd>{{ teacher.campus }}</dd></div></dl></aside><div class="directory-record-main"><header class="directory-record-header"><div><small>DOSSIER ENSEIGNANT</small><h2>{{ teacher.name }}</h2><p>Identité, intervention pédagogique et accès à la plateforme.</p></div><button type="button" class="primary-action" (click)="startTeacherForm(teacher)"><i>edit</i>Modifier</button></header><nav class="record-tabs panel"><button type="button" [class.active]="teacherRecordTab() === 'identity'" (click)="setTeacherRecordTab('identity')"><i>person</i>Identité</button><button type="button" [class.active]="teacherRecordTab() === 'teaching'" (click)="setTeacherRecordTab('teaching')"><i>menu_book</i>Intervention</button><button type="button" [class.active]="teacherRecordTab() === 'access'" (click)="setTeacherRecordTab('access')"><i>lock_person</i>Accès</button></nav>@if (teacherRecordTab() === 'identity') {<article class="panel directory-detail-card"><h3>Identité et contacts</h3><dl><div><dt>Prénom(s) et nom</dt><dd>{{ teacher.name }}</dd></div><div><dt>Téléphone</dt><dd>{{ teacher.phone || 'Non renseigné' }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ teacher.email || 'Non renseignée' }}</dd></div></dl></article>} @if (teacherRecordTab() === 'teaching') {<article class="panel directory-detail-card"><h3>Intervention pédagogique</h3><dl><div><dt>Établissement / cycle</dt><dd>{{ teacher.establishment }}</dd></div><div><dt>Matière principale</dt><dd>{{ teacher.subject }}</dd></div><div><dt>Campus principal</dt><dd>{{ teacher.campus }}</dd></div><div><dt>Emploi du temps</dt><dd>À consulter dans l’espace {{ teacher.establishment }}</dd></div></dl></article>} @if (teacherRecordTab() === 'access') {<article class="panel directory-detail-card access-detail"><h3>Compte et autorisations</h3><p>Le compte enseignant donnera accès aux classes, matières et emplois du temps de son périmètre d’intervention.</p><button type="button"><i>mark_email_unread</i>Envoyer une invitation de compte</button><button type="button"><i>lock_reset</i>Réinitialiser le mot de passe</button></article>}</div></section>
+          }
+        }
+      }
+
+      @if (activeView() === 'spaces') {
+        <div class="page-title">
+          <div><small>RESSOURCES PHYSIQUES</small><h1>Salles & espaces</h1><p>Centralisez les salles avant leur affectation aux établissements et emplois du temps.</p></div>
+          <button class="primary-action"><i>add</i>Ajouter une salle</button>
+        </div>
+        <nav class="class-tabs institute-tabs" aria-label="Salles et espaces par campus">
+          <button type="button" [class.active]="selectedSpaceCampus() === 'all'" (click)="selectSpaceCampus('all')">Tous les campus <b>{{ spaceRows.length }}</b></button>
+          @for (campus of campuses(); track campus.name) {
+            <button type="button" [class.active]="selectedSpaceCampus() === campus.name" (click)="selectSpaceCampus(campus.name)">{{ shortCampusName(campus.name) }} <b>{{ spaceCampusCount(campus.name) }}</b></button>
+          }
+        </nav>
+        <app-master-table title="Salles et espaces" [columnDefinitions]="spaceColumns" [dataSource]="spaceDataSource" [isLoading]="false" exportFileName="salles_et_espaces" [showAdd]="true" [showDelete]="true" [showEdit]="true" [showDetails]="true" [showBulkDelete]="true" [showCheckbox]="true" [disableRowClickToEdit]="true"></app-master-table>
+      }
+
+      @if (activeView() === 'activity-log') {
+        <div class="page-title"><div><small>SUIVI ET SÉCURITÉ</small><h1>Traçabilité</h1><p>Journal des activités de la plateforme et configuration du suivi par type d’utilisateur.</p></div></div>
+        <nav class="class-tabs institute-tabs trace-tabs" aria-label="Sections de traçabilité"><button type="button" [class.active]="traceConfigurationTab() === 'journal'" (click)="traceConfigurationTab.set('journal')"><i>manage_history</i>Journal des activités</button><button type="button" [class.active]="traceConfigurationTab() === 'settings'" (click)="traceConfigurationTab.set('settings')"><i>settings_suggest</i>Configuration du suivi</button></nav>
+        @if (traceConfigurationTab() === 'journal') {
+          <section class="trace-summary-grid"><article class="panel"><i>history</i><span><small>Actions journalisées</small><strong>1 248</strong><em>30 derniers jours</em></span></article><article class="panel"><i>login</i><span><small>Authentifications suivies</small><strong>386</strong><em>30 derniers jours</em></span></article><article class="panel"><i>error_outline</i><span><small>Événements refusés</small><strong>12</strong><em>À contrôler si nécessaire</em></span></article></section>
+          <section class="panel trace-log-card"><header><div><h2>Journal des activités</h2><p>Chaque ligne précise l’auteur, l’action, le périmètre et le résultat.</p></div><button type="button"><i>download</i>Exporter</button></header><div class="trace-log-head"><span>Date</span><span>Utilisateur</span><span>Action</span><span>Périmètre</span><span>Statut</span></div>@for (entry of activityEntries; track entry.date) {<article><time>{{ entry.date }}</time><strong>{{ entry.actor }}</strong><span><b>{{ entry.action }}</b><small>{{ entry.description }}</small></span><span>{{ entry.scope }}</span><em [class.refused]="entry.status === 'Refusée'"><i>{{ entry.status === 'Réussie' ? 'check_circle' : 'error' }}</i>{{ entry.status }}</em></article>}</section>
+        } @else {
+          <section class="trace-summary-grid"><article class="panel"><i>fact_check</i><span><small>Types suivis · actions</small><strong>{{ traceActionsEnabledCount() }} / {{ traceSettings().length }}</strong><em>Actions métier</em></span></article><article class="panel"><i>login</i><span><small>Types suivis · authentification</small><strong>{{ traceAuthEnabledCount() }} / {{ traceSettings().length }}</strong><em>Connexions et échecs</em></span></article></section>
+          <section class="panel trace-settings-card"><header><div><h2>Configuration du suivi</h2><p>Activez séparément le suivi des actions métier et des authentifications pour chaque type d’utilisateur.</p></div><span><i>info</i>Conservation recommandée : 12 mois</span></header><div class="trace-settings-head"><span>Type d’utilisateur</span><span>Actions métier</span><span>Authentifications</span><span>Dernière mise à jour</span></div>@for (setting of traceSettings(); track setting.type) {<article><div><strong>{{ setting.type }}</strong><small>{{ setting.description }}</small></div><label class="trace-switch"><input type="checkbox" [checked]="setting.actions" (change)="updateTraceSetting(setting.type, 'actions', $any($event.target).checked)" /><span></span><em>{{ setting.actions ? 'Activé' : 'Désactivé' }}</em></label><label class="trace-switch"><input type="checkbox" [checked]="setting.authentications" (change)="updateTraceSetting(setting.type, 'authentications', $any($event.target).checked)" /><span></span><em>{{ setting.authentications ? 'Activé' : 'Désactivé' }}</em></label><time>{{ setting.updatedAt }}</time></article>}</section>
+        }
+      }
+
+      @if (activeView() === 'assets') {
+        <div class="page-title">
+          <div><small>PATRIMOINE DE L’INSTITUT</small><h1>Biens physiques</h1><p>Inventoriez, valorisez et affectez les biens aux campus et établissements.</p></div>
+          <button class="primary-action"><i>add</i>Nouveau bien</button>
+        </div>
+        <section class="asset-grid">
+          @for (asset of assetCategories; track asset.label) {
+            <article class="panel asset-card"><span><i>{{ asset.icon }}</i></span><div><small>{{ asset.label }}</small><strong>{{ asset.count }}</strong><em>Valeur estimée : {{ asset.value }}</em></div><button>arrow_forward</button></article>
+          }
+        </section>
+        <section class="panel asset-callout"><i>qr_code_scanner</i><div><h2>Inventaire multi-campus</h2><p>Chaque bien pourra recevoir un code, un détenteur, une localisation et un historique de mouvements.</p></div><button>Préparer l’inventaire</button></section>
+      }
+
+      @if (activeView() === 'subscription') {
+        <div class="page-title">
+          <div><small>OFFRE MODULAIRE</small><h1>Souscription</h1><p>Activez les métiers puis choisissez les fonctionnalités nécessaires dans chacun d’eux.</p></div>
+          <button class="primary-action"><i>save</i>Enregistrer l’offre</button>
+        </div>
+        <section class="subscription-layout">
+          <article class="panel subscription-builder">
+            <header><div><h2>Types d’établissement</h2><p>Chaque métier activé ajoute ses propres modules et son espace dédié.</p></div></header>
+            @for (item of subscriptionTypes(); track item.type) {
+              <div class="subscription-row" [class.disabled]="!item.enabled">
+                <button class="subscription-toggle" [class.on]="item.enabled" (click)="toggleSubscription(item.type)" [attr.aria-label]="'Activer ou désactiver ' + item.type"><i></i></button>
+                <span class="type-icon"><i>{{ item.icon }}</i></span>
+                <div class="subscription-info"><strong>{{ item.type }}</strong><small>{{ item.description }}</small><span>@for (module of item.modules; track module) { <em>{{ module }}</em> }</span></div>
+                <b>{{ formatPrice(item.price) }}<small>/ mois</small></b>
+                <button class="configure-button">Fonctionnalités <i>chevron_right</i></button>
+              </div>
+            }
+          </article>
+          <aside class="panel subscription-summary">
+            <small>ESTIMATION MENSUELLE</small><strong>{{ formatPrice(subscriptionTotal()) }}</strong><span>hors taxes / mois</span>
+            <div><p><span>Socle Institut</span><b>15 000 F</b></p><p><span>Métiers activés</span><b>{{ activeSubscriptionCount() }} / 7</b></p><p><span>Utilisateurs inclus</span><b>Illimités</b></p></div>
+            <button>Voir le détail du calcul</button>
+            <p class="trial-info"><i>science</i>Chaque nouvelle fonctionnalité peut être testée avant facturation.</p>
+          </aside>
+        </section>
+      }
+
+      @if (activeView() === 'settings') {
+        <div class="page-title"><div><small>CONFIGURATION GLOBALE</small><h1>Paramètres de l’institut</h1><p>Identité, année de référence, règles générales et préférences.</p></div><button class="primary-action"><i>save</i>Enregistrer</button></div>
+        <section class="panel settings-placeholder"><span>tune</span><h2>Configuration centrale</h2><p>Cette page accueillera les paramètres hérités par les établissements, avec possibilité de surcharge locale.</p><button>Commencer la configuration</button></section>
+      }
+    </main>
+
+    <footer class="shell-footer">
+      <div><span class="footer-mark">E</span><p><strong>E‑Scolarité Institut</strong><small>Administration multi-établissements</small></p></div>
+      <nav aria-label="Liens du pied de page"><a href="#">Aide métier</a><a href="#">Guide institut</a><a href="#">Support</a></nav>
+      <span class="service-status"><i></i>Plateforme disponible</span><small>© 2026 Daara Tech</small>
+    </footer>
+  </div>
+</section>

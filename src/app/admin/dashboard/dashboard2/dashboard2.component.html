@@ -1,0 +1,555 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <!-- ROW: Alumni Network Grid Stats -->
+    <div class="row clearfix mt-4">
+      <div class="col-12">
+        @defer (on viewport) {
+          <app-alumni-network-cards></app-alumni-network-cards>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100" style="min-height: 120px;">
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="row mb-4">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-student-attendance-widget></app-student-attendance-widget>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100" style="min-height: 180px;">
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-noticeboard-announcements></app-noticeboard-announcements>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100" style="min-height: 180px;">
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">payments</mat-icon>
+              Fee Details
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              @defer (on viewport) {
+                <app-table-card [dataSource]="feesData" [columnDefinitions]="feesColumnDefinitions"></app-table-card>
+              } @placeholder {
+                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                  <div class="skeleton-body"></div>
+                </div>
+              }
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">class</mat-icon>
+              Upcoming Class
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              <div class="doc-file-type">
+                @defer (on viewport) {
+                  <app-emp-schedule [schedules]="scheduleList"></app-emp-schedule>
+                } @placeholder {
+                  <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                    <div class="skeleton-body"></div>
+                  </div>
+                }
+              </div>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">workspace_premium</mat-icon>
+              Top Performer
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            @defer (on viewport) {
+              <app-top-performer></app-top-performer>
+            } @placeholder {
+              <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                <div class="skeleton-body"></div>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">timeline</mat-icon>
+              Student Performance Chart
+            </mat-card-title>
+            <button mat-icon-button [matMenuTriggerFor]="menu" class="header-dropdown">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item>
+                <mat-icon>add_circle_outline</mat-icon>
+                <span>Add</span>
+              </button>
+              <button mat-menu-item disabled>
+                <mat-icon>delete_outline</mat-icon>
+                <span>Delete</span>
+              </button>
+              <button mat-menu-item>
+                <mat-icon>refresh</mat-icon>
+                <span>Refresh</span>
+              </button>
+            </mat-menu>
+          </mat-card-header>
+          <mat-card-content>
+            @defer (on viewport) {
+              <apx-chart [series]="barChartOptions.series!" [chart]="barChartOptions.chart!"
+                [dataLabels]="barChartOptions.dataLabels!" [plotOptions]="barChartOptions.plotOptions!"
+                [grid]="barChartOptions.grid!" [yaxis]="barChartOptions.yaxis!" [xaxis]="barChartOptions.xaxis!"
+                [fill]="barChartOptions.fill!" [tooltip]="barChartOptions.tooltip!">
+              </apx-chart>
+            } @placeholder {
+              <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                <div class="skeleton-body"></div>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-hostel-occupancy-donut></app-hostel-occupancy-donut>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100" style="min-height: 250px;">
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-disciplinary-incidents-table></app-disciplinary-incidents-table>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100" style="min-height: 250px;">
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-course-enrollment-chart></app-course-enrollment-chart>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100" style="min-height: 280px;">
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-demographics-pie-chart></app-demographics-pie-chart>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100" style="min-height: 280px;">
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <!-- Upcoming Events Table -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">event</mat-icon> Upcoming Events
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View Calendar</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              @defer (on viewport) {
+                <app-table-card [dataSource]="upcomingEvents"
+                  [columnDefinitions]="eventsColumnDefinitions"></app-table-card>
+              } @placeholder {
+                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                  <div class="skeleton-body"></div>
+                </div>
+              }
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Recent Admissions Table -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">person_add</mat-icon> Recent Admissions
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              @defer (on viewport) {
+                <app-table-card [dataSource]="recentAdmissions"
+                  [columnDefinitions]="admissionsColumnDefinitions"></app-table-card>
+              } @placeholder {
+                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                  <div class="skeleton-body"></div>
+                </div>
+              }
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Additional School Management Components -->
+    <div class="row mb-4">
+      <!-- Budget Overview Card -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex">
+        <mat-card class="modern-card h-100 w-100 d-flex flex-column">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">account_balance_wallet</mat-icon> Budget Overview
+            </mat-card-title>
+            <button mat-icon-button [matMenuTriggerFor]="budgetMenu" class="header-dropdown">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #budgetMenu="matMenu">
+              <button mat-menu-item>
+                <mat-icon>refresh</mat-icon>
+                <span>Refresh</span>
+              </button>
+              <button mat-menu-item>
+                <mat-icon>file_download</mat-icon>
+                <span>Export</span>
+              </button>
+            </mat-menu>
+          </mat-card-header>
+          <mat-card-content class="flex-grow-1 d-flex flex-column">
+            <div class="budget-overview flex-grow-1 d-flex flex-column">
+              <div class="budget-summary mb-4">
+                <div class="d-flex justify-content-between align-items-end mb-2">
+                  <div class="summary-item">
+                    <span class="text-muted d-block mb-1 font-13">Total Budget</span>
+                    <h3 class="mb-0 font-weight-bold">${{ budgetOverview.totalBudget.toLocaleString() }}</h3>
+                  </div>
+                  <div class="summary-item text-right">
+                    <span class="text-muted d-block mb-1 font-13">Remaining</span>
+                    <h3 class="mb-0 font-weight-bold">${{ budgetOverview.remainingBudget.toLocaleString() }}</h3>
+                  </div>
+                </div>
+                <div class="progress custom-progress-main mt-3">
+                  <div class="progress-bar" role="progressbar" [style.width.%]="budgetOverview.usedPercentage"
+                    [ngClass]="{'bg-success': budgetOverview.usedPercentage < 70, 'bg-warning': budgetOverview.usedPercentage >= 70 && budgetOverview.usedPercentage < 90, 'bg-danger': budgetOverview.usedPercentage >= 90}">
+                  </div>
+                </div>
+                <div class="text-right mt-1">
+                  <small class="text-muted font-weight-bold">{{ budgetOverview.usedPercentage }}% Used</small>
+                </div>
+              </div>
+              <div class="budget-allocation">
+                <h5 class="mb-3 font-14 font-weight-bold text-muted text-uppercase">Budget Allocation</h5>
+                @for (item of budgetOverview.allocation; track item) {
+                <div class="budget-item mb-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="font-13 font-weight-medium">{{ item.category }}</span>
+                    <span class="font-13 font-weight-bold">${{ item.amount.toLocaleString() }}</span>
+                  </div>
+                  <div class="progress custom-progress-item">
+                    <div class="progress-bar" [ngClass]="item.colorClass" role="progressbar"
+                      [style.width.%]="item.percentage">
+                    </div>
+                  </div>
+                </div>
+                }
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Library Statistics -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex">
+
+        <mat-card class="modern-card h-100 w-100 d-flex flex-column">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">bar_chart</mat-icon> Staff Performance Metrics
+            </mat-card-title>
+            <button mat-icon-button [matMenuTriggerFor]="staffMenu" class="header-dropdown">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #staffMenu="matMenu">
+              <button mat-menu-item>
+                <mat-icon>refresh</mat-icon>
+                <span>Refresh</span>
+              </button>
+              <button mat-menu-item>
+                <mat-icon>filter_list</mat-icon>
+                <span>Filter</span>
+              </button>
+            </mat-menu>
+          </mat-card-header>
+          <mat-card-content class="flex-grow-1 d-flex flex-column">
+            <div class="chart-container flex-grow-1 d-flex align-items-center justify-content-center">
+              @defer (on viewport) {
+                <apx-chart [series]="staffPerformanceChart.series2!" [chart]="staffPerformanceChart.chart!"
+                  [plotOptions]="staffPerformanceChart.plotOptions!" [labels]="staffPerformanceChart.labels!"
+                  [legend]="staffPerformanceChart.legend!" [colors]="staffPerformanceChart.colors!"
+                  [responsive]="staffPerformanceChart.responsive!" class="w-100">
+                </apx-chart>
+              } @placeholder {
+                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                  <div class="skeleton-body"></div>
+                </div>
+              }
+            </div>
+            <div class="staff-metrics-summary">
+              <div class="row align-items-center">
+                <div class="col-4 text-center metric-item px-2">
+                  <div
+                    class="icon-box bg-light-primary rounded-circle mb-2 mx-auto d-flex align-items-center justify-content-center"
+                    style="width:40px; height:40px;">
+                    <i class="fas fa-trophy text-primary"></i>
+                  </div>
+                  <h6 class="text-muted mb-1 font-12 text-uppercase">Top Performer</h6>
+                  <h5 class="mb-0 font-weight-bold">{{ staffMetrics.topPerformer }}</h5>
+                  <small class="text-success font-weight-medium">Score: {{ staffMetrics.topScore }}%</small>
+                </div>
+                <div class="col-4 text-center metric-item px-2">
+                  <div
+                    class="icon-box bg-light-success rounded-circle mb-2 mx-auto d-flex align-items-center justify-content-center"
+                    style="width:40px; height:40px;">
+                    <i class="fas fa-chart-line text-success"></i>
+                  </div>
+                  <h6 class="text-muted mb-1 font-12 text-uppercase">Average Score</h6>
+                  <h5 class="mb-0 font-weight-bold">{{ staffMetrics.averageScore }}%</h5>
+                  <small class="text-muted font-weight-medium">{{ staffMetrics.trend }}</small>
+                </div>
+                <div class="col-4 text-center metric-item px-2">
+                  <div
+                    class="icon-box bg-light-warning rounded-circle mb-2 mx-auto d-flex align-items-center justify-content-center"
+                    style="width:40px; height:40px;">
+                    <i class="fas fa-users text-warning"></i>
+                  </div>
+                  <h6 class="text-muted mb-1 font-12 text-uppercase">Departments</h6>
+                  <h5 class="mb-0 font-weight-bold">{{ staffMetrics.departmentCount }}</h5>
+                  <small class="text-muted font-weight-medium">{{ staffMetrics.staffCount }} Total Staff</small>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix mb-4">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex mb-4 mb-xl-0">
+        <mat-card class="modern-card h-100 w-100 d-flex flex-column">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined text-primary">menu_book</mat-icon> Library Statistics
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();" class="rounded-pill bg-light-primary text-primary border-0 px-3 py-1">View Details</a>
+          </mat-card-header>
+          <mat-card-content class="flex-grow-1 d-flex flex-column">
+            <div class="row mb-4 pt-2">
+              <div class="col-6 col-md-3 text-center mb-3 mb-md-0">
+                <div class="p-3 bg-light-primary rounded-lg h-100">
+                  <i class="fas fa-book font-24 text-primary mb-2"></i>
+                  <h6 class="text-muted font-12 text-uppercase mb-1">Total Books</h6>
+                  <h4 class="mb-0 font-weight-bold">{{ libraryStats.totalBooks }}</h4>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 text-center mb-3 mb-md-0">
+                <div class="p-3 bg-light-success rounded-lg h-100">
+                  <i class="fas fa-hand-holding font-24 text-success mb-2"></i>
+                  <h6 class="text-muted font-12 text-uppercase mb-1">Borrowed</h6>
+                  <h4 class="mb-0 font-weight-bold">{{ libraryStats.borrowedBooks }}</h4>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 text-center mb-3 mb-md-0">
+                <div class="p-3 bg-light-danger rounded-lg h-100">
+                  <i class="fas fa-exclamation-circle font-24 text-danger mb-2"></i>
+                  <h6 class="text-muted font-12 text-uppercase mb-1">Overdue</h6>
+                  <h4 class="mb-0 font-weight-bold">{{ libraryStats.overdueBooks }}</h4>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 text-center">
+                <div class="p-3 bg-light-info rounded-lg h-100">
+                  <i class="fas fa-plus-circle font-24 text-info mb-2"></i>
+                  <h6 class="text-muted font-12 text-uppercase mb-1">New Books</h6>
+                  <h4 class="mb-0 font-weight-bold">{{ libraryStats.newBooks }}</h4>
+                </div>
+              </div>
+            </div>
+            <h5 class="mb-3 font-14 font-weight-bold text-muted text-uppercase border-bottom pb-2 mt-auto">Most Popular Books</h5>
+            <ng-scrollbar class="popular-books" style="height: 260px" visibility="hover">
+              @defer (on viewport) {
+                @for (book of libraryStats.popularBooks; track book) {
+                <div class="book-item py-2 border-bottom">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                      <div class="book-icon bg-light-primary text-primary rounded d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px;">
+                        <i class="fas fa-book"></i>
+                      </div>
+                      <div class="book-info">
+                        <h6 class="mb-1 font-weight-bold">{{ book.title }}</h6>
+                        <small class="text-muted"><i class="fas fa-user-edit mr-1"></i>{{ book.author }}</small>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <span class="badge bg-light-primary text-primary px-3 py-1 rounded-pill">{{ book.borrowCount }} Borrows</span>
+                    </div>
+                  </div>
+                </div>
+                }
+              } @placeholder {
+                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                  <div class="skeleton-body"></div>
+                </div>
+              }
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex">
+        <mat-card class="modern-card h-100 w-100 d-flex flex-column">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined text-warning">directions_bus</mat-icon> Transportation
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();" class="rounded-pill bg-light-warning text-warning border-0 px-3 py-1">View Routes</a>
+          </mat-card-header>
+          <mat-card-content class="flex-grow-1 d-flex flex-column">
+            <div class="row mb-4 pt-2">
+              <div class="col-6 col-md-3 text-center mb-3 mb-md-0">
+                <div class="p-3 border rounded-lg shadow-sm h-100">
+                  <i class="fas fa-bus-alt font-24 text-warning mb-2"></i>
+                  <h6 class="text-muted font-12 text-uppercase mb-1">Total Buses</h6>
+                  <h4 class="mb-0 font-weight-bold">{{ transportStats.totalBuses }}</h4>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 text-center mb-3 mb-md-0">
+                <div class="p-3 border rounded-lg shadow-sm h-100">
+                  <i class="fas fa-route font-24 text-info mb-2"></i>
+                  <h6 class="text-muted font-12 text-uppercase mb-1">Routes</h6>
+                  <h4 class="mb-0 font-weight-bold">{{ transportStats.totalRoutes }}</h4>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 text-center mb-3 mb-md-0">
+                <div class="p-3 border rounded-lg shadow-sm h-100">
+                  <i class="fas fa-user-graduate font-24 text-success mb-2"></i>
+                  <h6 class="text-muted font-12 text-uppercase mb-1">Students</h6>
+                  <h4 class="mb-0 font-weight-bold">{{ transportStats.totalStudents }}</h4>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 text-center">
+                <div class="p-3 border rounded-lg shadow-sm h-100">
+                  <i class="fas fa-id-card font-24 text-primary mb-2"></i>
+                  <h6 class="text-muted font-12 text-uppercase mb-1">Drivers</h6>
+                  <h4 class="mb-0 font-weight-bold">{{ transportStats.totalDrivers }}</h4>
+                </div>
+              </div>
+            </div>
+            <h5 class="mb-3 font-14 font-weight-bold text-muted text-uppercase border-bottom pb-2 mt-auto">Live Bus Status</h5>
+            <ng-scrollbar class="bus-status" style="height: 260px" visibility="hover">
+              @defer (on viewport) {
+                @for (bus of transportStats.busStatus; track bus) {
+                <div class="bus-item py-2 border-bottom">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                      <div class="bus-icon bg-light-warning text-warning rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px;">
+                        <i class="fas fa-bus"></i>
+                      </div>
+                      <div>
+                        <h6 class="mb-1 font-weight-bold">Bus #{{ bus.busNumber }} <span class="text-muted font-12 ml-2"><i class="fas fa-map-marker-alt mr-1"></i>{{ bus.route }}</span></h6>
+                        <small class="text-muted"><i class="fas fa-id-badge mr-1"></i>Driver: {{ bus.driver }}</small>
+                      </div>
+                    </div>
+                    <div>
+                      <span class="badge px-3 py-1 rounded-pill shadow-sm" [ngClass]="bus.statusClass">{{ bus.status }}</span>
+                    </div>
+                  </div>
+                </div>
+                }
+              } @placeholder {
+                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                  <div class="skeleton-body"></div>
+                </div>
+              }
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">groups</mat-icon>
+              Professors List
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 450px" visibility="hover">
+              @defer (on viewport) {
+                <app-table-card [dataSource]="professorsData"
+                  [columnDefinitions]="professorsColumnDefinitions"></app-table-card>
+              } @placeholder {
+                <div class="skeleton-loader-card w-100" style="min-height: 350px; box-shadow: none;">
+                  <div class="skeleton-body"></div>
+                </div>
+              }
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+  </div>
+</section>

@@ -1,0 +1,65 @@
+.modern-card {
+  height: 100%;
+
+  .header-style {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+
+  .chart-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+.header-action-btn {
+  color: #9aa0ac;
+}
+
+.syllabus-details {
+  width: 100%;
+  margin-top: 10px;
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .subject-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .dot-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .subject-name {
+        font-size: 14px;
+        font-weight: 500;
+        /* Removed hardcoded color to inherit theme color */
+      }
+    }
+
+    .progress-info {
+      text-align: right;
+
+      .fw-bold {
+        font-weight: 600;
+      }
+    }
+  }
+}

@@ -1,0 +1,317 @@
+{
+  "LOGIN": {
+    "TITLE": "Willkommen bei Smart"
+  },
+  "MENUITEMS": {
+    "MAIN": {
+      "TEXT": "Hauptmenü"
+    },
+    "FRONT-OFFICE": {
+      "TEXT": "Empfang",
+      "LIST": {
+        "ADMISSION": "Aufnahmeanfrage",
+        "VISITORS": "Besucherbuch",
+        "COMPLAINTS": "Beschwerden"
+      }
+    },
+    "DASHBOARD": {
+      "TEXT": "Dashboard",
+      "LIST": {
+        "DASHBOARD1": "Dashboard 1",
+        "DASHBOARD2": "Dashboard 2",
+        "TEACHER-DASHBOARD": "Lehrer-Dashboard",
+        "STUDENT-DASHBOARD": "Schüler-Dashboard",
+        "LIBRARY-DASHBOARD": "Bibliotheks-Dashboard",
+        "TRANSPORT-DASHBOARD": "Transport-Dashboard"
+      }
+    },
+    "TEACHERS": {
+      "TEXT": "Lehrer",
+      "LIST": {
+        "ALL-TEACHERS": "Alle Lehrer",
+        "ADD-TEACHER": "Lehrer hinzufügen",
+        "EDIT-TEACHER": "Lehrer bearbeiten",
+        "ABOUT-TEACHER": "Über den Lehrer",
+        "TEACHER-TIMETABLE": "Lehrerstundenplan",
+        "ASSIGN-CLASS-TEACHER": "Klassenlehrer zuweisen"
+      }
+    },
+    "STUDENTS": {
+      "TEXT": "Schüler",
+      "LIST": {
+        "ALL-STUDENTS": "Alle Schüler",
+        "ADD-STUDENT": "Schüler hinzufügen",
+        "EDIT-STUDENT": "Schüler bearbeiten",
+        "ABOUT-STUDENT": "Über den Schüler",
+        "STUDENT-ATTENDANCE": "Schüleranwesenheit",
+        "STUDENT-PROMOTION": "Schülerversetzung",
+        "STUDENT-CERTIFICATES": "Schülerzertifikate",
+        "STUDENT-DISCIPLINE": "Schülerdisziplin",
+        "STUDENT-HEALTH-RECORDS": "Gesundheitsakten der Schüler",
+        "ID-CARD-GENERATOR": "Ausweiskarten-Generator"
+      }
+    },
+    "ADMISSIONS": {
+      "TEXT": "Aufnahmen",
+      "LIST": {
+        "ADMISSION-ENQUIRIES": "Aufnahmeanfragen",
+        "ONLINE-APPLICATIONS": "Online-Bewerbungen",
+        "ENTRANCE-EXAMS": "Aufnahmeprüfungen",
+        "MERIT-LIST": "Rangliste",
+        "SEAT-ALLOCATION": "Platzvergabe"
+      }
+    },
+    "EXAMINATION": {
+      "TEXT": "Prüfungen",
+      "LIST": {
+        "EXAM-TYPES": "Prüfungsarten",
+        "EXAM-SCHEDULE": "Prüfungsplan",
+        "HALL-ALLOCATION": "Raumzuteilung",
+        "MARKS-ENTRY": "Noteneingabe",
+        "RESULT-GENERATION": "Ergebnisgenerierung",
+        "REPORT-CARDS": "Zeugnisse",
+        "QUIZ-BUILDER": "Quiz-Ersteller"
+      }
+    },
+    "COURSES": {
+      "TEXT": "Kurse",
+      "LIST": {
+        "ALL-COURSES": "Alle Kurse",
+        "ADD-COURSE": "Kurs hinzufügen",
+        "EDIT-COURSE": "Kurs bearbeiten",
+        "ABOUT-COURSE": "Über den Kurs"
+      }
+    },
+    "LIBRARY": {
+      "TEXT": "Bibliothek",
+      "LIST": {
+        "ALL-LIBRARY": "Alle Bibliotheksbestände",
+        "ADD-LIBRARY": "Bibliotheksbestand hinzufügen",
+        "EDIT-LIBRARY": "Bibliotheksbestand bearbeiten",
+        "BOOK-STATUS": "Buchstatus",
+        "ISSUE-RETURN": "Ausleihe & Rückgabe",
+        "LIBRARY-REPORTS": "Bibliotheksberichte"
+      }
+    },
+    "DEPARTMENTS": {
+      "TEXT": "Abteilungen",
+      "LIST": {
+        "ALL-DEPARTMENT": "Alle Abteilungen",
+        "ADD-DEPARTMENT": "Abteilung hinzufügen",
+        "EDIT-DEPARTMENT": "Abteilung bearbeiten"
+      }
+    },
+    "STAFF": {
+      "TEXT": "Mitarbeiter",
+      "LIST": {
+        "ALL-STAFF": "Alle Mitarbeiter",
+        "ADD-STAFF": "Mitarbeiter hinzufügen",
+        "EDIT-STAFF": "Mitarbeiter bearbeiten",
+        "ABOUT-STAFF": "Über den Mitarbeiter",
+        "STAFF-ATTENDANCE": "Mitarbeiteranwesenheit"
+      }
+    },
+    "HOLIDAY": {
+      "TEXT": "Feiertage",
+      "LIST": {
+        "ALL-HOLIDAY": "Alle Feiertage",
+        "ADD-HOLIDAY": "Feiertag hinzufügen",
+        "EDIT-HOLIDAY": "Feiertag bearbeiten"
+      }
+    },
+    "COMMUNICATION": {
+      "TEXT": "Kommunikation",
+      "LIST": {
+        "NOTICE-BOARD": "Schwarzes Brett",
+        "ANNOUNCEMENTS": "Ankündigungen",
+        "SMS-EMAIL": "SMS / E-Mail"
+      }
+    },
+    "REPORTS": {
+      "TEXT": "Berichte",
+      "LIST": {
+        "ACADEMIC-REPORTS": "Akademische Berichte",
+        "ATTENDANCE-REPORTS": "Anwesenheitsberichte",
+        "FEE-REPORTS": "Gebührenberichte",
+        "EXAM-REPORTS": "Prüfungsberichte",
+        "CUSTOM-REPORTS": "Benutzerdefinierte Berichte"
+      }
+    },
+    "SETTINGS": {
+      "TEXT": "Einstellungen",
+      "LIST": {
+        "INSTITUTE-PROFILE": "Institutsprofil",
+        "ROLE-PERMISSIONS": "Rollen & Berechtigungen",
+        "USER-MANAGEMENT": "Benutzerverwaltung",
+        "ACADEMIC-RULES": "Akademische Regeln",
+        "NOTIFICATION-SETTINGS": "Benachrichtigungseinstellungen",
+        "SYSTEM-LOGS": "Systemprotokolle",
+        "BACKUP-RESTORE": "Sicherung & Wiederherstellung",
+        "AI-SETTINGS": "KI-Einstellungen"
+      }
+    },
+    "FEES": {
+      "TEXT": "Gebühren",
+      "LIST": {
+        "ALL-FEES": "Alle Gebühren",
+        "ADD-FEES": "Gebühren hinzufügen",
+        "EDIT-FEES": "Gebühren bearbeiten",
+        "FEES-TYPE": "Gebührenart",
+        "FEES-DISCOUNT": "Gebührenrabatt",
+        "FEE-RECEIPT": "Gebührenquittung"
+      }
+    },
+    "CLASS": {
+      "TEXT": "Klasse",
+      "LIST": {
+        "CLASS-LIST": "Klassenliste",
+        "CLASS-TIMETABLE": "Klassenstundenplan"
+      }
+    },
+    "ACADEMICS": {
+      "TEXT": "Akademisches",
+      "LIST": {
+        "ACADEMIC-YEAR": "Akademisches Jahr",
+        "SESSIONS": "Sitzungen / Semester",
+        "CLASSES": "Klassen",
+        "SUBJECTS": "Fächer",
+        "COURSE-CURRICULUM": "Lehrplan",
+        "ASSIGNMENT": "Klassen- & Fachzuweisung",
+        "LESSON-PLANNING": "Unterrichtsplanung"
+      }
+    },
+    "HOSTEL": {
+      "TEXT": "Wohnheim",
+      "LIST": {
+        "ROOM-LIST": "Zimmerliste",
+        "ROOM-TYPE": "Zimmertyp",
+        "ALLOCATIONS": "Zuteilungen",
+        "ATTENDANCE": "Wohnheim-Anwesenheit",
+        "HOSTEL-FEES": "Wohnheimgebühren"
+      }
+    },
+    "HR": {
+      "TEXT": "Personalwesen",
+      "LIST": {
+        "LEAVE-REQUESTS": "Urlaubsanträge der Mitarbeiter",
+        "LEAVE-BALANCE": "Urlaubssaldo der Mitarbeiter",
+        "LEAVE-TYPES": "Urlaubsarten",
+        "HOLIDAYS": "Feiertage",
+        "TODAY-ATTENDANCE": "Heutige Anwesenheit",
+        "ATTENDANCE-DETAIL": "Anwesenheitsdetails",
+        "ATTENDANCE-SHEET": "Anwesenheitsliste",
+        "EMPLOYEE-SALARY": "Mitarbeitergehalt",
+        "PAYSLIP": "Gehaltsabrechnung"
+      }
+    },
+    "TEACHER": {
+      "TEXT": "Lehrer",
+      "LIST": {
+        "AI-LESSON-PLANNER": "KI-Unterrichtsplaner",
+        "DASHBOARD": "Dashboard",
+        "TODAY-SCHEDULE": "Heutiger Stundenplan",
+        "ATTENDANCE-SUMMARY": "Anwesenheitsübersicht",
+        "ACADEMICS": "Akademisches",
+        "STUDY-MATERIALS": "Unterrichtsmaterialien",
+        "STUDENTS": "Schüler",
+        "STUDENT-PERFORMANCE": "Schülerleistung",
+        "EXAMINATION": "Prüfungen",
+        "GRADE-SUBMISSION": "Noteneinreichung",
+        "RESULT-PREVIEW": "Ergebnisvorschau",
+        "TIMETABLE": "Stundenplan",
+        "MY-TIMETABLE": "Mein Stundenplan",
+        "SUBSTITUTION-REQUESTS": "Vertretungsanfragen",
+        "COMMUNICATION": "Kommunikation",
+        "MESSAGES": "Nachrichten",
+        "ATTENDANCE": "Anwesenheit",
+        "DAILY-ATTENDANCE": "Tägliche Anwesenheit",
+        "ATTENDANCE-HISTORY": "Anwesenheitsverlauf",
+        "ATTENDANCE-CALENDAR": "Anwesenheitskalender",
+        "LEAVE": "Urlaub",
+        "APPLY-LEAVE": "Urlaub beantragen",
+        "LEAVE-STATUS": "Urlaubsstatus",
+        "MY-PROFILE": "Mein Profil",
+        "DOCUMENTS": "Dokumente",
+        "CHANGE-PASSWORD": "Passwort ändern",
+        "LECTURES": "Vorlesungen",
+        "LEAVE-REQUEST": "Urlaubsantrag",
+        "EXAM-SCHEDULE": "Prüfungsplan",
+        "MY-CLASSES": "Meine Klassen",
+        "SUBJECTS-TAUGHT": "Unterrichtete Fächer",
+        "PROFILE": "Profil",
+        "SETTINGS": "Einstellungen"
+      }
+    },
+    "STUDENT": {
+      "TEXT": "Schüler",
+      "LIST": {
+        "AI-STUDY-COMPANION": "KI-Lernbegleiter",
+        "DASHBOARD": "Dashboard",
+        "HOMEWORK": "Hausaufgaben",
+        "LEAVE-REQUEST": "Urlaubsantrag",
+        "TIME-TABLE": "Stundenplan",
+        "UPCOMING-EXAMS": "Bevorstehende Prüfungen",
+        "MY-CLASS": "Meine Klasse",
+        "MY-SUBJECTS": "Meine Fächer",
+        "ANNOUNCEMENTS": "Ankündigungen",
+        "ACADEMICS": "Akademisches",
+        "SYLLABUS": "Lehrplan",
+        "ASSIGNMENTS": "Aufgaben",
+        "STUDY-MATERIALS": "Lernmaterialien",
+        "ACADEMIC-CALENDAR": "Akademischer Kalender",
+        "ATTENDANCE": "Anwesenheit",
+        "MONTHLY-SUMMARY": "Monatsübersicht",
+        "MY-ATTENDANCE": "Meine Anwesenheit",
+        "ATTENDANCE-SUMMARY": "Anwesenheitsübersicht",
+        "ATTENDANCE-CALENDAR": "Anwesenheitskalender",
+        "FEES": "Gebühren",
+        "FEE-RECEIPTS": "Gebührenquittungen",
+        "DUE-FEES": "Fällige Gebühren",
+        "FEE-DETAILS": "Gebührendetails",
+        "ONLINE-PAYMENT": "Online-Zahlung",
+        "LIBRARY": "Bibliothek",
+        "MY-ISSUED-BOOKS": "Meine ausgeliehenen Bücher",
+        "DUE-DATES": "Fälligkeitsdaten",
+        "BOOK-HISTORY": "Buchverlauf",
+        "TRANSPORT": "Transport",
+        "MY-ROUTE": "Meine Route",
+        "VEHICLE-DETAILS": "Fahrzeugdetails",
+        "HOSTEL": "Wohnheim",
+        "ROOM-DETAILS": "Zimmerdetails",
+        "HOSTEL-FEES": "Wohnheimgebühren",
+        "COMPLAINTS": "Beschwerden",
+        "EXAMINATION": "Prüfungen",
+        "EXAM-SCHEDULE": "Prüfungsplan",
+        "HALL-TICKET": "Prüfungszulassung",
+        "MARKS": "Noten",
+        "REPORT-CARD": "Zeugnis",
+        "RESULTS": "Ergebnisse",
+        "NOTICES": "Mitteilungen",
+        "PROFILE": "Profil",
+        "SETTINGS": "Einstellungen"
+      }
+    },
+    "APPS": {
+      "TEXT": "Apps"
+    },
+    "CALENDAR": {
+      "TEXT": "Kalender"
+    },
+    "TASK": {
+      "TEXT": "Aufgaben"
+    },
+    "CONTACTS": {
+      "TEXT": "Kontakte"
+    },
+    "TRANSPORT": {
+      "TEXT": "Transport",
+      "LIST": {
+        "VEHICLES": "Fahrzeuge",
+        "ROUTES": "Routen",
+        "DRIVERS": "Fahrer",
+        "STUDENT-ALLOCATION": "Schülerzuweisung",
+        "TRANSPORT-FEES": "Transportgebühren"
+      }
+    }
+  }
+}

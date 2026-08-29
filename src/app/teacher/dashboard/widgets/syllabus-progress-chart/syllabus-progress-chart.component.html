@@ -1,0 +1,54 @@
+<mat-card class="modern-card">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">checklist</mat-icon> Syllabus Completion</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="chart-content">
+    <apx-chart [series]="chartOptions.series!" [chart]="chartOptions.chart!" [plotOptions]="chartOptions.plotOptions!"
+      [labels]="chartOptions.labels!" [stroke]="chartOptions.stroke!" [fill]="chartOptions.fill!"
+      [colors]="chartOptions.colors!">
+    </apx-chart>
+
+    <div class="syllabus-details">
+      <div class="detail-row">
+        <div class="subject-info">
+          <span class="dot-indicator" style="background-color: #1ab7ea;"></span>
+          <span class="subject-name">Physics</span>
+        </div>
+        <div class="progress-info">
+          <span class="fw-bold">76%</span>
+          <span class="text-muted font-12 ms-2">3 modules left</span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="subject-info">
+          <span class="dot-indicator" style="background-color: #0084ff;"></span>
+          <span class="subject-name">Chemistry</span>
+        </div>
+        <div class="progress-info">
+          <span class="fw-bold">67%</span>
+          <span class="text-muted font-12 ms-2">5 modules left</span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="subject-info">
+          <span class="dot-indicator" style="background-color: #39539E;"></span>
+          <span class="subject-name">Biology</span>
+        </div>
+        <div class="progress-info">
+          <span class="fw-bold">85%</span>
+          <span class="text-muted font-12 ms-2">1 module left</span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="subject-info">
+          <span class="dot-indicator" style="background-color: #0077B5;"></span>
+          <span class="subject-name">Mathematics</span>
+        </div>
+        <div class="progress-info">
+          <span class="fw-bold">40%</span>
+          <span class="text-muted font-12 ms-2">8 modules left</span>
+        </div>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>

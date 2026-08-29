@@ -1,0 +1,25 @@
+<mat-card class="modern-card class-schedule-card">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">calendar_today</mat-icon> Today's Class Schedule</mat-card-title>
+    <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="class-schedule-list">
+      <ng-scrollbar style="height: 400px" visibility="hover">
+        @for (class of todayClasses; track class) {
+          <div class="schedule-item" [ngClass]="getStatusClass(class.status || '')">
+            <div class="time-slot">{{class.time}}</div>
+            <div class="class-details">
+              <h4 class="subject">{{class.subject}}</h4>
+              <p class="room">{{class.room}}</p>
+            </div>
+            <div class="status-indicator" [ngClass]="getStatusClass(class.status || '')"
+              [matTooltip]="class.status || 'Unknown'" matTooltipPosition="above">
+            </div>
+          </div>
+        }
+      </ng-scrollbar>
+    </div>
+  </mat-card-content>
+</mat-card>

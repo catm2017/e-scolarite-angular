@@ -1,0 +1,19 @@
+<mat-card class="modern-card student-progress-chart">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">show_chart</mat-icon> {{ title() }}</mat-card-title>
+    <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View Details</a>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="chart-container">
+      <apx-chart [series]="chartOptions.series!" [chart]="chartOptions.chart!" [xaxis]="chartOptions.xaxis!"
+        [stroke]="chartOptions.stroke!" [colors]="chartOptions.colors!" [dataLabels]="chartOptions.dataLabels!"
+        [legend]="chartOptions.legend!" [markers]="chartOptions.markers!" [grid]="chartOptions.grid!"
+        [yaxis]="chartOptions.yaxis!" [tooltip]="chartOptions.tooltip!">
+      </apx-chart>
+    </div>
+  </mat-card-content>
+  <mat-card-actions align="end">
+    <button mat-button color="primary">EXPORT DATA</button>
+    <button mat-button color="accent">PRINT REPORT</button>
+  </mat-card-actions>
+</mat-card>

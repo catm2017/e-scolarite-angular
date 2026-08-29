@@ -1,0 +1,50 @@
+<div class="details-container">
+    <div class="modalHeader">
+        <div class="header-left">
+            <h3 class="modal-title">{{data.title}}</h3>
+            @if (data.type) {
+            <span class="type-badge" [ngClass]="'type-' + data.type.toLowerCase()">
+                {{data.type}}
+            </span>
+            }
+        </div>
+        <button mat-icon-button (click)="onClose()" class="close-btn">
+            <mat-icon rippleColor="rgba(0,0,0,0.1)">close</mat-icon>
+        </button>
+    </div>
+
+    <div mat-dialog-content class="details-content">
+        <div class="info-grid">
+            @for (col of data.columns; track col.def) {
+            @if (col.def !== 'actions' && col.def !== 'select' && data.item[col.def] !== undefined) {
+            <div class="info-item">
+                <span class="item-label">{{col.label}}</span>
+                <span class="item-value">
+                    @if (col.type === 'date') {
+                    {{data.item[col.def] | date:'mediumDate'}}
+                    } @else if (col.type === 'status') {
+                    <span class="status-badge"
+                        [ngClass]="'status-' + data.item[col.def].toLowerCase().replace(' ', '-')">
+                        {{data.item[col.def]}}
+                    </span>
+                    } @else if (col.type === 'number') {
+                    {{data.item[col.def] | number}}
+                    } @else {
+                    {{data.item[col.def]}}
+                    }
+                </span>
+            </div>
+            }
+            }
+        </div>
+
+        @if (data.item.downloadUrl) {
+        <div class="action-section">
+            <a mat-flat-button color="primary" [href]="data.item.downloadUrl" target="_blank" class="download-btn">
+                <mat-icon>file_download</mat-icon>
+                <span>Download Document</span>
+            </a>
+        </div>
+        }
+    </div>
+</div>

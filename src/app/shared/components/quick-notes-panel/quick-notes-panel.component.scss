@@ -1,0 +1,192 @@
+.quick-notes-panel {
+  margin-bottom: 20px;
+
+  mat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+
+    mat-card-title {
+      margin-bottom: 0;
+    }
+  }
+
+  .color-picker {
+    display: flex;
+    gap: 8px;
+
+    .color-option {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 2px solid transparent;
+
+      &:hover {
+        transform: scale(1.2);
+      }
+
+      &.selected {
+        border-color: #333;
+        transform: scale(1.2);
+      }
+    }
+  }
+
+  .new-note-container {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+
+    button {
+      align-self: flex-end;
+    }
+  }
+
+  .full-width {
+    width: 100%;
+  }
+
+  .notes-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+
+  .note {
+    padding: 16px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+    position: relative;
+    margin: 10px 0px;
+
+    .note-content {
+      flex-grow: 1;
+      margin-bottom: 16px;
+      white-space: pre-wrap;
+      color: #333;
+      word-break: break-word;
+    }
+
+    .note-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    .note-actions {
+      display: flex;
+
+      button {
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          line-height: 18px;
+          color: #333;
+        }
+      }
+    }
+  }
+
+  .edit-note-container {
+    width: 100%;
+
+    .edit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+  }
+
+  .empty-notes {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: rgba(0, 0, 0, 0.4);
+    grid-column: 1 / -1;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
+    }
+  }
+
+  .color-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 8px;
+    min-width: 100px;
+
+    .color-menu-option {
+      width: 30px !important;
+      height: 30px !important;
+      min-width: 30px !important;
+      padding: 0 !important;
+      border-radius: 50% !important;
+      cursor: pointer !important;
+      transition: transform 0.2s !important;
+      border: 1px solid rgba(0, 0, 0, 0.12) !important;
+      box-shadow: none !important;
+      line-height: 30px !important;
+
+      &:hover {
+        transform: scale(1.2) !important;
+        border-color: rgba(0, 0, 0, 0.5) !important;
+      }
+    }
+  }
+}
+
+// Global styles for the color menu panel
+::ng-deep .color-menu-panel {
+  min-width: 120px !important;
+  max-width: none !important;
+  overflow: visible !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+
+  .mat-mdc-menu-content {
+    padding: 8px !important;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .quick-notes-panel {
+    .notes-container {
+      grid-template-columns: 1fr;
+    }
+
+    mat-card-header {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .color-picker {
+        margin-top: 8px;
+      }
+    }
+  }
+}

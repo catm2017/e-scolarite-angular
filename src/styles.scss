@@ -1,0 +1,129 @@
+/* You can add global styles to this file, and also import other style files */
+@use 'app/prototype/parent-console';
+@use 'app/prototype/primary-school';
+
+// Global Modern Card Overrides
+.modern-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  margin-bottom: 24px;
+  background-color: #ffffff;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  // Flex alignment for title and icon
+  .mat-mdc-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .card-title-icon {
+      color: #6777ef; // default primary accent color for icon
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+// Themes Overrides
+body.layout-glassmorphism {
+  .modern-card {
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(31, 38, 135, 0.05) !important;
+  }
+}
+
+body.dark,
+.dark {
+  .modern-card {
+    background-color: #1a202e !important;
+    border: 1px solid #1a202e !important;
+    box-shadow: none !important;
+  }
+}
+
+// Global Animated Shimmer Skeleton Loaders for @defer blocks
+.skeleton-loader-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  overflow: hidden;
+  position: relative;
+  min-height: 250px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 20%,
+      rgba(255, 255, 255, 0.6) 60%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-header {
+  height: 24px;
+  width: 50%;
+  background-color: #f2f2f2;
+  border-radius: 4px;
+}
+
+.skeleton-body {
+  flex-grow: 1;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  min-height: 180px;
+}
+
+body.dark,
+.dark {
+  .skeleton-loader-card {
+    background: #252a3b !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    &::after {
+      background-image: linear-gradient(
+        90deg,
+        rgba(37, 42, 59, 0) 0%,
+        rgba(255, 255, 255, 0.05) 20%,
+        rgba(255, 255, 255, 0.1) 60%,
+        rgba(37, 42, 59, 0) 100%
+      );
+    }
+  }
+  .skeleton-header {
+    background-color: #2d3348 !important;
+  }
+  .skeleton-body {
+    background-color: #2b3044 !important;
+  }
+}
+

@@ -1,0 +1,40 @@
+<mat-card class="modern-card timetable-card">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">schedule</mat-icon> Daily Timetable</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-tab-group [selectedIndex]="currentDayIndex" animationDuration="300ms">
+      @for (day of weekdays; track day) {
+        <mat-tab [label]="day">
+          <ng-scrollbar style="height: 360px" visibility="hover">
+            <div class="timetable-container">
+              @for (slot of getScheduleForDay(day); track slot) {
+                <div class="time-slot" [ngClass]="[slot.color, isCurrentTimeSlot(slot) ? 'current-slot' : '']">
+                  <div class="time-info">
+                    <div class="time">{{slot.time}}</div>
+                    <div class="duration">{{slot.duration}}</div>
+                  </div>
+                  <div class="slot-content">
+                    <div class="subject-name">{{slot.subject}}</div>
+                    @if (slot.room) {
+                      <div class="location">
+                        <mat-icon>room</mat-icon>
+                        <span>{{slot.room}}</span>
+                      </div>
+                    }
+                    @if (slot.teacher) {
+                      <div class="teacher">
+                        <mat-icon>person</mat-icon>
+                        <span>{{slot.teacher}}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </ng-scrollbar>
+        </mat-tab>
+      }
+    </mat-tab-group>
+  </mat-card-content>
+</mat-card>

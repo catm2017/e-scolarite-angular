@@ -1,0 +1,92 @@
+<div class="ai-chat-wrapper" cdkDrag (cdkDragStarted)="onDragStart()" (cdkDragEnded)="onDragEnd()" [class.open]="isOpen">
+  <!-- Chat Window -->
+  <div class="chat-window glass-panel">
+    
+    <div class="chat-header">
+      <div class="header-left">
+        <div class="glowing-avatar" style="overflow: hidden;">
+          <img src="assets/images/logo.png" alt="Smart Logo" style="width: 24px; height: 24px; object-fit: contain;">
+        </div>
+        <div class="header-text">
+          <h5>Smart AI</h5>
+          <span>Your intelligent virtual assistant</span>
+        </div>
+      </div>
+      <button class="icon-btn dark-circle" (click)="toggleChat()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="chat-body" #chatBody>
+      @for (msg of messages; track msg; let i = $index) {
+        <div class="message-group" [class.is-user]="msg.isUser">
+          <div class="message-meta">
+            @if (!msg.isUser) {
+              <div class="bot-avatar" style="width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-right: 5px;">
+                <img src="assets/images/logo.png" alt="Smart Logo" style="width: 16px; height: 16px; object-fit: contain;">
+              </div>
+            }
+            <span class="sender-name">{{ msg.isUser ? 'You' : 'Smart AI' }}</span>
+            <span class="message-time">{{ msg.timestamp | date:'shortTime' }}</span>
+            @if (msg.isUser) {
+              <div class="user-avatar" style="overflow: hidden; padding: 0;">
+                <img src="assets/images/user/admin.jpg" alt="Admin" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+            }
+          </div>
+          
+          <div class="message-bubble">
+            {{ msg.text }}
+          </div>
+        </div>
+      }
+      
+      @if (isLoading) {
+        <div class="message-group is-bot">
+          <div class="message-meta">
+            <div class="bot-avatar" style="width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-right: 5px;">
+              <img src="assets/images/logo.png" alt="Smart Logo" style="width: 16px; height: 16px; object-fit: contain;">
+            </div>
+            <span class="sender-name">Smart AI</span>
+          </div>
+          <div class="message-bubble typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Action Shortcuts -->
+    <div class="action-shortcuts">
+      <button class="shortcut-btn" (click)="sendShortcut('Please summarize the current page')">
+        <mat-icon>summarize</mat-icon> Summary
+      </button>
+      <button class="shortcut-btn" (click)="sendShortcut('I need help using this system')">
+        <mat-icon>help_outline</mat-icon> Help
+      </button>
+    </div>
+
+    <div class="chat-footer">
+      <div class="input-container">
+        <input type="text" placeholder="Type message..." 
+               [(ngModel)]="userInput" (keyup.enter)="sendMessage()" [disabled]="isLoading">
+        <button class="send-btn" (click)="sendMessage()" [disabled]="isLoading || !userInput.trim()">
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Action Button -->
+  <button class="chat-fab" cdkDragHandle [class.fab-open]="isOpen" (click)="toggleChat()" matTooltip="Ask Smart AI">
+    @if (!isOpen) {
+      <div class="fab-gradient">
+        <mat-icon>auto_awesome</mat-icon>
+      </div>
+    } @else {
+      <div class="fab-dark">
+        <mat-icon>close</mat-icon>
+      </div>
+    }
+  </button>
+</div>

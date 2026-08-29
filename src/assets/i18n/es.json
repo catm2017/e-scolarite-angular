@@ -1,0 +1,317 @@
+{
+  "LOGIN": {
+    "TITLE": "Bienvenido a Smart"
+  },
+  "MENUITEMS": {
+    "MAIN": {
+      "TEXT": "Principal"
+    },
+    "FRONT-OFFICE": {
+      "TEXT": "Recepción",
+      "LIST": {
+        "ADMISSION": "Consulta de admisión",
+        "VISITORS": "Libro de visitantes",
+        "COMPLAINTS": "Quejas"
+      }
+    },
+    "DASHBOARD": {
+      "TEXT": "Panel",
+      "LIST": {
+        "DASHBOARD1": "Panel 1",
+        "DASHBOARD2": "Panel 2",
+        "TEACHER-DASHBOARD": "Panel del profesor",
+        "STUDENT-DASHBOARD": "Panel del estudiante",
+        "LIBRARY-DASHBOARD": "Panel de biblioteca",
+        "TRANSPORT-DASHBOARD": "Panel de transporte"
+      }
+    },
+    "TEACHERS": {
+      "TEXT": "Profesores",
+      "LIST": {
+        "ALL-TEACHERS": "Todos los profesores",
+        "ADD-TEACHER": "Agregar profesor",
+        "EDIT-TEACHER": "Editar profesor",
+        "ABOUT-TEACHER": "Acerca del profesor",
+        "TEACHER-TIMETABLE": "Horario del profesor",
+        "ASSIGN-CLASS-TEACHER": "Asignar profesor de clase"
+      }
+    },
+    "STUDENTS": {
+      "TEXT": "Estudiantes",
+      "LIST": {
+        "ALL-STUDENTS": "Todos los estudiantes",
+        "ADD-STUDENT": "Agregar estudiante",
+        "EDIT-STUDENT": "Editar estudiante",
+        "ABOUT-STUDENT": "Acerca del estudiante",
+        "STUDENT-ATTENDANCE": "Asistencia del estudiante",
+        "STUDENT-PROMOTION": "Promoción del estudiante",
+        "STUDENT-CERTIFICATES": "Certificados del estudiante",
+        "STUDENT-DISCIPLINE": "Disciplina del estudiante",
+        "STUDENT-HEALTH-RECORDS": "Registros de salud del estudiante",
+        "ID-CARD-GENERATOR": "Generador de tarjetas de identificación"
+      }
+    },
+    "ADMISSIONS": {
+      "TEXT": "Admisiones",
+      "LIST": {
+        "ADMISSION-ENQUIRIES": "Consultas de admisión",
+        "ONLINE-APPLICATIONS": "Solicitudes en línea",
+        "ENTRANCE-EXAMS": "Exámenes de ingreso",
+        "MERIT-LIST": "Lista de mérito",
+        "SEAT-ALLOCATION": "Asignación de plazas"
+      }
+    },
+    "EXAMINATION": {
+      "TEXT": "Exámenes",
+      "LIST": {
+        "EXAM-TYPES": "Tipos de examen",
+        "EXAM-SCHEDULE": "Calendario de exámenes",
+        "HALL-ALLOCATION": "Asignación de aulas",
+        "MARKS-ENTRY": "Ingreso de calificaciones",
+        "RESULT-GENERATION": "Generación de resultados",
+        "REPORT-CARDS": "Boletines de calificaciones",
+        "QUIZ-BUILDER": "Creador de cuestionarios"
+      }
+    },
+    "COURSES": {
+      "TEXT": "Cursos",
+      "LIST": {
+        "ALL-COURSES": "Todos los cursos",
+        "ADD-COURSE": "Agregar curso",
+        "EDIT-COURSE": "Editar curso",
+        "ABOUT-COURSE": "Acerca del curso"
+      }
+    },
+    "LIBRARY": {
+      "TEXT": "Biblioteca",
+      "LIST": {
+        "ALL-LIBRARY": "Todos los recursos de biblioteca",
+        "ADD-LIBRARY": "Agregar recurso de biblioteca",
+        "EDIT-LIBRARY": "Editar recurso de biblioteca",
+        "BOOK-STATUS": "Estado del libro",
+        "ISSUE-RETURN": "Préstamo y devolución",
+        "LIBRARY-REPORTS": "Informes de biblioteca"
+      }
+    },
+    "DEPARTMENTS": {
+      "TEXT": "Departamentos",
+      "LIST": {
+        "ALL-DEPARTMENT": "Todos los departamentos",
+        "ADD-DEPARTMENT": "Agregar departamento",
+        "EDIT-DEPARTMENT": "Editar departamento"
+      }
+    },
+    "STAFF": {
+      "TEXT": "Personal",
+      "LIST": {
+        "ALL-STAFF": "Todo el personal",
+        "ADD-STAFF": "Agregar personal",
+        "EDIT-STAFF": "Editar personal",
+        "ABOUT-STAFF": "Acerca del personal",
+        "STAFF-ATTENDANCE": "Asistencia del personal"
+      }
+    },
+    "HOLIDAY": {
+      "TEXT": "Días festivos",
+      "LIST": {
+        "ALL-HOLIDAY": "Todos los días festivos",
+        "ADD-HOLIDAY": "Agregar día festivo",
+        "EDIT-HOLIDAY": "Editar día festivo"
+      }
+    },
+    "COMMUNICATION": {
+      "TEXT": "Comunicación",
+      "LIST": {
+        "NOTICE-BOARD": "Tablón de anuncios",
+        "ANNOUNCEMENTS": "Anuncios",
+        "SMS-EMAIL": "SMS / Correo electrónico"
+      }
+    },
+    "REPORTS": {
+      "TEXT": "Informes",
+      "LIST": {
+        "ACADEMIC-REPORTS": "Informes académicos",
+        "ATTENDANCE-REPORTS": "Informes de asistencia",
+        "FEE-REPORTS": "Informes de cuotas",
+        "EXAM-REPORTS": "Informes de exámenes",
+        "CUSTOM-REPORTS": "Informes personalizados"
+      }
+    },
+    "SETTINGS": {
+      "TEXT": "Configuración",
+      "LIST": {
+        "INSTITUTE-PROFILE": "Perfil del instituto",
+        "ROLE-PERMISSIONS": "Roles y permisos",
+        "USER-MANAGEMENT": "Gestión de usuarios",
+        "ACADEMIC-RULES": "Normas académicas",
+        "NOTIFICATION-SETTINGS": "Configuración de notificaciones",
+        "SYSTEM-LOGS": "Registros del sistema",
+        "BACKUP-RESTORE": "Copia de seguridad y restauración",
+        "AI-SETTINGS": "Configuración de IA"
+      }
+    },
+    "FEES": {
+      "TEXT": "Cuotas",
+      "LIST": {
+        "ALL-FEES": "Todas las cuotas",
+        "ADD-FEES": "Agregar cuota",
+        "EDIT-FEES": "Editar cuota",
+        "FEES-TYPE": "Tipo de cuota",
+        "FEES-DISCOUNT": "Descuento de cuota",
+        "FEE-RECEIPT": "Recibo de cuota"
+      }
+    },
+    "CLASS": {
+      "TEXT": "Clase",
+      "LIST": {
+        "CLASS-LIST": "Lista de clases",
+        "CLASS-TIMETABLE": "Horario de clase"
+      }
+    },
+    "ACADEMICS": {
+      "TEXT": "Académico",
+      "LIST": {
+        "ACADEMIC-YEAR": "Año académico",
+        "SESSIONS": "Sesiones / Semestres",
+        "CLASSES": "Clases",
+        "SUBJECTS": "Asignaturas",
+        "COURSE-CURRICULUM": "Plan de estudios",
+        "ASSIGNMENT": "Asignación de clase y asignatura",
+        "LESSON-PLANNING": "Planificación de lecciones"
+      }
+    },
+    "HOSTEL": {
+      "TEXT": "Residencia",
+      "LIST": {
+        "ROOM-LIST": "Lista de habitaciones",
+        "ROOM-TYPE": "Tipo de habitación",
+        "ALLOCATIONS": "Asignaciones",
+        "ATTENDANCE": "Asistencia de residencia",
+        "HOSTEL-FEES": "Cuotas de residencia"
+      }
+    },
+    "HR": {
+      "TEXT": "Recursos Humanos",
+      "LIST": {
+        "LEAVE-REQUESTS": "Solicitudes de permiso de empleados",
+        "LEAVE-BALANCE": "Saldo de permisos de empleados",
+        "LEAVE-TYPES": "Tipos de permiso",
+        "HOLIDAYS": "Días festivos",
+        "TODAY-ATTENDANCE": "Asistencia de hoy",
+        "ATTENDANCE-DETAIL": "Detalle de asistencia",
+        "ATTENDANCE-SHEET": "Hoja de asistencia",
+        "EMPLOYEE-SALARY": "Salario del empleado",
+        "PAYSLIP": "Recibo de sueldo"
+      }
+    },
+    "TEACHER": {
+      "TEXT": "Profesor",
+      "LIST": {
+        "AI-LESSON-PLANNER": "Planificador de lecciones con IA",
+        "DASHBOARD": "Panel",
+        "TODAY-SCHEDULE": "Horario de hoy",
+        "ATTENDANCE-SUMMARY": "Resumen de asistencia",
+        "ACADEMICS": "Académico",
+        "STUDY-MATERIALS": "Materiales de estudio",
+        "STUDENTS": "Estudiantes",
+        "STUDENT-PERFORMANCE": "Rendimiento del estudiante",
+        "EXAMINATION": "Exámenes",
+        "GRADE-SUBMISSION": "Envío de calificaciones",
+        "RESULT-PREVIEW": "Vista previa de resultados",
+        "TIMETABLE": "Horario",
+        "MY-TIMETABLE": "Mi horario",
+        "SUBSTITUTION-REQUESTS": "Solicitudes de sustitución",
+        "COMMUNICATION": "Comunicación",
+        "MESSAGES": "Mensajes",
+        "ATTENDANCE": "Asistencia",
+        "DAILY-ATTENDANCE": "Asistencia diaria",
+        "ATTENDANCE-HISTORY": "Historial de asistencia",
+        "ATTENDANCE-CALENDAR": "Calendario de asistencia",
+        "LEAVE": "Permiso",
+        "APPLY-LEAVE": "Solicitar permiso",
+        "LEAVE-STATUS": "Estado del permiso",
+        "MY-PROFILE": "Mi perfil",
+        "DOCUMENTS": "Documentos",
+        "CHANGE-PASSWORD": "Cambiar contraseña",
+        "LECTURES": "Clases",
+        "LEAVE-REQUEST": "Solicitud de permiso",
+        "EXAM-SCHEDULE": "Calendario de exámenes",
+        "MY-CLASSES": "Mis clases",
+        "SUBJECTS-TAUGHT": "Asignaturas impartidas",
+        "PROFILE": "Perfil",
+        "SETTINGS": "Configuración"
+      }
+    },
+    "STUDENT": {
+      "TEXT": "Estudiante",
+      "LIST": {
+        "AI-STUDY-COMPANION": "Compañero de estudio con IA",
+        "DASHBOARD": "Panel",
+        "HOMEWORK": "Tareas",
+        "LEAVE-REQUEST": "Solicitud de permiso",
+        "TIME-TABLE": "Horario",
+        "UPCOMING-EXAMS": "Próximos exámenes",
+        "MY-CLASS": "Mi clase",
+        "MY-SUBJECTS": "Mis asignaturas",
+        "ANNOUNCEMENTS": "Anuncios",
+        "ACADEMICS": "Académico",
+        "SYLLABUS": "Programa de estudios",
+        "ASSIGNMENTS": "Tareas",
+        "STUDY-MATERIALS": "Materiales de estudio",
+        "ACADEMIC-CALENDAR": "Calendario académico",
+        "ATTENDANCE": "Asistencia",
+        "MONTHLY-SUMMARY": "Resumen mensual",
+        "MY-ATTENDANCE": "Mi asistencia",
+        "ATTENDANCE-SUMMARY": "Resumen de asistencia",
+        "ATTENDANCE-CALENDAR": "Calendario de asistencia",
+        "FEES": "Cuotas",
+        "FEE-RECEIPTS": "Recibos de cuotas",
+        "DUE-FEES": "Cuotas pendientes",
+        "FEE-DETAILS": "Detalles de cuotas",
+        "ONLINE-PAYMENT": "Pago en línea",
+        "LIBRARY": "Biblioteca",
+        "MY-ISSUED-BOOKS": "Mis libros prestados",
+        "DUE-DATES": "Fechas de vencimiento",
+        "BOOK-HISTORY": "Historial de libros",
+        "TRANSPORT": "Transporte",
+        "MY-ROUTE": "Mi ruta",
+        "VEHICLE-DETAILS": "Detalles del vehículo",
+        "HOSTEL": "Residencia",
+        "ROOM-DETAILS": "Detalles de la habitación",
+        "HOSTEL-FEES": "Cuotas de residencia",
+        "COMPLAINTS": "Quejas",
+        "EXAMINATION": "Exámenes",
+        "EXAM-SCHEDULE": "Calendario de exámenes",
+        "HALL-TICKET": "Credencial de examen",
+        "MARKS": "Calificaciones",
+        "REPORT-CARD": "Boletín de calificaciones",
+        "RESULTS": "Resultados",
+        "NOTICES": "Avisos",
+        "PROFILE": "Perfil",
+        "SETTINGS": "Configuración"
+      }
+    },
+    "APPS": {
+      "TEXT": "Aplicaciones"
+    },
+    "CALENDAR": {
+      "TEXT": "Calendario"
+    },
+    "TASK": {
+      "TEXT": "Tarea"
+    },
+    "CONTACTS": {
+      "TEXT": "Contactos"
+    },
+    "TRANSPORT": {
+      "TEXT": "Transporte",
+      "LIST": {
+        "VEHICLES": "Vehículos",
+        "ROUTES": "Rutas",
+        "DRIVERS": "Conductores",
+        "STUDENT-ALLOCATION": "Asignación de estudiantes",
+        "TRANSPORT-FEES": "Cuotas de transporte"
+      }
+    }
+  }
+}

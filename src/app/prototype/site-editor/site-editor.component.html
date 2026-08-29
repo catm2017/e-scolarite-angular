@@ -1,0 +1,252 @@
+<div class="editor">
+  <header class="editor-header">
+    <a routerLink="/institut" class="back-link"><span>arrow_back</span>Retour au back-office</a>
+    <div class="editor-title"><i>J</i><strong>Éditeur du site<small>Institut Le Joyau du Savoir</small></strong></div>
+    <div class="editor-actions">
+      <app-platform-language-switcher />
+      <span class="saved"><span>cloud_done</span> Modifications enregistrées</span>
+      <a routerLink="/demo/joyau-du-savoir">Aperçu public</a>
+      <button type="button">Publier</button>
+    </div>
+  </header>
+
+  <main>
+    <aside class="editor-sidebar">
+      <div class="editor-tabs">
+        <button type="button" [class.active]="activeTab() === 'content'" (click)="selectTab('content')"><span>edit_note</span>Contenu</button>
+        <button type="button" [class.active]="activeTab() === 'pages'" (click)="selectTab('pages')"><span>description</span>Pages</button>
+        <button type="button" [class.active]="activeTab() === 'navigation'" (click)="selectTab('navigation')"><span>menu</span>Menu</button>
+        <button type="button" [class.active]="activeTab() === 'design'" (click)="selectTab('design')"><span>palette</span>Design</button>
+      </div>
+
+      @if (activeTab() === 'content') {
+        <section class="panel-heading">
+          <small>CONTENU DE LA PAGE</small>
+          <select [ngModel]="selectedPageId()" (ngModelChange)="selectPage($event)">
+            @for (page of draft().pages; track page.id) {
+              <option [value]="page.id">{{ page.title }}</option>
+            }
+          </select>
+          <p>Ajoutez, modifiez et réordonnez les blocs par glisser-déposer.</p>
+        </section>
+
+        <section class="section-list" cdkDropList [cdkDropListData]="selectedPage().sections" (cdkDropListDropped)="dropSection($event)">
+          @for (section of selectedPage().sections; track section.id) {
+            <article class="section-editor-card" cdkDrag>
+              <div class="section-card-head">
+                <button type="button" class="drag-handle" cdkDragHandle title="Déplacer">drag_indicator</button>
+                <span class="section-icon">{{ sectionIcon(section.type) }}</span>
+                <strong>{{ sectionLabel(section.type) }}</strong>
+                <label class="visibility-switch" title="Afficher cette section">
+                  <input type="checkbox" [ngModel]="section.visible" (ngModelChange)="updateSection(section.id, { visible: $event })" />
+                  <i></i>
+                </label>
+                <button type="button" class="icon-button danger" (click)="removeSection(section.id)" title="Supprimer">delete</button>
+              </div>
+              <label>Sur-titre<input [ngModel]="section.eyebrow" (ngModelChange)="updateSection(section.id, { eyebrow: $event })" /></label>
+              <label>Titre<input [ngModel]="section.title" (ngModelChange)="updateSection(section.id, { title: $event })" /></label>
+              <label>Texte<textarea rows="3" [ngModel]="section.content" (ngModelChange)="updateSection(section.id, { content: $event })"></textarea></label>
+            </article>
+          } @empty {
+            <div class="empty-state"><span>widgets</span><strong>Aucune section</strong><p>Ajoutez un premier bloc à cette page.</p></div>
+          }
+        </section>
+
+        <section class="add-section">
+          <small>AJOUTER UNE SECTION</small>
+          <div>
+            <select [(ngModel)]="newSectionType">
+              @for (option of sectionOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+            <button type="button" (click)="addSection()"><span>add</span>Ajouter</button>
+          </div>
+        </section>
+      }
+
+      @if (activeTab() === 'pages') {
+        <section class="panel-heading">
+          <small>ARBORESCENCE DU SITE</small>
+          <h2>Pages</h2>
+          <p>Créez les pages, choisissez leur statut puis réordonnez-les.</p>
+        </section>
+        <section class="page-list" cdkDropList [cdkDropListData]="draft().pages" (cdkDropListDropped)="dropPage($event)">
+          @for (page of draft().pages; track page.id) {
+            <article cdkDrag [class.selected]="selectedPageId() === page.id" (click)="selectPage(page.id)">
+              <button type="button" class="drag-handle" cdkDragHandle title="Déplacer">drag_indicator</button>
+              <span class="page-symbol">{{ page.isHome ? 'home' : 'description' }}</span>
+              <div><strong>{{ page.title }}</strong><small>/{{ page.slug }} · {{ page.sections.length }} sections</small></div>
+              <em [class.draft]="page.status === 'draft'">{{ page.status === 'published' ? 'En ligne' : 'Brouillon' }}</em>
+              @if (!page.isHome) {
+                <button type="button" class="icon-button danger" (click)="$event.stopPropagation(); removePage(page)" title="Supprimer">delete</button>
+              }
+            </article>
+          }
+        </section>
+        @if (selectedPage(); as page) {
+          <section class="page-settings">
+            <small>RÉGLAGES DE LA PAGE</small>
+            <label>Titre<input [ngModel]="page.title" (ngModelChange)="updatePage(page.id, { title: $event })" /></label>
+            <label>Adresse de la page<div class="slug-field"><span>/</span><input [ngModel]="page.slug" (ngModelChange)="updatePage(page.id, { slug: $event })" /></div></label>
+            <label>Description<textarea rows="3" [ngModel]="page.description" (ngModelChange)="updatePage(page.id, { description: $event })"></textarea></label>
+            <label>Publication
+              <select [ngModel]="page.status" (ngModelChange)="updatePage(page.id, { status: $event })">
+                <option value="published">Publiée</option>
+                <option value="draft">Brouillon</option>
+              </select>
+            </label>
+          </section>
+        }
+        <section class="creation-card">
+          <small>NOUVELLE PAGE</small>
+          <label>Nom de la page<input [(ngModel)]="newPageTitle" placeholder="Ex. Vie scolaire" /></label>
+          <label>Courte description<textarea rows="2" [(ngModel)]="newPageDescription" placeholder="Objet de cette page"></textarea></label>
+          <button type="button" (click)="addPage()" [disabled]="!newPageTitle.trim()"><span>add</span>Créer la page</button>
+        </section>
+      }
+
+      @if (activeTab() === 'navigation') {
+        <section class="panel-heading">
+          <small>NAVIGATION PRINCIPALE</small>
+          <h2>Menu du site</h2>
+          <p>Glissez les liens pour choisir leur ordre dans la barre de navigation.</p>
+        </section>
+        <section class="menu-list" cdkDropList [cdkDropListData]="draft().menuItems" (cdkDropListDropped)="dropMenu($event)">
+          @for (item of draft().menuItems; track item.id) {
+            <article cdkDrag>
+              <button type="button" class="drag-handle" cdkDragHandle title="Déplacer">drag_indicator</button>
+              <span class="link-symbol">{{ item.linkType === 'internal' ? 'link' : 'open_in_new' }}</span>
+              <div>
+                <input [ngModel]="item.label" (ngModelChange)="updateMenuItem(item.id, { label: $event })" />
+                <small>{{ item.linkType === 'internal' ? pageTitle(item.pageId) : item.url }}</small>
+              </div>
+              <label class="visibility-switch" title="Afficher le lien">
+                <input type="checkbox" [ngModel]="item.visible" (ngModelChange)="updateMenuItem(item.id, { visible: $event })" />
+                <i></i>
+              </label>
+              <button type="button" class="icon-button danger" (click)="removeMenuItem(item.id)" title="Supprimer">delete</button>
+            </article>
+          }
+        </section>
+        <section class="creation-card">
+          <small>AJOUTER UN LIEN</small>
+          <label>Libellé<input [(ngModel)]="newMenuLabel" placeholder="Ex. Vie scolaire" /></label>
+          <div class="segmented">
+            <button type="button" [class.active]="newMenuType === 'internal'" (click)="newMenuType = 'internal'"><span>link</span>Page du site</button>
+            <button type="button" [class.active]="newMenuType === 'external'" (click)="newMenuType = 'external'"><span>open_in_new</span>Lien externe</button>
+          </div>
+          @if (newMenuType === 'internal') {
+            <label>Page liée
+              <select [(ngModel)]="newMenuPageId">
+                @for (page of draft().pages; track page.id) {
+                  <option [value]="page.id">{{ page.title }}</option>
+                }
+              </select>
+            </label>
+          } @else {
+            <label>Adresse complète<input [(ngModel)]="newMenuUrl" placeholder="https://exemple.sn" /></label>
+            <label class="check-row"><input type="checkbox" [(ngModel)]="newMenuOpenInNewTab" /><span>Ouvrir dans un nouvel onglet</span></label>
+          }
+          <button type="button" (click)="addMenuItem()" [disabled]="!newMenuLabel.trim()"><span>add_link</span>Ajouter au menu</button>
+        </section>
+      }
+
+      @if (activeTab() === 'design') {
+        <section class="panel-heading"><small>IDENTITÉ DU SITE</small><h2>Design et coordonnées</h2><p>Personnalisez les informations communes à toutes les pages.</p></section>
+        <section class="form-section">
+          <small>IDENTITÉ</small>
+          <label>Nom de l’établissement<input [ngModel]="draft().schoolName" (ngModelChange)="update('schoolName', $event)" /></label>
+          <label>Slogan<input [ngModel]="draft().tagline" (ngModelChange)="update('tagline', $event)" /></label>
+          <label>Présentation<textarea rows="4" [ngModel]="draft().description" (ngModelChange)="update('description', $event)"></textarea></label>
+        </section>
+        <section class="form-section">
+          <small>CONTACT</small>
+          <label>Téléphone<input [ngModel]="draft().phone" (ngModelChange)="update('phone', $event)" /></label>
+          <label>Adresse e-mail<input [ngModel]="draft().email" (ngModelChange)="update('email', $event)" /></label>
+          <label>Adresse<input [ngModel]="draft().address" (ngModelChange)="update('address', $event)" /></label>
+        </section>
+        <section class="form-section">
+          <small>APPARENCE</small>
+          <label>Couleur principale<div class="color-field"><input type="color" [ngModel]="draft().primaryColor" (ngModelChange)="update('primaryColor', $event)" /><span>{{ draft().primaryColor }}</span></div></label>
+          <label class="switch-row"><span>Admissions ouvertes<small>Affiche le bouton de préinscription.</small></span><input type="checkbox" [ngModel]="draft().admissionsOpen" (ngModelChange)="update('admissionsOpen', $event)" /></label>
+          <label class="switch-row"><span>Chiffres clés<small>Affiche les statistiques sur l’accueil.</small></span><input type="checkbox" [ngModel]="draft().showStats" (ngModelChange)="update('showStats', $event)" /></label>
+        </section>
+      }
+    </aside>
+
+    <section class="preview-area">
+      <div class="preview-toolbar">
+        <div><span>APERÇU EN DIRECT</span><strong>{{ selectedPage().title }}</strong></div>
+        <div class="device-switch">
+          <button type="button" [class.active]="previewDevice() === 'desktop'" (click)="previewDevice.set('desktop')">desktop_mac</button>
+          <button type="button" [class.active]="previewDevice() === 'tablet'" (click)="previewDevice.set('tablet')">tablet_mac</button>
+          <button type="button" [class.active]="previewDevice() === 'mobile'" (click)="previewDevice.set('mobile')">smartphone</button>
+        </div>
+        <small>joyaudusavoir.escolarite.sn/{{ selectedPage().isHome ? '' : selectedPage().slug }}</small>
+      </div>
+
+      <div class="browser-frame" [class.tablet]="previewDevice() === 'tablet'" [class.mobile]="previewDevice() === 'mobile'">
+        <div class="browser-top"><i></i><i></i><i></i><span>🔒 joyaudusavoir.escolarite.sn/{{ selectedPage().isHome ? '' : selectedPage().slug }}</span></div>
+        <div class="site-preview" [style.--school-color]="draft().primaryColor">
+          <div class="site-contactbar"><span>phone&nbsp; {{ draft().phone }}</span><span>mail&nbsp; {{ draft().email }}</span><span>schedule&nbsp; Lun–Ven · 08h–17h</span></div>
+          <nav>
+            <div class="preview-brand"><b>J</b><span>{{ draft().schoolName }}<small>Excellence · Savoir · Valeurs</small></span></div>
+            <div class="preview-menu">
+              @for (item of visibleMenu(); track item.id) {
+                <a [href]="item.linkType === 'external' ? item.url : '#'" [class.active]="item.pageId === selectedPageId()" (click)="previewMenuItem(item, $event)">{{ item.label }}</a>
+              }
+              <button type="button">Connexion</button>
+            </div>
+          </nav>
+
+          @for (section of selectedPage().sections; track section.id) {
+            @if (section.visible) {
+              @switch (section.type) {
+                @case ('hero') {
+                  <section class="preview-hero">
+                    <div><small>{{ section.eyebrow }}</small><h1>{{ section.title }}</h1><p>{{ section.content }}</p><div><button type="button">Connexion</button><a>Découvrir l’établissement →</a></div></div>
+                    <aside><span>school</span><strong>Photo de l’établissement</strong><small>Image administrable depuis le back-office</small></aside>
+                  </section>
+                }
+                @case ('stats') {
+                  @if (draft().showStats) {
+                    <section class="preview-stats"><div><strong>684</strong><span>Apprenants</span></div><div><strong>42</strong><span>Enseignants</span></div><div><strong>98%</strong><span>Réussite aux examens</span></div><div><strong>16</strong><span>Années d’expérience</span></div></section>
+                  }
+                }
+                @case ('programs') {
+                  <section class="preview-section preview-programs"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="card-grid"><article><span>child_care</span><em>CI – CM2</em><h3>Préscolaire & Primaire</h3><p>Éveil, fondamentaux et accompagnement dans un cadre stimulant.</p></article><article><span>menu_book</span><em>6e – Terminale</em><h3>Collège & Lycée</h3><p>Exigence académique, orientation et préparation aux examens.</p></article><article><span>auto_stories</span><em>Parcours dédié</em><h3>Enseignement religieux</h3><p>Lecture, mémorisation et éducation aux valeurs.</p></article></div></section>
+                }
+                @case ('schools') {
+                  <section class="preview-section preview-schools"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="school-grid"><article><div>apartment</div><strong>Campus Keur Massar</strong><span>Préscolaire · Primaire · Collège</span><small>location_on Dakar</small></article><article><div>domain</div><strong>Campus Dakar Plateau</strong><span>Lycée · Formation professionnelle</span><small>location_on Dakar</small></article></div></section>
+                }
+                @case ('about') {
+                  <section class="preview-about"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><div class="feature-grid"><article><span>person_search</span><strong>Suivi individualisé</strong><p>Chaque apprenant bénéficie d’un accompagnement attentif.</p></article><article><span>workspace_premium</span><strong>Excellence académique</strong><p>Des objectifs clairs et des équipes pédagogiques engagées.</p></article><article><span>diversity_3</span><strong>Valeurs & citoyenneté</strong><p>Une école ouverte, responsable et enracinée dans son contexte.</p></article></div></section>
+                }
+                @case ('testimonials') {
+                  <section class="preview-section preview-testimonials"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="quote-grid"><article><span>format_quote</span><p>Une équipe disponible et un suivi qui nous met en confiance.</p><strong>Awa Ndiaye</strong><small>Parent d’élève</small></article><article><span>format_quote</span><p>J’ai trouvé un cadre exigeant qui m’a aidé à progresser.</p><strong>Mamadou Fall</strong><small>Ancien élève</small></article></div></section>
+                }
+                @case ('contact') {
+                  <section class="preview-contact"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><article><p><span>location_on</span>{{ draft().address }}</p><p><span>phone</span>{{ draft().phone }}</p><p><span>mail</span>{{ draft().email }}</p><button type="button">Demander une visite</button></article></section>
+                }
+                @case ('cta') {
+                  <section class="preview-cta"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><button type="button">Déposer une demande</button></section>
+                }
+                @default {
+                  <section class="preview-section preview-text"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p></section>
+                }
+              }
+            }
+          }
+
+          <footer>
+            <div class="footer-brand"><b>J</b><div><strong>{{ draft().schoolName }}</strong><p>{{ draft().description }}</p></div></div>
+            <div><strong>Navigation</strong>@for (item of visibleMenu(); track item.id) { <a href="#" (click)="previewMenuItem(item, $event)">{{ item.label }}</a> }</div>
+            <div><strong>Contact</strong><span>{{ draft().address }}</span><span>{{ draft().phone }}</span><span>{{ draft().email }}</span></div>
+            <small>Site propulsé par E‑Scolarité</small>
+          </footer>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

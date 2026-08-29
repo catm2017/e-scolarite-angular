@@ -1,0 +1,71 @@
+<mat-card class="enhanced-events-card">
+  <mat-card-header class="header-menu">
+    <mat-card-title>Upcoming Events</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="filter-controls">
+      <mat-form-field appearance="outline" class="filter-select">
+        <mat-select [(ngModel)]="selectedType" placeholder="Event Type">
+          @for (type of eventTypes; track type.value) {
+          <mat-option [value]="type.value">{{ type.viewValue }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-select">
+        <mat-select [(ngModel)]="selectedDate" placeholder="Date Range">
+          @for (filter of dateFilters; track filter.value) {
+          <mat-option [value]="filter.value">{{ filter.viewValue }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="events-container">
+      @if (filteredEvents.length === 0) {
+      <div class="no-events">
+        <mat-icon>event_busy</mat-icon>
+        <p>No events found matching your filters</p>
+      </div>
+      } @else {
+      <ng-scrollbar style="height: 375px" visibility="hover">
+        @for (event of filteredEvents; track event.title) {
+        <div class="event-item">
+          <div class="event-date">
+            <div class="event-day">{{ event.day }}</div>
+            <div class="event-date-num">{{ event.date }}</div>
+            <div class="event-month">{{ event.month }}</div>
+          </div>
+          <div class="event-details">
+            <div class="event-header">
+              <h3 class="event-title">{{ event.title }}</h3>
+              <mat-chip-option>
+                <mat-icon>{{ getEventIcon(event.type) }}</mat-icon>
+                {{ event.type | titlecase }}
+              </mat-chip-option>
+            </div>
+            <div class="event-time">
+              <mat-icon>access_time</mat-icon>
+              {{ event.time }}
+            </div>
+            @if (event.description) {
+            <div class="event-description">{{ event.description }}</div>
+            }
+            <div class="event-status" [ngClass]="event.status.toLowerCase()">
+              {{ event.status }}
+            </div>
+          </div>
+        </div>
+        }
+      </ng-scrollbar>
+
+      }
+    </div>
+  </mat-card-content>
+
+  @if (showViewMore() && events().length > maxEvents()) {
+  <mat-card-actions align="end">
+    <button mat-button color="primary">View All Events</button>
+  </mat-card-actions>
+  }
+</mat-card>

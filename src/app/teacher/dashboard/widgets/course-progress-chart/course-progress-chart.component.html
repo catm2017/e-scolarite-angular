@@ -1,0 +1,47 @@
+<mat-card class="modern-card h-100 border-radius-10 shadow-sm course-progress-card">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">trending_up</mat-icon> Syllabus Progress</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="pt-2 d-flex flex-column justify-content-between">
+    <!-- Chart Container -->
+    <div class="chart-container d-flex justify-content-center align-items-center">
+      @if (chartOptions.series) {
+      <apx-chart [series]="chartOptions.series" [chart]="chartOptions.chart!"
+        [plotOptions]="chartOptions.plotOptions!" [labels]="chartOptions.labels!" [colors]="chartOptions.colors!"
+        class="w-100 d-flex justify-content-center">
+      </apx-chart>
+      }
+    </div>
+
+    <!-- Subject detailed list -->
+    <div class="subject-list-container mt-2">
+      @for (subject of subjects; track subject; let i = $index) {
+      <div class="subject-item d-flex align-items-center justify-content-between">
+
+        <!-- Left details: Dynamic tinted icon and titles -->
+        <div class="d-flex align-items-center gap-3">
+          <div class="subject-icon-wrap" [style.background-color]="subject.color + '15'" [style.color]="subject.color">
+            <mat-icon>{{ subject.icon }}</mat-icon>
+          </div>
+          <div>
+            <h5 class="subject-title mb-0">{{ subject.name }}</h5>
+            <span class="subject-subtext">{{ subject.completedChapters }} of {{ subject.totalChapters }} chapters
+              completed</span>
+          </div>
+        </div>
+
+        <!-- Right details: Dynamic colored percentage and themed status badge -->
+        <div class="d-flex flex-column align-items-end gap-1">
+          <span class="subject-percentage" [style.color]="subject.color">
+            {{ subject.percentage }}%
+          </span>
+          <span class="status-pill" [ngClass]="subject.statusClass">
+            {{ subject.status }}
+          </span>
+        </div>
+
+      </div>
+      }
+    </div>
+  </mat-card-content>
+</mat-card>

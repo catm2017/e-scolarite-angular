@@ -1,0 +1,222 @@
+<mat-card class="modern-card transport-overview-card">
+  <mat-card-header>
+    <div class="header-container">
+      <div class="title">
+        <mat-icon class="material-icons-outlined card-title-icon">directions_bus</mat-icon>
+        <span>Transport Overview</span>
+      </div>
+      <div class="actions">
+        <button mat-icon-button [matMenuTriggerFor]="menu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item>
+            <mat-icon>refresh</mat-icon>
+            <span>Refresh Data</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>file_download</mat-icon>
+            <span>Export Routes</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>print</mat-icon>
+            <span>Print Report</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>settings</mat-icon>
+            <span>Settings</span>
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content class="transport-card-content">
+    <div class="transport-stats">
+      <div class="stat-item">
+        <div class="stat-value">{{ transportStats.totalBuses }}</div>
+        <div class="stat-label">Total Buses</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">{{ getActiveBusCount() }}</div>
+        <div class="stat-label">Active Buses</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">{{ getDelayedBusCount() }}</div>
+        <div class="stat-label">Delayed</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">{{ transportStats.totalRoutes }}</div>
+        <div class="stat-label">Routes</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">{{ getTotalStudentsCount() }}</div>
+        <div class="stat-label">Students</div>
+      </div>
+    </div>
+
+    <div class="transport-content">
+      <div class="routes-list">
+        <h3>Bus Routes</h3>
+        <div class="routes-container">
+          <ng-scrollbar style="height: 400px" visibility="hover">
+            @for (route of busRoutes; track route) {
+              <div class="route-item" [class.selected]="selectedRoute?.id === route.id"
+                [class.active]="route.status === 'active'" [class.delayed]="route.status === 'delayed'"
+                [class.inactive]="route.status === 'inactive'" (click)="selectRoute(route)">
+                <div class="route-header">
+                  <div class="route-title">
+                    <mat-icon class="material-icons-outlined" [ngClass]="getStatusClass(route.status)">{{
+                    getStatusIcon(route.status) }}</mat-icon>
+                    <span>{{ route.name }}</span>
+                  </div>
+                  <div class="route-bus">{{ route.busNumber }}</div>
+                </div>
+                <div class="route-details">
+                  <div class="route-info">
+                    <div class="info-item">
+                      <mat-icon class="material-icons-outlined">people</mat-icon>
+                      <span>{{ route.totalStudents }} students</span>
+                    </div>
+                    <div class="info-item">
+                      <mat-icon class="material-icons-outlined">place</mat-icon>
+                      <span>{{ route.totalStops }} stops</span>
+                    </div>
+                  </div>
+                  <div class="route-time">
+                    <div class="time-range">{{ route.startTime }} - {{ route.endTime }}</div>
+                    <div class="last-updated">Updated {{ getTimeAgo(route.lastUpdated) }}</div>
+                  </div>
+                </div>
+              </div>
+            }
+          </ng-scrollbar>
+        </div>
+      </div>
+
+      @if (selectedRoute) {
+        <div class="route-details-section">
+          <h3>Route Details: {{ selectedRoute.name }}</h3>
+          <mat-tab-group [(selectedIndex)]="activeTab">
+            <mat-tab label="Overview">
+              <div class="route-overview">
+                <div class="route-info-card">
+                  <div class="info-section">
+                    <h4>Bus Information</h4>
+                    <div class="info-row">
+                      <div class="info-label">Bus Number:</div>
+                      <div class="info-value">{{ selectedRoute.busNumber }}</div>
+                    </div>
+                    <div class="info-row">
+                      <div class="info-label">Status:</div>
+                      <div class="info-value" [ngClass]="getStatusClass(selectedRoute.status)">
+                        <mat-icon class="material-icons-outlined">{{ getStatusIcon(selectedRoute.status) }}</mat-icon>
+                        {{ selectedRoute.status | titlecase }}
+                      </div>
+                    </div>
+                    <div class="info-row">
+                      <div class="info-label">Last Updated:</div>
+                      <div class="info-value">{{ getTimeAgo(selectedRoute.lastUpdated) }}</div>
+                    </div>
+                  </div>
+                  <div class="info-section">
+                    <h4>Driver Information</h4>
+                    <div class="info-row">
+                      <div class="info-label">Driver Name:</div>
+                      <div class="info-value">{{ selectedRoute.driverName }}</div>
+                    </div>
+                    <div class="info-row">
+                      <div class="info-label">Contact:</div>
+                      <div class="info-value">{{ selectedRoute.driverContact }}</div>
+                    </div>
+                  </div>
+                  <div class="info-section">
+                    <h4>Route Information</h4>
+                    <div class="info-row">
+                      <div class="info-label">Schedule:</div>
+                      <div class="info-value">{{ selectedRoute.startTime }} - {{ selectedRoute.endTime }}</div>
+                    </div>
+                    <div class="info-row">
+                      <div class="info-label">Distance:</div>
+                      <div class="info-value">{{ selectedRoute.distance }} km</div>
+                    </div>
+                    <div class="info-row">
+                      <div class="info-label">Students:</div>
+                      <div class="info-value">{{ selectedRoute.totalStudents }}</div>
+                    </div>
+                    <div class="info-row">
+                      <div class="info-label">Stops:</div>
+                      <div class="info-value">{{ selectedRoute.totalStops }}</div>
+                    </div>
+                  </div>
+                  <div class="route-actions">
+                    <button mat-stroked-button color="primary">
+                      <mat-icon class="material-icons-outlined">map</mat-icon>
+                      View on Map
+                    </button>
+                    <button mat-stroked-button color="primary">
+                      <mat-icon class="material-icons-outlined">message</mat-icon>
+                      Contact Driver
+                    </button>
+                    <button mat-stroked-button color="primary">
+                      <mat-icon class="material-icons-outlined">notifications</mat-icon>
+                      Send Alert
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+            <mat-tab label="Stops">
+              <div class="stops-list">
+                <ng-scrollbar style="height: 350px" visibility="hover">
+                  @for (stop of getRouteStops(selectedRoute.id); track stop; let i = $index) {
+                    <div class="stop-item">
+                      <div class="stop-number">{{ i + 1 }}</div>
+                      <div class="stop-content">
+                        <div class="stop-name">{{ stop.name }}</div>
+                        <div class="stop-details">
+                          <div class="stop-time">
+                            <mat-icon class="material-icons-outlined">schedule</mat-icon>
+                            <span>{{ stop.arrivalTime }} - {{ stop.departureTime }}</span>
+                          </div>
+                          <div class=" stop-students">
+                            <mat-icon class="material-icons-outlined">people</mat-icon>
+                            <span>{{ stop.studentsCount }} students</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </ng-scrollbar>
+              </div>
+            </mat-tab>
+            <mat-tab label="Students">
+              <div class="students-info">
+                <p class="no-data-message">
+                  <mat-icon>info</mat-icon>
+                  Detailed student information would be displayed here in a production environment.
+                </p>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+      }
+    </div>
+
+  </mat-card-content>
+
+  <mat-card-actions class="transport-card-actions">
+    <button mat-button color="primary">
+      <mat-icon class="material-icons-outlined">add</mat-icon>
+      Add New Route
+    </button>
+    <button mat-button color="primary">
+      <mat-icon class="material-icons-outlined">edit</mat-icon>
+      Edit Routes
+    </button>
+    <button mat-button color="primary">
+      <mat-icon class="material-icons-outlined">assignment</mat-icon>
+      Transport Report
+    </button>
+  </mat-card-actions>
+</mat-card>

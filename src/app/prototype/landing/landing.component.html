@@ -1,0 +1,137 @@
+<div class="landing">
+  <header class="topbar">
+    <a class="brand" routerLink="/">
+      <span class="brand-mark">E</span>
+      <span>E‑Scolarité</span>
+    </a>
+    <nav aria-label="Navigation principale">
+      <a href="#solutions">Solutions</a>
+      <a href="#fonctionnalites">Fonctionnalités</a>
+      <a href="#tarifs">Tarifs</a>
+    </nav>
+    <div class="topbar-actions">
+      <app-platform-language-switcher />
+      <a class="text-link" routerLink="/institut">Se connecter</a>
+      <a class="button button-small" routerLink="/saas">Voir la maquette</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span></span> Conçu pour les écoles du Sénégal</div>
+        <h1>Une seule plateforme pour faire grandir votre établissement.</h1>
+        <p>
+          Pilotez la scolarité, les finances et la communication. Activez
+          uniquement les fonctionnalités dont vous avez besoin et créez le site
+          web de votre école en quelques minutes.
+        </p>
+        <div class="hero-actions">
+          <a class="button" routerLink="/saas">Démarrer un essai gratuit</a>
+          <a class="button-secondary" href="#fonctionnalites">
+            Découvrir la plateforme <span>→</span>
+          </a>
+        </div>
+        <div class="trust">
+          <div class="avatars"><span>MK</span><span>AD</span><span>FS</span></div>
+          <p><strong>Simple à prendre en main</strong><br />Accompagnement local inclus</p>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="Aperçu du tableau de bord">
+        <div class="visual-glow"></div>
+        <div class="dashboard-window">
+          <div class="window-top">
+            <div class="mini-brand"><span>E</span> E‑Scolarité</div>
+            <div class="window-search">Rechercher une action…</div>
+            <div class="avatar">AM</div>
+          </div>
+          <div class="window-body">
+            <aside>
+              <span class="active">▦ Vue d’ensemble</span>
+              <span>♙ Apprenants</span>
+              <span>▤ Scolarité</span>
+              <span>◷ Emploi du temps</span>
+              <span>₣ Finances</span>
+            </aside>
+            <div class="dashboard-content">
+              <div class="welcome">
+                <div><small>Bonjour Aminata 👋</small><h3>Votre établissement en un coup d’œil</h3></div>
+                <button>+ Inscrire un élève</button>
+              </div>
+              <div class="stat-grid">
+                <article><span class="green">people</span><small>Élèves actifs</small><strong>684</strong><em>+24 ce mois</em></article>
+                <article><span class="blue">payments</span><small>Recouvrements</small><strong>87%</strong><em>Objectif 92%</em></article>
+                <article><span class="orange">event_available</span><small>Présence du jour</small><strong>94%</strong><em>18 absences</em></article>
+              </div>
+              <div class="dashboard-row">
+                <article class="chart-card">
+                  <div><strong>Encaissements</strong><small>6 derniers mois</small></div>
+                  <div class="chart">
+                    <i style="height: 35%"></i><i style="height: 52%"></i><i style="height: 46%"></i>
+                    <i style="height: 71%"></i><i style="height: 63%"></i><i class="highlight" style="height: 88%"></i>
+                  </div>
+                </article>
+                <article class="tasks">
+                  <strong>À traiter</strong>
+                  <span><i>!</i><b>12 dossiers</b><small>à compléter</small></span>
+                  <span><i>₣</i><b>36 échéances</b><small>en retard</small></span>
+                  <span><i>✓</i><b>8 notes</b><small>à valider</small></span>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="floating-card floating-payment"><span>✓</span><div><strong>Paiement reçu</strong><small>Mensualité de Fatou N.</small></div></div>
+        <div class="floating-card floating-ai"><span>✦</span><div><strong>Assistant E‑Scolarité</strong><small>36 familles peuvent être relancées</small></div></div>
+      </div>
+    </section>
+
+    <section class="proof">
+      <p>Une plateforme pour tous vos établissements</p>
+      <div><span>ÉCOLE PRIMAIRE</span><span>COLLÈGE</span><span>LYCÉE</span><span>UNIVERSITÉ</span><span>DAARA</span></div>
+    </section>
+
+    <section class="features" id="fonctionnalites">
+      <div class="section-heading">
+        <span class="eyebrow">TOUT AU MÊME ENDROIT</span>
+        <h2>Le quotidien de votre école devient plus simple.</h2>
+        <p>Commencez avec l’essentiel, puis ajoutez des capacités au rythme de votre établissement.</p>
+      </div>
+      <div class="feature-grid">
+        @for (feature of features; track feature.title) {
+          <article>
+            <span class="material-symbol">{{ feature.icon }}</span>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.text }}</p>
+            <a href="#tarifs">En savoir plus →</a>
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="pricing" id="tarifs">
+      <div>
+        <span class="eyebrow light">UN PRIX JUSTE ET ÉVOLUTIF</span>
+        <h2>Payez pour ce que vous utilisez.</h2>
+        <p>Composez une offre transparente. Testez chaque fonctionnalité avant de l’activer.</p>
+        <a class="button button-light" routerLink="/saas">Configurer une offre</a>
+      </div>
+      <article class="price-builder">
+        <header><div><small>Simulation mensuelle</small><strong>Votre formule</strong></div><span>Sans engagement</span></header>
+        @for (module of modules; track module.label) {
+          <div class="price-line">
+            <span class="check">✓</span><b>{{ module.label }}</b><strong>{{ module.price }} F</strong>
+          </div>
+        }
+        <footer><span>Total mensuel<small>Hors consommation WhatsApp & IA</small></span><strong>31 000 <small>F CFA</small></strong></footer>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand"><span class="brand-mark">E</span><span>E‑Scolarité</span></div>
+    <p>La plateforme scolaire pensée au Sénégal.</p>
+    <span>© 2026 Daara Tech</span>
+  </footer>
+</div>

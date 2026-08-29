@@ -1,0 +1,82 @@
+<mat-card class="modern-card class-schedule-card">
+  <mat-card-header class="header-style">
+    <mat-card-title>
+      <mat-icon class="card-title-icon material-icons-outlined">calendar_today</mat-icon> {{ title() }}
+    </mat-card-title>
+    <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+  </mat-card-header>
+
+
+  <mat-card-content>
+    <mat-accordion class="schedule-accordion" multi>
+      <ng-scrollbar style="height: 400px" visibility="hover">
+        @for (day of processedScheduleData(); track day.day) {
+        <mat-expansion-panel [expanded]="isToday(day.day)" class="day-panel">
+          <mat-expansion-panel-header class="day-header">
+            <div class="day-header-content">
+              <div class="day-info">
+                <span class="day-name">{{ day.day }}</span>
+                <span class="day-date">{{ getDayDate(day.day) }}</span>
+              </div>
+              <div class="classes-count">
+                <span class="count-badge">{{ day.classes.length }}</span>
+                <span class="count-label">Classes</span>
+              </div>
+            </div>
+          </mat-expansion-panel-header>
+
+          <div class="class-list">
+            @for (classItem of day.classes; track classItem.subject) {
+            <div class="class-item" [ngClass]="'subject-' + getSubjectType(classItem.subject)">
+              <div class="time-column">
+                <div class="time-display">{{ formatTime(classItem.time) }}</div>
+                <div class="duration">{{ calculateDuration(classItem.time) }}</div>
+              </div>
+
+              <div class="class-content">
+                <div class="class-header">
+                  <div class="subject-icon" [style.background-color]="getSubjectColor(classItem.subject)">
+                    <mat-icon>{{ classItem.icon || 'school' }}</mat-icon>
+                  </div>
+                  <h3 class="subject-name">{{ classItem.subject }}</h3>
+                </div>
+
+                <div class="class-details">
+                  <div class="detail-item">
+                    <mat-icon>room</mat-icon>
+                    <span>{{ classItem.room }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>groups</mat-icon>
+                    <span>{{ classItem.class }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="class-actions">
+                <button mat-icon-button aria-label="Class options">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+        </mat-expansion-panel>
+        }
+      </ng-scrollbar>
+    </mat-accordion>
+  </mat-card-content>
+
+  <mat-card-actions>
+    <div class="card-actions-container">
+      <button mat-stroked-button class="action-button">
+        <mat-icon>print</mat-icon>
+        <span>Print</span>
+      </button>
+      <button mat-flat-button color="primary" class="action-button">
+        <mat-icon>calendar_month</mat-icon>
+        <span>Full Schedule</span>
+      </button>
+    </div>
+  </mat-card-actions>
+</mat-card>

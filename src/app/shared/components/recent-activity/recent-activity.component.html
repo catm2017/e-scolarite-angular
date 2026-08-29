@@ -1,0 +1,61 @@
+<mat-card class="recent-activity-card">
+  <mat-card-header class="header-style">
+    <mat-card-title>
+      {{ title() }}
+      @if (getUnreadCount() > 0) {
+      <span class="unread-badge">{{ getUnreadCount() }}</span>
+      }
+    </mat-card-title>
+    <div class="header-actions">
+      @if (getUnreadCount() > 0) {
+      <button mat-icon-button matTooltip="Mark all as read" (click)="markAllAsRead()">
+        <mat-icon>done_all</mat-icon>
+      </button>
+      }
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (displayActivities.length === 0) {
+    <div class="empty-activities">
+      <mat-icon>notifications_off</mat-icon>
+      <p>No recent activities</p>
+    </div>
+    } @else {
+    <div class="activity-list">
+      <ng-scrollbar style="height: 390px" visibility="hover">
+        @for (activity of displayActivities; track activity.id) {
+        <div class="activity-item {{ activity.statusClass }}" [class.unread]="!activity.read"
+          (click)="viewActivity(activity)">
+          <div class="activity-icon" [ngClass]="getActivityIconClass(activity.type)">
+            <mat-icon>{{ getActivityIcon(activity.type) }}</mat-icon>
+          </div>
+          <div class="activity-content">
+            <div class="activity-header">
+              <span class="activity-title">{{ activity.title }}</span>
+              @if (!activity.read) {
+              <span class="unread-dot"></span>
+              }
+            </div>
+            <p class="activity-message">{{ activity.message }}</p>
+            <div class="activity-meta">
+              @if (activity.user) {
+              <span class="activity-user">{{ activity.user.name }}</span>
+              }
+              <span class="activity-time">{{ getFormattedTime(activity.timestamp) }}</span>
+            </div>
+          </div>
+        </div>
+        @if (!$last) {
+        <mat-divider></mat-divider>
+        }
+        }
+      </ng-scrollbar>
+    </div>
+    }
+  </mat-card-content>
+
+  <mat-card-actions align="end">
+    <button mat-button color="primary">VIEW ALL</button>
+  </mat-card-actions>
+</mat-card>

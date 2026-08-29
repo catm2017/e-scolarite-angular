@@ -1,0 +1,78 @@
+<div class="school-public" [style.--school-color]="draft().primaryColor">
+  <div class="demo-bar"><span>Site vitrine généré depuis E‑Scolarité</span><a routerLink="/institut/site-web">Modifier le site</a></div>
+  <div class="contact-bar">
+    <div><span><i>phone</i>{{ draft().phone }}</span><span><i>mail</i>{{ draft().email }}</span><span><i>schedule</i>08h00 – 17h00, du lundi au vendredi</span></div>
+    <div><a href="#" aria-label="Facebook">public</a><a href="#" aria-label="Instagram">photo_camera</a><a href="#" aria-label="LinkedIn">work</a></div>
+  </div>
+  <nav>
+    <div class="brand"><b>J</b><span>{{ draft().schoolName }}<small>Excellence · Savoir · Valeurs</small></span></div>
+    <button type="button" class="mobile-toggle" (click)="mobileMenuOpen.set(!mobileMenuOpen())">{{ mobileMenuOpen() ? 'close' : 'menu' }}</button>
+    <div class="nav-links" [class.open]="mobileMenuOpen()">
+      <div class="nav-menu">
+        @for (item of visibleMenu(); track item.id) {
+          <a
+            [href]="item.linkType === 'external' ? item.url : '#/' + (item.pageId || 'accueil')"
+            [attr.target]="item.openInNewTab ? '_blank' : null"
+            [attr.rel]="item.openInNewTab ? 'noopener noreferrer' : null"
+            [class.active]="item.pageId === selectedPageId()"
+            (click)="openMenuItem(item, $event)"
+          >{{ item.label }}@if (item.linkType === 'external') { <i>open_in_new</i> }</a>
+        }
+      </div>
+      <div class="nav-actions"><app-platform-language-switcher /><div class="access-links"><a routerLink="/demo/joyau-du-savoir/connexion" class="login-link"><i>login</i>Connexion</a></div></div>
+    </div>
+  </nav>
+
+  <main>
+    @for (section of selectedPage().sections; track section.id) {
+      @if (section.visible) {
+        @switch (section.type) {
+          @case ('hero') {
+            <section class="hero">
+              <div class="hero-copy"><small>{{ section.eyebrow }}</small><h1>{{ section.title }}</h1><h2>{{ draft().tagline }}</h2><p>{{ section.content }}</p><div><button type="button" routerLink="/demo/joyau-du-savoir/connexion">Connexion</button><a href="#decouvrir">Découvrir l’établissement <span>arrow_forward</span></a></div></div>
+              <aside><span>school</span><strong>Votre établissement en image</strong><p>Cette photographie sera administrable depuis le back-office.</p><em>Depuis 2008</em></aside>
+            </section>
+          }
+          @case ('stats') {
+            @if (draft().showStats) {
+              <section class="stats"><div><strong>684</strong><span>Apprenants</span></div><div><strong>42</strong><span>Enseignants</span></div><div><strong>98%</strong><span>Réussite aux examens</span></div><div><strong>16</strong><span>Années d’expérience</span></div></section>
+            }
+          }
+          @case ('programs') {
+            <section class="content-section programs" id="decouvrir"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="program-grid"><article><span>child_care</span><em>CI – CM2</em><h3>Préscolaire & Primaire</h3><p>Éveil, acquisition des fondamentaux et accompagnement personnalisé.</p><a href="#">Découvrir le parcours <i>arrow_forward</i></a></article><article><span>menu_book</span><em>6e – Terminale</em><h3>Collège & Lycée</h3><p>Consolidation des savoirs, orientation et préparation aux examens.</p><a href="#">Découvrir le parcours <i>arrow_forward</i></a></article><article><span>auto_stories</span><em>Parcours dédié</em><h3>Enseignement religieux</h3><p>Lecture, mémorisation, récitation et transmission des valeurs.</p><a href="#">Découvrir le parcours <i>arrow_forward</i></a></article></div></section>
+          }
+          @case ('schools') {
+            <section class="content-section schools"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="school-grid"><article><div class="school-image">apartment</div><div><em>Préscolaire · Primaire · Collège</em><h3>Campus Keur Massar</h3><p><span>location_on</span>Keur Massar, Dakar</p><a href="#">Voir le campus <i>arrow_forward</i></a></div></article><article><div class="school-image">domain</div><div><em>Lycée · Formation professionnelle</em><h3>Campus Dakar Plateau</h3><p><span>location_on</span>Dakar Plateau</p><a href="#">Voir le campus <i>arrow_forward</i></a></div></article></div></section>
+          }
+          @case ('about') {
+            <section class="about"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p><button type="button">Découvrir notre projet</button></div><div class="feature-grid"><article><span>person_search</span><div><h3>Accompagnement individualisé</h3><p>Un suivi attentif pour faire progresser chaque apprenant.</p></div></article><article><span>workspace_premium</span><div><h3>Excellence académique</h3><p>Des équipes engagées autour d’objectifs ambitieux et mesurables.</p></div></article><article><span>diversity_3</span><div><h3>Valeurs & citoyenneté</h3><p>Une éducation responsable, ouverte et enracinée au Sénégal.</p></div></article><article><span>lightbulb</span><div><h3>Innovation pédagogique</h3><p>Des méthodes actives et des outils adaptés à chaque cycle.</p></div></article></div></section>
+          }
+          @case ('news') {
+            <section class="content-section news"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="news-grid"><article><div>campaign</div><small>12 OCT. 2026</small><h3>Bienvenue pour la nouvelle rentrée scolaire</h3><a href="#">Lire l’actualité <i>arrow_forward</i></a></article><article><div>emoji_events</div><small>28 JUIN 2026</small><h3>Nos élèves récompensés pour leurs résultats</h3><a href="#">Lire l’actualité <i>arrow_forward</i></a></article><article><div>groups</div><small>16 MAI 2026</small><h3>Rencontre avec les familles de l’établissement</h3><a href="#">Lire l’actualité <i>arrow_forward</i></a></article></div></section>
+          }
+          @case ('testimonials') {
+            <section class="content-section testimonials"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="quote-grid"><article><span>format_quote</span><p>Une équipe disponible, une communication claire et un suivi qui nous met en confiance.</p><strong>Awa Ndiaye</strong><small>Parent d’élève</small></article><article><span>format_quote</span><p>J’ai trouvé un cadre exigeant qui m’a permis de progresser et de préparer mon avenir.</p><strong>Mamadou Fall</strong><small>Ancien élève</small></article></div></section>
+          }
+          @case ('contact') {
+            <section class="contact"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><article><p><span>location_on</span>{{ draft().address }}</p><p><span>phone</span>{{ draft().phone }}</p><p><span>mail</span>{{ draft().email }}</p><p><span>schedule</span>Lundi au vendredi, 08h00 – 17h00</p><button type="button">Demander une visite</button></article></section>
+          }
+          @case ('cta') {
+            <section class="cta"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><button type="button" (click)="selectedPageId.set('admission')">Déposer une demande</button></section>
+          }
+          @default {
+            <section class="content-section text-block"><span class="block-icon">{{ sectionIcon(section.type) }}</span><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p></section>
+          }
+        }
+      }
+    }
+  </main>
+
+  <footer>
+    <div class="footer-intro"><div class="brand"><b>J</b><span>{{ draft().schoolName }}</span></div><p>{{ draft().description }}</p><div class="socials"><a href="#">public</a><a href="#">photo_camera</a><a href="#">work</a></div></div>
+    <div><h3>Liens utiles</h3>@for (item of visibleMenu(); track item.id) { <a [href]="item.linkType === 'external' ? item.url : '#'" (click)="openMenuItem(item, $event)">{{ item.label }}</a> }</div>
+    <div><h3>Admissions</h3><a href="#" (click)="selectedPageId.set('admission'); $event.preventDefault()">Procédure d’admission</a><a href="#" (click)="selectedPageId.set('admission'); $event.preventDefault()">Déposer une demande d’admission</a><a href="#" (click)="selectedPageId.set('schools'); $event.preventDefault()">Nos établissements</a></div>
+    <div><h3>Votre espace</h3><a routerLink="/demo/joyau-du-savoir/connexion">Connexion</a><span>Vos identifiants sont créés et transmis par l’établissement.</span></div>
+    <div><h3>Contact</h3><span><i>location_on</i>{{ draft().address }}</span><span><i>phone</i>{{ draft().phone }}</span><span><i>mail</i>{{ draft().email }}</span></div>
+    <small>© 2026 {{ draft().schoolName }}. Tous droits réservés. · Site propulsé par E‑Scolarité</small>
+  </footer>
+</div>

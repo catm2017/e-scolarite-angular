@@ -1,0 +1,1088 @@
+@use "sass:color";
+
+// =========================================================================
+// Consolidated Modern Auth Layout & Components
+// =========================================================================
+
+.modern-auth {
+  height: 100vh;
+  background-color: #f8f9fa;
+  font-family: "Inter", "Roboto", sans-serif;
+  overflow: hidden;
+
+  .auth-main {
+    height: 100%;
+  }
+
+  .left-panel-wrapper {
+    position: relative;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+    background: linear-gradient(145deg, #eef2ff 0%, #e0e7ff 40%, #dbeafe 100%);
+
+    .abstract-bg {
+      height: 100vh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      .shape {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        z-index: 1;
+        animation: float 18s infinite alternate ease-in-out;
+      }
+
+      .shape-1 {
+        width: 380px;
+        height: 380px;
+        background: rgba(99, 102, 241, 0.18);
+        top: -8%;
+        left: -8%;
+        animation-delay: 0s;
+      }
+
+      .shape-2 {
+        width: 460px;
+        height: 460px;
+        background: rgba(59, 130, 246, 0.14);
+        bottom: -15%;
+        right: -8%;
+        animation-delay: -6s;
+      }
+
+      .shape-3 {
+        width: 280px;
+        height: 280px;
+        background: rgba(139, 92, 246, 0.12);
+        top: 38%;
+        left: 18%;
+        animation-delay: -12s;
+      }
+
+      // ---- Glass info card ----
+      .glass-feature-card {
+        position: relative;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        border-radius: 24px;
+        padding: 36px 40px;
+        width: 75%;
+        max-width: 460px;
+        color: #1e293b;
+        box-shadow:
+          0 8px 32px rgba(99, 102, 241, 0.1),
+          0 2px 8px rgba(0, 0, 0, 0.06);
+        animation: fadeInUp 0.9s ease-out;
+
+        // Badge pill
+        .left-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          background: linear-gradient(135deg, #6366f1, #3b82f6);
+          color: white;
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          padding: 6px 14px;
+          border-radius: 100px;
+          margin-bottom: 22px;
+
+          i {
+            font-size: 0.85rem;
+          }
+        }
+
+        h3 {
+          font-size: 1.65rem;
+          font-weight: 800;
+          color: #1e293b;
+          margin-bottom: 10px;
+          letter-spacing: -0.4px;
+          line-height: 1.25;
+        }
+
+        p {
+          color: #64748b;
+          font-size: 0.925rem;
+          line-height: 1.65;
+          margin-bottom: 28px;
+        }
+
+        // Stats row
+        .left-stats {
+          display: flex;
+          align-items: center;
+          gap: 0;
+          background: #f1f5f9;
+          border-radius: 16px;
+          padding: 16px 20px;
+          margin-bottom: 28px;
+
+          .stat-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            .stat-num {
+              font-size: 1.4rem;
+              font-weight: 800;
+              color: #4f46e5;
+              line-height: 1;
+            }
+            .stat-label {
+              font-size: 0.72rem;
+              color: #94a3b8;
+              font-weight: 500;
+              margin-top: 3px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+          }
+
+          .stat-divider {
+            width: 1px;
+            height: 36px;
+            background: #cbd5e1;
+          }
+        }
+
+        // Testimonial block
+        .left-testimonial {
+          .testimonial-text {
+            font-size: 0.875rem;
+            color: #475569;
+            font-style: italic;
+            line-height: 1.6;
+            margin-bottom: 14px;
+            padding-left: 14px;
+            border-left: 3px solid #6366f1;
+          }
+
+          .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            .author-info {
+              font-size: 0.8rem;
+              color: #64748b;
+              strong {
+                color: #1e293b;
+              }
+            }
+          }
+
+          .floating-avatars {
+            display: flex;
+            align-items: center;
+
+            .avatar {
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              border: 2px solid #ffffff;
+              margin-left: -8px;
+              background-size: cover;
+              background-position: center;
+
+              &:first-child {
+                margin-left: 0;
+              }
+            }
+          }
+        }
+      }
+
+      // ---- Top-left brand ----
+      .overlay-content {
+        position: absolute;
+        top: 32px;
+        left: 36px;
+        z-index: 10;
+
+        .left-brand {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          .left-logo {
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+          }
+
+          .brand-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #1e293b;
+            letter-spacing: 0.3px;
+          }
+        }
+      }
+    }
+  }
+
+  .auth-form-section {
+    display: block;
+    height: 100%;
+    background: #ffffff;
+    padding: 2rem;
+    overflow-y: auto;
+
+    /* Custom thin scrollbar for better UX */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 10px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.25);
+    }
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  }
+}
+
+// Glass Panel for Form
+.auth-glass-panel {
+  width: 100%;
+  max-width: 480px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.05),
+    0 5px 15px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.6s ease-out;
+  margin: 40px auto;
+}
+
+.logo-img {
+  transition: transform 0.3s ease;
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.welcome-msg {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2b3445;
+  margin-bottom: 0.5rem;
+}
+
+.sign-up-link {
+  color: #0d6efd;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  &:hover {
+    color: color.adjust(#0d6efd, $lightness: -15%);
+    text-decoration: underline;
+  }
+}
+
+// Role Selector — Premium Card Chips
+.user-role-selector {
+  .role-selector-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 14px;
+  }
+
+  .role-chips {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+
+    &.dual-chips {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    @media (min-width: 576px) {
+      &:not(.dual-chips) {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+    }
+  }
+
+  .role-chip {
+    position: relative;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 14px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    overflow: hidden;
+
+    // Subtle shine overlay
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+
+    // Icon circle
+    .chip-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.25s ease;
+      background: #e2e8f0;
+      color: #64748b;
+    }
+
+    .chip-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #334155;
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+
+    .chip-desc {
+      font-size: 0.68rem;
+      color: #94a3b8;
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+
+    // Check badge — hidden by default
+    .chip-check {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #10b981;
+      color: white;
+      font-size: 0.6rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0) rotate(-45deg);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      i {
+        display: block;
+        line-height: 1;
+      }
+    }
+
+    // Hover
+    &:hover {
+      border-color: #cbd5e1;
+      background: #f1f5f9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+
+      &::before {
+        opacity: 1;
+      }
+
+      .chip-icon-wrap {
+        transform: scale(1.08);
+      }
+    }
+
+    // ---- Active states — light pastel tint style ----
+    &.active {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+      .chip-check {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+
+      &::before {
+        opacity: 0;
+      }
+    }
+
+    &.admin-chip.active {
+      background: #f0fdf4;
+      border-color: #22c55e;
+      border-width: 2px;
+      .chip-icon-wrap {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+      .chip-label {
+        color: #15803d;
+      }
+      .chip-desc {
+        color: #4ade80;
+      }
+    }
+    &.teacher-chip.active {
+      background: #fff7ed;
+      border-color: #fb923c;
+      border-width: 2px;
+      .chip-icon-wrap {
+        background: #ffedd5;
+        color: #ea580c;
+      }
+      .chip-label {
+        color: #c2410c;
+      }
+      .chip-desc {
+        color: #fb923c;
+      }
+    }
+    &.student-chip.active {
+      background: #eff6ff;
+      border-color: #60a5fa;
+      border-width: 2px;
+      .chip-icon-wrap {
+        background: #dbeafe;
+        color: #2563eb;
+      }
+      .chip-label {
+        color: #1d4ed8;
+      }
+      .chip-desc {
+        color: #60a5fa;
+      }
+    }
+    &.parent-chip.active {
+      background: #faf5ff;
+      border-color: #a78bfa;
+      border-width: 2px;
+      .chip-icon-wrap {
+        background: #ede9fe;
+        color: #7c3aed;
+      }
+      .chip-label {
+        color: #6d28d9;
+      }
+      .chip-desc {
+        color: #a78bfa;
+      }
+    }
+
+    // ---- Idle icon accent colors (not active) ----
+    &.admin-chip .chip-icon-wrap {
+      background: #d1fae5;
+      color: #059669;
+    }
+    &.teacher-chip .chip-icon-wrap {
+      background: #ffedd5;
+      color: #f97316;
+    }
+    &.student-chip .chip-icon-wrap {
+      background: #dbeafe;
+      color: #3b82f6;
+    }
+    &.parent-chip .chip-icon-wrap {
+      background: #ede9fe;
+      color: #8b5cf6;
+    }
+  }
+}
+
+// Form Elements
+.example-full-width {
+  width: 100%;
+}
+
+.forgot-link {
+  color: #0d6efd;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  &:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+  }
+}
+
+.modern-btn {
+  width: 100%;
+  padding: 24px 0;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  border: none;
+  box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+  transition: all 0.3s ease;
+
+  &:hover:not([disabled]) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.4);
+    .transition-icon {
+      transform: translateX(4px);
+    }
+  }
+
+  &:active:not([disabled]) {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(13, 110, 253, 0.3);
+  }
+}
+
+// Social Login
+.social-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #adb5bd;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  &::before {
+    margin-right: 15px;
+  }
+  &::after {
+    margin-left: 15px;
+  }
+}
+
+.social-btn {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: 1px solid #e9ecef;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #495057;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  }
+
+  &.google:hover {
+    color: #ea4335;
+    border-color: #ea4335;
+  }
+  &.facebook:hover {
+    color: #1877f2;
+    border-color: #1877f2;
+  }
+  &.twitter:hover {
+    color: #1da1f2;
+    border-color: #1da1f2;
+  }
+  &.linkedin:hover {
+    color: #0a66c2;
+    border-color: #0a66c2;
+  }
+}
+
+.rounded-alert {
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+// Staggered layout helper animations
+::ng-deep .mat-mdc-form-field {
+  animation: fadeInUp 0.5s ease-out;
+  animation-fill-mode: both;
+}
+
+::ng-deep .mat-mdc-form-field:nth-child(1) {
+  animation-delay: 0.1s;
+}
+::ng-deep .mat-mdc-form-field:nth-child(2) {
+  animation-delay: 0.2s;
+}
+::ng-deep .mat-mdc-form-field:nth-child(3) {
+  animation-delay: 0.3s;
+}
+::ng-deep .mat-mdc-form-field:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+// Spinner & pwd toggles
+.show-pwd-icon {
+  color: rgba(0, 0, 0, 0.55);
+  padding: 12px;
+}
+.pwd-toggle {
+  cursor: pointer;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-spinner:before {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  margin-left: -10px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  border-top-color: #0d6efd;
+  animation: spinner 0.8s linear infinite;
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+// ==========================================
+// Consolidate Dark Theme Overrides
+// ==========================================
+body.dark,
+body.theme-black {
+  .modern-auth {
+    background-color: #0f172a;
+
+    .left-panel-wrapper {
+      background: linear-gradient(
+        145deg,
+        #000000 0%,
+        #000000 50%,
+        #000000 100%
+      ) !important;
+
+      .shape-1 {
+        background: rgba(99, 102, 241, 0.35) !important;
+      }
+      .shape-2 {
+        background: rgba(59, 130, 246, 0.25) !important;
+      }
+      .shape-3 {
+        background: rgba(139, 92, 246, 0.2) !important;
+      }
+
+      .glass-feature-card {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+
+        h3 {
+          color: #f1f5f9 !important;
+        }
+        p {
+          color: rgba(255, 255, 255, 0.6) !important;
+        }
+
+        .left-stats {
+          background: rgba(255, 255, 255, 0.06) !important;
+          .stat-num {
+            color: #818cf8 !important;
+          }
+          .stat-label {
+            color: #64748b !important;
+          }
+          .stat-divider {
+            background: rgba(255, 255, 255, 0.1) !important;
+          }
+        }
+
+        .left-testimonial {
+          .testimonial-text {
+            color: rgba(255, 255, 255, 0.5) !important;
+            border-left-color: #6366f1 !important;
+          }
+          .author-info {
+            color: #64748b !important;
+            strong {
+              color: #cbd5e1 !important;
+            }
+          }
+        }
+      }
+
+      .left-brand .brand-title {
+        color: #f1f5f9 !important;
+      }
+    }
+
+    .auth-form-section {
+      background: #111827 !important;
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      &::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
+
+    .auth-glass-panel {
+      background: #1e2433 !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .welcome-msg {
+      color: #f1f5f9 !important;
+    }
+
+    .text-muted,
+    .auth-signup-text {
+      color: #94a3b8 !important;
+    }
+
+    .role-selector-label {
+      color: #475569 !important;
+    }
+
+    .role-chip {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+
+      .chip-label {
+        color: #cbd5e1 !important;
+      }
+      .chip-desc {
+        color: #475569 !important;
+      }
+
+      &:hover {
+        background: #253347 !important;
+        border-color: #475569 !important;
+      }
+
+      &.active {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+        .chip-check {
+          opacity: 1;
+          transform: scale(1) rotate(0deg);
+        }
+      }
+
+      &.admin-chip .chip-icon-wrap {
+        background: rgba(5, 150, 105, 0.2) !important;
+        color: #34d399 !important;
+      }
+      &.teacher-chip .chip-icon-wrap {
+        background: rgba(249, 115, 22, 0.2) !important;
+        color: #fb923c !important;
+      }
+      &.student-chip .chip-icon-wrap {
+        background: rgba(59, 130, 246, 0.2) !important;
+        color: #60a5fa !important;
+      }
+      &.parent-chip .chip-icon-wrap {
+        background: rgba(139, 92, 246, 0.2) !important;
+        color: #a78bfa !important;
+      }
+
+      &.admin-chip.active {
+        background: rgba(5, 150, 105, 0.15) !important;
+        border-color: #22c55e !important;
+        border-width: 2px !important;
+        .chip-icon-wrap {
+          background: rgba(5, 150, 105, 0.25) !important;
+          color: #34d399 !important;
+        }
+        .chip-label {
+          color: #4ade80 !important;
+        }
+        .chip-desc {
+          color: #22c55e !important;
+        }
+      }
+      &.teacher-chip.active {
+        background: rgba(249, 115, 22, 0.12) !important;
+        border-color: #fb923c !important;
+        border-width: 2px !important;
+        .chip-icon-wrap {
+          background: rgba(249, 115, 22, 0.25) !important;
+          color: #fb923c !important;
+        }
+        .chip-label {
+          color: #fdba74 !important;
+        }
+        .chip-desc {
+          color: #fb923c !important;
+        }
+      }
+      &.student-chip.active {
+        background: rgba(59, 130, 246, 0.12) !important;
+        border-color: #60a5fa !important;
+        border-width: 2px !important;
+        .chip-icon-wrap {
+          background: rgba(59, 130, 246, 0.25) !important;
+          color: #60a5fa !important;
+        }
+        .chip-label {
+          color: #93c5fd !important;
+        }
+        .chip-desc {
+          color: #60a5fa !important;
+        }
+      }
+      &.parent-chip.active {
+        background: rgba(139, 92, 246, 0.12) !important;
+        border-color: #a78bfa !important;
+        border-width: 2px !important;
+        .chip-icon-wrap {
+          background: rgba(139, 92, 246, 0.25) !important;
+          color: #a78bfa !important;
+        }
+        .chip-label {
+          color: #c4b5fd !important;
+        }
+        .chip-desc {
+          color: #a78bfa !important;
+        }
+      }
+    }
+
+    .forgot-link {
+      color: #60a5fa !important;
+      &:hover {
+        color: #93c5fd !important;
+      }
+    }
+
+    .sign-up-link {
+      color: #60a5fa !important;
+      &:hover {
+        color: #93c5fd !important;
+      }
+    }
+
+    .social-divider {
+      color: #475569;
+      &::before,
+      &::after {
+        border-bottom-color: #334155;
+      }
+    }
+
+    .social-btn {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      color: #94a3b8 !important;
+
+      &:hover {
+        background: #2d3f55 !important;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4) !important;
+      }
+    }
+
+    .form-check-label {
+      color: #94a3b8 !important;
+    }
+
+    .text-center p.text-muted {
+      color: #475569 !important;
+    }
+  }
+}
+
+// ==========================================
+// Consolidate Glassmorphism Theme Overrides
+// ==========================================
+body.layout-glassmorphism {
+  .modern-auth {
+    background: transparent;
+
+    .auth-form-section {
+      background: rgba(255, 255, 255, 0.2) !important;
+      backdrop-filter: blur(24px) !important;
+      -webkit-backdrop-filter: blur(24px) !important;
+    }
+
+    .auth-glass-panel {
+      background: rgba(255, 255, 255, 0.3) !important;
+      border: 1px solid rgba(255, 255, 255, 0.5) !important;
+      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.12) !important;
+    }
+
+    .role-chip {
+      background: rgba(255, 255, 255, 0.35) !important;
+      border: 1px solid rgba(255, 255, 255, 0.5) !important;
+      &:hover {
+        background: rgba(255, 255, 255, 0.5) !important;
+      }
+
+      &.active {
+        color: white !important;
+        border-color: transparent !important;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2) !important;
+      }
+      &.admin-chip.active {
+        background: #0b8400 !important;
+      }
+      &.teacher-chip.active {
+        background: #fd7e14 !important;
+      }
+      &.student-chip.active {
+        background: #0d6efd !important;
+      }
+      &.parent-chip.active {
+        background: #8b5cf6 !important;
+      }
+    }
+
+    .social-btn {
+      background: rgba(255, 255, 255, 0.35) !important;
+      border-color: rgba(255, 255, 255, 0.5) !important;
+      backdrop-filter: blur(10px);
+      &:hover {
+        background: rgba(255, 255, 255, 0.55) !important;
+      }
+    }
+
+    .social-divider {
+      &::before,
+      &::after {
+        border-bottom-color: rgba(255, 255, 255, 0.4);
+      }
+    }
+  }
+
+  // Dark glassmorphism
+  &.dark {
+    .modern-auth {
+      .auth-form-section {
+        background: rgba(15, 23, 42, 0.5) !important;
+      }
+
+      .auth-glass-panel {
+        background: rgba(15, 23, 42, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+      }
+
+      .welcome-msg {
+        color: #f1f5f9 !important;
+      }
+      .text-muted {
+        color: #94a3b8 !important;
+      }
+
+      .role-chip {
+        background: rgba(0, 0, 0, 0.35) !important;
+        color: #cbd5e1 !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        &:hover {
+          background: rgba(0, 0, 0, 0.5) !important;
+        }
+
+        &.active {
+          color: white !important;
+          border-color: transparent !important;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5) !important;
+        }
+        &.student-chip.active {
+          background: #0d6efd !important;
+        }
+        &.teacher-chip.active {
+          background: #fd7e14 !important;
+        }
+      }
+
+      .social-btn {
+        background: rgba(0, 0, 0, 0.3) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        color: #cbd5e1 !important;
+      }
+
+      .forgot-link,
+      .sign-up-link {
+        color: #60a5fa !important;
+      }
+    }
+  }
+}

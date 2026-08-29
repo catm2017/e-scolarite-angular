@@ -1,0 +1,37 @@
+<mat-card class="modern-card h-100 border-radius-10 shadow-sm class-average-widget">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">bar_chart</mat-icon> Class Averages</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="pt-2 d-flex flex-column justify-content-between">
+    <!-- Chart Container -->
+    <div class="chart-container d-flex justify-content-center align-items-center">
+      @if (chartOptions.series) {
+      <apx-chart [series]="chartOptions.series" [chart]="chartOptions.chart!"
+        [xaxis]="chartOptions.xaxis!" [yaxis]="chartOptions.yaxis!" [plotOptions]="chartOptions.plotOptions!"
+        [dataLabels]="chartOptions.dataLabels!" [colors]="chartOptions.colors!" [fill]="chartOptions.fill!"
+        [stroke]="chartOptions.stroke!" [grid]="chartOptions.grid!" [tooltip]="chartOptions.tooltip!"
+        [legend]="chartOptions.legend!" class="w-100">
+      </apx-chart>
+      }
+    </div>
+
+    <!-- Grade Trends List -->
+    <div class="grade-list-container mt-2">
+      @for (grade of grades; track grade) {
+      <div class="grade-item d-flex align-items-center justify-content-between mb-1">
+        <div class="d-flex align-items-center gap-3">
+          <div class="grade-color-dot" [style.background-color]="grade.color"></div>
+          <span class="grade-name">{{ grade.name }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="grade-score" [style.color]="grade.color">{{ grade.score }}%</span>
+          <span class="trend-badge" [ngClass]="grade.trend === 'up' ? 'trend-up' : 'trend-down'">
+            <mat-icon class="trend-icon">{{ grade.trend === 'up' ? 'trending_up' : 'trending_down' }}</mat-icon>
+            <span>{{ grade.change }}</span>
+          </span>
+        </div>
+      </div>
+      }
+    </div>
+  </mat-card-content>
+</mat-card>

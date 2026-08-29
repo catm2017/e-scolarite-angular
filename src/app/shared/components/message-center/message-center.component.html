@@ -1,0 +1,83 @@
+<mat-card class="modern-card message-center">
+  <mat-card-header class="header-style">
+    <mat-card-title>
+      <mat-icon class="card-title-icon material-icons-outlined">forum</mat-icon> {{ title() }}
+      @if (getUnreadCount() > 0) {
+      <span class="unread-badge" matBadge="{{ getUnreadCount() }}" matBadgeOverlap="false"
+        matBadgeColor="accent"></span>
+      }
+    </mat-card-title>
+    <div class="header-actions">
+      <button mat-icon-button [matMenuTriggerFor]="messageMenu" aria-label="Message options">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #messageMenu="matMenu">
+        <button mat-menu-item (click)="markAllAsRead()">
+          <mat-icon>done_all</mat-icon>
+          <span>Mark all as read</span>
+        </button>
+        <button mat-menu-item>
+          <mat-icon>settings</mat-icon>
+          <span>Notification settings</span>
+        </button>
+      </mat-menu>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (processedMessages().length === 0) {
+    <div class="empty-messages">
+      <mat-icon>inbox</mat-icon>
+      <p>No messages to display</p>
+    </div>
+    } @else {
+    <div class="messages-list">
+      <ng-scrollbar style="height: 420px" visibility="hover">
+        @for (message of processedMessages(); track message.id) {
+        <div class="message-item" [class.unread]="!message.read" [class.expanded]="expandedMessageId === message.id">
+          <div class="message-header" (click)="toggleMessageExpansion(message.id)">
+            <div class="message-icon-container">
+              <div class="message-type-icon" [ngClass]="getMessageTypeClass(message.type)">
+                <mat-icon>{{ getMessageTypeIcon(message.type) }}</mat-icon>
+              </div>
+            </div>
+
+            <div class="message-info">
+              <div class="message-title-row">
+                <h3 class="message-title">{{ message.title }}</h3>
+                @if (message.priority) {
+                <div class="priority-chip" [ngClass]="getPriorityClass(message.priority)">
+                  {{ message.priority }}
+                </div>
+                }
+              </div>
+
+              <div class="message-meta">
+                <span class="message-sender">{{ message.sender }}</span>
+                <span class="message-date">{{ getFormattedDate(message.date) }}</span>
+              </div>
+            </div>
+
+            <div class="message-expand-icon">
+              <mat-icon class="expand-indicator">{{ expandedMessageId === message.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+          </div>
+
+          @if (expandedMessageId === message.id) {
+          <div class="message-content">
+            <p>{{ message.content }}</p>
+            <div class="message-actions">
+              <button mat-button color="primary">REPLY</button>
+              <button mat-button>FORWARD</button>
+              <button mat-button color="warn">DELETE</button>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </ng-scrollbar>
+    </div>
+    }
+  </mat-card-content>
+
+</mat-card>

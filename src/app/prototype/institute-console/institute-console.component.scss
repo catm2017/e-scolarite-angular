@@ -1,0 +1,804 @@
+@use '../shell';
+
+.parent-console-shell {
+  .parent-content .page-title h1 {
+    font-size: 22px !important;
+    line-height: 1.25;
+  }
+
+  .parent-context-bar {
+    margin-bottom: 19px;
+  }
+
+  .parent-content {
+    min-height: calc(100vh - 255px);
+  }
+
+  .campus-form-card {
+    margin-top: 18px;
+    overflow: hidden;
+  }
+
+  .directory-form-card {
+    margin-top: 18px;
+    overflow: hidden;
+  }
+
+  .directory-form-card > header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #e4edf3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .directory-form-card > header > div {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .directory-form-card > header > div > span {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: #e8f4fc;
+    color: #2f80ed;
+  }
+
+  .directory-form-card h2 {
+    margin: 0 0 3px;
+    color: #27445f;
+    font-size: 14px;
+  }
+
+  .directory-form-card header p {
+    margin: 0;
+    color: #71879a;
+    font-size: 11px;
+  }
+
+  .directory-form-card header i,
+  .directory-record-layout i {
+    font-family: 'Material Icons';
+    font-style: normal;
+  }
+
+  .directory-form-card > header > button {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    color: #6e8497;
+    cursor: pointer;
+  }
+
+  .directory-form-grid {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 15px;
+  }
+
+  .directory-form-grid label > span {
+    display: block;
+    margin-bottom: 7px;
+    color: #536f85;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .directory-form-grid label b,
+  .directory-form-card footer b { color: #df5d5d; }
+
+  .directory-form-grid input,
+  .directory-form-grid select {
+    width: 100%;
+    height: 41px;
+    padding: 0 12px;
+    border: 1px solid #d7e3ec;
+    border-radius: 8px;
+    outline: 0;
+    background: #fff;
+    color: #365269;
+    font: 12px Inter, Arial, sans-serif;
+  }
+
+  .directory-form-grid input:focus,
+  .directory-form-grid select:focus {
+    border-color: #2f80ed;
+    box-shadow: 0 0 0 3px rgba(47, 128, 237, .1);
+  }
+
+  .directory-form-card footer {
+    padding: 14px 20px;
+    border-top: 1px solid #e4edf3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: #f8fbfd;
+    color: #72889b;
+    font-size: 11px;
+  }
+
+  .directory-form-card footer > div { display: flex; gap: 8px; }
+
+  .directory-form-card footer button {
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid #d8e4ed;
+    border-radius: 8px;
+    background: #fff;
+    color: #526f84;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .directory-form-card footer .primary-action {
+    border-color: #2f80ed;
+    background: #2f80ed;
+    color: #fff;
+  }
+
+  .directory-record-layout {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 255px minmax(0, 1fr);
+    align-items: start;
+    gap: 17px;
+  }
+
+  .directory-profile-card {
+    padding: 24px 20px;
+    text-align: center;
+  }
+
+  .directory-profile-card > span {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 13px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    background: #e8f4fc;
+    color: #2f80ed;
+    font-size: 24px;
+    font-weight: 800;
+  }
+
+  .directory-profile-card h2 {
+    margin: 0;
+    color: #27445f;
+    font-size: 17px;
+  }
+
+  .directory-profile-card > p {
+    margin: 5px 0 11px;
+    color: #72899b;
+    font-size: 11px;
+  }
+
+  .directory-profile-card > em {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    border-radius: 14px;
+    background: #e8f8f1;
+    color: #28946c;
+    font-size: 10px;
+    font-style: normal;
+  }
+
+  .directory-profile-card > em i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .directory-profile-card dl {
+    margin: 20px 0 0;
+    padding-top: 13px;
+    border-top: 1px solid #e6eef3;
+    text-align: left;
+  }
+
+  .directory-profile-card dl div { margin-top: 12px; }
+  .directory-profile-card dt { color: #8698a5; font-size: 10px; }
+  .directory-profile-card dd { margin: 3px 0 0; color: #35536b; font-size: 11px; font-weight: 800; }
+
+  .directory-record-header {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .directory-record-header small { color: #2f80ed; font-size: 9px; font-weight: 800; letter-spacing: 1px; }
+  .directory-record-header h2 { margin: 5px 0 4px; color: #27445f; font-size: 19px; }
+  .directory-record-header p { margin: 0; color: #71889a; font-size: 11px; }
+
+  .directory-detail-card {
+    margin-top: 13px;
+    padding: 20px;
+  }
+
+  .directory-detail-card h3 { margin: 0 0 17px; color: #27445f; font-size: 14px; }
+  .directory-detail-card > p { margin: -7px 0 16px; color: #70879a; font-size: 11px; line-height: 1.55; }
+
+  .directory-detail-card dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+  }
+
+  .directory-detail-card dl div {
+    padding: 12px 0;
+    border-top: 1px solid #e8eff4;
+  }
+
+  .directory-detail-card dt { color: #8295a4; font-size: 10px; }
+  .directory-detail-card dd { margin: 4px 0 0; color: #345269; font-size: 12px; font-weight: 800; }
+
+  .access-detail button {
+    margin-right: 8px;
+    padding: 9px 11px;
+    border: 1px solid #d8e5ed;
+    border-radius: 8px;
+    background: #fff;
+    color: #2f80ed;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .access-detail button i { margin-right: 5px; font-size: 15px; vertical-align: middle; }
+
+  .user-disabled-action { background: #35a77b !important; border-color: #35a77b !important; }
+  .directory-profile-card > em.account-disabled { background: #fceae7; color: #c35f4c; }
+
+  .user-role-card > header,
+  .user-scope-card > header,
+  .user-security-card > header,
+  .user-activity-card > header {
+    margin-bottom: 16px;
+  }
+
+  .manage-roles-link { padding: 8px 10px; border: 1px solid #d6e4ed; border-radius: 8px; background: #fff; color: #2f80ed; font-size: 11px; font-weight: 800; }
+  .manage-roles-link i { margin-right: 4px; font-family: 'Material Icons'; font-style: normal; font-size: 14px; vertical-align: middle; }
+  .role-assignment-bar { margin-bottom: 18px; padding: 13px; border: 1px solid #dce8ef; border-radius: 10px; display: flex; align-items: end; gap: 10px; background: #f8fbfd; }
+  .role-assignment-bar label { flex: 1; }
+  .role-assignment-bar label span { display: block; margin-bottom: 6px; color: #526f84; font-size: 12px; font-weight: 800; }
+  .role-assignment-bar select { width: 100%; height: 40px; padding: 0 11px; border: 1px solid #d5e3ec; border-radius: 8px; background: #fff; color: #39556c; font-size: 12px; }
+  .role-assignment-bar button { height: 40px; padding: 0 12px; border: 0; border-radius: 8px; background: #2f80ed; color: #fff; font-size: 11px; font-weight: 800; }
+  .role-assignment-bar button:disabled { background: #b8c8d4; }
+  .role-assignment-bar button i { margin-right: 4px; font-family: 'Material Icons'; font-style: normal; font-size: 15px; vertical-align: middle; }
+  .assigned-role-list h4,.direct-permission-section h4 { margin: 0 0 8px; color: #405d73; font-size: 13px; }
+  .assigned-role-list > article { margin-top: 8px; padding: 13px; border: 1px solid #dfe9ef; border-radius: 9px; display: flex; justify-content: space-between; gap: 12px; background: #fff; }
+  .assigned-role-list strong { color: #36536a; font-size: 12px; }
+  .assigned-role-list p { margin: 4px 0 8px; color: #72889a; font-size: 10px; }
+  .assigned-role-list em { margin: 2px 4px 2px 0; padding: 3px 6px; border-radius: 10px; display: inline-block; background: #edf5fa; color: #537188; font-size: 8px; font-style: normal; }
+  .assigned-role-list > article > button { width: 28px; height: 28px; border: 0; border-radius: 7px; background: #fff3f0; color: #c35f4c; }
+  .assigned-role-list > article > button i { font-family: 'Material Icons'; font-style: normal; font-size: 16px; }
+  .empty-role-state,.direct-permission-section > p { margin: 0; color: #758b9d; font-size: 11px; line-height: 1.5; }
+  .direct-permission-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid #e6eef3; }
+  .direct-permission-section > p { margin-bottom: 11px; }
+
+  .role-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+  .role-card { padding: 18px; }
+  .role-card > header { padding: 0; display: flex; align-items: center; justify-content: space-between; }
+  .role-card header > span { width: 39px; height: 39px; border-radius: 11px; display: grid; place-items: center; background: #e8f4fc; color: #2f80ed; }
+  .role-card header i,.role-card footer i { font-family: 'Material Icons'; font-style: normal; }
+  .role-card header em { padding: 5px 8px; border-radius: 12px; background: #edf5fa; color: #637c90; font-size: 9px; font-style: normal; }
+  .role-card h2 { margin: 15px 0 7px; color: #2d4960; font-size: 16px; }
+  .role-card > p { min-height: 46px; margin: 0; color: #72889a; font-size: 11px; line-height: 1.5; }
+  .role-card > div { margin-top: 14px; display: grid; grid-template-columns: 25px 1fr; column-gap: 8px; }
+  .role-card > div > i { grid-row: 1 / 3; color: #2f80ed; font-family: 'Material Icons'; font-style: normal; font-size: 18px; }
+  .role-card > div strong { color: #38566d; font-size: 12px; }
+  .role-card > div span { color: #8496a4; font-size: 9px; }
+  .role-card footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e7eef3; }
+  .role-card footer button { padding: 0; border: 0; background: transparent; color: #2f80ed; font-size: 11px; font-weight: 800; }
+  .role-card footer i { margin-left: 3px; font-size: 14px; vertical-align: middle; }
+
+  .permission-catalogue-card { overflow: hidden; }
+  .permission-catalogue-card > header { padding: 17px 20px; border-bottom: 1px solid #e4edf3; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+  .permission-catalogue-card h2 { margin: 0 0 4px; color: #2c4961; font-size: 16px; }
+  .permission-catalogue-card header p { margin: 0; color: #758a9b; font-size: 12px; }
+  .permission-catalogue-card header button { padding: 9px 11px; border: 0; border-radius: 8px; background: #2f80ed; color: #fff; font-size: 11px; font-weight: 800; }
+  .permission-catalogue-card header button i { margin-right: 4px; font-family: 'Material Icons'; font-style: normal; font-size: 15px; vertical-align: middle; }
+  .sync-notice { padding: 10px 20px; display: flex; align-items: center; gap: 7px; background: #f2f9ff; color: #537a96; font-size: 11px; }
+  .sync-notice i { color: #2f80ed; font-family: 'Material Icons'; font-style: normal; font-size: 16px; }
+  .permission-catalogue-head,.permission-catalogue-card > article { padding: 13px 20px; display: grid; grid-template-columns: minmax(190px,1fr) 145px 1.45fr; gap: 14px; align-items: center; }
+  .permission-catalogue-head { background: #f7fafc; color: #8396a5; font-size: 10px; }
+  .permission-catalogue-card > article { border-top: 1px solid #e8eff4; color: #60798d; font-size: 11px; }
+  .permission-catalogue-card article strong,.permission-catalogue-card article small { display: block; }
+  .permission-catalogue-card article strong { color: #36536b; font-size: 12px; }
+  .permission-catalogue-card article small { margin-top: 3px; color: #8799a6; font-size: 9px; }
+  .permission-catalogue-card article em { justify-self: start; padding: 4px 7px; border-radius: 12px; background: #edf5fa; color: #5e7b90; font-size: 9px; font-style: normal; }
+
+  .role-detail-layout { display: grid; grid-template-columns: 245px minmax(0, 1fr); gap: 17px; align-items: start; }
+  .role-detail-summary { padding: 23px 18px; text-align: center; }
+  .role-detail-summary > span { width: 53px; height: 53px; margin: auto; border-radius: 15px; display: grid; place-items: center; background: #e8f4fc; color: #2f80ed; }
+  .role-detail-summary > span i { font-family: 'Material Icons'; font-style: normal; font-size: 26px; }
+  .role-detail-summary h2 { margin: 13px 0 5px; color: #345169; font-size: 16px; }
+  .role-detail-summary p { margin: 0; color: #7b90a0; font-size: 10px; }
+  .role-detail-summary strong { display: block; margin-top: 19px; color: #2f80ed; font-size: 25px; }
+  .role-detail-summary small { color: #7b90a0; font-size: 10px; }
+  .role-permissions-editor { overflow: hidden; }
+  .role-permissions-editor > header { padding: 18px 20px; border-bottom: 1px solid #e4edf3; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+  .role-permissions-editor h2 { margin: 0 0 4px; color: #2d4a62; font-size: 16px; }
+  .role-permissions-editor header p { margin: 0; color: #748a9b; font-size: 12px; }
+  .role-permissions-editor header em { padding: 5px 8px; border-radius: 12px; background: #e8f8f1; color: #28946c; font-size: 9px; font-style: normal; white-space: nowrap; }
+  .role-permissions-editor header em i { margin-right: 3px; font-family: 'Material Icons'; font-style: normal; font-size: 13px; vertical-align: middle; }
+  .role-permission-list { padding: 8px 20px 16px; }
+  .role-permission-list label { padding: 12px 0; border-top: 1px solid #e9f0f4; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .role-permission-list label:first-child { border-top: 0; }
+  .role-permission-list input { width: 16px; height: 16px; accent-color: #2f80ed; }
+  .role-permission-list label > span { display: grid; grid-template-columns: 27px 1fr; column-gap: 9px; }
+  .role-permission-list i { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; grid-row: 1 / 3; background: #e8f4fc; color: #2f80ed; font-family: 'Material Icons'; font-style: normal; font-size: 15px; }
+  .role-permission-list strong { color: #38556d; font-size: 12px; }
+  .role-permission-list small { margin-top: 3px; color: #7e93a2; font-size: 10px; }
+
+  .user-role-card header h3,
+  .user-scope-card header h3,
+  .user-security-card header h3,
+  .user-activity-card header h3 { margin-bottom: 5px; font-size: 16px; }
+
+  .user-role-card header p,
+  .user-scope-card header p,
+  .user-security-card header p,
+  .user-activity-card header p { margin: 0; color: #72899b; font-size: 12px; line-height: 1.45; }
+
+  .user-role-select { display: block; max-width: 365px; margin-bottom: 18px; }
+  .user-role-select > span { display: block; margin-bottom: 7px; color: #526f84; font-size: 12px; font-weight: 800; }
+  .user-role-select select { width: 100%; height: 43px; padding: 0 12px; border: 1px solid #d7e4ed; border-radius: 8px; background: #fff; color: #355269; font-size: 13px; font-weight: 700; }
+
+  .permission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .permission-grid label,
+  .access-choice-grid label { cursor: pointer; }
+  .permission-grid input,
+  .access-choice-grid input { position: absolute; opacity: 0; pointer-events: none; }
+  .permission-grid label > span { min-height: 64px; padding: 13px; border: 1px solid #dfe8ef; border-radius: 9px; display: block; background: #fff; }
+  .permission-grid input:checked + span { border-color: #91c6f7; background: #eef8ff; }
+  .permission-grid strong,
+  .permission-grid small { display: block; }
+  .permission-grid strong { color: #38556b; font-size: 12px; }
+  .permission-grid small { margin-top: 4px; color: #8397a6; font-size: 10px; }
+
+  .user-scope-card section + section { margin-top: 22px; }
+  .user-scope-card h4 { margin: 0 0 10px; color: #526f84; font-size: 13px; }
+  .access-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .access-choice-grid label > span { min-height: 82px; padding: 13px; border: 1px solid #dfe8ef; border-radius: 10px; display: grid; grid-template-columns: 27px 1fr; align-items: center; column-gap: 9px; background: #fff; }
+  .access-choice-grid input:checked + span { border-color: #91c6f7; background: #eef8ff; }
+  .access-choice-grid i { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; grid-row: 1 / 3; background: #e8f4fc; color: #2f80ed; font-family: 'Material Icons'; font-style: normal; font-size: 16px; }
+  .access-choice-grid strong { color: #3b566c; font-size: 12px; }
+  .access-choice-grid small { margin-top: 3px; color: #8195a4; font-size: 10px; }
+
+  .security-state { padding: 15px; border: 1px solid #e2ebf1; border-radius: 10px; display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 12px; background: #f9fcfe; }
+  .security-state > span { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: #e8f8f1; color: #28946c; }
+  .security-state > span.disabled { background: #fceae7; color: #c35f4c; }
+  .security-state i { font-family: 'Material Icons'; font-style: normal; font-size: 21px; }
+  .security-state small,.security-state strong { display: block; }
+  .security-state small { color: #8396a5; font-size: 10px; }
+  .security-state strong { margin: 3px 0; color: #355269; font-size: 14px; }
+  .security-state p { margin: 0; color: #73899b; font-size: 11px; }
+  .security-state button { padding: 9px 11px; border: 1px solid #d5e3ec; border-radius: 7px; background: #fff; color: #2f80ed; font-size: 11px; font-weight: 800; }
+
+  .user-activity-card header > button { padding: 9px 11px; border: 1px solid #d9e6ee; border-radius: 7px; background: #fff; color: #2f80ed; font-size: 11px; font-weight: 800; }
+  .user-activity-card header > button i { margin-right: 4px; font-family: 'Material Icons'; font-style: normal; font-size: 14px; vertical-align: middle; }
+  .user-activity-list article { padding: 12px 0; border-top: 1px solid #e8eff4; display: grid; grid-template-columns: 32px 1fr; gap: 10px; }
+  .user-activity-list article > span { width: 29px; height: 29px; border-radius: 8px; display: grid; place-items: center; background: #e8f8f1; color: #28946c; }
+  .user-activity-list article > span.refused { background: #fceae7; color: #c35f4c; }
+  .user-activity-list i { font-family: 'Material Icons'; font-style: normal; font-size: 16px; }
+  .user-activity-list strong { color: #3a566b; font-size: 12px; }
+  .user-activity-list p { margin: 3px 0; color: #6f8799; font-size: 11px; }
+  .user-activity-list small { color: #899ba8; font-size: 10px; }
+
+  .institute-tabs i,
+  .user-record-layout .record-tabs i,
+  .permission-catalogue-card button i,
+  .role-assignment-bar button i,
+  .manage-roles-link i {
+    display: inline-block;
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .institute-tabs i { margin-right: 6px; font-size: 18px; vertical-align: -4px; }
+  .trace-tabs button { min-height: 42px; padding: 10px 15px; font-size: 13px; }
+  .trace-tabs i { font-size: 18px; }
+  .trace-summary-grid { margin-bottom: 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+  .trace-summary-grid article { padding: 17px; display: flex; align-items: center; gap: 12px; }
+  .trace-summary-grid article > i { width: 39px; height: 39px; border-radius: 11px; display: grid; place-items: center; background: #e8f4fc; color: #2f80ed; font-family: 'Material Icons'; font-style: normal; font-size: 20px; }
+  .trace-summary-grid small,.trace-summary-grid strong,.trace-summary-grid em { display: block; }
+  .trace-summary-grid small { color: #8196a5; font-size: 12px; }
+  .trace-summary-grid strong { margin: 4px 0; color: #29465f; font-size: 25px; }
+  .trace-summary-grid em { color: #7e92a2; font-size: 11px; font-style: normal; }
+
+  .trace-log-card,.trace-settings-card { overflow: hidden; }
+  .trace-log-card > header,.trace-settings-card > header { padding: 20px 22px; border-bottom: 1px solid #e4edf3; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+  .trace-log-card h2,.trace-settings-card h2 { margin: 0 0 5px; color: #2c4961; font-size: 18px; }
+  .trace-log-card header p,.trace-settings-card header p { margin: 0; color: #687f92; font-size: 13px; line-height: 1.5; }
+  .trace-log-card header button { padding: 10px 13px; border: 1px solid #d8e5ed; border-radius: 7px; background: #fff; color: #2f80ed; font-size: 12px; font-weight: 800; }
+  .trace-log-card header button i,.trace-settings-card header span i { margin-right: 4px; font-family: 'Material Icons'; font-style: normal; font-size: 14px; vertical-align: middle; }
+  .trace-settings-card header > span { color: #687f92; font-size: 12px; }
+  .trace-log-head,.trace-log-card > article { padding: 15px 21px; display: grid; grid-template-columns: 160px 155px minmax(220px,1.3fr) 1fr 95px; gap: 13px; align-items: center; }
+  .trace-log-head { background: #f7fafc; color: #71879a; font-size: 11px; font-weight: 800; }
+  .trace-log-card > article { border-top: 1px solid #e9f0f4; color: #405d73; font-size: 13px; line-height: 1.45; }
+  .trace-log-card time { color: #60798d; font-size: 12px; }
+  .trace-log-card article > span b,.trace-log-card article > span small { display: block; }
+  .trace-log-card article > span b { color: #345269; font-size: 13px; }
+  .trace-log-card article > span small { margin-top: 4px; color: #71879a; font-size: 11px; line-height: 1.4; }
+  .trace-log-card article > em { justify-self: start; padding: 6px 9px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; background: #e8f8f1; color: #28946c; font-size: 11px; font-style: normal; }
+  .trace-log-card article > em.refused { background: #fceae7; color: #c35f4c; }
+  .trace-log-card article > em i { font-family: 'Material Icons'; font-style: normal; font-size: 12px; }
+
+  .trace-settings-head,.trace-settings-card > article { padding: 15px 22px; display: grid; grid-template-columns: minmax(210px,1.3fr) 195px 195px 175px; gap: 13px; align-items: center; }
+  .trace-settings-head { background: #f7fafc; color: #71879a; font-size: 11px; font-weight: 800; }
+  .trace-settings-card > article { border-top: 1px solid #e9f0f4; }
+  .trace-settings-card article strong,.trace-settings-card article small { display: block; }
+  .trace-settings-card article strong { color: #345269; font-size: 14px; }
+  .trace-settings-card article small { margin-top: 4px; color: #71879a; font-size: 12px; line-height: 1.4; }
+  .trace-settings-card time { color: #60798d; font-size: 12px; }
+  .trace-switch { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+  .trace-switch input { position: absolute; opacity: 0; }
+  .trace-switch > span { width: 30px; height: 18px; padding: 2px; border-radius: 11px; background: #cbd7df; transition: .2s; }
+  .trace-switch > span::after { width: 14px; height: 14px; border-radius: 50%; display: block; background: #fff; content: ''; transition: .2s; }
+  .trace-switch input:checked + span { background: #2f80ed; }
+  .trace-switch input:checked + span::after { transform: translateX(12px); }
+  .trace-switch em { color: #5d778b; font-size: 12px; font-weight: 700; font-style: normal; }
+
+  .campus-form-card > header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #e4edf3;
+  }
+
+  .campus-form-card > header > div {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .campus-form-card header > div > span {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: #e8f4fc;
+    color: #2f80ed;
+  }
+
+  .campus-form-card header i {
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-size: 20px;
+  }
+
+  .campus-form-card h2 {
+    margin: 0 0 3px;
+    color: #27445f;
+    font-size: 14px;
+  }
+
+  .campus-form-card header p {
+    margin: 0;
+    color: #71879a;
+    font-size: 11px;
+  }
+
+  .campus-form-card header > button {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    color: #6e8497;
+    cursor: pointer;
+  }
+
+  .campus-form-grid {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+  }
+
+  .campus-form-grid label > span {
+    display: block;
+    margin-bottom: 7px;
+    color: #536f85;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .campus-form-grid label b,
+  .campus-form-card footer b {
+    color: #df5d5d;
+  }
+
+  .campus-form-grid input {
+    width: 100%;
+    height: 41px;
+    padding: 0 12px;
+    border: 1px solid #d7e3ec;
+    border-radius: 8px;
+    outline: 0;
+    background: #fff;
+    color: #365269;
+    font: 12px Inter, Arial, sans-serif;
+  }
+
+  .campus-form-grid input:focus {
+    border-color: #2f80ed;
+    box-shadow: 0 0 0 3px rgba(47, 128, 237, .1);
+  }
+
+  .campus-form-card footer {
+    padding: 14px 20px;
+    border-top: 1px solid #e4edf3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: #f8fbfd;
+    color: #72889b;
+    font-size: 11px;
+  }
+
+  .campus-form-card footer > div {
+    display: flex;
+    gap: 8px;
+  }
+
+  .campus-form-card footer button {
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid #d8e4ed;
+    border-radius: 8px;
+    background: #fff;
+    color: #526f84;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .campus-form-card footer .primary-action {
+    border-color: #2f80ed;
+    background: #2f80ed;
+    color: #fff;
+  }
+
+  .campus-form-card footer .primary-action:disabled {
+    border-color: #b9c9d5;
+    background: #b9c9d5;
+    cursor: not-allowed;
+  }
+
+  /* Échelle typographique commune aux écrans d'accès et de sécurité. */
+  .user-record-layout,
+  .role-card-grid,
+  .permission-catalogue-card,
+  .role-detail-layout {
+    font-family: Inter, Poppins, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .user-record-layout .record-tabs button {
+    min-height: 46px;
+    padding: 11px 15px;
+    font-size: 13px;
+    font-weight: 750;
+  }
+
+  .user-record-layout .record-tabs button i {
+    font-size: 19px;
+  }
+
+  .user-record-layout .directory-profile-card h2,
+  .role-detail-summary h2 {
+    font-size: 18px;
+    line-height: 1.35;
+  }
+
+  .user-record-layout .directory-profile-card > p,
+  .role-detail-summary p {
+    font-size: 13px;
+  }
+
+  .user-record-layout .directory-profile-card dt,
+  .role-detail-summary small {
+    font-size: 11px;
+  }
+
+  .user-record-layout .directory-profile-card dd {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .user-record-layout .directory-detail-card {
+    padding: 23px;
+  }
+
+  .user-record-layout .directory-detail-card h3 {
+    font-size: 17px;
+    line-height: 1.35;
+  }
+
+  .user-record-layout .directory-detail-card header p,
+  .user-record-layout .directory-detail-card > p,
+  .direct-permission-section > p,
+  .empty-role-state {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .manage-roles-link,
+  .role-assignment-bar button,
+  .permission-catalogue-card header button {
+    font-size: 12px;
+  }
+
+  .role-assignment-bar label span,
+  .assigned-role-list h4,
+  .direct-permission-section h4 {
+    font-size: 14px;
+  }
+
+  .role-assignment-bar select {
+    height: 44px;
+    font-size: 13px;
+  }
+
+  .permission-grid label > span {
+    min-height: 72px;
+    padding: 15px;
+  }
+
+  .permission-grid strong,
+  .assigned-role-list strong,
+  .role-permission-list strong {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .permission-grid small,
+  .assigned-role-list p,
+  .role-permission-list small {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .assigned-role-list em {
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+
+  .role-card {
+    padding: 21px;
+  }
+
+  .role-card h2,
+  .permission-catalogue-card h2,
+  .role-permissions-editor h2 {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  .role-card > p,
+  .permission-catalogue-card header p,
+  .role-permissions-editor header p {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .role-card header em,
+  .role-card > div span,
+  .role-permissions-editor header em {
+    font-size: 11px;
+  }
+
+  .role-card > div strong,
+  .role-card footer button {
+    font-size: 13px;
+  }
+
+  .sync-notice {
+    font-size: 13px;
+  }
+
+  .permission-catalogue-head {
+    font-size: 11px;
+    font-weight: 750;
+  }
+
+  .permission-catalogue-card > article {
+    min-height: 65px;
+    font-size: 13px;
+  }
+
+  .permission-catalogue-card article strong {
+    font-size: 14px;
+  }
+
+  .permission-catalogue-card article small,
+  .permission-catalogue-card article em {
+    font-size: 11px;
+  }
+
+  .role-detail-summary strong {
+    font-size: 29px;
+  }
+
+  .role-permission-list label {
+    min-height: 64px;
+    padding: 14px 0;
+  }
+
+  .role-permission-list input {
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (max-width: 700px) {
+    .campus-form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .campus-form-card footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .campus-form-card footer > div {
+      width: 100%;
+    }
+
+    .campus-form-card footer button {
+      flex: 1;
+    }
+
+    .directory-form-grid,
+    .directory-record-layout,
+    .directory-detail-card dl,
+    .permission-grid,
+    .access-choice-grid,
+    .trace-summary-grid { grid-template-columns: 1fr; }
+
+    .role-card-grid,
+    .role-detail-layout { grid-template-columns: 1fr; }
+
+    .directory-form-card footer,
+    .directory-record-header { align-items: flex-start; flex-direction: column; }
+
+    .directory-form-card footer > div { width: 100%; }
+    .directory-form-card footer button { flex: 1; }
+
+    .trace-log-card,
+    .trace-settings-card { overflow-x: auto; }
+    .trace-log-head,.trace-log-card > article { min-width: 740px; }
+    .trace-settings-head,.trace-settings-card > article { min-width: 760px; }
+    .permission-catalogue-card { overflow-x: auto; }
+    .permission-catalogue-head,.permission-catalogue-card > article { min-width: 650px; }
+  }
+}

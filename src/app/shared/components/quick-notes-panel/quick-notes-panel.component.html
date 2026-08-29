@@ -1,0 +1,72 @@
+<mat-card class="modern-card quick-notes-panel">
+  <mat-card-header>
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">note</mat-icon> Quick Notes</mat-card-title>
+    <div class="color-picker">
+      @for (color of availableColors; track color) {
+      <div class="color-option" [style.background-color]="color" [class.selected]="color === selectedColor"
+        (click)="selectedColor = color">
+      </div>
+      }
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="new-note-container">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Add a new note</mat-label>
+        <textarea matInput [(ngModel)]="newNoteContent" placeholder="Type your note here..." rows="2"></textarea>
+      </mat-form-field>
+      <button mat-raised-button color="primary" [disabled]="!newNoteContent.trim()" (click)="addNote()">
+        <mat-icon>add</mat-icon> Add Note
+      </button>
+    </div>
+
+    <div class="notes-container">
+      @if (notes.length === 0) {
+      <div class="empty-notes">
+        <mat-icon>note</mat-icon>
+        <p>No notes yet. Add your first note above!</p>
+      </div>
+      } @else {
+      <ng-scrollbar style="height: 280px" visibility="hover">
+        @for (note of notes; track note.id) {
+        <div class="note" [style.background-color]="note.color">
+          @if (editingNote && editingNote.id === note.id) {
+          <div class="edit-note-container">
+            <mat-form-field appearance="outline" class="full-width">
+              <textarea matInput [(ngModel)]="editingNote.content" rows="3"></textarea>
+            </mat-form-field>
+            <div class="edit-actions">
+              <button mat-button (click)="saveEditedNote()">
+                <mat-icon>save</mat-icon> Save
+              </button>
+              <button mat-button (click)="cancelEdit()">
+                <mat-icon>close</mat-icon> Cancel
+              </button>
+            </div>
+          </div>
+          } @else {
+          <div class="note-content">{{ note.content }}</div>
+          <div class="note-footer">
+            <span class="note-date">{{ getFormattedDate(note.lastModified) }}</span>
+            <div class="note-actions">
+              <button mat-icon-button (click)="openColorPicker(note, $event)" aria-label="Change note color">
+                <mat-icon>palette</mat-icon>
+              </button>
+
+              <button mat-icon-button (click)="editNote(note)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="deleteNote(note.id)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </ng-scrollbar>
+      }
+    </div>
+  </mat-card-content>
+</mat-card>

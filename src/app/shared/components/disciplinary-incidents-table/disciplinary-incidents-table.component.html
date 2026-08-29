@@ -1,0 +1,69 @@
+<mat-card class="modern-card">
+  <mat-card-header class="header-style">
+    <mat-card-title>
+      <mat-icon class="card-title-icon material-icons-outlined">gavel</mat-icon> Disciplinary Incidents Log
+    </mat-card-title>
+    <button mat-icon-button [matMenuTriggerFor]="menu" class="header-dropdown">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item>
+        <mat-icon>refresh</mat-icon>
+        <span>Refresh List</span>
+      </button>
+      <button mat-menu-item>
+        <mat-icon>add</mat-icon>
+        <span>Log New Case</span>
+      </button>
+    </mat-menu>
+  </mat-card-header>
+  <mat-card-content class="p-0">
+    <ng-scrollbar style="height: 300px" visibility="hover">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle custom-html-table">
+          <thead>
+            <tr>
+              <th scope="col">Case ID</th>
+              <th scope="col">Student</th>
+              <th scope="col">Incident Description</th>
+              <th scope="col">Date</th>
+              <th scope="col">Severity</th>
+              <th scope="col">Status</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (incident of incidents; track incident.id) {
+            <tr>
+              <td><span class="font-weight-bold font-13">{{ incident.id }}</span></td>
+              <td>
+                <div class="d-flex align-items-center">
+                  <img [src]="incident.studentImg" alt="Avatar" class="avatar-sm rounded-circle mr-2"
+                    style="width: 32px; height: 32px; object-fit: cover;">
+                  <span class="font-13 font-weight-medium">{{ incident.studentName }}</span>
+                </div>
+              </td>
+              <td><span class="font-13">{{ incident.incidentType }}</span></td>
+              <td><span class="font-12 text-muted">{{ incident.date }}</span></td>
+              <td>
+                <span class="badge" [ngClass]="getSeverityClass(incident.severity)">{{ incident.severity }}</span>
+              </td>
+              <td>
+                <span class="px-2 py-1 rounded font-12 font-weight-semibold"
+                  [ngClass]="getStatusClass(incident.status)">
+                  {{ incident.status }}
+                </span>
+              </td>
+              <td>
+                <button mat-icon-button color="primary">
+                  <mat-icon class="font-18">visibility</mat-icon>
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </ng-scrollbar>
+  </mat-card-content>
+</mat-card>

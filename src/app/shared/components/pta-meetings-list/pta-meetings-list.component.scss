@@ -1,0 +1,48 @@
+.pta-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.pta-item {
+  background-color: rgba(154, 160, 172, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(154, 160, 172, 0.08);
+  border-left-width: 4px !important;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: rgba(154, 160, 172, 0.06);
+  }
+}
+
+.border-left-red {
+  border-left-color: #E25A66 !important;
+}
+
+.border-left-orange {
+  border-left-color: #FDA24C !important;
+}
+
+.border-left-blue {
+  border-left-color: #4F86F8 !important;
+}
+
+.border-left-green {
+  border-left-color: #3EBE77 !important;
+}
+
+.avatar-md {
+  border: 2px solid rgba(154, 160, 172, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.px-2-5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}

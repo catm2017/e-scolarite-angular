@@ -1,0 +1,53 @@
+<mat-card class="modern-card pta-meetings-card shadow-sm">
+  <div class="header-menu d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <mat-icon class="header-icon me-2 text-primary material-icons-outlined">groups</mat-icon>
+      <h5 class="font-18 font-weight-bold mb-0">Upcoming PTA Meetings</h5>
+    </div>
+  </div>
+
+  <mat-card-content class="pt-3 card-content-flex">
+    <ng-scrollbar style="height: 410px" visibility="hover">
+      <div class="meetings-list flex-grow-1">
+        @for (meeting of meetings; track meeting.id) {
+        <div class="meeting-item d-flex align-items-center p-3 mb-3 border rounded">
+          <!-- Calendar Date Icon -->
+          <div
+            class="calendar-date text-center me-3 d-flex flex-column justify-content-center align-items-center rounded">
+            <span class="day font-weight-bold leading-none">{{ meeting.dateDay }}</span>
+            <span class="month font-weight-700 leading-none mt-1">{{ meeting.dateMonth }}</span>
+          </div>
+
+          <!-- Meeting Information -->
+          <div class="meeting-details flex-grow-1 min-width-0">
+            <h6 class="mb-1 font-weight-bold font-14">{{ meeting.grade }}</h6>
+            <div class="d-flex flex-wrap align-items-center mb-1 gap-2 text-muted font-12">
+              <span class="d-inline-flex align-items-center">
+                <mat-icon class="font-14 me-1 text-muted">access_time</mat-icon>
+                {{ meeting.time }}
+              </span>
+              <span class="d-inline-flex align-items-center">
+                <mat-icon class="font-14 me-1 text-muted">room</mat-icon>
+                {{ meeting.location }}
+              </span>
+            </div>
+            <p class="mb-0 text-muted font-13 text-truncate" [matTooltip]="meeting.agenda" matTooltipPosition="above">
+              <strong class="agenda-label">Agenda:</strong> {{ meeting.agenda }}
+            </p>
+          </div>
+
+          <!-- RSVPs & Actions -->
+          <div class="rsvp-container text-end ms-3 d-flex flex-column align-items-end justify-content-center">
+            <span class="badge bg-success-subtle text-success font-11 py-1 px-2 mb-2 text-center w-100">
+              {{ meeting.rsvpCount }} Going
+            </span>
+            <button mat-flat-button color="primary" class="rsvp-btn" (click)="rsvpMeeting(meeting.id)">
+              <mat-icon class="font-13 align-middle">done</mat-icon> RSVP
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+    </ng-scrollbar>
+  </mat-card-content>
+</mat-card>

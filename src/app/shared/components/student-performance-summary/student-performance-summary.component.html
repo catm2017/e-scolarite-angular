@@ -1,0 +1,126 @@
+<mat-card class="student-performance-card">
+  <mat-card-header>
+    <mat-card-title>
+      <div class="header-container">
+        <div class="title">Student Performance Summary</div>
+        <div class="filters">
+          <mat-form-field appearance="outline" class="filter-select">
+            <mat-select [(ngModel)]="selectedSubject" (selectionChange)="onSubjectChange()">
+              @for (subject of subjects; track subject) {
+                <mat-option [value]="subject.id">
+                  {{ subject.name }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-select">
+            <mat-select [(ngModel)]="selectedTimeRange" (selectionChange)="onTimeRangeChange()">
+              @for (range of timeRanges; track range) {
+                <mat-option [value]="range.id">
+                  {{ range.name }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="performance-content">
+      <!-- Performance Metrics Summary -->
+      <div class="metrics-summary">
+        <div class="metric-item">
+          <div class="metric-label">Current Average</div>
+          <div class="metric-value">{{ performanceMetrics.currentAverage }}%</div>
+          <div class="metric-trend" [ngClass]="getTrendColor()">
+            <mat-icon>{{ getTrendIcon() }}</mat-icon>
+            <span>{{ performanceMetrics.improvement }}%</span>
+          </div>
+        </div>
+
+        <div class="metric-item">
+          <div class="metric-label">Previous Average</div>
+          <div class="metric-value">{{ performanceMetrics.previousAverage }}%</div>
+        </div>
+
+        <div class="metric-item">
+          <div class="metric-label">Highest Score</div>
+          <div class="metric-value">{{ performanceMetrics.highestScore }}%</div>
+        </div>
+
+        <div class="metric-item">
+          <div class="metric-label">Lowest Score</div>
+          <div class="metric-value">{{ performanceMetrics.lowestScore }}%</div>
+        </div>
+      </div>
+
+      <!-- Performance Chart -->
+      <div class="chart-container">
+        <apx-chart [series]="performanceChartOptions.series!" [chart]="performanceChartOptions.chart!"
+          [xaxis]="performanceChartOptions.xaxis!" [yaxis]="performanceChartOptions.yaxis!"
+          [dataLabels]="performanceChartOptions.dataLabels!" [grid]="performanceChartOptions.grid!"
+          [stroke]="performanceChartOptions.stroke!" [colors]="performanceChartOptions.colors!"
+          [markers]="performanceChartOptions.markers!" [tooltip]="performanceChartOptions.tooltip!"
+        [legend]="performanceChartOptions.legend!"></apx-chart>
+
+      </div>
+
+      <!-- Performance Insights -->
+      <div class="performance-insights">
+        <h3>Performance Insights</h3>
+        <div class="insight-item">
+          <mat-icon>insights</mat-icon>
+          <div class="insight-text">
+            @if (getPerformanceTrend() === 'positive') {
+              Showing consistent improvement over time. Keep up the good work!
+            }
+            @if (getPerformanceTrend() === 'negative') {
+              Performance has been declining. Consider additional support or study strategies.
+            }
+            @if (getPerformanceTrend() === 'neutral') {
+              Performance has been stable. Look for opportunities to improve further.
+            }
+          </div>
+        </div>
+
+        <div class="insight-item">
+          <mat-icon>compare_arrows</mat-icon>
+          <div class="insight-text">
+            @if (performanceMetrics.currentAverage > 75) {
+              Currently performing above the class average in most subjects.
+            }
+            @if (performanceMetrics.currentAverage <= 75) {
+              Currently performing near or below the class average. Additional focus may be needed.
+            }
+          </div>
+        </div>
+
+        <div class="insight-item">
+          <mat-icon>recommend</mat-icon>
+          <div class="insight-text">
+            @if (selectedSubject !== 'all') {
+              Focused improvement in {{ getSelectedSubjectName() }} can help raise overall performance.
+            }
+            @if (selectedSubject === 'all') {
+              Consider focusing on subjects with lower scores to improve overall average.
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </mat-card-content>
+
+  <mat-card-actions>
+    <button mat-button color="primary">
+      <mat-icon>description</mat-icon>
+      Full Report
+    </button>
+    <button mat-button color="accent">
+      <mat-icon>share</mat-icon>
+      Share
+    </button>
+  </mat-card-actions>
+</mat-card>

@@ -1,0 +1,76 @@
+<mat-card class="modern-card h-100 border-radius-10 shadow-sm upcoming-classes-widget">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">event</mat-icon> Upcoming Classes</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content class="pt-2">
+    <ng-scrollbar style="height: 450px;" visibility="hover">
+      <div class="classes-container pe-2">
+        @for (cls of classes; track cls; let i = $index) {
+        <div class="class-card d-flex align-items-stretch justify-content-between mb-3">
+
+          <!-- Colored background accent overlay -->
+          <div class="card-accent-bg" [style.background-color]="cls.color"></div>
+
+          <div class="card-main-content d-flex flex-column justify-content-between flex-grow-1 py-1">
+            <!-- Top Line: Subject and status badge -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <div class="subject-icon rounded-circle d-flex align-items-center justify-content-center text-white"
+                  [style.background-color]="cls.color">
+                  <mat-icon>{{ cls.icon }}</mat-icon>
+                </div>
+                <h5 class="class-subject mb-0">{{ cls.subject }}</h5>
+              </div>
+
+              <!-- Smart status badges -->
+              @if (i === 0) {
+              <span class="status-badge live">
+                <span class="pulse-dot"></span>
+                <span>Live Now</span>
+              </span>
+              }
+              @if (i === 1) {
+              <span class="status-badge next">
+                <span>Next Up</span>
+              </span>
+              }
+              @if (i > 1) {
+              <span class="status-badge upcoming">
+                <span>Upcoming</span>
+              </span>
+              }
+            </div>
+
+            <!-- Middle Line: Time and Duration full-width -->
+            <div class="d-flex justify-content-between align-items-center w-100 mb-2 py-1">
+              <div class="class-time text-muted d-flex align-items-center">
+                <mat-icon class="time-icon me-1">schedule</mat-icon>
+                <span>{{ cls.time }}</span>
+              </div>
+              <span class="duration-pill">{{ cls.duration }}</span>
+            </div>
+
+            <!-- Bottom Metadata row -->
+            <div class="d-flex flex-wrap gap-2 mt-2 pt-2 border-top border-dashed">
+              <span class="meta-pill">
+                <mat-icon>school</mat-icon>
+                <span>{{ cls.grade }}</span>
+              </span>
+              <span class="meta-pill">
+                <mat-icon>meeting_room</mat-icon>
+                <span>{{ cls.room }}</span>
+              </span>
+              <span class="meta-pill">
+                <mat-icon>groups</mat-icon>
+                <span>{{ cls.students }} Students</span>
+              </span>
+            </div>
+          </div>
+
+        </div>
+        }
+      </div>
+    </ng-scrollbar>
+  </mat-card-content>
+</mat-card>

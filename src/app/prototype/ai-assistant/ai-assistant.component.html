@@ -1,0 +1,95 @@
+<div class="assistant-wrapper" [class.open]="isOpen()">
+  <section class="assistant-panel" role="dialog" aria-label="Assistant E-Scolarité">
+    <header>
+      <div class="assistant-identity">
+        <span class="assistant-avatar"><i>auto_awesome</i></span>
+        <span>
+          <strong>Assistant E‑Scolarité</strong>
+          <small><i></i>Disponible pour vous aider</small>
+        </span>
+      </div>
+      <button type="button" class="close-button" aria-label="Fermer l’assistant" (click)="close()">
+        <i>close</i>
+      </button>
+    </header>
+
+    <div class="assistant-context">
+      <span>auto_awesome</span>
+      <p><strong>Gagnez du temps</strong>Posez une question ou demandez l’exécution d’une tâche.</p>
+    </div>
+
+    <div class="messages" aria-live="polite">
+      @for (message of messages(); track $index) {
+        <article [class.user-message]="message.author === 'user'">
+          @if (message.author === 'assistant') {
+            <span class="message-avatar">E</span>
+          }
+          <div>
+            <p>{{ message.text }}</p>
+            <small>{{ message.time }}</small>
+          </div>
+        </article>
+      }
+
+      @if (isThinking()) {
+        <article>
+          <span class="message-avatar">E</span>
+          <div class="typing" aria-label="L’assistant prépare sa réponse">
+            <i></i><i></i><i></i>
+          </div>
+        </article>
+      }
+    </div>
+
+    <div class="shortcuts">
+      <button type="button" (click)="sendShortcut('Résume cette page')">
+        <i>summarize</i>Résumer cette page
+      </button>
+      <button type="button" (click)="sendShortcut('Aide-moi à continuer')">
+        <i>lightbulb</i>Me guider
+      </button>
+    </div>
+
+    <div class="composer">
+      <button
+        type="button"
+        class="voice-button"
+        [class.listening]="isListening()"
+        [attr.aria-label]="isListening() ? 'Arrêter la saisie vocale' : 'Utiliser la voix'"
+        (click)="toggleVoice()"
+      >
+        <i>{{ isListening() ? 'graphic_eq' : 'mic_none' }}</i>
+      </button>
+      <input
+        type="text"
+        aria-label="Votre demande"
+        placeholder="Écrivez votre demande…"
+        [(ngModel)]="draft"
+        (keyup.enter)="send()"
+      />
+      <button
+        type="button"
+        class="send-button"
+        aria-label="Envoyer la demande"
+        [disabled]="!draft.trim() || isThinking()"
+        (click)="send()"
+      >
+        <i>arrow_upward</i>
+      </button>
+    </div>
+    <small class="assistant-note">L’assistant peut se tromper. Vérifiez les actions importantes.</small>
+  </section>
+
+  @if (!isOpen()) {
+    <span class="assistant-label">Besoin d’aide ?</span>
+  }
+  <button
+    type="button"
+    class="assistant-fab"
+    [class.fab-open]="isOpen()"
+    [attr.aria-label]="isOpen() ? 'Fermer l’assistant E-Scolarité' : 'Ouvrir l’assistant E-Scolarité'"
+    (click)="toggle()"
+  >
+    <span>{{ isOpen() ? 'close' : 'auto_awesome' }}</span>
+  </button>
+</div>

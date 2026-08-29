@@ -1,0 +1,36 @@
+:host {
+  display: inline-flex;
+}
+
+.platform-language-switcher {
+  height: 36px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #e1e4ec;
+  border-radius: 8px;
+  background: #fff;
+  color: #6f7485;
+
+  i {
+    font-size: 18px;
+  }
+
+  select {
+    width: 40px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}
+
+:host-context(.dark) .platform-language-switcher {
+  border-color: #343b4d;
+  background: #1a202e;
+  color: #aeb7c7;
+}

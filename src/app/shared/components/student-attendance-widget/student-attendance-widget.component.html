@@ -1,0 +1,63 @@
+<mat-card class="modern-card student-attendance-card">
+
+  <mat-card-header class="header-menu">
+    <mat-card-title>
+      <mat-icon class="card-title-icon material-icons-outlined">how_to_reg</mat-icon>
+      Student Attendance
+    </mat-card-title>
+    <mat-form-field appearance="outline" class="header-form-field">
+      <mat-select [value]="selectedClass()" (selectionChange)="updateClass($event.value)">
+        @for (class of classes; track class.value) {
+        <mat-option [value]="class.value">{{ class.viewValue }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </mat-card-header>
+
+
+  <mat-card-content>
+    <div class="attendance-summary">
+      <div class="summary-item present">
+        <div class="summary-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="summary-details">
+          <h3>Present</h3>
+          <div class="summary-count">{{ dailySummary.present }}</div>
+          <div class="summary-percentage">{{ getPercentage(dailySummary.present) }}%</div>
+        </div>
+      </div>
+
+      <div class="summary-item absent">
+        <div class="summary-icon">
+          <mat-icon>cancel</mat-icon>
+        </div>
+        <div class="summary-details">
+          <h3>Absent</h3>
+          <div class="summary-count">{{ dailySummary.absent }}</div>
+          <div class="summary-percentage">{{ getPercentage(dailySummary.absent) }}%</div>
+        </div>
+      </div>
+
+      <div class="summary-item late">
+        <div class="summary-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="summary-details">
+          <h3>Late</h3>
+          <div class="summary-count">{{ dailySummary.late }}</div>
+          <div class="summary-percentage">{{ getPercentage(dailySummary.late) }}%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="attendance-chart mb-4">
+      <apx-chart [series]="attendanceChartOptions.series!" [chart]="attendanceChartOptions.chart!"
+        [xaxis]="attendanceChartOptions.xaxis!" [yaxis]="attendanceChartOptions.yaxis!"
+        [grid]="attendanceChartOptions.grid!" [stroke]="attendanceChartOptions.stroke!"
+        [tooltip]="attendanceChartOptions.tooltip!" [dataLabels]="attendanceChartOptions.dataLabels!"
+        [legend]="attendanceChartOptions.legend!" [colors]="attendanceChartOptions.colors!"
+        [markers]="attendanceChartOptions.markers!"></apx-chart>
+    </div>
+  </mat-card-content>
+</mat-card>

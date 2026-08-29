@@ -1,0 +1,30 @@
+<mat-card class="modern-card academic-performance-card shadow-sm">
+  <mat-card-header class="header-menu d-flex justify-content-between align-items-center">
+    <mat-card-title class="font-18 font-weight-bold">
+      <mat-icon class="card-title-icon material-icons-outlined">school</mat-icon>
+      Academic Performance Analytics
+    </mat-card-title>
+    <mat-form-field appearance="outline" class="header-form-field">
+      <mat-select [value]="selectedClass" (selectionChange)="onClassChange($event.value)">
+        @for (class of classes; track class) {
+          <mat-option [value]="class">{{ class }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </mat-card-header>
+  <mat-card-content class="pt-3">
+    <div class="chart-container">
+      <apx-chart 
+        [series]="chartOptions.series!" 
+        [chart]="chartOptions.chart!"
+        [xaxis]="chartOptions.xaxis!" 
+        [yaxis]="chartOptions.yaxis!"
+        [grid]="chartOptions.grid!" 
+        [plotOptions]="chartOptions.plotOptions!"
+        [tooltip]="chartOptions.tooltip!" 
+        [dataLabels]="chartOptions.dataLabels!"
+        [colors]="chartOptions.colors!">
+      </apx-chart>
+    </div>
+  </mat-card-content>
+</mat-card>

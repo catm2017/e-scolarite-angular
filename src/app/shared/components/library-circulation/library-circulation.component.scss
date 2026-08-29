@@ -1,0 +1,71 @@
+.library-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .header-menu {
+    border-bottom: 1px solid rgba(154, 160, 172, 0.15);
+    padding: 15px 20px;
+  }
+
+  .responsive-table-container {
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  table {
+    background: transparent;
+    border-collapse: collapse;
+
+    th.mat-mdc-header-cell {
+      background-color: rgba(154, 160, 172, 0.05);
+      border-bottom: 1px solid rgba(154, 160, 172, 0.15) !important;
+      padding: 12px 8px;
+    }
+
+    td.mat-mdc-cell {
+      border-bottom: 1px solid rgba(154, 160, 172, 0.1) !important;
+      padding: 8px;
+    }
+  }
+
+  .student-avatar {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+  }
+
+  .block-text {
+    display: block;
+  }
+
+  .max-width-180 {
+    max-width: 180px;
+  }
+
+  .bg-danger-subtle {
+    background-color: rgba(244, 67, 54, 0.1);
+  }
+
+  .btn-xs {
+    padding: 2px 18px;
+    font-size: 11px;
+    border-radius: 10px !important;
+    min-height: auto;
+    line-height: normal;
+
+    .mat-icon {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+      margin-right: 2px;
+    }
+  }
+}

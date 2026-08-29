@@ -1,0 +1,170 @@
+<div class="auth-container modern-auth">
+  <div class="row auth-main h-100 m-0">
+    <div class="col-sm-6 px-0 d-none d-sm-block left-panel-wrapper">
+      <div class="abstract-bg">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+
+        <div class="glass-feature-card">
+          <div class="left-badge"><i class="fas fa-user-plus"></i> Join Our Community</div>
+          <h3>Unlock Your Potential</h3>
+          <p>Create an account to access powerful tools, connect with your community, and manage educational resources
+            efficiently.</p>
+
+          <div class="left-stats">
+            <div class="stat-item">
+              <span class="stat-num">12K+</span>
+              <span class="stat-label">Students</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-num">500+</span>
+              <span class="stat-label">Teachers</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-num">98%</span>
+              <span class="stat-label">Satisfaction</span>
+            </div>
+          </div>
+
+          <div class="left-testimonial">
+            <p class="testimonial-text">"Joining Smart School was the best decision. The platform made learning and
+              collaboration so much easier!"</p>
+            <div class="testimonial-author">
+              <div class="floating-avatars">
+                <div class="avatar av-1"></div>
+                <div class="avatar av-2"></div>
+                <div class="avatar av-3"></div>
+              </div>
+              <span class="author-info">Join <strong>12,000+</strong> members today</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 auth-form-section">
+      <div class="auth-glass-panel">
+        <div class="auth-wrapper">
+          <div class="text-center mb-4">
+            <h6 class="welcome-msg">Create an Account</h6>
+            <p class="auth-signup-text text-muted">Enter details to get started</p>
+          </div>
+
+          <div class="user-role-selector mb-4">
+            <p class="role-selector-label text-center mb-3">I am a:</p>
+            <div class="role-chips dual-chips">
+              <button type="button" class="role-chip student-chip" (click)="selectRole('student')"
+                [class.active]="selectedRole === 'student'">
+                <span class="chip-icon-wrap"><i class="fas fa-user-graduate"></i></span>
+                <span class="chip-label">Student</span>
+                <span class="chip-desc">My courses</span>
+                <span class="chip-check"><i class="fas fa-check"></i></span>
+              </button>
+              <button type="button" class="role-chip teacher-chip" (click)="selectRole('teacher')"
+                [class.active]="selectedRole === 'teacher'">
+                <span class="chip-icon-wrap"><i class="fas fa-chalkboard-teacher"></i></span>
+                <span class="chip-label">Teacher</span>
+                <span class="chip-desc">Class management</span>
+                <span class="chip-check"><i class="fas fa-check"></i></span>
+              </button>
+            </div>
+          </div>
+
+          <form class="validate-form" [formGroup]="authForm" (ngSubmit)="onSubmit()">
+            <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
+                <mat-form-field class="example-full-width" appearance="outline">
+                  <mat-label>Username</mat-label>
+                  <input matInput formControlName="username" placeholder="Choose a username" required>
+                  <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+                  @if (authForm.get('username')?.hasError('required')) {
+                  <mat-error>Username is required</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
+                <mat-form-field class="example-full-width" appearance="outline">
+                  <mat-label>Email Address</mat-label>
+                  <input matInput formControlName="email" placeholder="Enter your email" required>
+                  <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>mail</mat-icon>
+                  @if (authForm.get('email')?.hasError('required') || authForm.get('email')?.touched) {
+                  <mat-error>Please enter a valid email address</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
+                <mat-form-field class="example-full-width" appearance="outline">
+                  <mat-label>Password</mat-label>
+                  <input matInput formControlName="password" [type]="hide ? 'password' : 'text'"
+                    placeholder="Create a password" required>
+                  <mat-icon matSuffix (click)="hide = !hide" class="pwd-toggle p-3">
+                    {{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+                  @if (authForm.get('password')?.hasError('required')) {
+                  <mat-error>Password is required</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
+                <mat-form-field class="example-full-width" appearance="outline">
+                  <mat-label>Confirm Password</mat-label>
+                  <input matInput formControlName="cpassword" [type]="chide ? 'password' : 'text'"
+                    placeholder="Confirm your password" required>
+                  <mat-icon matSuffix (click)="chide = !chide" class="pwd-toggle p-3">
+                    {{chide ? 'visibility_off' : 'visibility'}}</mat-icon>
+                  @if (authForm.get('cpassword')?.hasError('required')) {
+                  <mat-error>Confirm Password is required</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+              <span class="text-muted small">Already Registered? <a routerLink="/authentication/signin"
+                  class="font-weight-bold text-primary text-decoration-none">Login</a></span>
+            </div>
+
+            <div class="container-auth-form-btn">
+              <button mat-flat-button color="primary" type="submit" [class.auth-spinner]="submitted"
+                [disabled]="!authForm.valid" class="auth-form-btn modern-btn">
+                <span>Create Account</span> <i class="fas fa-user-plus ms-2"></i>
+              </button>
+            </div>
+          </form>
+
+          <div class="social-divider mt-4 mb-3">
+            <span>OR SIGN UP WITH</span>
+          </div>
+
+          <ul class="list-unstyled social-icon mb-0 d-flex justify-content-center gap-3">
+            <li class="list-inline-item m-0">
+              <button class="social-btn google"><i class="fab fa-google"></i></button>
+            </li>
+            <li class="list-inline-item m-0">
+              <button class="social-btn facebook"><i class="fab fa-facebook-f"></i></button>
+            </li>
+            <li class="list-inline-item m-0">
+              <button class="social-btn twitter"><i class="fab fa-twitter"></i></button>
+            </li>
+            <li class="list-inline-item m-0">
+              <button class="social-btn linkedin"><i class="fab fa-linkedin-in"></i></button>
+            </li>
+          </ul>
+
+          <div class="mt-4 text-center">
+            <p class="text-muted mb-0 small">By registering, you agree to our <a href="javascript:void(0)"
+                class="text-primary text-decoration-none">Terms of Use</a> and <a href="javascript:void(0)"
+                class="text-primary text-decoration-none">Privacy Policy</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

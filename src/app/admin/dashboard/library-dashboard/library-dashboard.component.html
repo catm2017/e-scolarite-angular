@@ -1,0 +1,789 @@
+<section class="content">
+    <div class="content-block">
+        @for (breadscrum of breadscrums; track breadscrum) {
+        <div class="block-header">
+            <!-- breadcrumb -->
+            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+            </app-breadcrumb>
+        </div>
+        }
+
+        <!-- Library Statistics Cards -->
+        <div class="row clearfix">
+            <!-- Total Books Card -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12">
+                <mat-card class="modern-card stats-card">
+                    <mat-card-content>
+                        <div class="stats-icon">
+                            <mat-icon>menu_book</mat-icon>
+                        </div>
+                        <div class="stats-info">
+                            <h5>Total Books</h5>
+                            <h3>{{libraryStats.totalBooks}}</h3>
+                            <div class="progress-container">
+                                <mat-progress-bar mode="determinate"
+                                    [value]="libraryStats.totalBooksProgress"></mat-progress-bar>
+                                <span class="progress-label">{{libraryStats.totalBooksProgress}}% growth</span>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- Books Issued Card -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12">
+                <mat-card class="modern-card stats-card">
+                    <mat-card-content>
+                        <div class="stats-icon blue-bg">
+                            <mat-icon>assignment_turned_in</mat-icon>
+                        </div>
+                        <div class="stats-info">
+                            <h5>Books Issued</h5>
+                            <h3>{{libraryStats.booksIssued}}</h3>
+                            <div class="progress-container">
+                                <mat-progress-bar color="accent" mode="determinate"
+                                    [value]="libraryStats.booksIssuedProgress"></mat-progress-bar>
+                                <span class="progress-label">{{libraryStats.booksIssuedProgress}}% of total</span>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- Active Members Card -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12">
+                <mat-card class="modern-card stats-card">
+                    <mat-card-content>
+                        <div class="stats-icon purple-bg">
+                            <mat-icon>people</mat-icon>
+                        </div>
+                        <div class="stats-info">
+                            <h5>Active Members</h5>
+                            <h3>{{libraryStats.activeMembers}}</h3>
+                            <div class="progress-container">
+                                <mat-progress-bar color="primary" mode="determinate"
+                                    [value]="libraryStats.activeMembersProgress"></mat-progress-bar>
+                                <span class="progress-label">{{libraryStats.activeMembersProgress}}% active</span>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- Overdue Books Card -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12">
+                <mat-card class="modern-card stats-card">
+                    <mat-card-content>
+                        <div class="stats-icon orange-bg">
+                            <mat-icon>warning</mat-icon>
+                        </div>
+                        <div class="stats-info">
+                            <h5>Overdue Books</h5>
+                            <h3>{{libraryStats.overdueBooks}}</h3>
+                            <div class="progress-container">
+                                <mat-progress-bar color="warn" mode="determinate"
+                                    [value]="libraryStats.overdueBooksProgress"></mat-progress-bar>
+                                <span class="progress-label">{{libraryStats.overdueBooksProgress}}% of issued</span>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- Library Statistics Chart -->
+        <div class="row clearfix">
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                <mat-card class="chart-card modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">library_books</mat-icon> Library Collection Statistics </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #statsChart [series]="libraryStatsChartOptions.series!"
+                                    [chart]="libraryStatsChartOptions.chart!" [xaxis]="libraryStatsChartOptions.xaxis!"
+                                    [yaxis]="libraryStatsChartOptions.yaxis!" [colors]="libraryStatsChartOptions.colors!"
+                                    [plotOptions]="libraryStatsChartOptions.plotOptions!"
+                                    [dataLabels]="libraryStatsChartOptions.dataLabels!"
+                                    [grid]="libraryStatsChartOptions.grid!"
+                                    [legend]="libraryStatsChartOptions.legend!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row clearfix">
+            <!-- Books Issued Over Time Chart -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <mat-card class="chart-card modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">show_chart</mat-icon> Books Issued Over Time </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #issueChart [series]="issueChartOptions.series!"
+                                    [chart]="issueChartOptions.chart!" [xaxis]="issueChartOptions.xaxis!"
+                                    [stroke]="issueChartOptions.stroke!" [colors]="issueChartOptions.colors!"
+                                    [dataLabels]="issueChartOptions.dataLabels!" [legend]="issueChartOptions.legend!"
+                                    [tooltip]="issueChartOptions.tooltip!" [grid]="issueChartOptions.grid!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- Genre Distribution Chart -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <mat-card class="chart-card modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">pie_chart</mat-icon> Genre-wise Distribution </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #genreChart [series]="genreChartOptions.series!"
+                                    [chart]="genreChartOptions.chart!" [labels]="genreChartOptions.labels!"
+                                    [responsive]="genreChartOptions.responsive!" [colors]="genreChartOptions.colors!"
+                                    [dataLabels]="genreChartOptions.dataLabels!"
+                                    [legend]="genreChartOptions.legend!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+        <!-- Tables & Lists Section -->
+        <div class="row clearfix">
+            <!-- Recent Issued Books Table -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <mat-card class="modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">history</mat-icon> Recent Issued Books</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            <div class="table-responsive">
+                                @defer (on viewport) {
+                                    <table mat-table [dataSource]="recentIssuedBooks" class="mat-elevation-z0">
+                                        <!-- Title Column -->
+                                        <ng-container matColumnDef="title">
+                                            <th mat-header-cell *matHeaderCellDef>Title</th>
+                                            <td mat-cell *matCellDef="let book">{{book.title}}</td>
+                                        </ng-container>
+
+                                        <!-- Member Column -->
+                                        <ng-container matColumnDef="member">
+                                            <th mat-header-cell *matHeaderCellDef>Member Name</th>
+                                            <td mat-cell *matCellDef="let book">{{book.member}}</td>
+                                        </ng-container>
+
+                                        <!-- Issue Date Column -->
+                                        <ng-container matColumnDef="issueDate">
+                                            <th mat-header-cell *matHeaderCellDef>Issue Date</th>
+                                            <td mat-cell *matCellDef="let book">{{book.issueDate}}</td>
+                                        </ng-container>
+
+                                        <!-- Due Date Column -->
+                                        <ng-container matColumnDef="dueDate">
+                                            <th mat-header-cell *matHeaderCellDef>Due Date</th>
+                                            <td mat-cell *matCellDef="let book">{{book.dueDate}}</td>
+                                        </ng-container>
+
+                                        <!-- Status Column -->
+                                        <ng-container matColumnDef="status">
+                                            <th mat-header-cell *matHeaderCellDef>Status</th>
+                                            <td mat-cell *matCellDef="let book">
+                                                <span class="status-badge active">{{book.status}}</span>
+                                            </td>
+                                        </ng-container>
+
+                                        <tr mat-header-row
+                                            *matHeaderRowDef="['title', 'member', 'issueDate', 'dueDate', 'status']"></tr>
+                                        <tr mat-row
+                                            *matRowDef="let row; columns: ['title', 'member', 'issueDate', 'dueDate', 'status'];">
+                                        </tr>
+                                    </table>
+                                } @placeholder {
+                                    <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                        <div class="skeleton-body"></div>
+                                    </div>
+                                }
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                    <mat-card-actions align="end">
+                        <button mat-button color="primary">View All</button>
+                    </mat-card-actions>
+                </mat-card>
+            </div>
+
+            <!-- Overdue Books Table -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <mat-card class="modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">warning</mat-icon> Overdue Books</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            <div class="table-responsive">
+                                @defer (on viewport) {
+                                    <table mat-table [dataSource]="overdueBooks" class="mat-elevation-z0">
+                                        <!-- Title Column -->
+                                        <ng-container matColumnDef="title">
+                                            <th mat-header-cell *matHeaderCellDef>Book Title</th>
+                                            <td mat-cell *matCellDef="let book">{{book.title}}</td>
+                                        </ng-container>
+
+                                        <!-- Borrower Column -->
+                                        <ng-container matColumnDef="borrower">
+                                            <th mat-header-cell *matHeaderCellDef>Borrower</th>
+                                            <td mat-cell *matCellDef="let book">{{book.borrower}}</td>
+                                        </ng-container>
+
+                                        <!-- Days Overdue Column -->
+                                        <ng-container matColumnDef="daysOverdue">
+                                            <th mat-header-cell *matHeaderCellDef>Days Overdue</th>
+                                            <td mat-cell *matCellDef="let book"
+                                                [ngClass]="{'overdue-text': book.daysOverdue > 7}">
+                                                {{book.daysOverdue}}
+                                            </td>
+                                        </ng-container>
+
+                                        <!-- Contact Column -->
+                                        <ng-container matColumnDef="contact">
+                                            <th mat-header-cell *matHeaderCellDef>Contact Info</th>
+                                            <td mat-cell *matCellDef="let book">{{book.contact}}</td>
+                                        </ng-container>
+
+                                        <!-- Actions Column -->
+                                        <ng-container matColumnDef="actions">
+                                            <th mat-header-cell *matHeaderCellDef>Actions</th>
+                                            <td mat-cell *matCellDef="let book" class="action-buttons1">
+                                                <button mat-icon-button color="primary" matTooltip="Send Reminder">
+                                                    <mat-icon>notifications</mat-icon>
+                                                </button>
+                                                <button mat-icon-button color="accent" matTooltip="Call Member">
+                                                    <mat-icon>call</mat-icon>
+                                                </button>
+                                            </td>
+                                        </ng-container>
+
+                                        <tr mat-header-row
+                                            *matHeaderRowDef="['title', 'borrower', 'daysOverdue', 'contact', 'actions']">
+                                        </tr>
+                                        <tr mat-row
+                                            *matRowDef="let row; columns: ['title', 'borrower', 'daysOverdue', 'contact', 'actions'];">
+                                        </tr>
+                                    </table>
+                                } @placeholder {
+                                    <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                        <div class="skeleton-body"></div>
+                                    </div>
+                                }
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                    <mat-card-actions align="end">
+                        <button mat-button color="primary">View All</button>
+                    </mat-card-actions>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- Book Borrowing Patterns Heatmap -->
+        <div class="row clearfix">
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                <mat-card class="chart-card modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">grid_on</mat-icon> Book Borrowing Patterns </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #heatmapChart [series]="heatmapChartOptions.series!"
+                                    [chart]="heatmapChartOptions.chart!" [dataLabels]="heatmapChartOptions.dataLabels!"
+                                    [colors]="heatmapChartOptions.colors!" [xaxis]="heatmapChartOptions.xaxis!"
+                                    [yaxis]="heatmapChartOptions.yaxis!" [title]="heatmapChartOptions.title!"
+                                    [plotOptions]="heatmapChartOptions.plotOptions!"
+                                    [tooltip]="heatmapChartOptions.tooltip!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <div class="row clearfix">
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">stars</mat-icon> Top Active Readers</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            @defer (on viewport) {
+                                <ul class="custom-list readers-list">
+                                    @for (reader of topReaders; track reader) {
+                                    <li class="list-item">
+                                        <img [src]="reader.avatar" alt="Avatar" class="avatar-img">
+                                        <div class="item-info">
+                                            <h5 class="item-title">{{ reader.name }}</h5>
+                                            <span class="item-subtitle">{{ reader.books }} books read</span>
+                                        </div>
+                                        <div class="badge-accent">{{ reader.books }}</div>
+                                    </li>
+                                    }
+                                </ul>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">trending_up</mat-icon> Trending Books</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            @defer (on viewport) {
+                                <ul class="custom-list popular-list">
+                                    @for (book of popularBooks; track book) {
+                                    <li class="list-item">
+                                        <div class="icon-circle bg-primary">
+                                            <mat-icon>{{ book.icon }}</mat-icon>
+                                        </div>
+                                        <div class="item-info">
+                                            <h5 class="item-title">{{ book.title }}</h5>
+                                            <span class="item-subtitle">{{ book.author }}</span>
+                                        </div>
+                                        <div class="badge-primary">{{ book.borrows }}</div>
+                                    </li>
+                                    }
+                                </ul>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">event</mat-icon> Upcoming Events</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            @defer (on viewport) {
+                                <ul class="timeline-list">
+                                    @for (event of upcomingEvents; track event) {
+                                    <li class="timeline-item">
+                                        <div class="timeline-marker bg-accent"></div>
+                                        <div class="timeline-content">
+                                            <h5 class="timeline-title">{{ event.title }}</h5>
+                                            <span class="timeline-date">{{ event.date }}</span>
+                                            <span class="timeline-type">{{ event.type }}</span>
+                                        </div>
+                                    </li>
+                                    }
+                                </ul>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- Charts Section 2 -->
+        <div class="row clearfix">
+            <!-- Monthly New Members Chart -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <mat-card class="chart-card modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">person_add</mat-icon> Monthly New Members </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #memberChart [series]="memberChartOptions.series!"
+                                    [chart]="memberChartOptions.chart!" [xaxis]="memberChartOptions.xaxis!"
+                                    [stroke]="memberChartOptions.stroke!" [colors]="memberChartOptions.colors!"
+                                    [dataLabels]="memberChartOptions.dataLabels!"
+                                    [plotOptions]="memberChartOptions.plotOptions!" [fill]="memberChartOptions.fill!"
+                                    [tooltip]="memberChartOptions.tooltip!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- Library Usage Metrics Chart -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <mat-card class="chart-card modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">analytics</mat-icon> Library Usage Metrics </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #usageChart [series]="usageChartOptions.series!"
+                                    [chart]="usageChartOptions.chart!" [plotOptions]="usageChartOptions.plotOptions!"
+                                    [labels]="usageChartOptions.labels!" [colors]="usageChartOptions.colors!"
+                                    [stroke]="usageChartOptions.stroke!" [fill]="usageChartOptions.fill!"
+                                    [tooltip]="usageChartOptions.tooltip!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <div class="row clearfix">
+            <!-- Newly Added Books Table -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <mat-card class="modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">fiber_new</mat-icon> Newly Added Books</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            <div class="table-responsive">
+                                @defer (on viewport) {
+                                    <table mat-table [dataSource]="newlyAddedBooks" class="mat-elevation-z0">
+                                        <!-- Title Column -->
+                                        <ng-container matColumnDef="title">
+                                            <th mat-header-cell *matHeaderCellDef>Title</th>
+                                            <td mat-cell *matCellDef="let book">{{book.title}}</td>
+                                        </ng-container>
+
+                                        <!-- Author Column -->
+                                        <ng-container matColumnDef="author">
+                                            <th mat-header-cell *matHeaderCellDef>Author</th>
+                                            <td mat-cell *matCellDef="let book">{{book.author}}</td>
+                                        </ng-container>
+
+                                        <!-- Genre Column -->
+                                        <ng-container matColumnDef="genre">
+                                            <th mat-header-cell *matHeaderCellDef>Genre</th>
+                                            <td mat-cell *matCellDef="let book">
+                                                <span class="genre-chip">{{book.genre}}</span>
+                                            </td>
+                                        </ng-container>
+
+                                        <!-- Added Date Column -->
+                                        <ng-container matColumnDef="addedDate">
+                                            <th mat-header-cell *matHeaderCellDef>Added Date</th>
+                                            <td mat-cell *matCellDef="let book">{{book.addedDate}}</td>
+                                        </ng-container>
+
+                                        <tr mat-header-row *matHeaderRowDef="['title', 'author', 'genre', 'addedDate']">
+                                        </tr>
+                                        <tr mat-row
+                                            *matRowDef="let row; columns: ['title', 'author', 'genre', 'addedDate'];">
+                                        </tr>
+                                    </table>
+                                } @placeholder {
+                                    <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                        <div class="skeleton-body"></div>
+                                    </div>
+                                }
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                    <mat-card-actions align="end">
+                        <button mat-button color="primary">View All</button>
+                    </mat-card-actions>
+                </mat-card>
+            </div>
+
+            <!-- Reminders Card -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <mat-card class="reminders-card modern-card">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">notifications_active</mat-icon> Reminders</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            <div class="reminders-list">
+                                @defer (on viewport) {
+                                    @for (reminder of reminders; track reminder) {
+                                    <div class="reminder-item"
+                                        [ngClass]="{'overdue-reminder': reminder.type === 'overdue', 'reservation-reminder': reminder.type === 'reservation'}">
+                                        <div class="reminder-icon">
+                                            <mat-icon>{{reminder.type === 'overdue' ? 'assignment_late' :
+                                                'event_available'}}</mat-icon>
+                                        </div>
+                                        <div class="reminder-details">
+                                            <h4 class="reminder-title">{{reminder.title}}</h4>
+                                            <p class="reminder-info">{{reminder.date}} - {{reminder.student}}</p>
+                                        </div>
+                                        <div class="reminder-actions">
+                                            <button mat-icon-button color="primary" matTooltip="Send Notification">
+                                                <mat-icon>notifications</mat-icon>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    }
+                                } @placeholder {
+                                    <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                        <div class="skeleton-body"></div>
+                                    </div>
+                                }
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                    <mat-card-actions align="end">
+                        <button mat-button color="primary">View All Reminders</button>
+                    </mat-card-actions>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- Circulation & Budget Allocation Heatmaps/Charts -->
+        <div class="row clearfix">
+            <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">compare_arrows</mat-icon> Digital vs Physical Circulation</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #circulationChart [series]="circulationChartOptions.series!"
+                                    [chart]="circulationChartOptions.chart!" [xaxis]="circulationChartOptions.xaxis!"
+                                    [stroke]="circulationChartOptions.stroke!" [colors]="circulationChartOptions.colors!"
+                                    [dataLabels]="circulationChartOptions.dataLabels!"
+                                    [legend]="circulationChartOptions.legend!"
+                                    [grid]="circulationChartOptions.grid!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">account_balance_wallet</mat-icon> Budget Allocation</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #budgetChart [series]="budgetChartOptions.series!"
+                                    [chart]="budgetChartOptions.chart!" [labels]="budgetChartOptions.labels!"
+                                    [colors]="budgetChartOptions.colors!" [dataLabels]="budgetChartOptions.dataLabels!"
+                                    [legend]="budgetChartOptions.legend!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <div class="row clearfix">
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">directions_walk</mat-icon> Visitor Footfall</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #footfallChart [series]="footfallChartOptions.series!"
+                                    [chart]="footfallChartOptions.chart!" [xaxis]="footfallChartOptions.xaxis!"
+                                    [stroke]="footfallChartOptions.stroke!" [colors]="footfallChartOptions.colors!"
+                                    [dataLabels]="footfallChartOptions.dataLabels!"
+                                    [grid]="footfallChartOptions.grid!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">groups</mat-icon> Member Demographics</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #demographicsChart [series]="demographicsChartOptions.series!"
+                                    [chart]="demographicsChartOptions.chart!" [xaxis]="demographicsChartOptions.xaxis!"
+                                    [colors]="demographicsChartOptions.colors!"
+                                    [plotOptions]="demographicsChartOptions.plotOptions!"
+                                    [dataLabels]="demographicsChartOptions.dataLabels!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">speed</mat-icon> Return Speed Analysis</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #returnSpeedChart [series]="returnSpeedChartOptions.series!"
+                                    [chart]="returnSpeedChartOptions.chart!"
+                                    [plotOptions]="returnSpeedChartOptions.plotOptions!"
+                                    [labels]="returnSpeedChartOptions.labels!"
+                                    [colors]="returnSpeedChartOptions.colors!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <div class="row clearfix">
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">hourglass_empty</mat-icon> Pending Reservations</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            <div class="table-responsive">
+                                @defer (on viewport) {
+                                    <table mat-table [dataSource]="pendingReservations" class="mat-elevation-z0">
+                                        <ng-container matColumnDef="title">
+                                            <th mat-header-cell *matHeaderCellDef>Book</th>
+                                            <td mat-cell *matCellDef="let row">{{row.title}}</td>
+                                        </ng-container>
+                                        <ng-container matColumnDef="member">
+                                            <th mat-header-cell *matHeaderCellDef>Member</th>
+                                            <td mat-cell *matCellDef="let row">{{row.member}}</td>
+                                        </ng-container>
+                                        <ng-container matColumnDef="date">
+                                            <th mat-header-cell *matHeaderCellDef>Date</th>
+                                            <td mat-cell *matCellDef="let row">{{row.date}}</td>
+                                        </ng-container>
+                                        <ng-container matColumnDef="status">
+                                            <th mat-header-cell *matHeaderCellDef>Status</th>
+                                            <td mat-cell *matCellDef="let row">
+                                                <span class="status-badge"
+                                                    [ngClass]="row.status === 'Available' ? 'active' : 'pending'">{{row.status}}</span>
+                                            </td>
+                                        </ng-container>
+                                        <tr mat-header-row *matHeaderRowDef="['title', 'member', 'date', 'status']"></tr>
+                                        <tr mat-row *matRowDef="let row; columns: ['title', 'member', 'date', 'status'];">
+                                        </tr>
+                                    </table>
+                                } @placeholder {
+                                    <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                        <div class="skeleton-body"></div>
+                                    </div>
+                                }
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">broken_image</mat-icon> Lost & Damaged Books</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            <div class="table-responsive">
+                                @defer (on viewport) {
+                                    <table mat-table [dataSource]="lostBooks" class="mat-elevation-z0">
+                                        <ng-container matColumnDef="title">
+                                            <th mat-header-cell *matHeaderCellDef>Book</th>
+                                            <td mat-cell *matCellDef="let row">{{row.title}}</td>
+                                        </ng-container>
+                                        <ng-container matColumnDef="member">
+                                            <th mat-header-cell *matHeaderCellDef>Member</th>
+                                            <td mat-cell *matCellDef="let row">{{row.member}}</td>
+                                        </ng-container>
+                                        <ng-container matColumnDef="reported">
+                                            <th mat-header-cell *matHeaderCellDef>Reported</th>
+                                            <td mat-cell *matCellDef="let row">{{row.reported}}</td>
+                                        </ng-container>
+                                        <ng-container matColumnDef="status">
+                                            <th mat-header-cell *matHeaderCellDef>Status</th>
+                                            <td mat-cell *matCellDef="let row">
+                                                <span class="status-badge"
+                                                    [ngClass]="row.status === 'Fined' ? 'rejected' : 'pending'">{{row.status}}</span>
+                                            </td>
+                                        </ng-container>
+                                        <tr mat-header-row *matHeaderRowDef="['title', 'member', 'reported', 'status']">
+                                        </tr>
+                                        <tr mat-row
+                                            *matRowDef="let row; columns: ['title', 'member', 'reported', 'status'];"></tr>
+                                    </table>
+                                } @placeholder {
+                                    <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                        <div class="skeleton-body"></div>
+                                    </div>
+                                }
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,103 @@
+.timetable-container {
+  padding: 15px 0;
+
+  .time-slot {
+    display: flex;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    &.current-slot {
+      border: 2px solid #3f51b5;
+      box-shadow: 0 5px 15px rgba(63, 81, 181, 0.2);
+    }
+
+    .time-info {
+      width: 100px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(0, 0, 0, 0.03);
+
+      .time {
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 5px;
+      }
+
+      .duration {
+        font-size: 12px;
+      }
+    }
+
+    .slot-content {
+      flex: 1;
+      padding: 15px;
+
+      .subject-name {
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 10px;
+      }
+
+      .location,
+      .teacher {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+
+        mat-icon {
+          font-size: 16px;
+          height: 16px;
+          width: 16px;
+          margin-right: 8px;
+        }
+      }
+    }
+  }
+}
+
+// Color classes
+.primary-light {
+  background-color: rgba(63, 81, 181, 0.1);
+  .time-info {
+    background-color: rgba(63, 81, 181, 0.15);
+  }
+}
+
+.accent-light {
+  background-color: rgba(255, 64, 129, 0.1);
+  .time-info {
+    background-color: rgba(255, 64, 129, 0.15);
+  }
+}
+
+.warn-light {
+  background-color: rgba(244, 67, 54, 0.1);
+  .time-info {
+    background-color: rgba(244, 67, 54, 0.15);
+  }
+}
+
+.success-light {
+  background-color: rgba(76, 175, 80, 0.1);
+  .time-info {
+    background-color: rgba(76, 175, 80, 0.15);
+  }
+}
+
+.grey-light {
+  background-color: rgba(158, 158, 158, 0.1);
+  .time-info {
+    background-color: rgba(158, 158, 158, 0.15);
+  }
+}

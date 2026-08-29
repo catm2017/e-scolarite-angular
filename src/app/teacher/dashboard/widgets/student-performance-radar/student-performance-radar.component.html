@@ -1,0 +1,28 @@
+<mat-card class="modern-card">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">radar</mat-icon> Class Performance Profile</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <apx-chart [series]="chartOptions.series!" [chart]="chartOptions.chart!" [xaxis]="chartOptions.xaxis!"
+      [stroke]="chartOptions.stroke!" [colors]="chartOptions.colors!" [dataLabels]="chartOptions.dataLabels!"
+      [tooltip]="chartOptions.tooltip!" [fill]="chartOptions.fill!" [markers]="chartOptions.markers!">
+    </apx-chart>
+
+    <div class="performance-insights">
+      <div class="insight-item">
+        <div class="insight-icon bg-light-green"><i class="fas fa-arrow-up col-green"></i></div>
+        <div class="insight-text">
+          <span class="insight-label">Strongest Area</span>
+          <span class="insight-value">Assignments (95%)</span>
+        </div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-icon bg-light-orange"><i class="fas fa-arrow-down col-orange"></i></div>
+        <div class="insight-text">
+          <span class="insight-label">Needs Focus</span>
+          <span class="insight-value">Attendance (70%)</span>
+        </div>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>

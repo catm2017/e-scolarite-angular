@@ -1,0 +1,47 @@
+<div class="access-page">
+  <header>
+    <a routerLink="/demo/joyau-du-savoir" class="brand"><b>J</b><span>Institut Le Joyau du Savoir<small>Portail sécurisé E‑Scolarité</small></span></a>
+    <nav class="public-menu" aria-label="Navigation du site">
+      <a routerLink="/demo/joyau-du-savoir">Accueil</a>
+      <a routerLink="/demo/joyau-du-savoir" [queryParams]="{ page: 'schools' }">Nos écoles</a>
+      <a routerLink="/demo/joyau-du-savoir" [queryParams]="{ page: 'about' }">À propos</a>
+      <a routerLink="/demo/joyau-du-savoir" [queryParams]="{ page: 'admission' }">Admission</a>
+      <a routerLink="/demo/joyau-du-savoir" [queryParams]="{ page: 'contact' }">Contact</a>
+    </nav>
+    <a routerLink="/demo/joyau-du-savoir" class="back-link"><span>arrow_back</span>Retour au site</a>
+  </header>
+
+  <main>
+    <section class="access-intro">
+      <div class="intro-logo">J</div>
+      <small>ESPACE UTILISATEUR</small>
+      <h1>Accédez à votre espace E‑Scolarité.</h1>
+      <p>Votre compte vous dirige automatiquement vers les établissements, campus et fonctionnalités auxquels vous êtes rattaché.</p>
+      <div class="security-points">
+        <span><i>verified_user</i>Accès selon les autorisations</span>
+        <span><i>account_tree</i>Espaces et campus rattachés</span>
+        <span><i>lock</i>Connexion sécurisée</span>
+      </div>
+    </section>
+
+    <section class="access-card">
+      <div class="card-heading">
+        <small>CONNEXION</small>
+        <h2>Bienvenue</h2>
+        <p>Identifiez-vous pour rejoindre votre espace.</p>
+      </div>
+      <label>Adresse e-mail ou téléphone<input [(ngModel)]="emailOrPhone" placeholder="ex. nom@ecole.sn ou +221 77…" autocomplete="username" /></label>
+      <label>Mot de passe<div class="password-field"><input type="password" [(ngModel)]="password" placeholder="Votre mot de passe" autocomplete="current-password" /><span>visibility_off</span></div></label>
+      <a href="#" class="forgot">Mot de passe oublié ?</a>
+      <section class="profile-demo">
+        <div><strong>Profil de démonstration</strong><small>La production reconnaîtra ce profil et ses rattachements après authentification.</small></div>
+        <select [ngModel]="profileId()" (ngModelChange)="profileId.set($event)">
+          @for (profile of profiles; track profile.id) { <option [value]="profile.id">{{ profile.label }}</option> }
+        </select>
+        <p><span>account_tree</span>{{ selectedProfile().detail }}</p>
+      </section>
+      <button type="button" class="primary-action" (click)="authenticate()">Se connecter<span>arrow_forward</span></button>
+      <div class="card-footer">Votre compte est créé par l’établissement. Contactez son administration si vous n’avez pas reçu vos identifiants.</div>
+    </section>
+  </main>
+</div>

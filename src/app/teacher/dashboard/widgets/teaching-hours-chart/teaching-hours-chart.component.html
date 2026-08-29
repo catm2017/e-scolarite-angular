@@ -1,0 +1,21 @@
+<mat-card class="modern-card">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">access_time</mat-icon> Weekly Hours</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="summary-stats">
+      <div class="stat-item">
+        <h4 class="col-indigo font-20 mb-0">30h</h4>
+        <span class="text-muted font-12">Total Teaching</span>
+      </div>
+      <div class="stat-item">
+        <h4 class="col-green font-20 mb-0">15h</h4>
+        <span class="text-muted font-12">Total Prep</span>
+      </div>
+    </div>
+    <apx-chart [series]="chartOptions.series!" [chart]="chartOptions.chart!" [xaxis]="chartOptions.xaxis!"
+      [stroke]="chartOptions.stroke!" [colors]="chartOptions.colors!" [dataLabels]="chartOptions.dataLabels!"
+      [tooltip]="chartOptions.tooltip!" [fill]="chartOptions.fill!" [yaxis]="chartOptions.yaxis!">
+    </apx-chart>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,107 @@
+.attendance-overview {
+  .header-style {
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    mat-card-title {
+      margin-bottom: 0;
+    }
+
+    .class-selector {
+      width: 120px;
+      margin: 0;
+      font-size: 14px;
+
+      ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+      }
+
+      ::ng-deep .mat-mdc-form-field-infix {
+        padding: 8px 0;
+        min-height: auto;
+      }
+    }
+  }
+
+  .chart-container {
+    margin: 0 auto;
+    max-width: 400px;
+  }
+
+  .attendance-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 16px;
+    padding: 0 16px;
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: 8px 16px;
+    border-radius: 4px;
+    min-width: 80px;
+
+    &.present {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: #4caf50;
+    }
+
+    &.absent {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: #f44336;
+    }
+
+    &.late {
+      background-color: rgba(255, 152, 0, 0.1);
+      color: #ff9800;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+  }
+
+  .total-students {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 14px;
+  }
+
+  mat-card-actions {
+    padding: 8px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .attendance-overview {
+    .header-style {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .class-selector {
+        width: 100%;
+        margin-top: 8px;
+      }
+    }
+
+    .attendance-stats {
+      flex-direction: column;
+
+      .stat-item {
+        margin-bottom: 8px;
+        width: 100%;
+      }
+    }
+  }
+}

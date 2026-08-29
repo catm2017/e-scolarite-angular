@@ -1,0 +1,336 @@
+/* Budget Overview Styles */
+.budget-overview {
+  .budget-summary {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+
+    .summary-item h3 {
+      font-size: 24px;
+      letter-spacing: -0.5px;
+    }
+  }
+
+  .custom-progress-main {
+    height: 8px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    overflow: visible;
+
+    .progress-bar {
+      border-radius: 8px;
+      position: relative;
+      /* Add subtle glow to the main progress bar */
+      &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0.4) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        border-radius: 8px;
+      }
+    }
+  }
+
+  .budget-allocation {
+    .budget-item {
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      margin-left: -12px;
+      margin-right: -12px;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+        transform: translateY(-2px);
+      }
+    }
+  }
+
+  .custom-progress-item {
+    height: 6px;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+
+    .progress-bar {
+      border-radius: 6px;
+    }
+
+    /* We override the bootstrap background classes to look more modern */
+    .bg-primary {
+      background-color: #6366f1 !important;
+    }
+    .bg-success {
+      background-color: #10b981 !important;
+    }
+    .bg-info {
+      background-color: #0ea5e9 !important;
+    }
+    .bg-warning {
+      background-color: #f59e0b !important;
+    }
+    .bg-danger {
+      background-color: #ef4444 !important;
+    }
+  }
+}
+
+/* Dark Mode Overrides for Budget Overview */
+::ng-deep .dark .budget-overview,
+::ng-deep body.dark .budget-overview {
+  .budget-summary {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    .summary-item h3 {
+      color: #e2e8f0;
+    }
+    .summary-item span {
+      color: #94a3b8 !important;
+    }
+  }
+
+  .custom-progress-main,
+  .custom-progress-item {
+    background-color: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .budget-allocation {
+    h5 {
+      color: #94a3b8 !important;
+    }
+    .budget-item {
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.04);
+      }
+      span {
+        color: #e2e8f0 !important;
+      }
+    }
+  }
+}
+
+/* Glassmorphism Overrides for Budget Overview */
+::ng-deep body.layout-glassmorphism {
+  .budget-overview {
+    .budget-summary {
+      border-bottom-color: rgba(255, 255, 255, 0.4);
+      .summary-item h3 {
+        color: #1e293b;
+        text-shadow: none;
+      }
+      .summary-item span {
+        color: #475569 !important;
+      }
+    }
+
+    .custom-progress-main,
+    .custom-progress-item {
+      background-color: rgba(255, 255, 255, 0.4);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .budget-allocation {
+      h5 {
+        color: #64748b !important;
+      }
+      .budget-item {
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        span {
+          color: #1e293b !important;
+        }
+      }
+    }
+  }
+
+  &.dark .budget-overview {
+    .budget-summary {
+      border-bottom-color: rgba(255, 255, 255, 0.15);
+      .summary-item h3 {
+        color: #fff;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .summary-item span {
+        color: rgba(255, 255, 255, 0.8) !important;
+      }
+    }
+
+    .custom-progress-main,
+    .custom-progress-item {
+      background-color: rgba(255, 255, 255, 0.15);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .budget-allocation {
+      h5 {
+        color: rgba(255, 255, 255, 0.7) !important;
+      }
+      .budget-item {
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.08);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        span {
+          color: #fff !important;
+        }
+      }
+    }
+  }
+}
+
+/* Library Statistics Styles */
+.library-stat-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.popular-books {
+  .book-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+/* Staff Performance Metrics Styles */
+.staff-metrics-summary {
+  padding-top: 1.5rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+
+  .metric-item {
+    position: relative;
+
+    &:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 15%;
+      height: 70%;
+      width: 1px;
+      background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    h5 {
+      font-size: 18px;
+      letter-spacing: -0.3px;
+    }
+  }
+}
+
+/* Dark Mode Overrides for Staff Performance */
+::ng-deep .dark .staff-metrics-summary,
+::ng-deep body.dark .staff-metrics-summary {
+  border-top-color: rgba(255, 255, 255, 0.1);
+  .metric-item {
+    &::after {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    h5 {
+      color: #e2e8f0;
+    }
+    span,
+    small {
+      color: #94a3b8 !important;
+    }
+  }
+}
+
+/* Glassmorphism Overrides for Staff Performance */
+::ng-deep body.layout-glassmorphism {
+  .staff-metrics-summary {
+    border-top-color: rgba(255, 255, 255, 0.4);
+    .metric-item {
+      &::after {
+        background-color: rgba(0, 0, 0, 0.08);
+      }
+      h5 {
+        color: #1e293b;
+        text-shadow: none;
+      }
+    }
+  }
+
+  &.dark .staff-metrics-summary {
+    border-top-color: rgba(255, 255, 255, 0.15);
+    .metric-item {
+      &::after {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+      h5 {
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      span,
+      small {
+        color: rgba(255, 255, 255, 0.8) !important;
+      }
+    }
+  }
+}
+
+/* Transportation Management Styles */
+.transport-stat-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.bus-status {
+  .bus-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.status-circle {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.status-active {
+  background-color: #4caf50;
+}
+
+.status-leave {
+  background-color: #ffc107;
+}
+
+.status-inactive {
+  background-color: #f44336;
+}
+
+/* Dark Mode Border Overrides for Dashboard Cards */
+::ng-deep .dark,
+::ng-deep body.dark {
+  .book-item,
+  .bus-item,
+  h5.border-bottom {
+    border-bottom-color: rgba(234, 229, 229, 0.12) !important;
+  }
+  .p-3.border {
+    border-color: rgba(234, 229, 229, 0.12) !important;
+  }
+}

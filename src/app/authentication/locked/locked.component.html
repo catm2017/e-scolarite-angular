@@ -1,0 +1,49 @@
+<div class="auth-centered-container">
+  <!-- Decorative Background Shapes -->
+  <div class="shape shape-1"></div>
+  <div class="shape shape-2"></div>
+  <div class="shape shape-3"></div>
+
+  <div class="glass-card text-center">
+    <div class="brand-logo mb-4">
+      <img src="assets/images/logo.png" alt="Smart School Logo" class="logo-img" height="36">
+    </div>
+
+    <div class="user-avatar-wrap mb-3">
+      <div class="avatar-ring">
+        <img [src]="userImg || 'assets/images/user/student.jpg'" alt="User Profile" class="avatar-img">
+        <span class="status-badge"><i class="fas fa-lock"></i></span>
+      </div>
+    </div>
+
+    <h3 class="user-name mb-1">{{userFullName || 'User'}}</h3>
+    <p class="status-text text-muted mb-4">Session is currently locked</p>
+
+    <form class="validate-form" [formGroup]="authForm" (ngSubmit)="onSubmit()">
+      <div class="mb-4">
+        <mat-form-field class="example-full-width" appearance="outline">
+          <mat-label>Enter Password</mat-label>
+          <input matInput formControlName="password" [type]="hide ? 'password' : 'text'" placeholder="••••••••" required>
+          <mat-icon matSuffix (click)="hide = !hide" class="pwd-toggle-icon">
+            {{hide ? 'visibility_off' : 'visibility'}}
+          </mat-icon>
+          @if (authForm.get('password')?.hasError('required')) {
+          <mat-error>Password is required to unlock</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="container-auth-form-btn mb-4">
+        <button mat-flat-button color="primary" class="auth-form-btn modern-btn" [disabled]="!authForm.valid" type="submit">
+          <span>Unlock Session</span> <i class="fas fa-unlock ms-2"></i>
+        </button>
+      </div>
+
+      <div class="text-center">
+        <a routerLink="/authentication/signin" class="switch-account-link">
+          Sign in as a different user
+        </a>
+      </div>
+    </form>
+  </div>
+</div>

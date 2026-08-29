@@ -1,0 +1,103 @@
+<mat-card class="modern-card hostel-mess-card shadow-sm">
+  <div class="header-menu d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <mat-icon class="header-icon me-2 text-primary material-icons-outlined">home_work</mat-icon>
+      <h5 class="font-18 font-weight-bold mb-0">Hostel & Mess Services</h5>
+    </div>
+  </div>
+  
+  <mat-card-content class="pt-0 card-content-flex h-100">
+    <mat-tab-group animationDuration="300ms" class="flex-grow-1 d-flex flex-column h-100">
+      <!-- Hostel Occupancy Tab -->
+      <mat-tab label="Hostel Occupancy">
+        <ng-scrollbar style="height: 370px" visibility="hover">
+          <div class="tab-content-container pt-3">
+            @for (block of blocks; track block.id) {
+              <div class="block-item mb-3 p-3 rounded border">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="d-flex align-items-center">
+                    <div class="gender-icon-wrapper me-3 d-flex align-items-center justify-content-center rounded"
+                      [ngClass]="block.gender === 'Boys' ? 'bg-primary-subtle text-primary' : 'bg-danger-subtle text-danger'">
+                      <mat-icon class="gender-icon font-18">
+                        {{ block.gender === 'Boys' ? 'male' : 'female' }}
+                      </mat-icon>
+                    </div>
+                    <div>
+                      <h6 class="mb-0 font-weight-bold font-14">{{ block.name }}</h6>
+                      <span class="badge mt-1" [ngClass]="block.gender === 'Boys' ? 'bg-primary-subtle text-primary' : 'bg-danger-subtle text-danger'">
+                        {{ block.gender }} Block
+                      </span>
+                    </div>
+                  </div>
+                  <div class="text-end d-flex flex-column align-items-end">
+                    <span class="occupancy-stats font-13 font-weight-600">
+                      {{ block.occupied }} / {{ block.capacity }} <span class="text-muted font-11">beds</span>
+                    </span>
+                    <span class="percentage-badge mt-1" [ngClass]="getOccupancyRate(block.occupied, block.capacity) >= 90 ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary'">
+                      {{ getOccupancyRate(block.occupied, block.capacity) }}% Occupied
+                    </span>
+                  </div>
+                </div>
+                <div class="progress-bar-wrapper">
+                  <mat-progress-bar [mode]="'determinate'" [value]="getOccupancyRate(block.occupied, block.capacity)"
+                    [color]="getOccupancyRate(block.occupied, block.capacity) >= 90 ? 'warn' : 'primary'"></mat-progress-bar>
+                </div>
+              </div>
+            }
+          </div>
+        </ng-scrollbar>
+      </mat-tab>
+
+      <!-- Daily Mess Menu Tab -->
+      <mat-tab label="Today's Meal Menu">
+        <ng-scrollbar style="height: 370px" visibility="hover">
+          <div class="tab-content-container pt-3">
+            @for (meal of menuToday; track meal.id) {
+              <div class="meal-item p-3 mb-2 border rounded d-flex align-items-start">
+                <div class="meal-icon-container me-3 d-flex align-items-center justify-content-center rounded"
+                  [ngClass]="{
+                    'bg-primary-subtle text-primary': meal.meal === 'Breakfast',
+                    'bg-success-subtle text-success': meal.meal === 'Lunch',
+                    'bg-warning-subtle text-warning': meal.meal === 'Snacks',
+                    'bg-danger-subtle text-danger': meal.meal === 'Dinner'
+                  }">
+                  <mat-icon class="meal-icon font-18">
+                    @if (meal.meal === 'Breakfast') { free_breakfast }
+                    @else if (meal.meal === 'Lunch') { restaurant }
+                    @else if (meal.meal === 'Snacks') { local_cafe }
+                    @else if (meal.meal === 'Dinner') { dinner_dining }
+                  </mat-icon>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="meal-tag font-weight-bold font-14"
+                      [ngClass]="{
+                        'text-primary': meal.meal === 'Breakfast',
+                        'text-success': meal.meal === 'Lunch',
+                        'text-warning': meal.meal === 'Snacks',
+                        'text-danger': meal.meal === 'Dinner'
+                      }">{{ meal.meal }}</span>
+                    
+                    <div class="d-flex align-items-center">
+                      <div class="stars-list d-flex align-items-center me-2">
+                        @for (star of getStarArray(meal.rating); track $index) {
+                          <mat-icon class="star-icon font-14 text-warning">
+                            @if (star === 1) { star } 
+                            @else if (star === 0.5) { star_half } 
+                            @else { star_border }
+                          </mat-icon>
+                        }
+                      </div>
+                      <span class="font-11 text-muted">({{ meal.totalReviews }} reviews)</span>
+                    </div>
+                  </div>
+                  <p class="mb-0 font-13 text-muted italic mt-1">"{{ meal.menu }}"</p>
+                </div>
+              </div>
+            }
+          </div>
+        </ng-scrollbar>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card-content>
+</mat-card>

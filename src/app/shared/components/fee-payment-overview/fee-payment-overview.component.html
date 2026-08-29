@@ -1,0 +1,42 @@
+<mat-card class="modern-card fee-payment-card">
+
+  <mat-card-header class="header-menu">
+    <mat-card-title>
+      <mat-icon class="card-title-icon material-icons-outlined">monetization_on</mat-icon>
+      Fee Payment Status
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="overview-container">
+      <!-- Payment Status Chart -->
+      <div class="chart-container">
+        <div class="chart-wrapper">
+          <apx-chart [series]="feeChartOptions.series!" [chart]="feeChartOptions.chart!"
+            [labels]="feeChartOptions.labels!" [responsive]="feeChartOptions.responsive!"
+            [dataLabels]="feeChartOptions.dataLabels!" [legend]="feeChartOptions.legend!"
+            [colors]="feeChartOptions.colors!" [tooltip]="feeChartOptions.tooltip!"></apx-chart>
+        </div>
+
+        <div class="payment-summary">
+          <div class="summary-item">
+            <div class="label">Total Students</div>
+            <div class="value">{{paymentSummary.total}}</div>
+          </div>
+          <div class="summary-item paid">
+            <div class="label">Paid</div>
+            <div class="value">{{paymentSummary.paid}}%</div>
+          </div>
+          <div class="summary-item pending">
+            <div class="label">Pending</div>
+            <div class="value">{{paymentSummary.pending}}%</div>
+          </div>
+          <div class="summary-item overdue">
+            <div class="label">Overdue</div>
+            <div class="value">{{paymentSummary.overdue}}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>

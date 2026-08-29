@@ -1,0 +1,317 @@
+{
+  "LOGIN": {
+    "TITLE": "Welcome to Smart"
+  },
+  "MENUITEMS": {
+    "MAIN": {
+      "TEXT": "Main"
+    },
+    "FRONT-OFFICE": {
+      "TEXT": "Front Office",
+      "LIST": {
+        "ADMISSION": "Admission Inquiry",
+        "VISITORS": "Visitors Book",
+        "COMPLAINTS": "Complaints"
+      }
+    },
+    "DASHBOARD": {
+      "TEXT": "Dashboard",
+      "LIST": {
+        "DASHBOARD1": "Dashboard 1",
+        "DASHBOARD2": "Dashboard 2",
+        "TEACHER-DASHBOARD": "Teacher Dashboard",
+        "STUDENT-DASHBOARD": "Student Dashboard",
+        "LIBRARY-DASHBOARD": "Library Dashboard",
+        "TRANSPORT-DASHBOARD": "Transport Dashboard"
+      }
+    },
+    "TEACHERS": {
+      "TEXT": "Teachers",
+      "LIST": {
+        "ALL-TEACHERS": "All Teachers",
+        "ADD-TEACHER": "Add Teacher",
+        "EDIT-TEACHER": "Edit Teacher",
+        "ABOUT-TEACHER": "About Teacher",
+        "TEACHER-TIMETABLE": "Teacher Timetable",
+        "ASSIGN-CLASS-TEACHER": "Assign Class Teacher"
+      }
+    },
+    "STUDENTS": {
+      "TEXT": "Students",
+      "LIST": {
+        "ALL-STUDENTS": "All Students",
+        "ADD-STUDENT": "Add Student",
+        "EDIT-STUDENT": "Edit Student",
+        "ABOUT-STUDENT": "About Student",
+        "STUDENT-ATTENDANCE": "Student Attendance",
+        "STUDENT-PROMOTION": "Student Promotion",
+        "STUDENT-CERTIFICATES": "Student Certificates",
+        "STUDENT-DISCIPLINE": "Student Discipline",
+        "STUDENT-HEALTH-RECORDS": "Student Health Records",
+        "ID-CARD-GENERATOR": "ID Card Generator"
+      }
+    },
+    "ADMISSIONS": {
+      "TEXT": "Admissions",
+      "LIST": {
+        "ADMISSION-ENQUIRIES": "Admission Enquiries",
+        "ONLINE-APPLICATIONS": "Online Applications",
+        "ENTRANCE-EXAMS": "Entrance Exams",
+        "MERIT-LIST": "Merit List",
+        "SEAT-ALLOCATION": "Seat Allocation"
+      }
+    },
+    "EXAMINATION": {
+      "TEXT": "Examination",
+      "LIST": {
+        "EXAM-TYPES": "Exam Types",
+        "EXAM-SCHEDULE": "Exam Schedule",
+        "HALL-ALLOCATION": "Hall Allocation",
+        "MARKS-ENTRY": "Marks Entry",
+        "RESULT-GENERATION": "Result Generation",
+        "REPORT-CARDS": "Report Cards",
+        "QUIZ-BUILDER": "Quiz Builder"
+      }
+    },
+    "COURSES": {
+      "TEXT": "Courses",
+      "LIST": {
+        "ALL-COURSES": "All Courses",
+        "ADD-COURSE": "Add Course",
+        "EDIT-COURSE": "Edit Course",
+        "ABOUT-COURSE": "About Course"
+      }
+    },
+    "LIBRARY": {
+      "TEXT": "Library",
+      "LIST": {
+        "ALL-LIBRARY": "All Library Assets",
+        "ADD-LIBRARY": "Add Library Asset",
+        "EDIT-LIBRARY": "Edit Library Asset",
+        "BOOK-STATUS": "Book Status",
+        "ISSUE-RETURN": "Issue Return",
+        "LIBRARY-REPORTS": "Library Reports"
+      }
+    },
+    "DEPARTMENTS": {
+      "TEXT": "Departments",
+      "LIST": {
+        "ALL-DEPARTMENT": "All Departments",
+        "ADD-DEPARTMENT": "Add Department",
+        "EDIT-DEPARTMENT": "Edit Department"
+      }
+    },
+    "STAFF": {
+      "TEXT": "Staff",
+      "LIST": {
+        "ALL-STAFF": "All Staff",
+        "ADD-STAFF": "Add Staff",
+        "EDIT-STAFF": "Edit Staff",
+        "ABOUT-STAFF": "About Staff",
+        "STAFF-ATTENDANCE": "Staff Attendance"
+      }
+    },
+    "HOLIDAY": {
+      "TEXT": "Holiday",
+      "LIST": {
+        "ALL-HOLIDAY": "All Holiday",
+        "ADD-HOLIDAY": "Add Holiday",
+        "EDIT-HOLIDAY": "Edit Holiday"
+      }
+    },
+    "COMMUNICATION": {
+      "TEXT": "Communication",
+      "LIST": {
+        "NOTICE-BOARD": "Notice Board",
+        "ANNOUNCEMENTS": "Announcements",
+        "SMS-EMAIL": "SMS / Email"
+      }
+    },
+    "REPORTS": {
+      "TEXT": "Reports",
+      "LIST": {
+        "ACADEMIC-REPORTS": "Academic Reports",
+        "ATTENDANCE-REPORTS": "Attendance Reports",
+        "FEE-REPORTS": "Fee Reports",
+        "EXAM-REPORTS": "Exam Reports",
+        "CUSTOM-REPORTS": "Custom Reports"
+      }
+    },
+    "SETTINGS": {
+      "TEXT": "Settings",
+      "LIST": {
+        "INSTITUTE-PROFILE": "Institute Profile",
+        "ROLE-PERMISSIONS": "Role & Permissions",
+        "USER-MANAGEMENT": "User Management",
+        "ACADEMIC-RULES": "Academic Rules",
+        "NOTIFICATION-SETTINGS": "Notification Settings",
+        "SYSTEM-LOGS": "System Logs",
+        "BACKUP-RESTORE": "Backup & Restore",
+        "AI-SETTINGS": "AI Settings"
+      }
+    },
+    "FEES": {
+      "TEXT": "Fees",
+      "LIST": {
+        "ALL-FEES": "All Fees",
+        "ADD-FEES": "Add fees",
+        "EDIT-FEES": "Edit fees",
+        "FEES-TYPE": "Fees Type",
+        "FEES-DISCOUNT": "Fees Discount",
+        "FEE-RECEIPT": "Fee Receipt"
+      }
+    },
+    "CLASS": {
+      "TEXT": "Class",
+      "LIST": {
+        "CLASS-LIST": "Class List",
+        "CLASS-TIMETABLE": "Class Timetable"
+      }
+    },
+    "ACADEMICS": {
+      "TEXT": "Academics",
+      "LIST": {
+        "ACADEMIC-YEAR": "Academic Year",
+        "SESSIONS": "Sessions / Semesters",
+        "CLASSES": "Classes",
+        "SUBJECTS": "Subjects",
+        "COURSE-CURRICULUM": "Course Curriculum",
+        "ASSIGNMENT": "Class & Subject Assignment",
+        "LESSON-PLANNING": "Lesson Planning"
+      }
+    },
+    "HOSTEL": {
+      "TEXT": "Hostel",
+      "LIST": {
+        "ROOM-LIST": "Room List",
+        "ROOM-TYPE": "Room Type",
+        "ALLOCATIONS": "Allocations",
+        "ATTENDANCE": "Hostel Attendance",
+        "HOSTEL-FEES": "Hostel Fees"
+      }
+    },
+    "HR": {
+      "TEXT": "Human Resources",
+      "LIST": {
+        "LEAVE-REQUESTS": "Employee Leave Requests",
+        "LEAVE-BALANCE": "Employee Leave Balance",
+        "LEAVE-TYPES": "Leave Types",
+        "HOLIDAYS": "Holidays",
+        "TODAY-ATTENDANCE": "Today's Attendance",
+        "ATTENDANCE-DETAIL": "Attendance Detail",
+        "ATTENDANCE-SHEET": "Attendance Sheet",
+        "EMPLOYEE-SALARY": "Employee Salary",
+        "PAYSLIP": "Payslip"
+      }
+    },
+    "TEACHER": {
+      "TEXT": "Teacher",
+      "LIST": {
+        "AI-LESSON-PLANNER": "AI Lesson Planner",
+        "DASHBOARD": "Dashboard",
+        "TODAY-SCHEDULE": "Today's Schedule",
+        "ATTENDANCE-SUMMARY": "Attendance Summary",
+        "ACADEMICS": "Academics",
+        "STUDY-MATERIALS": "Study Materials",
+        "STUDENTS": "Students",
+        "STUDENT-PERFORMANCE": "Student Performance",
+        "EXAMINATION": "Examination",
+        "GRADE-SUBMISSION": "Grade Submission",
+        "RESULT-PREVIEW": "Result Preview",
+        "TIMETABLE": "Timetable",
+        "MY-TIMETABLE": "My Timetable",
+        "SUBSTITUTION-REQUESTS": "Substitution Requests",
+        "COMMUNICATION": "Communication",
+        "MESSAGES": "Messages",
+        "ATTENDANCE": "Attendance",
+        "DAILY-ATTENDANCE": "Daily Attendance",
+        "ATTENDANCE-HISTORY": "Attendance History",
+        "ATTENDANCE-CALENDAR": "Attendance Calendar",
+        "LEAVE": "Leave",
+        "APPLY-LEAVE": "Apply Leave",
+        "LEAVE-STATUS": "Leave Status",
+        "MY-PROFILE": "My Profile",
+        "DOCUMENTS": "Documents",
+        "CHANGE-PASSWORD": "Change Password",
+        "LECTURES": "Lectures",
+        "LEAVE-REQUEST": "Leave Request",
+        "EXAM-SCHEDULE": "Exam Schedule",
+        "MY-CLASSES": "My Classes",
+        "SUBJECTS-TAUGHT": "Subject Taught",
+        "PROFILE": "Profile",
+        "SETTINGS": "Settings"
+      }
+    },
+    "STUDENT": {
+      "TEXT": "Student",
+      "LIST": {
+        "AI-STUDY-COMPANION": "AI Study Companion",
+        "DASHBOARD": "Dashboard",
+        "HOMEWORK": "Homework",
+        "LEAVE-REQUEST": "Leave Request",
+        "TIME-TABLE": "Time Table",
+        "UPCOMING-EXAMS": "Upcoming Exams",
+        "MY-CLASS": "My Class",
+        "MY-SUBJECTS": "My Subjects",
+        "ANNOUNCEMENTS": "Announcements",
+        "ACADEMICS": "Academics",
+        "SYLLABUS": "Syllabus",
+        "ASSIGNMENTS": "Assignments",
+        "STUDY-MATERIALS": "Study Materials",
+        "ACADEMIC-CALENDAR": "Academic Calendar",
+        "ATTENDANCE": "Attendance",
+        "MONTHLY-SUMMARY": "Monthly Summary",
+        "MY-ATTENDANCE": "My Attendance",
+        "ATTENDANCE-SUMMARY": "Attendance Summary",
+        "ATTENDANCE-CALENDAR": "Attendance Calendar",
+        "FEES": "Fees",
+        "FEE-RECEIPTS": "Fee Receipts",
+        "DUE-FEES": "Due Fees",
+        "FEE-DETAILS": "Fee Details",
+        "ONLINE-PAYMENT": "Online Payment",
+        "LIBRARY": "Library",
+        "MY-ISSUED-BOOKS": "My Issued Books",
+        "DUE-DATES": "Due Dates",
+        "BOOK-HISTORY": "Book History",
+        "TRANSPORT": "Transport",
+        "MY-ROUTE": "My Route",
+        "VEHICLE-DETAILS": "Vehicle Details",
+        "HOSTEL": "Hostel",
+        "ROOM-DETAILS": "Room Details",
+        "HOSTEL-FEES": "Hostel Fees",
+        "COMPLAINTS": "Complaints",
+        "EXAMINATION": "Examination",
+        "EXAM-SCHEDULE": "Exam Schedule",
+        "HALL-TICKET": "Hall Ticket",
+        "MARKS": "Marks",
+        "REPORT-CARD": "Report Card",
+        "RESULTS": "Results",
+        "NOTICES": "Notices",
+        "PROFILE": "Profile",
+        "SETTINGS": "Settings"
+      }
+    },
+    "APPS": {
+      "TEXT": "Apps"
+    },
+    "CALENDAR": {
+      "TEXT": "Calendar"
+    },
+    "TASK": {
+      "TEXT": "Task"
+    },
+    "CONTACTS": {
+      "TEXT": "Contacts"
+    },
+    "TRANSPORT": {
+      "TEXT": "Transport",
+      "LIST": {
+        "VEHICLES": "Vehicles",
+        "ROUTES": "Routes",
+        "DRIVERS": "Drivers",
+        "STUDENT-ALLOCATION": "Student Allocation",
+        "TRANSPORT-FEES": "Transport Fees"
+      }
+    }
+  }
+}

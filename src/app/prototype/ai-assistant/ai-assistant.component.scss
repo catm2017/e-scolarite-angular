@@ -1,0 +1,467 @@
+:host {
+  --assistant-blue: #2f80ed;
+  --assistant-ink: #27445f;
+  font-family: Inter, Poppins, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.assistant-wrapper {
+  position: fixed;
+  right: 24px;
+  bottom: 22px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.assistant-fab {
+  width: 62px;
+  height: 62px;
+  flex: 0 0 62px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #55b9f3, var(--assistant-blue));
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 13px 30px rgba(47, 128, 237, 0.34);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.assistant-fab:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 16px 35px rgba(47, 128, 237, 0.4);
+}
+
+.assistant-fab:focus-visible {
+  outline: 3px solid rgba(47, 128, 237, 0.25);
+  outline-offset: 4px;
+}
+
+.assistant-fab span {
+  font-family: 'Material Icons';
+  font-size: 29px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.assistant-fab.fab-open {
+  background: #27445f;
+}
+
+.assistant-label {
+  padding: 9px 13px;
+  border: 1px solid #dcebf7;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #526d84;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+  box-shadow: 0 8px 22px rgba(41, 83, 119, 0.12);
+  animation: label-in 280ms ease both;
+}
+
+.assistant-panel {
+  position: absolute;
+  right: 0;
+  bottom: 78px;
+  width: 390px;
+  height: min(610px, calc(100vh - 120px));
+  padding: 0;
+  border: 1px solid rgba(210, 234, 250, 0.95);
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(248, 252, 255, 0.96);
+  color: var(--assistant-ink);
+  box-shadow: 0 24px 65px rgba(30, 71, 106, 0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(24px) scale(0.94);
+  transform-origin: bottom right;
+  transition: opacity 220ms ease, transform 260ms ease, visibility 220ms ease;
+}
+
+.open .assistant-panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.assistant-panel > header {
+  height: auto;
+  min-height: 78px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e5f0f8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  line-height: normal;
+}
+
+.assistant-identity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.assistant-avatar {
+  width: 43px;
+  height: 43px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(145deg, #64c3f4, var(--assistant-blue));
+  box-shadow: 0 8px 18px rgba(47, 128, 237, 0.24);
+}
+
+.assistant-avatar > i,
+.close-button > i,
+.shortcuts i,
+.composer i {
+  font-family: 'Material Icons';
+  font-style: normal;
+}
+
+.assistant-avatar > i {
+  font-size: 22px;
+}
+
+.assistant-identity strong,
+.assistant-identity small {
+  display: block;
+}
+
+.assistant-identity strong {
+  font-size: 15px;
+}
+
+.assistant-identity small {
+  margin-top: 4px;
+  color: #73889a;
+  font-size: 11px;
+}
+
+.assistant-identity small i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #35b781;
+  box-shadow: 0 0 0 3px #e3f7ef;
+}
+
+.close-button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eff5f9;
+  color: #526b80;
+  cursor: pointer;
+}
+
+.close-button > i {
+  font-size: 18px;
+}
+
+.assistant-context {
+  margin: 14px 16px 4px;
+  padding: 11px 12px;
+  border: 1px solid #dcecf8;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #edf8ff;
+}
+
+.assistant-context > span {
+  font-family: 'Material Icons';
+  color: var(--assistant-blue);
+  font-size: 20px;
+}
+
+.assistant-context p,
+.assistant-context strong {
+  display: block;
+  margin: 0;
+}
+
+.assistant-context p {
+  color: #688095;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.assistant-context strong {
+  color: var(--assistant-ink);
+  font-size: 12px;
+}
+
+.messages {
+  min-height: 0;
+  flex: 1;
+  padding: 15px 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.messages article {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.message-avatar {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--assistant-blue);
+  color: #fff;
+  font: italic 700 13px Georgia, serif;
+}
+
+.messages article > div {
+  max-width: 82%;
+}
+
+.messages p {
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid #e2edf5;
+  border-radius: 15px 15px 15px 4px;
+  background: #fff;
+  color: #3b566d;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 5px 15px rgba(44, 83, 116, 0.06);
+}
+
+.messages article small {
+  display: block;
+  margin-top: 4px;
+  color: #91a1af;
+  font-size: 9px;
+}
+
+.messages .user-message {
+  justify-content: flex-end;
+}
+
+.messages .user-message > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.messages .user-message p {
+  border-color: var(--assistant-blue);
+  border-radius: 15px 15px 4px 15px;
+  background: var(--assistant-blue);
+  color: #fff;
+}
+
+.typing {
+  min-width: 65px;
+  padding: 13px 15px;
+  border: 1px solid #e2edf5;
+  border-radius: 15px 15px 15px 4px;
+  display: flex;
+  gap: 5px;
+  background: #fff;
+}
+
+.typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7c9bb3;
+  animation: typing 1.2s infinite ease-in-out;
+}
+
+.typing i:nth-child(2) {
+  animation-delay: 140ms;
+}
+
+.typing i:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+.shortcuts {
+  padding: 5px 16px 11px;
+  display: flex;
+  gap: 8px;
+}
+
+.shortcuts button {
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #dceaf4;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  color: #4f6c83;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.shortcuts i {
+  color: var(--assistant-blue);
+  font-size: 16px;
+}
+
+.composer {
+  margin: 0 16px;
+  padding: 5px;
+  border: 1px solid #d9e8f3;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(40, 78, 109, 0.07);
+}
+
+.composer input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 4px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--assistant-ink);
+  font: 13px Inter, Poppins, Arial, sans-serif;
+}
+
+.composer input::placeholder {
+  color: #90a1af;
+}
+
+.voice-button,
+.send-button {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.voice-button {
+  background: transparent;
+  color: #6b8498;
+}
+
+.voice-button.listening {
+  background: #e6f4ff;
+  color: var(--assistant-blue);
+}
+
+.send-button {
+  background: var(--assistant-blue);
+  color: #fff;
+}
+
+.send-button:disabled {
+  background: #cbd9e4;
+  cursor: not-allowed;
+}
+
+.voice-button i,
+.send-button i {
+  font-size: 20px;
+}
+
+.assistant-note {
+  padding: 9px 16px 13px;
+  color: #93a3b0;
+  font-size: 9px;
+  text-align: center;
+}
+
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes label-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+
+@media (max-width: 600px) {
+  .assistant-wrapper {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .assistant-label {
+    display: none;
+  }
+
+  .assistant-panel {
+    width: calc(100vw - 24px);
+    height: min(620px, calc(100vh - 96px));
+    bottom: 72px;
+  }
+
+  .assistant-fab {
+    width: 56px;
+    height: 56px;
+    flex-basis: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-panel,
+  .assistant-fab,
+  .assistant-label,
+  .typing i {
+    animation: none;
+    transition: none;
+  }
+}

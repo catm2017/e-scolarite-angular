@@ -1,0 +1,57 @@
+<mat-card class="modern-card top-students-card">
+  <mat-card-header class="header-style">
+    <mat-card-title>
+      <mat-icon class="card-title-icon material-icons-outlined">stars</mat-icon> Top Performing Students
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="students-container">
+      <ng-scrollbar style="height: 400px" visibility="hover">
+        @for (student of processedStudents(); track student; let i = $index) {
+        <div class="student-card">
+          <div class="student-avatar-wrap">
+            <div class="student-avatar">
+              @if (student.avatar) {
+              <img [src]="student.avatar" [alt]="student.name">
+              } @else {
+              <div class="no-image">{{ student.name.charAt(0) }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="student-info">
+            <div class="info-top">
+              <h3 class="student-name">{{ student.name }}</h3>
+              <div class="score-display">
+                <span class="score-value">{{ student.score }}%</span>
+              </div>
+            </div>
+
+            <div class="info-middle">
+              <span class="subject-text text-muted">{{ student.subject }}</span>
+              @if (student.improvement !== undefined) {
+              <div class="improvement-badge" [ngClass]="getImprovementColor(student.improvement)">
+                <i class="fas"
+                  [ngClass]="student.improvement > 0 ? 'fa-arrow-up' : (student.improvement < 0 ? 'fa-arrow-down' : 'fa-minus')"></i>
+                <span>{{ student.improvement > 0 ? '+' : '' }}{{ student.improvement }}%</span>
+              </div>
+              }
+            </div>
+
+            @if (student.badges && student.badges.length > 0) {
+            <div class="badges-row mt-2">
+              @for (badge of student.badges; track badge) {
+              <div class="badge-icon" [ngClass]="getBadgeColor(badge)" [matTooltip]="getBadgeTooltip(badge)">
+                <mat-icon>{{ badge }}</mat-icon>
+              </div>
+              }
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </ng-scrollbar>
+    </div>
+  </mat-card-content>
+</mat-card>

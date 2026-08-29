@@ -1,0 +1,119 @@
+<!-- Search Trigger Pill inside Header (Desktop) -->
+<div class="search-bar-trigger d-none d-md-flex" (click)="openCommandPalette()">
+  <mat-icon class="search-trigger-icon">search</mat-icon>
+  <span class="placeholder-text">Rechercher un élève, une classe ou un paiement…</span>
+  <kbd class="shortcut-badge">Ctrl K</kbd>
+</div>
+
+<!-- Search Icon Trigger (Mobile) -->
+<button mat-icon-button class="nav-notification-icons d-block d-md-none" (click)="openCommandPalette()">
+  <mat-icon class="icon-color">search</mat-icon>
+</button>
+
+<!-- Modern Glass Spotlight Command Palette Modal -->
+@if (isPaletteOpen) {
+  <div class="command-palette-backdrop animate-fade-in" (click)="closeCommandPalette($event)">
+    <div class="command-palette-container animate-scale-up" (click)="$event.stopPropagation()">
+      
+      <!-- Palette Search Box -->
+      <div class="palette-header">
+        <mat-icon class="palette-search-icon">search</mat-icon>
+        <input #paletteInput type="text" 
+               [(ngModel)]="searchQuery" 
+               (input)="onSearchInput()"
+               (keydown)="handleKeyDown($event)"
+               placeholder="Que souhaitez-vous retrouver dans E-Scolarité ?">
+        <button mat-icon-button class="palette-close-btn" (click)="closeCommandPalette($event)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- AI Intent Parsing Loading Bar -->
+      @if (isSearchingAI) {
+        <div class="ai-processing-status">
+          <mat-spinner diameter="14"></mat-spinner>
+          <span>L’assistant recherche la meilleure action…</span>
+        </div>
+      }
+
+      <!-- Results Container -->
+      <div class="palette-results scrollbar-custom">
+        
+        <!-- Section: AI Match (Highest Priority) -->
+        @if (aiDetectedRoute) {
+          <div class="ai-match-item" (click)="navigateToRoute(aiDetectedRoute.route)" 
+               [class.selected]="selectedIdx === 0" (mouseenter)="selectedIdx = 0">
+            <div class="match-spark">
+              <mat-icon>auto_awesome</mat-icon>
+            </div>
+            <div class="match-details">
+              <span class="match-tag">RECOMMANDATION IA</span>
+              <div class="match-title">{{ aiDetectedRoute.label }}</div>
+              <div class="match-subtitle">Action proposée à partir de votre demande</div>
+            </div>
+            <mat-icon class="match-arrow">chevron_right</mat-icon>
+          </div>
+        }
+
+        <!-- Section: Navigation Match -->
+        @if (searchQuery.trim().length > 0) {
+          @if (filteredRoutes.length > 0) {
+            <div class="group-wrapper">
+              <div class="group-header">Navigation</div>
+              @for (route of filteredRoutes; track route.route) {
+                <div class="palette-item" [class.selected]="selectedIdx === (aiDetectedRoute ? $index + 1 : $index)"
+                     (click)="navigateToRoute(route.route)" (mouseenter)="selectedIdx = (aiDetectedRoute ? $index + 1 : $index)">
+                  <mat-icon class="item-icon">{{ route.icon }}</mat-icon>
+                  <div class="item-meta">
+                    <span class="item-title">{{ route.label }}</span>
+                    <span class="item-path">{{ route.pathLabel }}</span>
+                  </div>
+                  <span class="action-hint">Go <kbd>↵</kbd></span>
+                </div>
+              }
+            </div>
+          } @else if (!aiDetectedRoute) {
+            <div class="palette-empty-state">
+              <mat-icon>find_in_page</mat-icon>
+              <h4>Aucune page trouvée</h4>
+              <p>Essayez « élève », « classe », « absence », « note » ou « paiement ».</p>
+            </div>
+          }
+        }
+
+        <!-- Section: Suggestions (Empty State) -->
+        @if (searchQuery.trim().length === 0) {
+          <div class="group-wrapper">
+          <div class="group-header">Suggestions fréquentes</div>
+            @for (cmd of visibleCommands; track cmd.route) {
+              <div class="palette-item" [class.selected]="selectedIdx === $index"
+                   (click)="navigateToRoute(cmd.route)" (mouseenter)="selectedIdx = $index">
+                <mat-icon class="item-icon">{{ cmd.icon }}</mat-icon>
+                <div class="item-meta">
+                  <span class="item-title">{{ cmd.label }}</span>
+                  <span class="item-path">{{ cmd.desc }}</span>
+                </div>
+                  <span class="action-hint">Ouvrir <kbd>↵</kbd></span>
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+
+      <!-- Palette Footer -->
+      <div class="palette-footer">
+        <div class="footer-shortcuts">
+          <span><kbd>↑↓</kbd> Sélectionner</span>
+          <span><kbd>↵</kbd> Ouvrir</span>
+          <span><kbd>esc</kbd> Fermer</span>
+        </div>
+        <div class="footer-branding">
+          <mat-icon>auto_awesome</mat-icon>
+          <span>Recherche E-Scolarité</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+}

@@ -1,0 +1,62 @@
+<mat-card class="modern-card h-100 border-radius-10 shadow-sm exam-schedule-widget">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">visibility</mat-icon> Invigilation Duty</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content class="pt-2">
+    <ng-scrollbar style="height: 430px;" visibility="hover">
+      <div class="exams-container">
+        @for (exam of exams; track exam; let i = $index) {
+        <div class="exam-card d-flex align-items-stretch mb-3">
+
+          <div class="card-accent-bg" [style.background-color]="exam.color"></div>
+
+          <!-- Date block on the left -->
+          <div class="date-block d-flex flex-column align-items-center justify-content-center text-center me-3"
+            [style.background]="exam.color + '0d'" [style.color]="exam.color">
+            <span class="date-number">{{ exam.date.split(' ')[0] }}</span>
+            <span class="date-month">{{ exam.date.split(' ')[1] }}</span>
+          </div>
+
+          <!-- Main content -->
+          <div class="card-main-content d-flex flex-column justify-content-between flex-grow-1 py-1">
+            <!-- Top: Subject and status -->
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div class="d-flex align-items-center gap-2">
+                <div class="subject-icon-wrap" [style.background-color]="exam.color + '15'" [style.color]="exam.color">
+                  <mat-icon>{{ exam.icon }}</mat-icon>
+                </div>
+                <div>
+                  <h5 class="exam-subject mb-0">{{ exam.subject }}</h5>
+                  <span class="exam-type-label">{{ exam.examType }}</span>
+                </div>
+              </div>
+
+              <span class="status-badge" [ngClass]="exam.statusClass">
+                {{ exam.status }}
+              </span>
+            </div>
+
+            <!-- Bottom: Metadata pills row -->
+            <div class="d-flex flex-wrap gap-2 mt-2 pt-2 border-top border-dashed">
+              <span class="meta-pill">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ exam.time }}</span>
+              </span>
+              <span class="meta-pill">
+                <mat-icon>meeting_room</mat-icon>
+                <span>{{ exam.room }}</span>
+              </span>
+              <span class="meta-pill">
+                <mat-icon>timer</mat-icon>
+                <span>{{ exam.duration }}</span>
+              </span>
+            </div>
+          </div>
+
+        </div>
+        }
+      </div>
+    </ng-scrollbar>
+  </mat-card-content>
+</mat-card>

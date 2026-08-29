@@ -1,0 +1,319 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card modern-card">
+          <div class="body">
+            <div class="row align-items-center">
+              <div class="col-md-4">
+                <img src="assets/images/pages/welcome.png" alt="" class="w-100">
+              </div>
+              <div class="col-md-8">
+                <h4 class="font-18 weight-500 mb-2">
+                  Welcome back <div class="weight-600 font-25 col-blue pt-1">Ashton Cox!</div>
+                </h4>
+                <p class="font-16 max-width-600">We would like to take this opportunity to welcome you to our practice
+                  and to thank you
+                  for choosing our physicians to participate in your healthcare. We look forward to
+                  providing you with personalized, comprehensive health care focusing on wellness and
+                  prevention.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row mb-4 clearfix">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-teaching-hours-chart class="w-100"></app-teaching-hours-chart>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-student-performance-radar class="w-100"></app-student-performance-radar>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-syllabus-progress-chart class="w-100"></app-syllabus-progress-chart>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">calendar_today</mat-icon> Average Lecture Per Month</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <h6>65 <span class="text-muted font-12">(Average)</span></h6>
+            @defer (on viewport) {
+              <apx-chart [series]="avgLecChartOptions.series!" [chart]="avgLecChartOptions.chart!"
+                [xaxis]="avgLecChartOptions.xaxis!" [stroke]="avgLecChartOptions.stroke!"
+                [colors]="avgLecChartOptions.colors!" [dataLabels]="avgLecChartOptions.dataLabels!"
+                [legend]="avgLecChartOptions.legend!" [markers]="avgLecChartOptions.markers!"
+                [grid]="avgLecChartOptions.grid!" [yaxis]="avgLecChartOptions.yaxis!"
+                [tooltip]="avgLecChartOptions.tooltip!" [title]="avgLecChartOptions.title!"
+                [fill]="avgLecChartOptions.fill!">
+              </apx-chart>
+            } @placeholder {
+              <div class="skeleton-loader-card w-100" style="min-height: 250px;">
+                <div class="skeleton-body"></div>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">pie_chart</mat-icon> Subject Chart</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @defer (on viewport) {
+              <apx-chart [series]="pieChartOptions.series!" [chart]="pieChartOptions.chart!"
+                [labels]="pieChartOptions.labels!" [responsive]="pieChartOptions.responsive!"
+                [dataLabels]="pieChartOptions.dataLabels!" [legend]="pieChartOptions.legend!" class="apex-pie-center">
+              </apx-chart>
+            } @placeholder {
+              <div class="skeleton-loader-card w-100" style="min-height: 180px;">
+                <div class="skeleton-body"></div>
+              </div>
+            }
+            <div class="table-responsive m-t-15">
+              <table class="table align-items-center">
+                <tbody>
+                  <tr>
+                    <td><i class="fa fa-circle col-cyan msr-2"></i> Music</td>
+                    <td>23</td>
+                    <td class="col-green">+32%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fa fa-circle col-blue msr-2"></i>Science</td>
+                    <td>32</td>
+                    <td class="col-green">+12%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fa fa-circle col-orange msr-2"></i>Economics</td>
+                    <td>12</td>
+                    <td class="col-orange">-12%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fa fa-circle col-green msr-2"></i>Mathes</td>
+                    <td>32</td>
+                    <td class="col-green">+3%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-class-schedule></app-class-schedule>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">menu_book</mat-icon> Today's Lecture</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              @defer (on viewport) {
+                <app-table-card [dataSource]="lectureData"
+                  [columnDefinitions]="lectureColumnDefinitions"></app-table-card>
+              } @placeholder {
+                <div class="skeleton-loader-card w-100" style="min-height: 250px;">
+                  <div class="skeleton-body"></div>
+                </div>
+              }
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-student-progress></app-student-progress>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-attendance-overview></app-attendance-overview>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-quick-notes-panel></app-quick-notes-panel>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-class-schedule-card></app-class-schedule-card>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        @defer (on viewport) {
+          <app-student-progress-chart></app-student-progress-chart>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-top-students-card class="w-100 d-flex flex-column"></app-top-students-card>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-message-center class="w-100 d-flex flex-column"></app-message-center>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="row mb-4 clearfix">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-upcoming-classes class="w-100"></app-upcoming-classes>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-course-progress-chart class="w-100"></app-course-progress-chart>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-student-queries class="w-100"></app-student-queries>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="row mb-4 clearfix">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-recent-submissions class="w-100"></app-recent-submissions>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-exam-schedule class="w-100"></app-exam-schedule>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+        @defer (on viewport) {
+          <app-class-average-chart class="w-100"></app-class-average-chart>
+        } @placeholder {
+          <div class="skeleton-loader-card w-100">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+</section>

@@ -1,0 +1,546 @@
+<section class="content">
+    <div class="content-block">
+        @for (breadscrum of breadscrums; track breadscrum) {
+        <div class="block-header">
+            <!-- breadcrumb -->
+            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+            </app-breadcrumb>
+        </div>
+        }
+
+        <div class="row clearfix">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                @defer (on viewport) {
+                    <app-transport-overview></app-transport-overview>
+                } @placeholder {
+                    <div class="skeleton-loader-card w-100" style="min-height: 120px;">
+                        <div class="skeleton-body"></div>
+                    </div>
+                }
+            </div>
+        </div>
+
+
+        <div class="row clearfix">
+            <!-- Students per Route Chart -->
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header class="header-menu">
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">route</mat-icon> Students per Route</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        @defer (on viewport) {
+                            <apx-chart [series]="routeDistributionChartOptions?.series"
+                                [chart]="routeDistributionChartOptions?.chart"
+                                [xaxis]="routeDistributionChartOptions?.xaxis"
+                                [yaxis]="routeDistributionChartOptions?.yaxis"
+                                [dataLabels]="routeDistributionChartOptions?.dataLabels"
+                                [plotOptions]="routeDistributionChartOptions?.plotOptions"
+                                [fill]="routeDistributionChartOptions?.fill"
+                                [stroke]="routeDistributionChartOptions?.stroke"
+                                [tooltip]="routeDistributionChartOptions?.tooltip">
+                            </apx-chart>
+                        } @placeholder {
+                            <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                <div class="skeleton-body"></div>
+                            </div>
+                        }
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- On-Time Performance Chart -->
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header class="header-menu">
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">schedule</mat-icon> On-Time Performance</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        @defer (on viewport) {
+                            <apx-chart [series]="onTimePerformanceChartOptions?.series"
+                                [chart]="onTimePerformanceChartOptions?.chart"
+                                [labels]="onTimePerformanceChartOptions?.labels"
+                                [colors]="onTimePerformanceChartOptions?.colors"
+                                [legend]="onTimePerformanceChartOptions?.legend"
+                                [dataLabels]="onTimePerformanceChartOptions?.dataLabels"
+                                [plotOptions]="onTimePerformanceChartOptions?.plotOptions"
+                                [tooltip]="onTimePerformanceChartOptions?.tooltip">
+                            </apx-chart>
+                        } @placeholder {
+                            <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                <div class="skeleton-body"></div>
+                            </div>
+                        }
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- Weekly Usage Chart -->
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header class="header-menu">
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">directions_bus</mat-icon> Weekly Transport Usage</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        @defer (on viewport) {
+                            <apx-chart [series]="weeklyUsageChartOptions?.series" [chart]="weeklyUsageChartOptions?.chart"
+                                [xaxis]="weeklyUsageChartOptions?.xaxis" [yaxis]="weeklyUsageChartOptions?.yaxis"
+                                [dataLabels]="weeklyUsageChartOptions?.dataLabels"
+                                [stroke]="weeklyUsageChartOptions?.stroke" [fill]="weeklyUsageChartOptions?.fill"
+                                [colors]="weeklyUsageChartOptions?.colors" [tooltip]="weeklyUsageChartOptions?.tooltip">
+                            </apx-chart>
+                        } @placeholder {
+                            <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                <div class="skeleton-body"></div>
+                            </div>
+                        }
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- Vehicle Status Section -->
+        <div class="row clearfix">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <mat-card class="modern-card">
+                    <mat-card-header class="header-menu">
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">local_shipping</mat-icon> Vehicle Status</mat-card-title>
+                        <div class="header-buttons">
+                            <button mat-icon-button color="primary">
+                                <mat-icon>refresh</mat-icon>
+                            </button>
+                        </div>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="table-responsive">
+                            @defer (on viewport) {
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Vehicle</th>
+                                            <th>Status</th>
+                                            <th>Driver</th>
+                                            <th>Location</th>
+                                            <th>Last Update</th>
+                                            <th>Fuel Level</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (vehicle of vehicles; track vehicle.id) {
+                                        <tr>
+                                            <td>{{ vehicle.id }}</td>
+                                            <td>{{ vehicle.name }}</td>
+                                            <td>
+                                                @if (vehicle.status === 'active') {
+                                                <span class="badge bg-success">Active</span>
+                                                } @else if (vehicle.status === 'maintenance') {
+                                                <span class="badge bg-warning">Maintenance</span>
+                                                } @else {
+                                                <span class="badge bg-secondary">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>{{ vehicle.driver }}</td>
+                                            <td>{{ vehicle.location }}</td>
+                                            <td>{{ vehicle.lastUpdate }}</td>
+                                            <td>
+                                                <div class="progress-container">
+                                                    <mat-progress-bar mode="determinate"
+                                                        [value]="vehicle.fuelLevel"></mat-progress-bar>
+                                                    <span class="progress-value">{{ vehicle.fuelLevel }}%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- Route Completion Section -->
+        <div class="row clearfix">
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                <mat-card class="modern-card">
+                    <mat-card-header class="header-menu">
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">map</mat-icon> Route Completion</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        @defer (on viewport) {
+                            <apx-chart [series]="routeCompletionChartOptions?.series"
+                                [chart]="routeCompletionChartOptions?.chart" [xaxis]="routeCompletionChartOptions?.xaxis"
+                                [yaxis]="routeCompletionChartOptions?.yaxis"
+                                [dataLabels]="routeCompletionChartOptions?.dataLabels"
+                                [stroke]="routeCompletionChartOptions?.stroke"
+                                [colors]="routeCompletionChartOptions?.colors"
+                                [tooltip]="routeCompletionChartOptions?.tooltip">
+                            </apx-chart>
+                        } @placeholder {
+                            <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                <div class="skeleton-body"></div>
+                            </div>
+                        }
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- Student Transport Section -->
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                <mat-card class="modern-card">
+                    <mat-card-header class="header-menu">
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">emoji_transportation</mat-icon> Student Transport</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 270px" visibility="hover">
+                            <div class="table-responsive">
+                                @defer (on viewport) {
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Route</th>
+                                                <th>Total Students</th>
+                                                <th>Present Today</th>
+                                                <th>Absent</th>
+                                                <th>Special Needs</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @for (route of studentTransport; track route.route) {
+                                            <tr>
+                                                <td>{{ route.route }}</td>
+                                                <td>{{ route.totalStudents }}</td>
+                                                <td>{{ route.presentToday }}</td>
+                                                <td>{{ route.absent }}</td>
+                                                <td>{{ route.specialNeeds }}</td>
+                                            </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                } @placeholder {
+                                    <div class="skeleton-loader-card w-100" style="min-height: 220px; box-shadow: none;">
+                                        <div class="skeleton-body"></div>
+                                    </div>
+                                }
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- New Widgets Row 1: Charts -->
+        <div class="row clearfix">
+            <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">local_gas_station</mat-icon> Fuel Consumption Trends</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #fuelConsumptionChart [series]="fuelConsumptionChartOptions.series!"
+                                    [chart]="fuelConsumptionChartOptions.chart!"
+                                    [xaxis]="fuelConsumptionChartOptions.xaxis!"
+                                    [stroke]="fuelConsumptionChartOptions.stroke!"
+                                    [colors]="fuelConsumptionChartOptions.colors!"
+                                    [dataLabels]="fuelConsumptionChartOptions.dataLabels!"
+                                    [legend]="fuelConsumptionChartOptions.legend!"
+                                    [grid]="fuelConsumptionChartOptions.grid!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">pie_chart</mat-icon> Fleet Utilization</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #fleetUtilizationChart [series]="fleetUtilizationChartOptions.series!"
+                                    [chart]="fleetUtilizationChartOptions.chart!"
+                                    [plotOptions]="fleetUtilizationChartOptions.plotOptions!"
+                                    [labels]="fleetUtilizationChartOptions.labels!"
+                                    [colors]="fleetUtilizationChartOptions.colors!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- New Widgets Row 2: Lists -->
+        <div class="row clearfix">
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">workspace_premium</mat-icon> Top Driver Performance</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            @defer (on viewport) {
+                                <ul class="custom-list readers-list">
+                                    @for (driver of topDrivers; track driver.name) {
+                                    <li class="list-item">
+                                        <img [src]="driver.avatar" alt="Avatar" class="avatar-img">
+                                        <div class="item-info">
+                                            <h5 class="item-title">{{ driver.name }}</h5>
+                                            <span class="item-subtitle"><mat-icon
+                                                    style="font-size: 14px; width: 14px; height: 14px; color: #FFC107;">star</mat-icon>
+                                                {{ driver.rating }} Rating</span>
+                                        </div>
+                                        <div class="badge-accent">{{ driver.onTime }}% On-Time</div>
+                                    </li>
+                                    }
+                                </ul>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">add_alert</mat-icon> Recent Alerts</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            @defer (on viewport) {
+                                <ul class="custom-list popular-list">
+                                    @for (alert of recentAlerts; track alert.title) {
+                                    <li class="list-item">
+                                        <div class="icon-circle"
+                                            [ngClass]="{'bg-primary': alert.type === 'Info', 'bg-warning': alert.type === 'Warning', 'bg-danger': alert.type === 'Alert', 'bg-success': alert.type === 'Success'}">
+                                            <mat-icon>{{ alert.icon }}</mat-icon>
+                                        </div>
+                                        <div class="item-info">
+                                            <h5 class="item-title">{{ alert.title }}</h5>
+                                            <span class="item-subtitle">{{ alert.time }}</span>
+                                        </div>
+                                        <div class="badge-primary"
+                                            [ngClass]="{'badge-warning': alert.type === 'Warning', 'badge-danger': alert.type === 'Alert', 'badge-success': alert.type === 'Success'}">
+                                            {{ alert.type }}</div>
+                                    </li>
+                                    }
+                                </ul>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">build</mat-icon> Maintenance Schedule</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            @defer (on viewport) {
+                                <ul class="timeline-list">
+                                    @for (maint of maintenanceSchedule; track maint.vehicle) {
+                                    <li class="timeline-item">
+                                        <div class="timeline-marker bg-accent"></div>
+                                        <div class="timeline-content">
+                                            <h5 class="timeline-title">{{ maint.vehicle }} - {{ maint.type }}</h5>
+                                            <span class="timeline-date">{{ maint.date }}</span>
+                                            <span class="timeline-type">{{ maint.status }}</span>
+                                        </div>
+                                    </li>
+                                    }
+                                </ul>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- New Widgets Row 3: More Charts -->
+        <div class="row clearfix">
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">payments</mat-icon> Operating Costs</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #operatingCostsChart [series]="operatingCostsChartOptions.series!"
+                                    [chart]="operatingCostsChartOptions.chart!"
+                                    [labels]="operatingCostsChartOptions.labels!"
+                                    [colors]="operatingCostsChartOptions.colors!"
+                                    [dataLabels]="operatingCostsChartOptions.dataLabels!"
+                                    [legend]="operatingCostsChartOptions.legend!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">bar_chart</mat-icon> Vehicle Age Distribution</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #vehicleAgeChart [series]="vehicleAgeChartOptions.series!"
+                                    [chart]="vehicleAgeChartOptions.chart!" [labels]="vehicleAgeChartOptions.labels!"
+                                    [colors]="vehicleAgeChartOptions.colors!"
+                                    [dataLabels]="vehicleAgeChartOptions.dataLabels!"
+                                    [legend]="vehicleAgeChartOptions.legend!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 d-flex">
+                <mat-card class="chart-card modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">group</mat-icon> Student Boarding (Major Stops)</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="chart-container">
+                            @defer (on viewport) {
+                                <apx-chart #studentBoardingChart [series]="studentBoardingChartOptions.series!"
+                                    [chart]="studentBoardingChartOptions.chart!"
+                                    [xaxis]="studentBoardingChartOptions.xaxis!"
+                                    [colors]="studentBoardingChartOptions.colors!"
+                                    [plotOptions]="studentBoardingChartOptions.plotOptions!"
+                                    [dataLabels]="studentBoardingChartOptions.dataLabels!"></apx-chart>
+                            } @placeholder {
+                                <div class="skeleton-loader-card w-100" style="min-height: 200px; box-shadow: none;">
+                                    <div class="skeleton-body"></div>
+                                </div>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- New Widgets Row 4: Tables -->
+        <div class="row clearfix">
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">badge</mat-icon> Driver Roster</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            <div class="table-responsive">
+                                @defer (on viewport) {
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Driver</th>
+                                                <th>Route</th>
+                                                <th>Shift</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @for (row of driverRoster; track row.name) {
+                                            <tr>
+                                                <td>{{row.name}}</td>
+                                                <td>{{row.route}}</td>
+                                                <td>{{row.shift}}</td>
+                                                <td>
+                                                    <span class="status-badge"
+                                                        [ngClass]="row.status === 'On Duty' ? 'active' : (row.status === 'Off Duty' ? 'rejected' : 'pending')">{{row.status}}</span>
+                                                </td>
+                                            </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                } @placeholder {
+                                    <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                        <div class="skeleton-body"></div>
+                                    </div>
+                                }
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 d-flex">
+                <mat-card class="modern-card w-100">
+                    <mat-card-header>
+                        <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">trending_up</mat-icon> Route Efficiency Analysis</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 350px" visibility="hover">
+                            <div class="table-responsive">
+                                @defer (on viewport) {
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Route</th>
+                                                <th>Duration</th>
+                                                <th>Avg Speed</th>
+                                                <th>Efficiency</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @for (row of routeEfficiency; track row.route) {
+                                            <tr>
+                                                <td>{{row.route}}</td>
+                                                <td>{{row.duration}}</td>
+                                                <td>{{row.avgSpeed}}</td>
+                                                <td>
+                                                    <span class="status-badge active">{{row.score}}</span>
+                                                </td>
+                                            </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                } @placeholder {
+                                    <div class="skeleton-loader-card w-100" style="min-height: 250px; box-shadow: none;">
+                                        <div class="skeleton-body"></div>
+                                    </div>
+                                }
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+    </div>
+</section>

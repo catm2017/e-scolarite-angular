@@ -1,0 +1,156 @@
+.class-average-widget {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-container {
+  min-height: 200px;
+  position: relative;
+}
+
+/* Grade list container */
+.grade-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.grade-item {
+  background: #f8fafc;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  padding: 8px 12px;
+  border-radius: 8px;
+
+  &:hover {
+    transform: translateY(-1px);
+    background: #ffffff;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.06);
+  }
+}
+
+.grade-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.grade-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.grade-score {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Trend badges */
+.trend-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.trend-badge.trend-up {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+}
+
+.trend-badge.trend-down {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
+
+.trend-icon {
+  font-size: 12px !important;
+  width: 12px !important;
+  height: 12px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ApexCharts deep overrides */
+::ng-deep {
+  .apexcharts-canvas {
+    margin: 0 auto;
+  }
+
+  .apexcharts-xaxis-label {
+    fill: #94a3b8 !important;
+    font-family: inherit !important;
+  }
+}
+
+/* ==========================================
+   Dark Mode Overrides
+   ========================================== */
+::ng-deep .dark,
+::ng-deep body.dark {
+  .grade-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.04);
+
+    &:hover {
+      background: #1e1e30;
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .grade-name {
+    color: #e2e8f0;
+  }
+
+  .apexcharts-xaxis-label {
+    fill: #64748b !important;
+  }
+}
+
+/* ==========================================
+   Glassmorphism Overrides
+   ========================================== */
+::ng-deep body.layout-glassmorphism {
+  .grade-item {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.35);
+      border-color: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 12px rgba(31, 38, 135, 0.04);
+    }
+  }
+
+  .grade-name {
+    color: #1e293b;
+  }
+
+  &.dark {
+    .grade-item {
+      background: rgba(30, 30, 48, 0.35);
+      border-color: rgba(255, 255, 255, 0.06);
+
+      &:hover {
+        background: rgba(30, 30, 48, 0.5);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    .grade-name {
+      color: #fff;
+    }
+  }
+}

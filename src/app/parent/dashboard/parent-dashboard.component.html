@@ -1,0 +1,464 @@
+<section class="content">
+  <div class="content-block">
+    <div class="parent-portal">
+      <!-- Breadcrumb -->
+      <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items"
+        [active_item]="breadscrums[0].active"></app-breadcrumb>
+
+      <!-- Child Selector -->
+      <div class="child-selector-bar">
+        <div class="child-selector-label">
+          <mat-icon>family_restroom</mat-icon>
+          <span>My Children</span>
+        </div>
+        <div class="child-cards-row">
+          @for (child of children(); track child.id; let i = $index) {
+          <div class="child-chip" [class.active]="selectedChild() === i" (click)="selectChild(i)" role="button"
+            [id]="'child-selector-' + i" [attr.aria-pressed]="selectedChild() === i">
+            <img [src]="child.avatar" [alt]="child.name" class="child-avatar">
+            <div class="child-chip-info">
+              <span class="child-chip-name">{{ child.name }}</span>
+              <span class="child-chip-class">{{ child.class }}</span>
+            </div>
+          </div>
+          }
+        </div>
+        <div class="notification-bell" id="notification-bell-btn">
+          <button mat-icon-button [matBadge]="unreadCount()" matBadgeColor="warn" [matBadgeHidden]="unreadCount() === 0"
+            (click)="markAllRead()" aria-label="Notifications">
+            <mat-icon>notifications</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Current Child Info Banner -->
+      <div class="child-banner">
+        <div class="child-banner-avatar">
+          <img [src]="currentChild().avatar" [alt]="currentChild().name">
+          <div class="child-banner-status-dot"></div>
+        </div>
+        <div class="child-banner-info">
+          <h2>{{ currentChild().name }}</h2>
+          <p>{{ currentChild().class }} &bull; Roll No: {{ currentChild().rollNo }}</p>
+        </div>
+        <div class="child-banner-actions">
+          <button mat-stroked-button id="view-progress-btn" [routerLink]="['/parent/progress']">
+            <mat-icon>bar_chart</mat-icon> View Progress
+          </button>
+          <button mat-flat-button color="primary" id="message-teacher-btn" [routerLink]="['/parent/messages']">
+            <mat-icon>chat</mat-icon> Message Teacher
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="row">
+        @for (card of statsCards(); track card.title) {
+        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 mb-4">
+          <div class="stat-card" [ngClass]="card.color">
+            <div class="stat-card-content">
+              <div class="stat-icon">
+                <mat-icon>{{ card.icon }}</mat-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ card.value }}</span>
+                <span class="stat-title">{{ card.title }}</span>
+              </div>
+            </div>
+            <div class="stat-trend" [class.trend-up]="card.trendUp" [class.trend-down]="!card.trendUp">
+              <mat-icon>{{ card.trendUp ? 'trending_up' : 'trending_down' }}</mat-icon>
+              <span>{{ card.trend }}</span>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+          <!-- Attendance Donut Chart -->
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">pie_chart</mat-icon> Attendance Overview
+              </mat-card-title>
+              <mat-card-subtitle>Current academic year</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @defer (on viewport) {
+              <apx-chart [series]="attendanceChartOptions.series!" [chart]="attendanceChartOptions.chart!"
+                [labels]="attendanceChartOptions.labels!" [colors]="attendanceChartOptions.colors!"
+                [legend]="attendanceChartOptions.legend!" [dataLabels]="attendanceChartOptions.dataLabels!"
+                [responsive]="attendanceChartOptions.responsive!"></apx-chart>
+              } @placeholder {
+              <div class="chart-placeholder shimmer"></div>
+              }
+              <div class="attendance-stats-row">
+                <div class="att-stat">
+                  <span class="att-dot present"></span>
+                  <span class="att-label">Present Days</span>
+                  <span class="att-value">{{ currentChild().attendancePercent }} Days</span>
+                </div>
+                <div class="att-stat">
+                  <span class="att-dot absent"></span>
+                  <span class="att-label">Absent Days</span>
+                  <span class="att-value">{{ 100 - currentChild().attendancePercent }} Days</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+          <!-- Today's Timetable -->
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">schedule</mat-icon> Today's Schedule
+              </mat-card-title>
+              <mat-card-subtitle>{{ currentChild().name }}'s timetable</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content class="timetable-content">
+              <ng-scrollbar style="height: 300px" visibility="hover">
+                <div class="timeline-container">
+                  @for (period of todayTimetable; track period.time) {
+                  <div class="timeline-row" [ngClass]="getTimetableStatusClass(period.status)">
+                    <div class="timeline-time">{{ period.time }}</div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                      <div class="timeline-header">
+                        <span class="timeline-subject">{{ period.subject }}</span>
+                        <div class="timeline-badges">
+                          @if (period.status === 'completed') { <span class="badge-done">Done</span> }
+                          @if (period.status === 'ongoing') { <span class="badge-now">Now</span> }
+                          @if (period.status === 'break') { <span class="badge-break">Break</span> }
+                          @if (period.status === 'upcoming') { <span class="badge-next">Next</span> }
+                        </div>
+                      </div>
+                      @if (period.teacher) {
+                      <div class="timeline-details">
+                        <mat-icon class="timeline-icon">person</mat-icon>
+                        <span>{{ period.teacher }}</span>
+                        <span class="timeline-separator">•</span>
+                        <mat-icon class="timeline-icon">room</mat-icon>
+                        <span>Room {{ period.room }}</span>
+                      </div>
+                      }
+                    </div>
+                  </div>
+                  }
+                </div>
+              </ng-scrollbar>
+            </mat-card-content>
+          </mat-card>
+        </div>
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+          <!-- Recent Grades -->
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">grade</mat-icon> Recent Grades
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <ng-scrollbar style="height: 320px" visibility="hover">
+                @for (grade of recentGrades; track grade.subject) {
+                <div class="modern-grade-row" [ngClass]="getStatusClass(grade.status)">
+                  <div class="grade-letter-avatar" [ngClass]="getStatusClass(grade.status)">
+                    {{ grade.grade }}
+                  </div>
+                  <div class="grade-details">
+                    <div class="grade-header-row">
+                      <span class="grade-subject">{{ grade.subject }}</span>
+                      <span class="grade-score-pill">{{ grade.score }}/{{ grade.maxScore }}</span>
+                    </div>
+                    <span class="grade-test">{{ grade.test }} &middot; {{ grade.date }}</span>
+                    <mat-progress-bar mode="determinate" [value]="(grade.score / grade.maxScore) * 100"
+                      class="grade-progress" [ngClass]="getStatusClass(grade.status)"></mat-progress-bar>
+                  </div>
+                </div>
+                }
+              </ng-scrollbar>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+          <!-- Subject Performance Chart -->
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">auto_graph</mat-icon> Subject Performance
+              </mat-card-title>
+              <mat-card-subtitle>Latest test scores</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @defer (on viewport) {
+              <apx-chart [series]="performanceChartOptions.series!" [chart]="performanceChartOptions.chart!"
+                [xaxis]="performanceChartOptions.xaxis!" [yaxis]="performanceChartOptions.yaxis!"
+                [stroke]="performanceChartOptions.stroke!" [fill]="performanceChartOptions.fill!"
+                [colors]="performanceChartOptions.colors!" [grid]="performanceChartOptions.grid!"
+                [tooltip]="performanceChartOptions.tooltip!"
+                [dataLabels]="performanceChartOptions.dataLabels!"></apx-chart>
+              } @placeholder {
+              <div class="chart-placeholder shimmer"></div>
+              }
+            </mat-card-content>
+          </mat-card>
+        </div>
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">receipt_long</mat-icon> Fee Status
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="fee-status-container">
+                <div class="fee-amount">
+                  <h3>{{ feeStatus.totalDue | currency:'INR' }}</h3>
+                  <span class="fee-subtitle">Total Due</span>
+                </div>
+                <div class="fee-details">
+                  <div class="fee-row">
+                    <span class="fee-label">Due Date:</span>
+                    <span class="fee-val overdue-text">{{ feeStatus.dueDate }}</span>
+                  </div>
+                  <div class="fee-row">
+                    <span class="fee-label">Last Paid:</span>
+                    <span class="fee-val">{{ feeStatus.lastPaid }} ({{ feeStatus.lastPaidAmount | currency:'INR'
+                      }})</span>
+                  </div>
+                </div>
+                <button mat-flat-button color="primary" class="w-100 mt-3">Pay Now</button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">directions_bus</mat-icon> Transport Info
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="transport-container">
+                <div class="transport-route">
+                  <mat-icon>route</mat-icon>
+                  <span>{{ transportDetails.route }}</span>
+                </div>
+                <div class="transport-grid">
+                  <div class="t-item">
+                    <span class="t-label">Bus No</span>
+                    <span class="t-val">{{ transportDetails.busNo }}</span>
+                  </div>
+                  <div class="t-item">
+                    <span class="t-label">Driver</span>
+                    <span class="t-val">{{ transportDetails.driverName }}</span>
+                  </div>
+                  <div class="t-item">
+                    <span class="t-label">Pickup</span>
+                    <span class="t-val">{{ transportDetails.pickupTime }}</span>
+                  </div>
+                  <div class="t-item">
+                    <span class="t-label">Drop</span>
+                    <span class="t-val">{{ transportDetails.dropTime }}</span>
+                  </div>
+                </div>
+                <button mat-stroked-button class="w-100 mt-3"><mat-icon>call</mat-icon> Call Driver</button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <!-- Teacher Messages -->
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">forum</mat-icon> Teacher Messages
+              </mat-card-title>
+              <a mat-button color="primary" [routerLink]="['/parent/messages']" id="view-all-messages-link">View all</a>
+            </mat-card-header>
+            <mat-card-content>
+              <ng-scrollbar style="height: 350px" visibility="hover">
+                @for (msg of teacherMessages; track msg.teacher) {
+                <div class="teacher-msg-item" [class.unread-msg]="msg.unread">
+                  <img [src]="msg.avatar" [alt]="msg.teacher" class="msg-avatar">
+                  <div class="msg-content">
+                    <div class="msg-header">
+                      <span class="msg-teacher">{{ msg.teacher }}</span>
+                      <span class="msg-time">{{ msg.time }}</span>
+                    </div>
+                    <span class="msg-subject-tag">{{ msg.subject }}</span>
+                    <p class="msg-text">{{ msg.message }}</p>
+                  </div>
+                </div>
+                }
+              </ng-scrollbar>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">assignment</mat-icon> Pending Homework
+              </mat-card-title>
+              <mat-card-subtitle>{{ homeworkList.length }} assignments pending</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <ng-scrollbar style="height: 350px" visibility="hover">
+                @for (hw of homeworkList; track hw.subject) {
+                <div class="hw-item">
+                  <div class="hw-priority" [ngClass]="getPriorityClass(hw.priority)"></div>
+                  <div class="hw-content">
+                    <span class="hw-subject">{{ hw.subject }}</span>
+                    <p class="hw-task">{{ hw.task }}</p>
+                    <span class="hw-due">
+                      <mat-icon>calendar_today</mat-icon>
+                      Due: {{ hw.dueDate }}
+                    </span>
+                  </div>
+                  <span class="badge hw-badge" [ngClass]="getPriorityClass(hw.priority)">
+                    {{ hw.priority | titlecase }}
+                  </span>
+                </div>
+                }
+              </ng-scrollbar>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Transport Info -->
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">event</mat-icon> Upcoming Events
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <ng-scrollbar style="height: 350px" visibility="hover">
+                @for (event of upcomingEvents; track event.title) {
+                <div class="event-item" [ngClass]="event.color">
+                  <div class="event-date-box">
+                    <span class="event-day">{{ event.date }}</span>
+                    <span class="event-month">{{ event.month }}</span>
+                  </div>
+                  <div class="event-details">
+                    <span class="event-title">{{ event.title }}</span>
+                    <span class="event-type">{{ event.type | titlecase }}</span>
+                  </div>
+                  <mat-icon class="event-arrow">chevron_right</mat-icon>
+                </div>
+                }
+              </ng-scrollbar>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+          <!-- Library Books Status -->
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">local_library</mat-icon> Library Books
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <ng-scrollbar style="height: 320px" visibility="hover">
+                @for (book of libraryBooks; track book.title) {
+                <div class="lib-item">
+                  <div class="lib-icon" [class.overdue]="book.status === 'overdue'">
+                    <mat-icon>book</mat-icon>
+                  </div>
+                  <div class="lib-details">
+                    <span class="lib-title">{{ book.title }}</span>
+                    <div class="lib-dates">
+                      <span>Issued: {{ book.issueDate }}</span>
+                      <span class="lib-due" [class.overdue-text]="book.status === 'overdue'">Due: {{ book.dueDate
+                        }}</span>
+                    </div>
+                  </div>
+                  @if (book.status === 'overdue') {
+                  <span class="badge badge-solid-red overdue-badge">Overdue</span>
+                  }
+                </div>
+                }
+              </ng-scrollbar>
+            </mat-card-content>
+          </mat-card>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+          <!-- Behavioral Remarks -->
+          <mat-card class="modern-card h-100">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">psychology</mat-icon> Behavioral Remarks
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <ng-scrollbar style="height: 320px" visibility="hover">
+                @for (rem of behavioralRemarks; track rem.date) {
+                <div class="behavior-item" [ngClass]="rem.type">
+                  <div class="beh-icon">
+                    <mat-icon>{{ rem.type === 'positive' ? 'thumb_up' : 'info' }}</mat-icon>
+                  </div>
+                  <div class="beh-content">
+                    <div class="beh-header">
+                      <span class="beh-teacher">{{ rem.teacher }}</span>
+                      <span class="beh-date">{{ rem.date }}</span>
+                    </div>
+                    <p class="beh-remark">{{ rem.remark }}</p>
+                  </div>
+                </div>
+                }
+              </ng-scrollbar>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- Notifications Panel -->
+      @if (unreadCount() > 0) {
+      <div class="row">
+        <div class="col-12">
+          <mat-card class="modern-card notifications-panel">
+            <mat-card-header class="header-style">
+              <mat-card-title>
+                <mat-icon class="card-title-icon material-icons-outlined">notifications_active</mat-icon> Notifications
+                <span class="notif-badge">{{ unreadCount() }} new</span>
+              </mat-card-title>
+              <button mat-button (click)="markAllRead()" id="mark-all-read-btn">Mark all as read</button>
+            </mat-card-header>
+            <mat-card-content class="notif-content">
+              @for (notif of notifications(); track notif.id) {
+              @if (!notif.read) {
+              <div class="notif-item unread">
+                <div class="notif-icon-wrap">
+                  <mat-icon>{{ notif.icon }}</mat-icon>
+                </div>
+                <div class="notif-details">
+                  <p class="notif-message">{{ notif.message }}</p>
+                  <span class="notif-time">{{ notif.time }}</span>
+                </div>
+              </div>
+              }
+              }
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+      }
+
+    </div>
+  </div>
+</section>

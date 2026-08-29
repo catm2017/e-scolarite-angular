@@ -1,0 +1,73 @@
+<mat-card class="modern-card h-100 border-radius-10 shadow-sm student-queries-widget">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">help_outline</mat-icon> Student Queries</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content class="pt-2">
+    <ng-scrollbar style="height: 450px;" visibility="hover">
+      <div class="queries-container pe-2">
+        @for (q of queries; track q; let i = $index) {
+        <div class="query-card d-flex align-items-stretch justify-content-between mb-3">
+
+          <!-- Accent light background matches dynamic color -->
+          <div class="card-accent-bg" [style.background-color]="q.color"></div>
+
+          <div class="card-main-content d-flex flex-column justify-content-between flex-grow-1 py-1">
+
+            <!-- Top Line: Avatar, Student Name, and Status Badge -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <div class="student-avatar d-flex align-items-center justify-content-center text-white font-11 fw-bold"
+                  [style.background-color]="q.color">
+                  {{ q.avatar }}
+                </div>
+                <h5 class="student-name mb-0">{{ q.student }}</h5>
+              </div>
+
+              <!-- Status Badges -->
+              <span class="status-badge" [ngClass]="q.statusClass">
+                @if (q.status === 'Pending') {
+                <span class="pulse-dot"></span>
+                }
+                <span>{{ q.status }}</span>
+              </span>
+            </div>
+
+            <!-- Middle Line: Question description -->
+            <div class="mb-2 py-1">
+              <p class="question-text text-muted mb-0">{{ q.question }}</p>
+            </div>
+
+            <!-- Bottom Line: Subject metadata pill and Time -->
+            <div
+              class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 pt-2 border-top border-dashed">
+              <span class="meta-pill" [style.color]="q.color" [style.background]="q.color + '0a'">
+                <mat-icon class="meta-icon">{{ q.icon }}</mat-icon>
+                <span>{{ q.subject }}</span>
+              </span>
+              <span class="time-pill text-muted d-flex align-items-center">
+                <mat-icon class="time-icon me-1">schedule</mat-icon>
+                <span>{{ q.date }}</span>
+              </span>
+            </div>
+
+          </div>
+
+          <!-- Action buttons panel on hover -->
+          <div class="card-actions-panel d-flex flex-column align-items-center justify-content-center gap-2 ps-3 ms-2">
+            <button mat-icon-button class="action-btn text-primary" title="Reply">
+              <mat-icon>reply</mat-icon>
+            </button>
+            @if (q.status === 'Pending') {
+            <button mat-icon-button class="action-btn text-success" title="Mark Resolved">
+              <mat-icon>done</mat-icon>
+            </button>
+            }
+          </div>
+
+        </div>
+        }
+      </div>
+    </ng-scrollbar>
+  </mat-card-content>
+</mat-card>

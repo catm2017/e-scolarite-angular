@@ -1,0 +1,249 @@
+// Header Search Trigger Layout
+.search-bar-list-item {
+  display: flex;
+  align-items: center;
+}
+
+.workspace-nav-controls {
+  position: absolute;
+  left: 52%;
+  top: 9px;
+  transform: translateX(-50%);
+  height: 42px;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  z-index: 2;
+}
+
+.workspace-campus-switcher {
+  min-width: 180px;
+  height: 42px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #e1e4ec;
+  border-radius: 9px;
+  background: #f8f9fc;
+  color: #626779;
+  z-index: 2;
+
+  > i {
+    color: #6777ef;
+    font-size: 20px;
+  }
+
+  > span {
+    min-width: 0;
+    flex: 1;
+  }
+
+  small {
+    display: block;
+    margin-bottom: -2px;
+    color: #9297a8;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  select {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #343849;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+}
+
+.workspace-period-controls {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+}
+
+.workspace-context-select {
+  width: 120px;
+  height: 42px;
+  padding: 6px 9px 5px;
+  border: 1px solid #e1e4ec;
+  border-radius: 9px;
+  display: block;
+  background: #fff;
+  color: #626779;
+
+  &.establishment-type-select {
+    width: 140px;
+  }
+
+  &.academic-year-select {
+    width: 110px;
+  }
+
+  small {
+    display: block;
+    margin-bottom: 2px;
+    overflow: hidden;
+    color: #9297a8;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: .035em;
+    line-height: 1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  select {
+    width: 100%;
+    padding: 0 14px 0 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #343849;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.25;
+    cursor: pointer;
+  }
+}
+
+.institute-nav-controls {
+  left: 53%;
+}
+
+.institute-context-switcher {
+  min-width: 195px;
+
+  strong {
+    display: block;
+    overflow: hidden;
+    color: #343849;
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.institute-summary {
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  strong {
+    overflow: hidden;
+    color: #343849;
+    font-size: 10px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+:host-context(.dark) {
+  .workspace-campus-switcher,
+  .workspace-context-select {
+    border-color: #343b4d;
+    background: #1a202e;
+  }
+
+  .workspace-campus-switcher select,
+  .workspace-context-select select {
+      color: #d4dae5;
+  }
+
+  .institute-context-switcher strong,
+  .institute-summary strong { color: #d4dae5; }
+}
+
+@media (max-width: 1300px) {
+  .workspace-nav-controls {
+    left: 50%;
+  }
+
+  .workspace-campus-switcher {
+    min-width: 150px;
+  }
+
+  .workspace-context-select {
+    width: 110px;
+
+    &.establishment-type-select {
+      width: 135px;
+    }
+
+    &.academic-year-select {
+      width: 110px;
+    }
+  }
+}
+
+@media (max-width: 1100px) {
+  .workspace-nav-controls {
+    left: 44%;
+  }
+
+  .workspace-campus-switcher {
+    min-width: 150px;
+  }
+
+  .workspace-context-select {
+    width: 88px;
+    padding-inline: 7px;
+
+    &.establishment-type-select {
+      width: 100px;
+    }
+
+    &.academic-year-select {
+      width: 80px;
+    }
+
+    small {
+      display: none;
+    }
+
+    select {
+      height: 100%;
+      font-size: 9px;
+    }
+  }
+
+  .institute-nav-controls {
+    left: 54%;
+  }
+
+  .institute-nav-controls .institute-summary {
+    display: none;
+  }
+}
+
+@media (max-width: 991px) {
+  .workspace-nav-controls {
+    left: 50%;
+  }
+
+  .workspace-period-controls {
+    display: none;
+  }
+}
+
+// Mobile responsive adjustments
+@media (max-width: 767px) {
+  .options-container {
+    padding-left: 0 !important;
+  }
+
+  .workspace-nav-controls {
+    display: none;
+  }
+}

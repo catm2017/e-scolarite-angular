@@ -1,0 +1,305 @@
+.student-queries-widget {
+  overflow: hidden;
+}
+
+.queries-container {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+/* Card base and layout */
+.query-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.015);
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+
+    .card-accent-bg {
+      opacity: 0.04;
+    }
+
+    .card-actions-panel {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
+/* Accent light background matches dynamic color */
+.card-accent-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.015;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* Student Avatar */
+.student-avatar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+}
+
+/* Typography styles */
+.student-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  letter-spacing: -0.1px;
+}
+
+.question-text {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #475569 !important;
+}
+
+.time-pill {
+  font-size: 11px;
+  font-weight: 500;
+
+  .time-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    margin-right: 4px;
+    color: #94a3b8;
+  }
+}
+
+/* Subject Metadata Pill */
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.015);
+  transition: all 0.2s ease;
+
+  .meta-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    margin-right: 4px;
+  }
+
+  &:hover {
+    filter: brightness(0.95);
+  }
+}
+
+/* Status Badges */
+.status-badge {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.3px;
+  height: fit-content;
+}
+
+.status-badge.pending {
+  background: rgba(245, 158, 11, 0.08);
+  color: #f59e0b;
+}
+
+.status-badge.resolved {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+}
+
+/* Pulse Dot Animation for Pending Queries */
+.pulse-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  animation: pulse-orange 1.8s infinite;
+}
+
+@keyframes pulse-orange {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.border-dashed {
+  border-top-style: dashed !important;
+  border-top-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Action Buttons panel */
+.card-actions-panel {
+  border-left: 1px dashed rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  transform: translateX(8px);
+  transition: all 0.25s ease;
+
+  .action-btn {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      transform 0.2s ease,
+      background 0.2s ease;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.02);
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &:hover {
+      transform: scale(1.1);
+      background: rgba(0, 0, 0, 0.06);
+    }
+  }
+}
+
+/* ==========================================
+   Dark Mode Overrides
+   ========================================== */
+::ng-deep .dark,
+::ng-deep body.dark {
+  .query-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    &:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+  }
+
+  .student-name {
+    color: #e2e8f0;
+  }
+
+  .question-text {
+    color: #94a3b8 !important;
+  }
+
+  .border-dashed {
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .card-actions-panel {
+    border-left-color: rgba(255, 255, 255, 0.08);
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.03);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
+  }
+}
+
+/* ==========================================
+   Glassmorphism Overrides
+   ========================================== */
+::ng-deep body.layout-glassmorphism {
+  .query-card {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.35);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 8px 24px rgba(31, 38, 135, 0.06);
+    }
+  }
+
+  .student-name {
+    color: #1e293b;
+  }
+
+  .question-text {
+    color: #334155 !important;
+  }
+
+  .border-dashed {
+    border-top-color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  .card-actions-panel {
+    border-left-color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Glassmorphism Dark */
+  &.dark {
+    .query-card {
+      background: rgba(30, 30, 48, 0.45);
+      border-color: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+
+      &:hover {
+        background: rgba(30, 30, 48, 0.55);
+        border-color: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    .student-name {
+      color: #fff;
+    }
+
+    .question-text {
+      color: #cbd5e1 !important;
+    }
+
+    .border-dashed {
+      border-top-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .card-actions-panel {
+      border-left-color: rgba(255, 255, 255, 0.08);
+    }
+  }
+}

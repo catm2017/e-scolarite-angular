@@ -1,0 +1,237 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <!-- Widgets -->
+    <div class="row">
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Total Sales" value="1500" description="Total sales this month"
+          img="assets/images/banner/img1.png" arrowIcon="trending_up">
+        </app-statistic-card2>
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Total Courses" value="125" description="Total course this month"
+          img="assets/images/banner/img2.png" arrowIcon="trending_down">
+        </app-statistic-card2>
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Total Teachers" value="89" description="12% Higher Then
+        Last Month" img="assets/images/banner/img3.png" arrowIcon="trending_up">
+        </app-statistic-card2>
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Fees Collection" value="$48,697" description="22% Less Then
+        Last
+        Month" img="assets/images/banner/img4.png" arrowIcon="trending_down">
+        </app-statistic-card2>
+      </div>
+    </div>
+
+    <div class="row">
+
+      <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+        <div class="row">
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+            @defer (on viewport) {
+            <app-attendance-chart></app-attendance-chart>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+          </div>
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+            @defer (on viewport) {
+            <app-chart-card1 [title]="title2" [subtitle]="subtitle2"></app-chart-card1>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+          </div>
+          <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
+            @defer (on viewport) {
+            <app-teacher-activity-tracker></app-teacher-activity-tracker>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+          </div>
+          <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+            <mat-card class="modern-card">
+              <mat-card-header class="header-style">
+                <mat-card-title>
+                  <mat-icon class="card-title-icon material-icons-outlined">emoji_events</mat-icon>
+                  Sport Achievements
+                </mat-card-title>
+                <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+              </mat-card-header>
+              <mat-card-content>
+                <ng-scrollbar style="height: 370px" visibility="hover">
+                  <app-table-card [dataSource]="sportData"
+                    [columnDefinitions]="sportColumnDefinitions"></app-table-card>
+                </ng-scrollbar>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        @defer (on viewport) {
+            <app-fee-payment-overview></app-fee-payment-overview>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+        <mat-card class="modern-card">
+          <mat-card-header class="header-menu">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">event_note</mat-icon>
+              Exam Schedule
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 360px" visibility="hover">
+              <app-schedule-card [schedules]="examList"></app-schedule-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="modern-card">
+          <mat-card-content>
+            <app-appointment-card [totalAppointments]="128" [completed]="73" [upcoming]="55">
+            </app-appointment-card>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">people</mat-icon>
+              Teacher List
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              @defer (on viewport) {
+            <app-emp-status></app-emp-status>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 mb-4">
+        <app-chart-card4 [maleCount]="2078" [femaleCount]="1825" class="h-100">
+        </app-chart-card4>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 mb-4">
+        <mat-card class="modern-card h-100 d-flex flex-column">
+          <mat-card-content class="flex-grow-1 d-flex flex-column pt-3">
+            <ng-scrollbar style="height: 370px" visibility="hover" class="flex-grow-1">
+              <app-event-card [events]="events" [maxEvents]="3" [showViewMore]="true">
+              </app-event-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 mb-4">
+        <mat-card class="modern-card h-100 d-flex flex-column">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">fact_check</mat-icon>
+              Average Class Attendance
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content class="flex-grow-1">
+            <apx-chart [series]="performanceRateChartOptions.series!" [chart]="performanceRateChartOptions.chart!"
+              [xaxis]="performanceRateChartOptions.xaxis!" [stroke]="performanceRateChartOptions.stroke!"
+              [colors]="performanceRateChartOptions.colors!" [dataLabels]="performanceRateChartOptions.dataLabels!"
+              [legend]="performanceRateChartOptions.legend!" [markers]="performanceRateChartOptions.markers!"
+              [grid]="performanceRateChartOptions.grid!" [yaxis]="performanceRateChartOptions.yaxis!"
+              [tooltip]="performanceRateChartOptions.tooltip!" [title]="performanceRateChartOptions.title!">
+            </apx-chart>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        <mat-card class="modern-card">
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <mat-icon class="card-title-icon material-icons-outlined">person_add</mat-icon>
+              New Student List
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 450px" visibility="hover">
+              <app-table-card [dataSource]="studentData"
+                [columnDefinitions]="studentColumnDefinitions"></app-table-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        @defer (on viewport) {
+            <app-academic-performance></app-academic-performance>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        @defer (on viewport) {
+            <app-fee-collection-summary></app-fee-collection-summary>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+        @defer (on viewport) {
+            <app-school-transport></app-school-transport>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-4">
+        @defer (on viewport) {
+            <app-hostel-mess></app-hostel-mess>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-4">
+        @defer (on viewport) {
+            <app-upcoming-pta-meetings></app-upcoming-pta-meetings>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-4">
+        @defer (on viewport) {
+            <app-library-circulation></app-library-circulation>
+          } @placeholder {
+            <div class="skeleton-loader card-skeleton" style="height: 350px; width: 100%; border-radius: 8px;"></div>
+          }
+      </div>
+    </div>
+  </div>
+</section>

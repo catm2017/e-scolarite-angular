@@ -1,0 +1,379 @@
+.upcoming-classes-widget {
+  overflow: hidden;
+}
+
+.classes-container {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+/* Card base and layouts */
+.class-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.015);
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+
+    .card-accent-bg {
+      opacity: 0.04;
+    }
+
+    .action-btn {
+      transform: scale(1.1);
+    }
+
+    .action-btn-secondary {
+      color: var(--bs-primary) !important;
+      background: rgba(99, 102, 241, 0.08);
+    }
+  }
+}
+
+/* Accent light background matches dynamic color */
+.card-accent-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.015;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* Icons */
+.subject-icon {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Typography styles */
+.class-subject {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #1e293b;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+
+.class-time {
+  font-size: 12px;
+  font-weight: 500;
+
+  .time-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+    color: #94a3b8;
+  }
+}
+
+.duration-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+  color: #64748b;
+}
+
+/* Status Badges */
+.status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.5px;
+  height: fit-content;
+}
+
+.status-badge.live {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.status-badge.next {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.status-badge.upcoming {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+}
+
+/* Pulse Dot Animation for Live Class */
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Metadata Pill styling */
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.025);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.015);
+  transition: all 0.2s ease;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    margin-right: 4px;
+    color: #94a3b8;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #475569;
+  }
+}
+
+.border-dashed {
+  border-top-style: dashed !important;
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Action Buttons panel */
+.card-actions-panel {
+  border-left: 1px dashed rgba(0, 0, 0, 0.06);
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .action-btn-secondary {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    transition: all 0.2s ease;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+/* ==========================================
+   Dark Mode Overrides
+   ========================================== */
+::ng-deep .dark,
+::ng-deep body.dark {
+  .class-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    &:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+  }
+
+  .class-subject {
+    color: #e2e8f0;
+  }
+
+  .duration-pill {
+    background: rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
+  }
+
+  .meta-pill {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.02);
+    color: #94a3b8;
+
+    mat-icon {
+      color: #64748b;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: #cbd5e1;
+    }
+  }
+
+  .border-dashed {
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .card-actions-panel {
+    border-left-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* ==========================================
+   Glassmorphism Overrides
+   ========================================== */
+::ng-deep body.layout-glassmorphism {
+  .class-card {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.35);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 8px 24px rgba(31, 38, 135, 0.06);
+    }
+  }
+
+  .class-subject {
+    color: #1e293b;
+  }
+
+  .duration-pill {
+    background: rgba(255, 255, 255, 0.4);
+    color: #475569;
+  }
+
+  .meta-pill {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #475569;
+
+    mat-icon {
+      color: #64748b;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.45);
+      color: #1e293b;
+    }
+  }
+
+  .border-dashed {
+    border-top-color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  .card-actions-panel {
+    border-left-color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Glassmorphism Dark */
+  &.dark {
+    .class-card {
+      background: rgba(30, 30, 48, 0.45);
+      border-color: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+
+      &:hover {
+        background: rgba(30, 30, 48, 0.55);
+        border-color: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    .class-subject {
+      color: #fff;
+    }
+
+    .duration-pill {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+
+    .meta-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+
+      mat-icon {
+        color: #94a3b8;
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+    }
+
+    .border-dashed {
+      border-top-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .card-actions-panel {
+      border-left-color: rgba(255, 255, 255, 0.08);
+    }
+  }
+}

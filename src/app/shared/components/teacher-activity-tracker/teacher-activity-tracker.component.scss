@@ -1,0 +1,351 @@
+.teacher-activity-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .header-menu {
+    border-bottom: 1px solid rgba(154, 160, 172, 0.12);
+    padding: 15px 20px;
+    margin-bottom: 0;
+
+    .header-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+
+      .teacher-select,
+      .day-select {
+        width: 140px;
+      }
+    }
+  }
+
+  mat-card-content {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+.teacher-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  .teacher-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .teacher-details {
+    h3 {
+      margin: 0 0 4px 0;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+}
+
+.schedule-container {
+  position: relative;
+  margin: 20px 0;
+  height: 120px;
+
+  .time-slots {
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    bottom: -20px;
+    width: 100%;
+
+    .time-slot {
+      font-size: 0.8rem;
+      text-align: center;
+      width: 50px;
+      transform: translateX(-50%);
+    }
+
+    .time-slot:first-child {
+      transform: translateX(0);
+      text-align: left;
+    }
+
+    .time-slot:last-child {
+      transform: translateX(-100%);
+      text-align: right;
+    }
+  }
+
+  .timeline-grid {
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+
+    .grid-line {
+      width: 1px;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .activities-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+
+    .activity-item {
+      position: absolute;
+      height: 100%;
+      border-radius: 4px;
+      padding: 3px;
+      color: white;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .activity-icon {
+        display: flex;
+        align-items: center;
+
+        mat-icon {
+          font-size: 18px;
+          height: 18px;
+          width: 18px;
+          line-height: 18px;
+        }
+      }
+
+      .activity-details {
+        .activity-title {
+          font-weight: 500;
+          font-size: 0.9rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .activity-time,
+        .activity-location {
+          font-size: 0.8rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+  }
+}
+
+.activity-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 16px 0;
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+
+    .legend-label {
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.activity-list {
+  h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0 0 16px 0;
+  }
+
+  .no-activities {
+    padding: 16px;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+    background-color: #f5f5f5;
+    border-radius: 4px;
+  }
+
+  .activity-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background-color: #f5f5f5;
+
+    .activity-time-block {
+      min-width: 90px;
+
+      .activity-time {
+        font-size: 0.85rem;
+      }
+    }
+
+    .activity-type-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      color: white;
+
+      mat-icon {
+        font-size: 20px;
+        height: 20px;
+        width: 20px;
+        line-height: 20px;
+      }
+    }
+
+    .activity-list-details {
+      flex: 1;
+
+      .activity-list-title {
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      .activity-list-location {
+        font-size: 0.85rem;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .teacher-activity-card {
+    .header-menu {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .header-actions {
+        margin-top: 12px;
+        width: 100%;
+
+        .teacher-select,
+        .day-select {
+          flex: 1;
+        }
+      }
+    }
+  }
+
+  .schedule-container {
+    height: 100px;
+
+    .time-slots .time-slot {
+      font-size: 0.7rem;
+    }
+
+    .activities-container .activity-item {
+      .activity-details .activity-title {
+        font-size: 0.8rem;
+      }
+
+      .activity-details .activity-time,
+      .activity-details .activity-location {
+        font-size: 0.7rem;
+      }
+    }
+  }
+}
+::ng-deep .dark {
+  .schedule-container
+    .activities-container
+    .activity-item
+    .activity-icon
+    mat-icon {
+    color: white;
+  }
+  .schedule-container .timeline-grid .grid-line {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+  }
+  .activity-list .activity-list-item {
+    background-color: rgba($color: #000000, $alpha: 0.25) !important;
+  }
+}
+
+::ng-deep body.layout-glassmorphism {
+  .teacher-activity-card {
+    background: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05) !important;
+
+    .activity-list .activity-list-item {
+      background-color: rgba(255, 255, 255, 0.35) !important;
+      border: 1px solid rgba(255, 255, 255, 0.45) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      box-shadow: none;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        border-color: rgba(92, 103, 242, 0.3) !important;
+      }
+    }
+  }
+
+  &.dark {
+    .teacher-activity-card {
+      background: rgba(15, 23, 42, 0.55) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+
+      .activity-list .activity-list-item {
+        background-color: rgba(15, 23, 42, 0.4) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+
+        &:hover {
+          background-color: rgba(15, 23, 42, 0.55) !important;
+          border-color: rgba(92, 103, 242, 0.4) !important;
+        }
+      }
+    }
+  }
+}
+

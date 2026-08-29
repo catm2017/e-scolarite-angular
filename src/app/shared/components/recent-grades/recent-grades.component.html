@@ -1,0 +1,33 @@
+<mat-card class="modern-card recent-grades-card">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">grade</mat-icon> Recent Grades</mat-card-title>
+    <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+  </mat-card-header>
+  <mat-card-content>
+    <ng-scrollbar style="height: 390px" visibility="hover">
+      <div class="grades-list">
+        @for (item of grades; track item) {
+          <div class="grade-item">
+            <div class="grade-icon">
+              <div class="icon-circle" [ngClass]="item.iconClass">
+                <mat-icon>school</mat-icon>
+              </div>
+            </div>
+            <div class="grade-details">
+              <div class="grade-header">
+                <h4 class="grade-title">{{item.title}}</h4>
+                <!-- <mat-chip [color]="getGradeColor(item.grade)" selected>{{item.grade}}</mat-chip> -->
+                <div [class]="getGradeColor(item.grade)" class="badge">{{item.grade}}</div>
+              </div>
+              <p class="grade-subject">{{item.subject}}</p>
+              <div class="grade-footer">
+                <span class="grade-date">{{item.date | date:'mediumDate'}}</span>
+                <span class="grade-score">{{item.score}}/{{item.maxScore}}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </ng-scrollbar>
+  </mat-card-content>
+</mat-card>

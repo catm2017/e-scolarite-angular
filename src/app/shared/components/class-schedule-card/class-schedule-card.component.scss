@@ -1,0 +1,494 @@
+.class-schedule-card {
+  // Accordion styling
+  mat-card-content {
+    padding: 0;
+
+    .schedule-accordion {
+      .day-panel {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        margin: 5px 0px;
+
+        &:first-child {
+          margin-top: 16px;
+        }
+
+        &:last-child {
+          margin-bottom: 16px;
+        }
+
+        .day-header {
+          padding: 0 16px;
+          height: 64px;
+
+          &:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+          }
+
+          .day-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+
+            .day-info {
+              display: flex;
+              flex-direction: column;
+
+              .day-name {
+                font-size: 16px;
+                font-weight: 500;
+              }
+
+              .day-date {
+                font-size: 14px;
+                color: #757575;
+                margin-top: 4px;
+              }
+            }
+
+            .classes-count {
+              display: flex;
+              align-items: center;
+              margin: 0px 10px;
+
+              .count-badge {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 24px;
+                height: 24px;
+                border-radius: 12px;
+                background-color: #6777ef;
+                color: white;
+                font-size: 12px;
+                font-weight: 500;
+                padding: 0 8px;
+              }
+
+              .count-label {
+                margin-left: 8px;
+                font-size: 14px;
+                color: #757575;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Class list styling
+    .class-list {
+      padding: 8px 0px;
+
+      .class-item {
+        display: flex;
+        margin-bottom: 12px;
+        padding: 16px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #e4e2e2;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .time-column {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-width: 80px;
+          margin-right: 16px;
+
+          .time-display {
+            font-size: 16px;
+            font-weight: 500;
+          }
+
+          .duration {
+            font-size: 12px;
+            color: #757575;
+            margin-top: 4px;
+          }
+        }
+
+        .class-content {
+          flex: 1;
+
+          .class-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+
+            .subject-icon {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 36px;
+              height: 36px;
+              border-radius: 50%;
+              margin-right: 12px;
+              color: white;
+
+              mat-icon {
+                font-size: 20px;
+                height: 20px;
+                width: 20px;
+              }
+            }
+
+            .subject-name {
+              margin: 0;
+              font-size: 16px;
+              font-weight: 500;
+            }
+          }
+
+          .class-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-left: 48px;
+
+            .detail-item {
+              display: flex;
+              align-items: center;
+              color: #757575;
+              font-size: 14px;
+
+              mat-icon {
+                font-size: 16px;
+                height: 16px;
+                width: 16px;
+                margin-right: 4px;
+              }
+            }
+          }
+        }
+
+        .class-actions {
+          display: flex;
+          align-items: flex-start;
+
+          button {
+            color: #757575;
+
+            &:hover {
+              background-color: rgba(0, 0, 0, 0.05);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Card actions styling
+  mat-card-actions {
+    padding: 8px 16px 16px;
+
+    .card-actions-container {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+
+      .action-button {
+        display: flex;
+        align-items: center;
+
+        mat-icon {
+          margin-right: 8px;
+        }
+      }
+    }
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    margin: 12px;
+
+    .header-style .header-content {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .week-navigator {
+        margin-top: 12px;
+      }
+    }
+
+    .class-list .class-item {
+      flex-direction: column;
+
+      .time-column {
+        flex-direction: row;
+        justify-content: flex-start;
+        margin-right: 0;
+        margin-bottom: 12px;
+
+        .time-display {
+          margin-right: 8px;
+        }
+      }
+
+      .class-content .class-details {
+        margin-left: 0;
+        margin-top: 8px;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    margin: 8px;
+
+    .header-style .header-content {
+      padding: 16px;
+
+      mat-card-title .title-container span {
+        font-size: 18px;
+      }
+    }
+
+    .schedule-accordion .day-panel {
+      margin: 8px;
+
+      .day-header {
+        height: 56px;
+      }
+    }
+
+    .class-list {
+      padding: 8px;
+
+      .class-item {
+        padding: 12px;
+
+        .class-content .class-header .subject-name {
+          font-size: 15px;
+        }
+
+        .class-content .class-details {
+          gap: 8px;
+
+          .detail-item {
+            font-size: 13px;
+          }
+        }
+      }
+    }
+
+    mat-card-actions .card-actions-container {
+      flex-direction: column;
+      width: 100%;
+
+      .action-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}
+::ng-deep .dark {
+  .class-schedule-card {
+    .class-list .class-item {
+      background-color: rgba($color: #000000, $alpha: 0.15) !important;
+      border: 1px solid #292a31 !important;
+      color: #e0e0e0 !important;
+    }
+    .schedule-accordion .day-panel {
+      background-color: rgba($color: #000000, $alpha: 0.1) !important;
+    }
+  }
+}
+
+::ng-deep body.layout-glassmorphism {
+  .class-schedule-card {
+    // Accordion panel styles in glassmorphism
+    .schedule-accordion .day-panel {
+      background: rgba(255, 255, 255, 0.01) !important;
+      border: 1px solid rgba(255, 255, 255, 0.4) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      box-shadow: 0 4px 15px rgba(31, 38, 135, 0.03) !important;
+
+      .day-header {
+        background: transparent !important;
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .day-header-content {
+          .day-info {
+            .day-name {
+              color: #1a202c !important;
+            }
+            .day-date {
+              color: #4a5568 !important;
+            }
+          }
+          .classes-count {
+            .count-label {
+              color: #4a5568 !important;
+            }
+          }
+        }
+      }
+    }
+
+    // Class list item styles in glassmorphism
+    .class-list .class-item {
+      background-color: rgba(255, 255, 255, 0.7) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      backdrop-filter: blur(5px) !important;
+      -webkit-backdrop-filter: blur(5px) !important;
+      color: #2d3748 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(31, 38, 135, 0.06) !important;
+      }
+
+      .time-column {
+        .time-display {
+          color: #1a202c !important;
+        }
+        .duration {
+          color: #4a5568 !important;
+        }
+      }
+
+      .class-content {
+        .subject-name {
+          color: #1a202c !important;
+        }
+        .class-details .detail-item {
+          color: #4a5568 !important;
+          mat-icon {
+            color: #4a5568 !important;
+          }
+        }
+      }
+
+      .class-actions button {
+        color: #4a5568 !important;
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+      }
+    }
+
+    // Actions block styles
+    mat-card-actions .action-button {
+      &.mat-stroked-button {
+        background: rgba(255, 255, 255, 0.25) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+        color: #2d3748 !important;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.4) !important;
+        }
+      }
+    }
+  }
+
+  // Dark variant of Glassmorphism
+  &.dark {
+    .class-schedule-card {
+      .schedule-accordion .day-panel {
+        background: rgba(15, 23, 42, 0.35) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+
+        .day-header {
+          &:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+          }
+
+          .day-header-content {
+            .day-info {
+              .day-name {
+                color: #f8fafc !important;
+              }
+              .day-date {
+                color: #cbd5e1 !important;
+              }
+            }
+            .classes-count {
+              .count-label {
+                color: #cbd5e1 !important;
+              }
+            }
+          }
+        }
+      }
+
+      .class-list .class-item {
+        background-color: rgba(15, 23, 42, 0.25) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(5px) !important;
+        -webkit-backdrop-filter: blur(5px) !important;
+        color: #cbd5e1 !important;
+
+        &:hover {
+          background-color: rgba(15, 23, 42, 0.4) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .time-column {
+          .time-display {
+            color: #f8fafc !important;
+          }
+          .duration {
+            color: #94a3b8 !important;
+          }
+        }
+
+        .class-content {
+          .subject-name {
+            color: #f8fafc !important;
+          }
+          .class-details .detail-item {
+            color: #94a3b8 !important;
+            mat-icon {
+              color: #94a3b8 !important;
+            }
+          }
+        }
+
+        .class-actions button {
+          color: #94a3b8 !important;
+          &:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+          }
+        }
+      }
+
+      mat-card-actions .action-button {
+        &.mat-stroked-button {
+          background: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          color: #f8fafc !important;
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,128 @@
+<div class="prototype-shell">
+  <aside class="shell-sidebar">
+    <a class="shell-brand" routerLink="/"><span>E</span><b>E‑Scolarité</b></a>
+    <div class="workspace-label">ADMINISTRATION SAAS</div>
+    <nav>
+      <button [class.active]="activeView() === 'dashboard'" (click)="activeView.set('dashboard')"><i>space_dashboard</i>Vue d’ensemble</button>
+      <button [class.active]="activeView() === 'schools'" (click)="activeView.set('schools')"><i>apartment</i>Établissements <em>38</em></button>
+      <button [class.active]="activeView() === 'pricing'" (click)="activeView.set('pricing')"><i>sell</i>Tarification</button>
+      <button><i>receipt_long</i>Facturation</button>
+      <button><i>extension</i>Fonctionnalités</button>
+    </nav>
+    <div class="workspace-label">OPÉRATIONS</div>
+    <nav>
+      <button><i>support_agent</i>Support</button>
+      <button><i>bar_chart</i>Utilisation</button>
+      <button><i>settings</i>Paramètres</button>
+    </nav>
+  </aside>
+
+  <div class="shell-main">
+    <header class="shell-header">
+      <div class="context"><small>Console propriétaire</small><strong>Daara Tech</strong></div>
+      <div class="shell-search"><i>search</i>Rechercher un établissement… <kbd>⌘ K</kbd></div>
+      <app-platform-language-switcher />
+      <button class="icon-button"><i>notifications_none</i><span></span></button>
+      <div class="user-chip"><b>CM</b><span>Cheikh M.<small>Super administrateur</small></span></div>
+    </header>
+
+    <main class="shell-content">
+      @if (activeView() === 'dashboard') {
+        <div class="page-title">
+          <div><small>PLATEFORME E‑SCOLARITÉ</small><h1>Vue d’ensemble</h1><p>Suivez la croissance, les souscriptions et la santé de votre SaaS.</p></div>
+          <button class="primary-action" (click)="activeView.set('schools')"><i>add</i>Nouvel établissement</button>
+        </div>
+        <section class="metric-grid">
+          <article><span class="metric-icon green"><i>apartment</i></span><div><small>Établissements actifs</small><strong>38</strong><em>+4 ce trimestre</em></div><b>+11%</b></article>
+          <article><span class="metric-icon violet"><i>payments</i></span><div><small>Revenu mensuel</small><strong>1,18 M F</strong><em>Revenu récurrent</em></div><b>+8,4%</b></article>
+          <article><span class="metric-icon orange"><i>hourglass_top</i></span><div><small>Essais en cours</small><strong>7</strong><em>3 expirent cette semaine</em></div><b class="neutral">Voir</b></article>
+          <article><span class="metric-icon blue"><i>groups</i></span><div><small>Apprenants gérés</small><strong>18 420</strong><em>Tous établissements</em></div><b>+16%</b></article>
+        </section>
+        <section class="content-grid">
+          <article class="panel revenue-panel">
+            <header><div><h2>Revenu récurrent</h2><p>Évolution des 8 derniers mois</p></div><select><option>Cette année</option></select></header>
+            <div class="revenue-summary"><strong>1 184 500 F</strong><span>↗ 8,4% depuis juin</span></div>
+            <div class="line-chart">
+              <div class="chart-labels"><span>1,2M</span><span>900K</span><span>600K</span><span>300K</span></div>
+              <div class="chart-lines"><i></i><i></i><i></i><i></i><svg viewBox="0 0 600 150" preserveAspectRatio="none"><path d="M0 132 C60 120,80 115,120 119 S190 96,230 100 S300 75,350 82 S420 48,470 56 S550 18,600 24"/><path class="fill" d="M0 132 C60 120,80 115,120 119 S190 96,230 100 S300 75,350 82 S420 48,470 56 S550 18,600 24 L600 150 L0 150Z"/></svg></div>
+              <div class="months"><span>JAN</span><span>FÉV</span><span>MAR</span><span>AVR</span><span>MAI</span><span>JUN</span><span>JUL</span><span>AOÛ</span></div>
+            </div>
+          </article>
+          <article class="panel action-panel">
+            <header><div><h2>Actions prioritaires</h2><p>À traiter cette semaine</p></div><span class="count">6</span></header>
+            <div class="action-item"><i class="danger">priority_high</i><div><b>3 essais arrivent à échéance</b><small>Contacter les établissements</small></div><button>Traiter</button></div>
+            <div class="action-item"><i class="warning">receipt_long</i><div><b>2 factures en retard</b><small>69 000 F à recouvrer</small></div><button>Relancer</button></div>
+            <div class="action-item"><i class="info">support_agent</i><div><b>1 demande de support</b><small>Priorité haute · il y a 24 min</small></div><button>Ouvrir</button></div>
+          </article>
+        </section>
+        <section class="panel schools-panel">
+          <header><div><h2>Établissements récents</h2><p>Dernières souscriptions et activités</p></div><button class="link-button" (click)="activeView.set('schools')">Voir tous →</button></header>
+          <div class="school-table">
+            <div class="table-head"><span>ÉTABLISSEMENT</span><span>OFFRE</span><span>APPRENANTS</span><span>MONTANT / MOIS</span><span>STATUT</span><span></span></div>
+            @for (school of schools; track school.name) {
+              <div class="table-row">
+                <span class="school-name"><i [style.background]="school.color">{{ school.initials }}</i><b>{{ school.name }}<small>{{ school.city }}</small></b></span>
+                <span>{{ school.plan }}</span><span>{{ school.students }}</span><strong>{{ school.amount | number }} F</strong>
+                <span><em class="status" [class.trial]="school.status === 'Essai'" [class.late]="school.status === 'À relancer'">{{ school.status }}</em></span><button>more_horiz</button>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      @if (activeView() === 'pricing') {
+        <div class="page-title">
+          <div><small>CATALOGUE COMMERCIAL</small><h1>Tarification modulaire</h1><p>Définissez un prix clair pour chaque capacité activable.</p></div>
+          <button class="primary-action"><i>add</i>Nouvelle fonctionnalité</button>
+        </div>
+        <div class="pricing-callout"><span>lightbulb</span><div><strong>Une tarification juste et prévisible</strong><p>Le socle est obligatoire. Les modules s’additionnent et peuvent être testés 30 jours avant facturation.</p></div><button>Configurer les essais</button></div>
+        <section class="panel module-panel">
+          <header><div><h2>Fonctionnalités commercialisées</h2><p>{{ modules.length }} capacités dans le catalogue</p></div><div class="table-filter">search&nbsp;&nbsp; Rechercher</div></header>
+          <div class="module-grid">
+            @for (module of modules; track module.name) {
+              <article>
+                <div class="module-top"><span>{{ module.name.slice(0,1) }}</span><em [class.off]="!module.enabled">{{ module.enabled ? 'Commercialisé' : 'Brouillon' }}</em></div>
+                <small>{{ module.category }}</small><h3>{{ module.name }}</h3>
+                <div class="module-price"><strong>{{ module.price | number }} F</strong><span>/ mois</span></div>
+                <footer><span><b>{{ module.clients }}</b> clients actifs</span><button>Configurer →</button></footer>
+              </article>
+            }
+          </div>
+        </section>
+      }
+
+      @if (activeView() === 'schools') {
+        <div class="page-title">
+          <div><small>PORTEFEUILLE CLIENTS</small><h1>Établissements</h1><p>Gérez les souscriptions et accédez aux espaces clients.</p></div>
+          <button class="primary-action"><i>add</i>Nouvel établissement</button>
+        </div>
+        <section class="panel school-list-panel">
+          <header><div class="segmented"><button class="active">Tous <b>38</b></button><button>Actifs <b>29</b></button><button>En essai <b>7</b></button><button>À relancer <b>2</b></button></div><div class="table-filter">search&nbsp;&nbsp; Rechercher</div></header>
+          @for (school of schools; track school.name) {
+            <article class="client-card">
+              <span class="client-logo" [style.background]="school.color">{{ school.initials }}</span>
+              <div><h3>{{ school.name }}</h3><p>{{ school.city }} · {{ school.students }} apprenants</p></div>
+              <div><small>SOUSCRIPTION</small><strong>{{ school.plan }}</strong></div>
+              <div><small>MENSUALITÉ</small><strong>{{ school.amount | number }} F</strong></div>
+              <em class="status" [class.trial]="school.status === 'Essai'" [class.late]="school.status === 'À relancer'">{{ school.status }}</em>
+              <a routerLink="/institut">Ouvrir l’espace <span>→</span></a>
+            </article>
+          }
+        </section>
+      }
+    </main>
+    <footer class="shell-footer">
+      <div>
+        <span class="footer-mark">E</span>
+        <p><strong>E‑Scolarité</strong><small>Une solution Daara Tech</small></p>
+      </div>
+      <nav aria-label="Liens du pied de page">
+        <a href="#">Centre d’aide</a>
+        <a href="#">Confidentialité</a>
+        <a href="#">Conditions d’utilisation</a>
+      </nav>
+      <span class="service-status"><i></i>Tous les services sont opérationnels</span>
+      <small>© 2026 Daara Tech</small>
+    </footer>
+  </div>
+</div>

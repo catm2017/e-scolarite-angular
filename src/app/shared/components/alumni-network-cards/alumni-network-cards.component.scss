@@ -1,0 +1,170 @@
+// Accent top lines and hover glows per type
+.active-alumni {
+  --theme-color: #4f86f8;
+  --theme-color-rgb: 79, 134, 248;
+  --theme-gradient: linear-gradient(90deg, #4f86f8, #60afff);
+}
+.employment-rate {
+  --theme-color: #3ebe77;
+  --theme-color-rgb: 62, 190, 119;
+  --theme-gradient: linear-gradient(90deg, #3ebe77, #59dca2);
+}
+.funds-donated {
+  --theme-color: #fda24c;
+  --theme-color-rgb: 253, 162, 76;
+  --theme-gradient: linear-gradient(90deg, #fda24c, #ffc107);
+}
+.active-mentors {
+  --theme-color: #e25a66;
+  --theme-color-rgb: 226, 90, 102;
+  --theme-gradient: linear-gradient(90deg, #e25a66, #ff7a8a);
+}
+
+.alumni-card {
+  border: 1px solid rgba(154, 160, 172, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-radius: 16px !important;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--bs-card-bg, #ffffff);
+
+  // Accent Line at the top
+  .card-accent-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--theme-gradient);
+    opacity: 0.85;
+    transition: height 0.25s ease;
+  }
+
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(var(--theme-color-rgb), 0.12);
+    border-color: rgba(var(--theme-color-rgb), 0.2);
+
+    .card-accent-line {
+      height: 6px;
+    }
+
+    .icon-circle {
+      transform: scale(1.08) translateY(-2px);
+      box-shadow: 0 8px 20px rgba(var(--theme-color-rgb), 0.3);
+    }
+  }
+
+  mat-card-content {
+    padding: 24px !important;
+  }
+}
+
+.z-index-1 {
+  position: relative;
+  z-index: 1;
+}
+
+.tracking-wider {
+  letter-spacing: 0.6px;
+}
+
+.icon-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(var(--theme-color-rgb), 0.1);
+  
+  mat-icon {
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+  }
+}
+
+.card-value {
+  color: var(--bs-heading-color, #212529);
+  font-family: 'Outfit', 'Inter', sans-serif;
+  letter-spacing: -0.3px;
+  font-size: 28px;
+}
+
+// Trend badge styling as a premium pill badge
+.trend-badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Inter', sans-serif;
+  
+  &.text-primary {
+    background-color: rgba(79, 134, 248, 0.08);
+    color: #4f86f8 !important;
+  }
+  &.text-success {
+    background-color: rgba(62, 190, 119, 0.08);
+    color: #3ebe77 !important;
+  }
+  &.text-warning {
+    background-color: rgba(253, 162, 76, 0.08);
+    color: #fda24c !important;
+  }
+  &.text-danger {
+    background-color: rgba(226, 90, 102, 0.08);
+    color: #e25a66 !important;
+  }
+}
+
+// Color and background helper classes
+.bg-primary-subtle {
+  background-color: rgba(79, 134, 248, 0.1) !important;
+}
+.bg-success-subtle {
+  background-color: rgba(62, 190, 119, 0.1) !important;
+}
+.bg-warning-subtle {
+  background-color: rgba(253, 162, 76, 0.1) !important;
+}
+.bg-danger-subtle {
+  background-color: rgba(226, 90, 102, 0.1) !important;
+}
+
+// Dark Mode Support
+::ng-deep {
+  .dark,
+  body.dark {
+    .alumni-card {
+      background-color: #1a202e !important;
+      border-color: rgba(255, 255, 255, 0.05) !important;
+      
+      &:hover {
+        box-shadow: 0 12px 30px rgba(var(--theme-color-rgb), 0.18) !important;
+        border-color: rgba(var(--theme-color-rgb), 0.3) !important;
+      }
+    }
+
+    .card-value {
+      color: #ffffff !important;
+    }
+
+    .trend-badge {
+      &.text-primary {
+        background-color: rgba(79, 134, 248, 0.15) !important;
+      }
+      &.text-success {
+        background-color: rgba(62, 190, 119, 0.15) !important;
+      }
+      &.text-warning {
+        background-color: rgba(253, 162, 76, 0.15) !important;
+      }
+      &.text-danger {
+        background-color: rgba(226, 90, 102, 0.15) !important;
+      }
+    }
+  }
+}

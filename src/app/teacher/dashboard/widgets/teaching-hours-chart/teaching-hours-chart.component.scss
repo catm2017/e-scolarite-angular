@@ -1,0 +1,34 @@
+.modern-card {
+  height: 100%;
+
+  &:hover {
+    box-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .header-style {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .summary-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+
+      h4 {
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+.header-action-btn {
+  color: #9aa0ac;
+}

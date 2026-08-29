@@ -1,0 +1,48 @@
+<mat-card class="modern-card course-progress-card">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">trending_up</mat-icon> Course Progress</mat-card-title>
+    <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-tab-group animationDuration="0ms">
+      <mat-tab label="Overview">
+        <div class="chart-container">
+          <apx-chart [series]="chartOptions.series!" [chart]="chartOptions.chart!" [xaxis]="chartOptions.xaxis!"
+            [yaxis]="chartOptions.yaxis!" [dataLabels]="chartOptions.dataLabels!"
+            [plotOptions]="chartOptions.plotOptions!" [stroke]="chartOptions.stroke!" [fill]="chartOptions.fill!"
+          [tooltip]="chartOptions.tooltip!" [colors]="chartOptions.colors!"></apx-chart>
+        </div>
+      </mat-tab>
+      <mat-tab label="Courses">
+        <ng-scrollbar style="height: 365px" visibility="hover">
+          <div class="courses-list">
+            @for (course of courses; track course) {
+              <div class="course-item">
+                <div class="course-header">
+                  <h4 class="course-name">{{course.name}}</h4>
+                  <span class="course-grade">Grade: {{course.grade}}</span>
+                </div>
+                <div class="course-instructor">
+                  <mat-icon>person</mat-icon>
+                  <span>{{course.instructor}}</span>
+                </div>
+                <div class="course-progress-info">
+                  <div class="progress-text">
+                    <span>Progress: {{course.progress}}%</span>
+                    <span>{{course.completedModules}}/{{course.totalModules}} modules</span>
+                  </div>
+                  <mat-progress-bar [color]="getProgressColor(course.progress)" mode="determinate"
+                  [value]="course.progress"></mat-progress-bar>
+                </div>
+                <div class="course-footer">
+                  <span class="last-accessed">Last accessed: {{course.lastAccessed | date:'shortDate'}}</span>
+                  <button mat-button color="primary">Continue</button>
+                </div>
+              </div>
+            }
+          </div>
+        </ng-scrollbar>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card-content>
+</mat-card>

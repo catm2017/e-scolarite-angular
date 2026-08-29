@@ -1,0 +1,82 @@
+<mat-card class="modern-card transport-card shadow-sm">
+  <div class="header-menu d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <mat-icon class="header-icon me-2 text-primary material-icons-outlined">directions_bus</mat-icon>
+      <h5 class="font-18 font-weight-bold mb-0">School Transport Tracker</h5>
+    </div>
+    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill font-12 font-weight-bold d-flex align-items-center">
+      <span class="pulse-indicator bg-success me-2"></span> 3 Active
+    </span>
+  </div>
+  
+  <mat-card-content class="pt-4">
+    <div class="row">
+      @for (route of routes; track route.id) {
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-4">
+          <div class="route-item p-3 rounded" [class]="route.status.toLowerCase().replace(' ', '-')">
+            
+            <!-- Route Number & Badge -->
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <span class="route-num-badge" [class]="route.status.toLowerCase().replace(' ', '-')">{{ route.routeNumber }}</span>
+                <h5 class="mb-0 mt-2 font-15 font-weight-bold route-title">{{ route.routeName }}</h5>
+              </div>
+              <span class="status-badge" [class]="route.status.toLowerCase().replace(' ', '-')">
+                <span class="status-dot" [class]="route.status.toLowerCase().replace(' ', '-')"></span>
+                {{ route.status }} @if (route.status === 'Delayed') { ({{ route.delayTime }}) }
+              </span>
+            </div>
+            
+            <!-- Live Progress Track -->
+            <div class="progress-track-wrapper my-4">
+              <div class="progress-labels d-flex justify-content-between font-10 text-muted mb-1">
+                <span>Start</span>
+                <span>En Route</span>
+                <span>Arrived</span>
+              </div>
+              <div class="progress-line-container">
+                <div class="progress-line-bg"></div>
+                <div class="progress-line-fill" [class]="route.status.toLowerCase().replace(' ', '-')" [style.width.%]="getProgressPercent(route.status)"></div>
+                <div class="bus-tracker-icon" [style.left.%]="getProgressPercent(route.status)">
+                  <mat-icon [class]="route.status.toLowerCase().replace(' ', '-')">directions_bus</mat-icon>
+                </div>
+              </div>
+            </div>
+
+            <!-- Driver & Capacity Details -->
+            <div class="row info-grid py-2 my-2 border-top border-bottom border-light">
+              <div class="col-6 border-end border-light">
+                <span class="font-10 text-muted block text-uppercase letter-spacing-1">Driver</span>
+                <span class="font-weight-bold font-13 block info-value mt-1">{{ route.driverName }}</span>
+              </div>
+              <div class="col-6 ps-3">
+                <span class="font-10 text-muted block text-uppercase letter-spacing-1">Onboard Students</span>
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                  <span class="font-weight-bold font-13 info-value">{{ route.activeStudents }} / {{ route.capacity }}</span>
+                  <span class="font-11 font-weight-bold text-muted">{{ getCapacityPercent(route) }}%</span>
+                </div>
+                <div class="capacity-bar mt-1">
+                  <div class="capacity-fill" [style.width.%]="getCapacityPercent(route)" [class.full]="getCapacityPercent(route) >= 90"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-1">
+              <a href="tel:{{ route.driverPhone }}" mat-stroked-button class="action-btn text-muted hover-lift">
+                <mat-icon class="font-15 align-middle me-1">call</mat-icon> Call Driver
+              </a>
+              <button mat-flat-button color="primary" class="action-btn track-btn hover-lift" (click)="trackBus(route.routeNumber)">
+                @if (route.status === 'On Time' || route.status === 'Delayed') {
+                  <span class="pulse-ring"></span>
+                }
+                <mat-icon class="font-15 align-middle me-1">my_location</mat-icon> Track Live
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      }
+    </div>
+  </mat-card-content>
+</mat-card>

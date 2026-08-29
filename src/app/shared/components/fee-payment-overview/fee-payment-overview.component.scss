@@ -1,0 +1,92 @@
+.fee-payment-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.overview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  @media (min-width: 992px) {
+    flex-direction: row;
+
+    .chart-container {
+      flex: 1;
+    }
+
+    .quick-links-container {
+      flex: 1;
+    }
+  }
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .payment-summary {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+
+    .summary-item {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      background-color: rgba(255, 150, 0, 0.3);
+
+      .label {
+        font-size: 15px;
+        color: rgba(0, 0, 0, 0.6);
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+
+      .value {
+        font-size: 1.25rem;
+        font-weight: 500;
+      }
+
+      &.paid {
+        background-color: rgba(76, 175, 80, 0.1);
+        .value {
+          color: #4caf50;
+        }
+      }
+
+      &.pending {
+        background-color: rgba(33, 150, 243, 0.1);
+        .value {
+          color: #2196f3;
+        }
+      }
+
+      &.overdue {
+        background-color: rgba(244, 67, 54, 0.1);
+        .value {
+          color: #f44336;
+        }
+      }
+
+      &.partial {
+        background-color: rgba(255, 152, 0, 0.1);
+        .value {
+          color: #ff9800;
+        }
+      }
+    }
+  }
+}
+::ng-deep .dark {
+  .fee-payment-card {
+    .chart-container .payment-summary .summary-item .label {
+      color: #ffffff !important;
+    }
+  }
+}

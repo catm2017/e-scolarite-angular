@@ -1,0 +1,83 @@
+.assignments-list {
+  .assignment-item {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .assignment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+
+      .assignment-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        flex: 1;
+        padding-right: 10px;
+      }
+    }
+
+    .assignment-details {
+      margin-bottom: 15px;
+
+      .subject-info,
+      .date-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+
+        mat-icon {
+          font-size: 18px;
+          height: 18px;
+          width: 18px;
+          margin-right: 8px;
+        }
+      }
+
+      .days-remaining {
+        margin-left: 10px;
+        font-size: 12px;
+        font-weight: 500;
+
+        &.overdue-text {
+          color: #9c322a;
+        }
+      }
+    }
+
+    .assignment-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+
+        mat-icon {
+          margin-right: 5px;
+        }
+
+        .status-text {
+          font-size: 14px;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+::ng-deep .dark {
+  .assignments-list .assignment-item {
+    background-color: #171921 !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+}

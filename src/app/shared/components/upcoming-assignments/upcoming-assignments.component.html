@@ -1,0 +1,47 @@
+<mat-card class="modern-card">
+  <mat-card-header class="header-style">
+    <mat-card-title><mat-icon class="card-title-icon material-icons-outlined">assignment</mat-icon> Upcoming Assignments</mat-card-title>
+    <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+  </mat-card-header>
+  <mat-card-content>
+    <ng-scrollbar style="height: 360px" visibility="hover">
+      <div class="assignments-list">
+        @for (assignment of assignments; track assignment) {
+          <div class="assignment-item"
+            [ngClass]="{'overdue': isOverdue(assignment.dueDate)}">
+            <div class="assignment-header">
+              <div class="assignment-title">{{assignment.title}}</div>
+              <div [class]="getPriorityColor(assignment.priority)" class="badge">{{assignment.priority}}</div>
+            </div>
+            <div class="assignment-details">
+              <div class="subject-info">
+                <mat-icon class="material-icons-outlined">book</mat-icon>
+                <span>{{assignment.subject}}</span>
+              </div>
+              <div class="date-info">
+                <mat-icon class="material-icons-outlined">event</mat-icon>
+                <span>Due: {{assignment.dueDate | date:'mediumDate'}}</span>
+                @if (!isOverdue(assignment.dueDate)) {
+                  <span class="days-remaining"
+                  >({{getDaysRemaining(assignment.dueDate)}} days left)</span>
+                }
+                @if (isOverdue(assignment.dueDate)) {
+                  <span class="days-remaining overdue-text">(Overdue by
+                  {{-getDaysRemaining(assignment.dueDate)}} days)</span>
+                }
+              </div>
+            </div>
+            <div class="assignment-footer">
+              <div class="status-indicator">
+                <mat-icon class="material-icons-outlined"
+                [class]="getStatusColor(assignment.status)">{{getStatusIcon(assignment.status)}}</mat-icon>
+                <span class="status-text">{{assignment.status | titlecase}}</span>
+              </div>
+              <button mat-button color="primary">View Details</button>
+            </div>
+          </div>
+        }
+      </div>
+    </ng-scrollbar>
+  </mat-card-content>
+</mat-card>

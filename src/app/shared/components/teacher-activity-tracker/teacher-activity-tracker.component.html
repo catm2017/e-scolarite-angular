@@ -1,0 +1,125 @@
+<mat-card class="modern-card teacher-activity-card shadow-sm">
+  <div class="header-menu d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <mat-icon class="header-icon me-2 text-primary material-icons-outlined">co_present</mat-icon>
+      <h5 class="font-18 font-weight-bold mb-0">Teacher Activity Tracker</h5>
+    </div>
+    <div class="header-actions">
+      <mat-select [(ngModel)]="selectedTeacher" class="teacher-select">
+        @for (teacher of teachers; track teacher.id) {
+        <mat-option [value]="teacher.id">{{ teacher.name }}</mat-option>
+        }
+      </mat-select>
+      <mat-select [(ngModel)]="selectedDay" class="day-select">
+        @for (day of days; track day.id) {
+        <mat-option [value]="day.id">{{ day.name }}</mat-option>
+        }
+      </mat-select>
+    </div>
+  </div>
+
+  <mat-card-content>
+    <!-- Teacher Info -->
+    @if (currentTeacher) {
+    <div class="teacher-info">
+      <div class="teacher-avatar">
+        <img [src]="currentTeacher.image" alt="{{ currentTeacher.name }}">
+      </div>
+      <div class="teacher-details">
+        <h3>{{ currentTeacher.name }}</h3>
+        <p>{{ currentTeacher.department }}</p>
+      </div>
+    </div>
+    }
+
+    <mat-divider></mat-divider>
+
+    <!-- Schedule Timeline -->
+    <div class="schedule-container">
+      <!-- Time Slots -->
+      <div class="time-slots">
+        @for (slot of timeSlots; track slot) {
+        <div class="time-slot">{{ slot }}</div>
+        }
+      </div>
+
+      <!-- Timeline Grid -->
+      <div class="timeline-grid">
+        @for (slot of timeSlots; track slot) {
+        <div class="grid-line"></div>
+        }
+      </div>
+
+      <!-- Activities -->
+      <div class="activities-container">
+        @for (activity of currentActivities; track activity.id) {
+        <div class="activity-item" [style.left]="getActivityLeft(activity)" [style.width]="getActivityWidth(activity)"
+          [style.background-color]="getActivityColor(activity.type)"
+          [matTooltip]="activity.title + ' - ' + activity.startTime + ' to ' + activity.endTime + ' - ' + activity.location">
+          <div class="activity-icon">
+            <mat-icon>{{ getActivityIcon(activity.type) }}</mat-icon>
+          </div>
+          <div class="activity-details">
+            <div class="activity-title">{{ activity.title }}</div>
+            <div class="activity-time">{{ activity.startTime }} - {{ activity.endTime }}</div>
+            <div class="activity-location">{{ activity.location }}</div>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Activity Legend -->
+    <div class="activity-legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #4CAF50;"></div>
+        <div class="legend-label">Class</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #2196F3;"></div>
+        <div class="legend-label">Meeting</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #FF9800;"></div>
+        <div class="legend-label">Break</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #9C27B0;"></div>
+        <div class="legend-label">Office Hours</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #607D8B;"></div>
+        <div class="legend-label">Other</div>
+      </div>
+    </div>
+
+    <!-- Activity List -->
+    <div class="activity-list">
+      <h3>Activities for {{ getSelectedDayName() }}</h3>
+      @if (currentActivities.length === 0) {
+      <div class="no-activities">No activities scheduled for this day</div>
+      } @else {
+      <ng-scrollbar style="height: 320px" visibility="hover">
+        @for (activity of currentActivities; track activity.id) {
+
+        <div class="activity-list-item">
+          <div class="activity-time-block">
+            <div class="activity-time">{{ activity.startTime }} - {{ activity.endTime }}</div>
+          </div>
+          <div class="activity-type-icon" [style.background-color]="getActivityColor(activity.type)">
+            <mat-icon>{{ getActivityIcon(activity.type) }}</mat-icon>
+          </div>
+          <div class="activity-list-details">
+            <div class="activity-list-title">{{ activity.title }}</div>
+            <div class="activity-list-location">{{ activity.location }}</div>
+          </div>
+        </div>
+        }
+      </ng-scrollbar>
+      }
+
+    </div>
+  </mat-card-content>
+</mat-card>

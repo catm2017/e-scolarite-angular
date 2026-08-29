@@ -1,0 +1,166 @@
+<div class="auth-container modern-auth">
+  <div class="row auth-main h-100 m-0">
+    <div class="col-sm-6 px-0 d-none d-sm-block left-panel-wrapper">
+      <div class="abstract-bg">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+
+
+        <div class="glass-feature-card">
+          <div class="left-badge"><i class="fas fa-graduation-cap"></i> Education Platform</div>
+          <h3>Empowering Education</h3>
+          <p>Streamline your institution's operations with our all-in-one management platform designed for modern
+            schools.</p>
+
+          <div class="left-stats">
+            <div class="stat-item">
+              <span class="stat-num">12K+</span>
+              <span class="stat-label">Students</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-num">500+</span>
+              <span class="stat-label">Teachers</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-num">98%</span>
+              <span class="stat-label">Satisfaction</span>
+            </div>
+          </div>
+
+          <div class="left-testimonial">
+            <p class="testimonial-text">"Smart School transformed how we manage our institution. Everything is seamless
+              and efficient."</p>
+            <div class="testimonial-author">
+              <div class="floating-avatars">
+                <div class="avatar av-1"></div>
+                <div class="avatar av-2"></div>
+                <div class="avatar av-3"></div>
+              </div>
+              <span class="author-info">Trusted by <strong>12,000+</strong> users</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 auth-form-section">
+      <div class="auth-glass-panel">
+        <div class="auth-wrapper">
+          <div class="text-center mb-4">
+            <h6 class="welcome-msg">Welcome back!</h6>
+            <p class="auth-signup-text text-muted">Need an account? <a routerLink="/authentication/signup"
+                class="sign-up-link font-weight-bold">Sign Up
+              </a></p>
+          </div>
+
+          <div class="user-role-selector mb-4">
+            <p class="role-selector-label">Who are you signing in as?</p>
+            <div class="role-chips">
+              <button type="button" class="role-chip admin-chip" (click)="adminSet();"
+                [class.active]="authForm.get('username')?.value === 'admin'">
+                <span class="chip-icon-wrap"><i class="fas fa-user-shield"></i></span>
+                <span class="chip-label">Admin</span>
+                <span class="chip-desc">Full access</span>
+                <span class="chip-check"><i class="fas fa-check"></i></span>
+              </button>
+              <button type="button" class="role-chip teacher-chip" (click)="teacherSet();"
+                [class.active]="authForm.get('username')?.value === 'teacher'">
+                <span class="chip-icon-wrap"><i class="fas fa-chalkboard-teacher"></i></span>
+                <span class="chip-label">Teacher</span>
+                <span class="chip-desc">Class management</span>
+                <span class="chip-check"><i class="fas fa-check"></i></span>
+              </button>
+              <button type="button" class="role-chip student-chip" (click)="studentSet();"
+                [class.active]="authForm.get('username')?.value === 'student'">
+                <span class="chip-icon-wrap"><i class="fas fa-user-graduate"></i></span>
+                <span class="chip-label">Student</span>
+                <span class="chip-desc">My courses</span>
+                <span class="chip-check"><i class="fas fa-check"></i></span>
+              </button>
+              <button type="button" class="role-chip parent-chip" (click)="parentSet();"
+                [class.active]="authForm.get('username')?.value === 'parent'">
+                <span class="chip-icon-wrap"><i class="fas fa-user-friends"></i></span>
+                <span class="chip-label">Parent</span>
+                <span class="chip-desc">Track progress</span>
+                <span class="chip-check"><i class="fas fa-check"></i></span>
+              </button>
+            </div>
+          </div>
+
+          <form class="validate-form mt-4" [formGroup]="authForm" (ngSubmit)="onSubmit()">
+            <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
+                <mat-form-field class="example-full-width" appearance="outline">
+                  <mat-label>Username</mat-label>
+                  <input matInput formControlName="username" placeholder="Enter your username" />
+                  <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+                  @if (authForm.get('username')?.hasError('required')) {
+                  <mat-error>Username is required</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
+                <mat-form-field class="example-full-width" appearance="outline">
+                  <mat-label>Password</mat-label>
+                  <input matInput [type]="hide ? 'password' : 'text'" formControlName="password"
+                    placeholder="Enter your password">
+                  <mat-icon class="material-icons-outlined pwd-toggle p-3" matSuffix (click)="hide = !hide">
+                    {{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+                  @if (authForm.get('password')?.hasError('required')) {
+                  <mat-error>Password is required</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="form-check custom-checkbox">
+                <label class="form-check-label text-muted">
+                  <input class="form-check-input" type="checkbox" [(ngModel)]="rememberMe"
+                    [ngModelOptions]="{standalone: true}"> Remember me
+                  <span class="form-check-sign">
+                    <span class="check"></span>
+                  </span>
+                </label>
+              </div>
+              <a class="forgot-link font-weight-bold" routerLink="/authentication/forgot-password">Forgot Password?</a>
+            </div>
+            @if (error) {
+            <div class="alert alert-danger mt-3 mb-0 rounded-alert"><i
+                class="fas fa-exclamation-circle me-2"></i>{{error}}</div>
+            }
+            <div class="container-auth-form-btn mt-2">
+              <button mat-flat-button color="primary" [class.auth-spinner]="loading"
+                [disabled]="loading || !authForm.valid" class="auth-form-btn modern-btn" type="submit">
+                <span>Sign In</span> <i class="fas fa-arrow-right ms-2 transition-icon"></i>
+              </button>
+            </div>
+          </form>
+
+          <div class="social-divider mt-4 mb-3">
+            <span>OR CONTINUE WITH</span>
+          </div>
+
+          <ul class="list-unstyled social-icon mb-0 d-flex justify-content-center gap-3">
+            <li class="list-inline-item m-0">
+              <button class="social-btn google"><i class="fab fa-google"></i></button>
+            </li>
+            <li class="list-inline-item m-0">
+              <button class="social-btn facebook"><i class="fab fa-facebook-f"></i></button>
+            </li>
+            <li class="list-inline-item m-0">
+              <button class="social-btn twitter"><i class="fab fa-twitter"></i></button>
+            </li>
+            <li class="list-inline-item m-0">
+              <button class="social-btn linkedin"><i class="fab fa-linkedin-in"></i></button>
+            </li>
+          </ul>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

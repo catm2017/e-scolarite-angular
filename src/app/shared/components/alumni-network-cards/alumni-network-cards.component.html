@@ -1,0 +1,29 @@
+<div class="row">
+  @for (stat of stats; track stat.title) {
+  <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12">
+    <mat-card class="modern-card alumni-card" [ngClass]="stat.title.toLowerCase().replace(' ', '-')">
+      <!-- Glowing accent line at the top -->
+      <div class="card-accent-line"></div>
+      <mat-card-content class="p-4 d-flex align-items-center justify-content-between position-relative">
+        <div class="z-index-1">
+          <span class="text-muted font-11 font-weight-bold d-block mb-1 text-uppercase tracking-wider">{{ stat.title
+            }}</span>
+          <h3 class="font-28 font-weight-bold mb-1 card-value font-outfit">{{ stat.value }}</h3>
+
+          <div class="d-flex align-items-center gap-1.5 mt-2">
+            <span class="trend-badge font-11 font-weight-bold d-inline-flex align-items-center"
+              [ngClass]="stat.colorClass">
+              {{ stat.subText }}
+            </span>
+          </div>
+        </div>
+
+        <div class="icon-circle d-flex align-items-center justify-content-center"
+          [ngClass]="[stat.bgClass, stat.colorClass]">
+          <mat-icon class="font-26">{{ stat.icon }}</mat-icon>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  }
+</div>

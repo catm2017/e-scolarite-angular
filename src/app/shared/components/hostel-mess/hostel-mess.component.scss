@@ -1,0 +1,285 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.hostel-mess-card {
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .header-menu {
+    border-bottom: 1px solid rgba(154, 160, 172, 0.12);
+    padding: 15px 20px;
+    margin-bottom: 0;
+
+    .header-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .card-content-flex {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px !important;
+  }
+
+  .tab-content-container {
+    width: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    padding-right: 12px;
+    padding-left: 2px;
+  }
+
+  ng-scrollbar {
+    display: block;
+    width: 100%;
+
+    ::ng-deep {
+      .ng-scroll-viewport {
+        overflow-x: hidden !important;
+      }
+      .ng-scroll-content {
+        width: 100% !important;
+      }
+    }
+  }
+
+  .block-item {
+    background-color: #f8f9fa;
+    border: 1px solid rgba(154, 160, 172, 0.12) !important;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: rgba(92, 103, 242, 0.02);
+      border-color: rgba(92, 103, 242, 0.2) !important;
+    }
+
+    .gender-icon-wrapper {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+
+      .gender-icon {
+        width: 18px;
+        height: 18px;
+        font-size: 18px;
+      }
+    }
+
+    .percentage-badge {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  }
+
+  .progress-bar-wrapper {
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+
+    ::ng-deep .mat-mdc-progress-bar {
+      height: 6px;
+      border-radius: 3px;
+    }
+  }
+
+  .meal-item {
+    background-color: #f8f9fa;
+    border: 1px solid rgba(154, 160, 172, 0.12) !important;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: rgba(92, 103, 242, 0.02);
+      border-color: rgba(92, 103, 242, 0.2) !important;
+    }
+
+    .meal-icon-container {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+
+      .meal-icon {
+        width: 18px;
+        height: 18px;
+        font-size: 18px;
+      }
+    }
+  }
+
+  .star-icon {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+  }
+
+  .italic {
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  // Custom styling for subtle badges
+  .bg-primary-subtle {
+    background-color: rgba(92, 103, 242, 0.08) !important;
+    color: #5c67f2 !important;
+  }
+  .bg-danger-subtle {
+    background-color: rgba(244, 67, 54, 0.08) !important;
+    color: #f44336 !important;
+  }
+  .bg-success-subtle {
+    background-color: rgba(76, 175, 80, 0.08) !important;
+    color: #4caf50 !important;
+  }
+  .bg-warning-subtle {
+    background-color: rgba(255, 152, 0, 0.08) !important;
+    color: #ff9800 !important;
+  }
+
+  ::ng-deep .mat-mdc-tab-group {
+    font-family: inherit;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+
+    .mat-mdc-tab-body-wrapper {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mat-mdc-tab-body {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+}
+
+// Dark Mode Overrides
+::ng-deep {
+  .dark,
+  body.dark {
+    .hostel-mess-card {
+      background-color: #1a202e !important;
+
+      .header-menu {
+        border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+      }
+
+      .text-muted {
+        color: #96a2b4 !important;
+      }
+
+      .block-item,
+      .meal-item {
+        background-color: #1a202e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+
+        &:hover {
+          background-color: rgba(92, 103, 242, 0.04) !important;
+          border-color: rgba(92, 103, 242, 0.3) !important;
+        }
+
+        h6,
+        .occupancy-stats {
+          color: #ffffff !important;
+        }
+      }
+
+      // Pastel subtle badges in dark mode
+      .bg-primary-subtle {
+        background-color: rgba(92, 103, 242, 0.15) !important;
+        color: #8c96ff !important;
+      }
+      .bg-danger-subtle {
+        background-color: rgba(244, 67, 54, 0.15) !important;
+        color: #ff8a80 !important;
+      }
+      .bg-success-subtle {
+        background-color: rgba(76, 175, 80, 0.15) !important;
+        color: #81c784 !important;
+      }
+      .bg-warning-subtle {
+        background-color: rgba(255, 152, 0, 0.15) !important;
+        color: #ffd54f !important;
+      }
+
+      .mat-mdc-tab {
+        .mdc-tab__text-label {
+          color: #96a2b4 !important;
+        }
+        &.mdc-tab--active {
+          .mdc-tab__text-label {
+            color: #ffffff !important;
+          }
+        }
+      }
+
+      .italic {
+        color: #cbd5e0 !important;
+      }
+    }
+  }
+}
+
+::ng-deep body.layout-glassmorphism {
+  .hostel-mess-card {
+    background: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05) !important;
+
+    .block-item, .meal-item {
+      background-color: rgba(255, 255, 255, 0.35) !important;
+      border-color: rgba(255, 255, 255, 0.45) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      box-shadow: none;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        border-color: rgba(92, 103, 242, 0.3) !important;
+      }
+    }
+  }
+
+  &.dark {
+    .hostel-mess-card {
+      background: rgba(15, 23, 42, 0.55) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+
+      .block-item, .meal-item {
+        background-color: rgba(15, 23, 42, 0.4) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+
+        &:hover {
+          background-color: rgba(15, 23, 42, 0.55) !important;
+          border-color: rgba(92, 103, 242, 0.4) !important;
+        }
+      }
+    }
+  }
+}
+

@@ -19,13 +19,17 @@ export class CollegeSchoolComponent implements OnInit, AfterViewInit {
   @ViewChild(PrimarySchoolComponent) private readonly school!: PrimarySchoolComponent;
 
   ngOnInit(): void {
-    this.workspace.establishmentType.set('college');
-    this.workspace.selectedPeriod.set('Semestre 1');
-    this.workspace.selectView('dashboard');
+    this.workspace.configureEstablishment('college');
   }
 
   ngAfterViewInit(): void {
+    // Le socle est désormais connecté aux données de l'institut. L'ancien
+    // scénario de démonstration ci-dessous était très volumineux et écrasait
+    // les données chargées par l'API à l'entrée du tableau de bord.
+    return;
+
     this.school.schoolYearSettings = {
+      centralYearId: '',
       label: '2026–2027',
       startDate: '2026-10-01',
       endDate: '2027-07-15',
@@ -143,7 +147,6 @@ export class CollegeSchoolComponent implements OnInit, AfterViewInit {
     ]);
     this.school.additionalSchoolFees.set([
       { id: 1, academicYear: '2026–2027', classId: '3e-a-km', label: 'Frais d’examen BFEM', amount: '15000', frequency: 'Paiement unique', required: true },
-      { id: 2, academicYear: '2026–2027', classId: '6e-a-km', label: 'Tenue sportive', amount: '12000', frequency: 'Paiement unique', required: false },
     ]);
     this.school.additionalFeeForm.classId = '3e-a-km';
     this.school.monthlyPaymentRecords.set({
@@ -176,6 +179,7 @@ export class CollegeSchoolComponent implements OnInit, AfterViewInit {
       { id: 7, campusId: 'keur-massar', amount: 78500, reason: 'Facture d’eau', direction: 'Sortie', date: '2026-08-18', paymentMethod: 'Chèque', thirdParty: 'Sen’Eau', reference: 'DEC-COL-260818-007', status: 'En attente', source: 'Dépenses', notes: 'En attente de signature' },
       { id: 8, campusId: 'plateau', amount: 28000, reason: 'Mensualité', direction: 'Entrée', date: '2026-08-20', paymentMethod: 'Wave', thirdParty: 'Élève de 3e A', reference: 'ENC-COL-260820-021', status: 'Validée', source: 'Encaissements', notes: '' },
     ]);
+    this.school.preparerPropositionsClasses(true);
     this.school.selectedClassId.set('3e-a-km');
     this.school.selectedCurriculumSubjectId.set(1);
     this.school.selectedSubject.set('Mathématiques');

@@ -1,15 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { ColumnDefinition, MasterTableComponent } from '@shared/components/master-table/master-table.component';
 import {
   InstituteView,
   InstituteWorkspaceService,
 } from './institute-workspace.service';
+import { CampusInstitut, CentralApiService, FonctionnaliteSouscription, SalleInstitut, TypeSouscription } from '../central-api.service';
+import { AppToastService } from '@core/service/app-toast.service';
 
 interface Establishment {
+  id: string | null;
   type: string;
   name: string;
   icon: string;
@@ -17,26 +21,32 @@ interface Establishment {
   learners: string;
   campuses: number;
   levels: string;
-  status: 'Actif' | 'À configurer';
+  status: 'Actif' | 'Non activé';
+  active: boolean;
 }
 
 interface SubscriptionType {
+  id: string | null;
+  typeId: string;
+  code: string;
   type: string;
   icon: string;
   description: string;
   modules: string[];
   price: number;
   enabled: boolean;
+  functionalities: FonctionnaliteSouscription[];
 }
 
 interface Campus {
+  id: string;
+  code: string;
   name: string;
   city: string;
-  manager: string;
   establishments: number;
-  learners: string;
   rooms: number;
   status: string;
+  phone: string | null;
 }
 
 interface InstituteDirectoryRow {
@@ -55,12 +65,25 @@ interface InstituteDirectoryRow {
 }
 
 interface InstituteSpaceRow {
+  id: string;
+  campusId: string;
   reference: string;
   name: string;
   type: string;
   campus: string;
   capacity: string;
+  description: string;
   status: string;
+}
+
+interface InstituteSpaceForm {
+  campusId: string;
+  code: string;
+  name: string;
+  type: string;
+  capacity: number | null;
+  description: string;
+  status: 'disponible' | 'indisponible' | 'maintenance';
 }
 
 type StaffRecordTab = 'identity' | 'assignment' | 'access';
@@ -106,113 +129,31 @@ interface InstituteRole {
   styleUrl: './institute-console.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InstituteConsoleComponent {
+export class InstituteConsoleComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly workspace = inject(InstituteWorkspaceService);
+  private readonly api = inject(CentralApiService);
+  private readonly toast = inject(AppToastService);
   readonly activeView = this.workspace.activeView;
+  readonly establishments = signal<Establishment[]>([]);
+  readonly instituteName = signal('Institut');
+  readonly connectedUserName = signal('');
+  readonly subscriptionLoading = signal(false);
+  readonly subscriptionSaving = signal(false);
+  readonly subscriptionError = signal<string | null>(null);
+  readonly subscriptionSuccess = signal<string | null>(null);
+  readonly backendRefreshing = signal(false);
+  readonly selectedSubscriptionType = signal<SubscriptionType | null>(null);
+  readonly activeEstablishmentsCount = computed(() => this.establishments().filter((item) => item.active).length);
+  readonly activeEstablishments = computed(() => this.establishments().filter((item) => item.active));
 
-  readonly establishments: Establishment[] = [
-    {
-      type: 'Daara',
-      name: 'Daara Joyau du Savoir',
-      icon: 'auto_stories',
-      color: '#2f80ed',
-      learners: '520',
-      campuses: 2,
-      levels: 'Mémorisation · Révision · Arabe',
-      status: 'Actif',
-    },
-    {
-      type: 'Préscolaire',
-      name: 'La Petite Académie',
-      icon: 'toys',
-      color: '#e28b4f',
-      learners: '186',
-      campuses: 2,
-      levels: 'Petite · Moyenne · Grande section',
-      status: 'Actif',
-    },
-    {
-      type: 'École primaire',
-      name: 'École Élémentaire Joyau',
-      icon: 'school',
-      color: '#36a37c',
-      learners: '760',
-      campuses: 3,
-      levels: 'CI à CM2',
-      status: 'Actif',
-    },
-    {
-      type: 'Collège',
-      name: 'Collège Joyau du Savoir',
-      icon: 'menu_book',
-      color: '#7b61c9',
-      learners: '890',
-      campuses: 2,
-      levels: '6e à 3e',
-      status: 'Actif',
-    },
-    {
-      type: 'Lycée',
-      name: 'Lycée d’Excellence Joyau',
-      icon: 'workspace_premium',
-      color: '#d66f57',
-      learners: '730',
-      campuses: 2,
-      levels: 'Seconde à Terminale',
-      status: 'Actif',
-    },
-    {
-      type: 'Université',
-      name: 'Université Joyau',
-      icon: 'account_balance',
-      color: '#2779b9',
-      learners: '910',
-      campuses: 1,
-      levels: 'Licence · Master',
-      status: 'Actif',
-    },
-    {
-      type: 'Formation professionnelle',
-      name: 'Institut des Métiers',
-      icon: 'engineering',
-      color: '#a56a3f',
-      learners: '284',
-      campuses: 2,
-      levels: 'Diplômes · Certifications',
-      status: 'À configurer',
-    },
-  ];
-
-  readonly campuses = signal<Campus[]>([
-    {
-      name: 'Campus Keur Massar',
-      city: 'Keur Massar, Dakar',
-      manager: 'Aminata Ndiaye',
-      establishments: 5,
-      learners: '2 010',
-      rooms: 42,
-      status: 'Campus principal',
-    },
-    {
-      name: 'Campus Dakar Plateau',
-      city: 'Plateau, Dakar',
-      manager: 'Moussa Fall',
-      establishments: 4,
-      learners: '1 470',
-      rooms: 31,
-      status: 'Actif',
-    },
-    {
-      name: 'Campus Rufisque',
-      city: 'Rufisque, Dakar',
-      manager: 'Fatou Sarr',
-      establishments: 3,
-      learners: '800',
-      rooms: 24,
-      status: 'Actif',
-    },
-  ]);
+  readonly campuses = signal<Campus[]>([]);
+  readonly campusCount = computed(() => this.campuses().length);
+  readonly roomCount = computed(() => this.campuses().reduce((total, campus) => total + campus.rooms, 0));
+  readonly campusSaving = signal(false);
+  readonly campusError = signal<string | null>(null);
+  readonly editingCampusId = signal<string | null>(null);
 
   readonly campusFormOpen = signal(false);
   campusForm = { name: '', address: '' };
@@ -241,17 +182,17 @@ export class InstituteConsoleComponent {
     { matricule: 'ENS-005', name: 'Abdoulaye Touré', email: 'abdoulaye.toure@joyau.sn', phone: '76 485 67 32', subject: 'Sciences de la vie et de la terre', establishment: 'Lycée', campus: 'Rufisque', status: 'En congé' },
     { matricule: 'ENS-006', name: 'Coumba Ba', email: 'coumba.ba@joyau.sn', phone: '78 603 15 41', subject: 'Droit des affaires', establishment: 'Université', campus: 'Dakar Plateau', status: 'Actif' },
   ];
-  readonly spaceRows: InstituteSpaceRow[] = [
-    { reference: 'KM-S01', name: 'Salle A1', type: 'Salle de classe', campus: 'Keur Massar', capacity: '36 places', status: 'Disponible' },
-    { reference: 'KM-LAB1', name: 'Laboratoire de sciences', type: 'Laboratoire', campus: 'Keur Massar', capacity: '28 places', status: 'Disponible' },
-    { reference: 'DP-S12', name: 'Salle B12', type: 'Salle de classe', campus: 'Dakar Plateau', capacity: '40 places', status: 'Occupée' },
-    { reference: 'RF-B01', name: 'Bureau direction', type: 'Bureau', campus: 'Rufisque', capacity: '6 places', status: 'Disponible' },
-  ];
-
   readonly userDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.userRows);
   readonly staffDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.staffRows);
   readonly teacherDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.teacherRows);
-  readonly spaceDataSource = new MatTableDataSource<InstituteSpaceRow>(this.spaceRows);
+  readonly spaceRows = signal<InstituteSpaceRow[]>([]);
+  readonly spaceDataSource = new MatTableDataSource<InstituteSpaceRow>([]);
+  readonly spacesLoading = signal(false);
+  readonly spaceSaving = signal(false);
+  readonly spaceFormOpen = signal(false);
+  readonly editingSpaceId = signal<string | null>(null);
+  readonly spaceError = signal<string | null>(null);
+  spaceForm: InstituteSpaceForm = this.emptySpaceForm();
   readonly selectedTeacherEstablishment = signal('all');
   readonly selectedStaffCampus = signal('all');
   readonly selectedSpaceCampus = signal('all');
@@ -370,7 +311,7 @@ export class InstituteConsoleComponent {
     { def: 'type', label: 'Type', type: 'text', visible: true },
     { def: 'campus', label: 'Campus', type: 'text', visible: true },
     { def: 'capacity', label: 'Capacité', type: 'text', visible: true },
-    { def: 'status', label: 'État', type: 'status', visible: true, statusBadgeMap: { Disponible: 'badge badge-solid-green', Occupée: 'badge badge-solid-orange' } },
+    { def: 'status', label: 'État', type: 'status', visible: true, statusBadgeMap: { Disponible: 'badge badge-solid-green', Indisponible: 'badge badge-solid-red', Maintenance: 'badge badge-solid-orange' } },
     { def: 'actions', label: 'Actions', type: 'actionBtn', visible: true },
   ];
 
@@ -381,81 +322,221 @@ export class InstituteConsoleComponent {
     { label: 'Équipements pédagogiques', count: 426, value: '31,8 M F', icon: 'science' },
   ];
 
-  readonly subscriptionTypes = signal<SubscriptionType[]>([
-    {
-      type: 'Daara',
-      icon: 'auto_stories',
-      description: 'Suivi des sourates, révisions et progression',
-      modules: ['Apprenants', 'Progression coranique', 'Planning'],
-      price: 6000,
-      enabled: true,
-    },
-    {
-      type: 'Préscolaire',
-      icon: 'toys',
-      description: 'Cycles préscolaires et suivi des enfants',
-      modules: ['Inscriptions', 'Présences'],
-      price: 4000,
-      enabled: true,
-    },
-    {
-      type: 'École primaire',
-      icon: 'school',
-      description: 'Classes CI à CM2 et évaluations',
-      modules: ['Scolarité', 'Évaluations', 'Finances'],
-      price: 5000,
-      enabled: true,
-    },
-    {
-      type: 'Collège',
-      icon: 'menu_book',
-      description: 'Cycles moyen, emplois du temps et notes',
-      modules: ['Scolarité', 'Séances', 'Évaluations'],
-      price: 6000,
-      enabled: true,
-    },
-    {
-      type: 'Lycée',
-      icon: 'workspace_premium',
-      description: 'Séries, compositions et préparation examens',
-      modules: ['Scolarité', 'Séances', 'Examens'],
-      price: 7000,
-      enabled: true,
-    },
-    {
-      type: 'Université',
-      icon: 'account_balance',
-      description: 'Semestres, crédits, filières et délibérations',
-      modules: ['Filières', 'Crédits', 'Délibérations'],
-      price: 12000,
-      enabled: true,
-    },
-    {
-      type: 'Formation professionnelle',
-      icon: 'engineering',
-      description: 'Parcours, compétences et certifications',
-      modules: ['Parcours', 'Stages', 'Certifications'],
-      price: 8000,
-      enabled: false,
-    },
-  ]);
+  readonly subscriptionTypes = signal<SubscriptionType[]>([]);
 
   readonly subscriptionTotal = computed(
     () =>
-      15000 +
       this.subscriptionTypes()
-        .filter((item) => item.enabled)
-        .reduce((sum, item) => sum + item.price, 0),
+        .reduce((sum, item) => sum + item.functionalities
+          .filter((fonctionnalite) => fonctionnalite.selectionnee)
+          .reduce((subtotal, fonctionnalite) => subtotal + fonctionnalite.prix_mensuel, 0), 0),
   );
   readonly activeSubscriptionCount = computed(
-    () => this.subscriptionTypes().filter((item) => item.enabled).length,
+    () => this.subscriptionTypes().flatMap((item) => item.functionalities).filter((item) => item.selectionnee).length,
   );
+  readonly activeSubscriptionTypesCount = computed(() => this.subscriptionTypes().filter((item) => item.enabled).length);
+
+  ngOnInit(): void {
+    const vueDemandee = this.route.snapshot.queryParamMap.get('vue');
+    // Compatibilité des anciens liens /institut?vue=… : ils deviennent des
+    // URLs réelles, donc un changement de menu réactive bien son composant.
+    if (vueDemandee) {
+      const view: InstituteView = vueDemandee === 'campuses'
+        ? 'campuses'
+        : vueDemandee === 'souscription'
+          ? 'subscription'
+          : 'overview';
+      void this.router.navigateByUrl(this.workspace.cheminVue(view), { replaceUrl: true });
+      return;
+    }
+
+    this.workspace.synchronizeFromUrl(this.router.url);
+    if (!this.workspace.subscriptionValidated() && this.activeView() !== 'subscription') {
+      void this.router.navigateByUrl(this.workspace.cheminVue('subscription'), { replaceUrl: true });
+      return;
+    }
+    this.chargerEspace();
+  }
+
+  private chargerEspace(): void {
+    this.subscriptionLoading.set(true);
+    this.subscriptionError.set(null);
+    this.api.espaceInstitut().subscribe({
+      next: (espace) => {
+        this.instituteName.set(espace.institut.nom);
+        this.connectedUserName.set(`${espace.user.prenom} ${espace.user.nom}`.trim());
+        this.campuses.set(espace.campus.map((campus) => this.presenterCampus(campus)));
+        this.establishments.set(espace.etablissements.map((item) => this.presenterEtablissement(item)));
+        this.chargerSalles();
+        this.chargerSouscription();
+      },
+      error: (erreur: HttpErrorResponse) => {
+        if (erreur.status === 401 || erreur.status === 419) {
+          this.subscriptionLoading.set(false);
+          this.backendRefreshing.set(false);
+          return;
+        }
+        this.subscriptionError.set('Les données de votre institut ne sont pas disponibles pour le moment.');
+        this.subscriptionLoading.set(false);
+        this.backendRefreshing.set(false);
+      },
+    });
+  }
+
+  private chargerSouscription(): void {
+    this.api.souscriptionInstitut().subscribe({
+      next: (souscription) => {
+        const types = souscription.types.map((item) => this.presenterSouscription(item));
+        this.subscriptionTypes.set(types);
+        this.selectedSubscriptionType.set(types.find((item) => item.enabled) ?? null);
+        this.workspace.configureSubscriptionAccess(souscription.validee, souscription.fonctionnalites_actives);
+        if (!souscription.validee && this.activeView() !== 'subscription') {
+          void this.router.navigateByUrl(this.workspace.cheminVue('subscription'), { replaceUrl: true });
+        }
+        this.subscriptionLoading.set(false);
+        if (this.backendRefreshing()) {
+          this.backendRefreshing.set(false);
+          this.subscriptionSuccess.set('Les données ont été réactualisées depuis la base de données.');
+        }
+      },
+      error: (erreur: HttpErrorResponse) => {
+        if (erreur.status === 401 || erreur.status === 419) {
+          this.subscriptionLoading.set(false);
+          this.backendRefreshing.set(false);
+          return;
+        }
+        this.subscriptionError.set('La souscription est momentanément indisponible.');
+        this.subscriptionLoading.set(false);
+        this.backendRefreshing.set(false);
+      },
+    });
+  }
+
+  actualiserDonneesBackend(): void {
+    if (this.backendRefreshing()) return;
+    this.api.invaliderCache('institut:');
+    this.backendRefreshing.set(true);
+    this.subscriptionError.set(null);
+    this.subscriptionSuccess.set(null);
+    this.chargerEspace();
+  }
+
+  chargerSalles(): void {
+    this.spacesLoading.set(true);
+    this.api.sallesInstitut().subscribe({
+      next: (resultat) => {
+        this.spacesLoading.set(false);
+        this.spaceRows.set(resultat.data.map((salle) => this.presenterSalle(salle)));
+        this.appliquerFiltreSalles();
+      },
+      error: (erreur: HttpErrorResponse) => {
+        this.spacesLoading.set(false);
+        if (erreur.status !== 401 && erreur.status !== 419) {
+          this.toast.error(erreur.error?.message ?? 'Les salles et espaces n’ont pas pu être chargés.');
+        }
+      },
+    });
+  }
+
+  private presenterEtablissement(item: Omit<TypeSouscription, 'fonctionnalites'>): Establishment {
+    const presentation = this.presentationType(item.code);
+    return {
+      id: item.id,
+      type: item.type,
+      name: item.nom,
+      icon: presentation.icon,
+      color: presentation.color,
+      learners: '—',
+      campuses: this.campusCount(),
+      levels: presentation.levels,
+      status: item.active ? 'Actif' : 'Non activé',
+      active: item.active,
+    };
+  }
+
+  private presenterCampus(campus: CampusInstitut): Campus {
+    return {
+      id: campus.id,
+      code: campus.code,
+      name: campus.nom,
+      city: campus.adresse || 'Adresse non renseignée',
+      establishments: campus.etablissements_count,
+      rooms: campus.salles_count,
+      status: campus.statut === 'actif' ? 'Actif' : 'Inactif',
+      phone: campus.telephone,
+    };
+  }
+
+  private presenterSalle(salle: SalleInstitut): InstituteSpaceRow {
+    const statuts: Record<SalleInstitut['statut'], string> = {
+      disponible: 'Disponible',
+      indisponible: 'Indisponible',
+      maintenance: 'Maintenance',
+    };
+    return {
+      id: salle.id,
+      campusId: salle.campus_id,
+      reference: salle.code,
+      name: salle.nom,
+      type: salle.type,
+      campus: salle.campus_nom,
+      capacity: salle.capacite ? `${salle.capacite} places` : 'Non définie',
+      description: salle.description ?? '',
+      status: statuts[salle.statut],
+    };
+  }
+
+  canOpenEstablishment(item: Establishment): boolean {
+    const typeSouscription = this.subscriptionTypes().find((type) => type.type === item.type);
+    return item.active
+      && this.campusCount() > 0
+      && this.workspace.subscriptionValidated()
+      && Boolean(typeSouscription?.functionalities.some((fonctionnalite) => fonctionnalite.selectionnee));
+  }
+
+  establishmentActionLabel(item: Establishment): string {
+    if (!item.active) return 'Non activé';
+    if (this.campusCount() === 0) return 'Ajoutez un campus';
+    return 'Ouvrir l’espace';
+  }
+
+  private presenterSouscription(item: TypeSouscription): SubscriptionType {
+    const presentation = this.presentationType(item.code);
+    return {
+      id: item.id,
+      typeId: item.type_id,
+      code: item.code,
+      type: item.type,
+      icon: presentation.icon,
+      description: item.active ? 'Établissement activé lors de votre adhésion.' : 'Type non retenu dans votre adhésion.',
+      modules: item.fonctionnalites.map((fonctionnalite) => fonctionnalite.libelle),
+      price: item.fonctionnalites.reduce((total, fonctionnalite) => total + fonctionnalite.prix_mensuel, 0),
+      enabled: item.active,
+      functionalities: item.fonctionnalites,
+    };
+  }
+
+  private presentationType(code: string): { icon: string; color: string; levels: string } {
+    const presentations: Record<string, { icon: string; color: string; levels: string }> = {
+      prescolaire: { icon: 'toys', color: '#e28b4f', levels: 'Petite · Moyenne · Grande section' },
+      primaire: { icon: 'school', color: '#36a37c', levels: 'CI à CM2' },
+      college: { icon: 'menu_book', color: '#7b61c9', levels: '6e à 3e' },
+      lycee: { icon: 'workspace_premium', color: '#d66f57', levels: 'Seconde à Terminale' },
+      universite: { icon: 'account_balance', color: '#2779b9', levels: 'Licence · Master' },
+      formation_professionnelle: { icon: 'engineering', color: '#a56a3f', levels: 'Diplômes · Certifications' },
+    };
+    return presentations[code] ?? { icon: 'account_balance', color: '#2f80ed', levels: 'À définir' };
+  }
 
   openEstablishmentSpace(type: string): void {
+    const establishment = this.establishments().find((item) => item.type === type);
+    const typeSouscription = this.subscriptionTypes().find((item) => item.type === type);
+    if (!establishment || !this.canOpenEstablishment(establishment)
+      || !typeSouscription?.functionalities.some((item) => item.selectionnee)) return;
     const paths: Record<string, string> = {
-      'École primaire': '/institut/etablissements/primaire',
-      Collège: '/institut/etablissements/college',
-      Lycée: '/institut/etablissements/lycee',
+      'École primaire': '/institut/etablissements/primaire/tableau-de-bord',
+      Collège: '/institut/etablissements/college/tableau-de-bord',
+      Lycée: '/institut/etablissements/lycee/tableau-de-bord',
     };
     const path = paths[type];
 
@@ -475,34 +556,50 @@ export class InstituteConsoleComponent {
     this.workspace.selectView(view);
   }
 
-  openCampusForm(): void {
-    this.campusForm = { name: '', address: '' };
+  openCampusForm(campus?: Campus): void {
+    this.editingCampusId.set(campus?.id ?? null);
+    this.campusForm = campus ? { name: campus.name, address: campus.city } : { name: '', address: '' };
+    this.campusError.set(null);
     this.campusFormOpen.set(true);
   }
 
   closeCampusForm(): void {
     this.campusFormOpen.set(false);
+    this.editingCampusId.set(null);
   }
 
   saveCampus(): void {
     const name = this.campusForm.name.trim();
     const address = this.campusForm.address.trim();
+    const isUpdate = Boolean(this.editingCampusId());
 
     if (!name || !address) return;
 
-    this.campuses.update((items) => [
-      ...items,
-      {
-        name,
-        city: address,
-        manager: 'À définir',
-        establishments: 0,
-        learners: '0',
-        rooms: 0,
-        status: 'À configurer',
+    this.campusSaving.set(true);
+    this.campusError.set(null);
+    const requete = this.editingCampusId()
+      ? this.api.mettreAJourCampusInstitut(this.editingCampusId()!, { nom: name, adresse: address })
+      : this.api.creerCampusInstitut({ nom: name, adresse: address });
+    requete.subscribe({
+      next: (resultat) => {
+        this.campuses.update((items) => {
+          const existe = items.some((item) => item.id === resultat.data.id);
+          const campus = this.presenterCampus(resultat.data);
+          return (existe ? items.map((item) => item.id === campus.id ? campus : item) : [...items, campus])
+            .sort((a, b) => a.name.localeCompare(b.name));
+        });
+        this.establishments.update((items) => items.map((item) => ({ ...item, campuses: this.campusCount() })));
+        this.campusSaving.set(false);
+        this.closeCampusForm();
+        this.toast.success(isUpdate ? 'Le campus a été mis à jour.' : 'Le campus a été ajouté.');
       },
-    ]);
-    this.closeCampusForm();
+      error: (erreur) => {
+        this.campusSaving.set(false);
+        const message = erreur?.error?.message || 'Le campus n’a pas pu être créé. Vérifiez les informations puis réessayez.';
+        this.campusError.set(message);
+        this.toast.error(message);
+      },
+    });
   }
 
   selectUserCategory(category: 'all' | 'teachers' | 'staff' | 'guardians' | 'learners'): void {
@@ -630,9 +727,7 @@ export class InstituteConsoleComponent {
 
   selectSpaceCampus(campus: string): void {
     this.selectedSpaceCampus.set(campus);
-    this.spaceDataSource.data = campus === 'all'
-      ? this.spaceRows
-      : this.spaceRows.filter((space) => space.campus === campus);
+    this.appliquerFiltreSalles();
   }
 
   shortCampusName(name: string): string {
@@ -644,7 +739,115 @@ export class InstituteConsoleComponent {
   }
 
   spaceCampusCount(campus: string): number {
-    return this.spaceRows.filter((space) => space.campus === campus).length;
+    return this.spaceRows().filter((space) => space.campusId === campus).length;
+  }
+
+  openSpaceForm(space?: InstituteSpaceRow): void {
+    this.editingSpaceId.set(space?.id ?? null);
+    const campusId = space?.campusId ?? this.campuses()[0]?.id ?? '';
+    this.spaceForm = space
+      ? {
+          campusId,
+          code: space.reference,
+          name: space.name,
+          type: space.type,
+          capacity: this.nombreCapacite(space.capacity),
+          description: space.description,
+          status: this.codeStatutSalle(space.status),
+        }
+      : { ...this.emptySpaceForm(), campusId };
+    this.spaceError.set(null);
+    this.spaceFormOpen.set(true);
+  }
+
+  closeSpaceForm(): void {
+    this.spaceFormOpen.set(false);
+    this.editingSpaceId.set(null);
+    this.spaceError.set(null);
+  }
+
+  saveSpace(): void {
+    if (!this.spaceForm.campusId || !this.spaceForm.name.trim() || !this.spaceForm.type.trim() || this.spaceSaving()) {
+      return;
+    }
+    this.spaceSaving.set(true);
+    this.spaceError.set(null);
+    const donnees = {
+      campus_id: this.spaceForm.campusId,
+      code: this.spaceForm.code.trim() || null,
+      nom: this.spaceForm.name.trim(),
+      type: this.spaceForm.type.trim(),
+      capacite: this.spaceForm.capacity,
+      description: this.spaceForm.description.trim() || null,
+      statut: this.spaceForm.status,
+    };
+    const requete = this.editingSpaceId()
+      ? this.api.mettreAJourSalleInstitut(this.editingSpaceId()!, donnees)
+      : this.api.creerSalleInstitut(donnees);
+    requete.subscribe({
+      next: (resultat) => {
+        const salle = this.presenterSalle(resultat.data);
+        this.spaceRows.update((items) => {
+          const existe = items.some((item) => item.id === salle.id);
+          return (existe ? items.map((item) => item.id === salle.id ? salle : item) : [...items, salle])
+            .sort((a, b) => `${a.campus}\u0000${a.name}`.localeCompare(`${b.campus}\u0000${b.name}`));
+        });
+        this.appliquerFiltreSalles();
+        this.spaceSaving.set(false);
+        this.closeSpaceForm();
+        this.chargerEspace();
+        this.toast.success(resultat.message);
+      },
+      error: (erreur) => {
+        this.spaceSaving.set(false);
+        const message = erreur?.error?.message ?? 'La salle n’a pas pu être enregistrée.';
+        this.spaceError.set(message);
+        this.toast.error(message);
+      },
+    });
+  }
+
+  deleteSpace(space: InstituteSpaceRow): void {
+    if (!window.confirm(`Supprimer « ${space.name} » ? Cette action retirera la salle des futures configurations d’emploi du temps.`)) {
+      return;
+    }
+    this.api.supprimerSalleInstitut(space.id).subscribe({
+      next: (resultat) => {
+        this.spaceRows.update((items) => items.filter((item) => item.id !== space.id));
+        this.appliquerFiltreSalles();
+        this.chargerEspace();
+        this.toast.success(resultat.message);
+      },
+      error: (erreur) => this.toast.error(erreur?.error?.message ?? 'La salle n’a pas pu être supprimée.'),
+    });
+  }
+
+  private appliquerFiltreSalles(): void {
+    const campusId = this.selectedSpaceCampus();
+    this.spaceDataSource.data = campusId === 'all'
+      ? this.spaceRows()
+      : this.spaceRows().filter((space) => space.campusId === campusId);
+  }
+
+  private emptySpaceForm(): InstituteSpaceForm {
+    return {
+      campusId: '',
+      code: '',
+      name: '',
+      type: 'Salle de classe',
+      capacity: null,
+      description: '',
+      status: 'disponible',
+    };
+  }
+
+  private codeStatutSalle(statut: string): InstituteSpaceForm['status'] {
+    return statut === 'Indisponible' ? 'indisponible' : statut === 'Maintenance' ? 'maintenance' : 'disponible';
+  }
+
+  private nombreCapacite(capacite: string): number | null {
+    const valeur = Number(capacite.replace(/\D/g, ''));
+    return Number.isFinite(valeur) && valeur > 0 ? valeur : null;
   }
 
   startStaffForm(record?: InstituteDirectoryRow): void {
@@ -786,10 +989,73 @@ export class InstituteConsoleComponent {
     return labels[this.activeView()];
   }
 
-  toggleSubscription(type: string): void {
-    this.subscriptionTypes.update((items) =>
-      items.map((item) => (item.type === type ? { ...item, enabled: !item.enabled } : item)),
-    );
+  ouvrirFonctionnalites(type: SubscriptionType): void {
+    if (!type.enabled) return;
+    this.selectedSubscriptionType.set(type);
+  }
+
+  ouvrirPremierTypeActif(): void {
+    const type = this.subscriptionTypes().find((item) => item.enabled);
+    if (type) this.ouvrirFonctionnalites(type);
+  }
+
+  basculerFonctionnalite(fonctionnaliteId: string): void {
+    const type = this.selectedSubscriptionType();
+    if (!type) return;
+    this.subscriptionTypes.update((types) => types.map((item) => item.typeId !== type.typeId ? item : {
+      ...item,
+      functionalities: item.functionalities.map((fonctionnalite) => fonctionnalite.id === fonctionnaliteId
+        ? { ...fonctionnalite, selectionnee: !fonctionnalite.selectionnee }
+        : fonctionnalite),
+    }));
+    this.selectedSubscriptionType.set(this.subscriptionTypes().find((item) => item.typeId === type.typeId) ?? null);
+  }
+
+  enregistrerSouscription(): void {
+    if (this.subscriptionSaving()) return;
+    this.subscriptionSaving.set(true);
+    this.subscriptionError.set(null);
+    this.subscriptionSuccess.set(null);
+    const selection = this.subscriptionTypes()
+      .flatMap((type) => type.functionalities)
+      .filter((fonctionnalite) => fonctionnalite.selectionnee)
+      .map((fonctionnalite) => fonctionnalite.id);
+
+    if (!selection.length) {
+      this.subscriptionError.set('Sélectionnez au moins une fonctionnalité commercialisée avant de valider.');
+      this.subscriptionSaving.set(false);
+      return;
+    }
+
+    this.api.enregistrerSouscriptionInstitut(selection).subscribe({
+      next: () => this.api.validerSouscriptionInstitut().subscribe({
+        next: (souscription) => {
+          const types = souscription.types.map((item) => this.presenterSouscription(item));
+          this.subscriptionTypes.set(types);
+          const selected = this.selectedSubscriptionType();
+          this.selectedSubscriptionType.set(types.find((item) => item.typeId === selected?.typeId) ?? types.find((item) => item.enabled) ?? null);
+          this.workspace.configureSubscriptionAccess(souscription.validee, souscription.fonctionnalites_actives);
+          this.subscriptionSuccess.set('Votre souscription est validée. Les espaces et menus autorisés sont maintenant accessibles.');
+          this.subscriptionSaving.set(false);
+        },
+        error: (response: unknown) => {
+          this.subscriptionError.set(this.subscriptionErrorMessage(response, 'La validation de votre souscription a échoué.'));
+          this.subscriptionSaving.set(false);
+        },
+      }),
+      error: (response: unknown) => {
+        this.subscriptionError.set(this.subscriptionErrorMessage(response, 'La sauvegarde de votre souscription a échoué.'));
+        this.subscriptionSaving.set(false);
+      },
+    });
+  }
+
+  hasActiveFeature(code: string): boolean {
+    return this.workspace.hasFeature(code);
+  }
+
+  private subscriptionErrorMessage(response: unknown, fallback: string): string {
+    return (response as { error?: { message?: string } })?.error?.message ?? fallback;
   }
 
   formatPrice(value: number): string {

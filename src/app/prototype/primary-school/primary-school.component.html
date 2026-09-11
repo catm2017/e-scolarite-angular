@@ -26,6 +26,12 @@
     </div>
 
     <main class="primary-content">
+      @if (financesLoading() && (activeView() === 'fees' || activeView() === 'payments' || activeView() === 'expense-settings' || activeView() === 'expenses' || activeView() === 'finance')) {
+        <section class="panel data-loading-state" role="status" aria-live="polite">
+          <i>sync</i><strong>Chargement des données financières…</strong><span>Les tarifs, paiements et dépenses du campus sont en cours de récupération.</span>
+        </section>
+      }
+
       @if (activeView() === 'dashboard') {
         <div class="page-title">
           <div><small>{{ isHighSchool() ? 'LYCÉE' : isCollege() ? 'COLLÈGE' : 'ÉCOLE PRIMAIRE' }} · {{ currentCampus().shortName.toUpperCase() }}</small><h1>{{ t('dashboard') }}</h1><p>Les informations essentielles du campus, sans détails inutiles.</p></div>
@@ -77,7 +83,7 @@
           </div>
           <div class="title-actions">
             <button type="button" (click)="setView('students')"><i>close</i>Annuler</button>
-            <button mat-flat-button class="primary-action" type="submit" form="student-record-form">
+            <button mat-flat-button class="primary-action" type="submit" form="student-record-form" [disabled]="dossierSaving()">
               <mat-icon>save</mat-icon>{{ studentForm.id ? 'Enregistrer les modifications' : 'Créer le dossier' }}
             </button>
           </div>
@@ -303,7 +309,10 @@
 
           <div class="enrollment-operation-switch" role="group" aria-label="Type d’opération">
             <button type="button" [class.active]="enrollmentOperation() === 'registration'" (click)="changeEnrollmentOperation('registration')">
-              <i>how_to_reg</i><span><strong>Inscription / réinscription</strong><small>Nouveau dossier ou passage en classe supérieure, avec frais à encaisser</small></span>
+              <i>person_add</i><span><strong>Inscription</strong><small>Première inscription d’un nouveau dossier, avec frais à encaisser</small></span>
+            </button>
+            <button type="button" [class.active]="enrollmentOperation() === 'reenrollment'" (click)="changeEnrollmentOperation('reenrollment')">
+              <i>how_to_reg</i><span><strong>Réinscription</strong><small>Passage d’un ancien élève dans la nouvelle année scolaire</small></span>
             </button>
             <button type="button" [class.active]="enrollmentOperation() === 'transfer'" (click)="changeEnrollmentOperation('transfer')">
               <i>swap_horiz</i><span><strong>Transfert</strong><small>Changement de classe, sans créer de frais d’inscription</small></span>
@@ -312,24 +321,26 @@
 
           <div class="enrollment-selectors">
             <label>
-              <span>{{ enrollmentOperation() === 'registration' ? 'Élèves à inscrire ou réinscrire' : 'Classe de départ' }}</span>
+              <span>{{ enrollmentOperation() === 'registration' ? 'Dossiers à inscrire' : 'Classe de départ' }}</span>
               <select [ngModel]="enrollmentSourceClassId()" (ngModelChange)="changeEnrollmentSource($event)">
-                <option value="unassigned">Classe non définie · nouveaux dossiers</option>
-                @for (classroom of campusClasses(); track classroom.id) {
-                  <option [value]="classroom.id">{{ classroom.name }} · {{ classroom.level }}</option>
+                @if (!enrollmentSourceOptions().length) {
+                  <option value="">Aucun élève disponible</option>
+                }
+                @for (source of enrollmentSourceOptions(); track source.id) {
+                  <option [value]="source.id">{{ source.label }}{{ source.year ? ' · ' + source.year : '' }}</option>
                 }
               </select>
-              <small>{{ enrollmentOperation() === 'registration' ? 'Choisissez « Classe non définie » pour un nouveau dossier, ou la classe actuelle pour une réinscription.' : 'Les élèves affichés proviennent de cette classe.' }}</small>
+              <small>{{ enrollmentOperation() === 'registration' ? 'Seuls les dossiers sans historique scolaire sont proposés.' : enrollmentOperation() === 'reenrollment' ? 'Les élèves proposés ne sont pas encore réinscrits pour cette année.' : 'Les élèves affichés sont actuellement inscrits dans cette classe.' }}</small>
             </label>
             <i class="enrollment-direction">arrow_forward</i>
             <label>
-              <span>{{ enrollmentOperation() === 'registration' ? 'Classe d’inscription' : 'Nouvelle classe' }}</span>
+              <span>{{ enrollmentOperation() === 'transfer' ? 'Nouvelle classe' : 'Classe d’inscription' }}</span>
               <select [ngModel]="enrollmentTargetClassId()" (ngModelChange)="changeEnrollmentTarget($event)">
                 @for (classroom of campusClasses(); track classroom.id) {
                   <option [value]="classroom.id">{{ classroom.name }} · {{ classroom.level }}</option>
                 }
               </select>
-              <small>{{ enrollmentOperation() === 'registration' ? 'Les frais d’inscription de cette classe seront ajoutés aux encaissements.' : 'Sélectionnez la classe qui accueillera les élèves transférés.' }}</small>
+              <small>{{ enrollmentOperation() === 'transfer' ? 'Sélectionnez la classe qui accueillera les élèves transférés.' : 'Les frais d’inscription de cette classe seront ajoutés aux encaissements.' }}</small>
             </label>
           </div>
 
@@ -340,34 +351,31 @@
             </div>
             <div class="enrollment-selection-actions">
               <span>{{ enrollmentSelectedStudentIds().length }} sélectionné(s)</span>
-              <button type="button" (click)="toggleAllEnrollmentStudents()">
-                <i>{{ enrollmentAllSelected() ? 'deselect' : 'select_all' }}</i>
-                {{ enrollmentAllSelected() ? 'Tout désélectionner' : 'Tout sélectionner' }}
-              </button>
             </div>
           </div>
 
-          <div class="enrollment-list" role="table" aria-label="Élèves à inscrire ou réinscrire">
-            <div class="enrollment-list-head" role="row">
-              <span></span><span></span><span>Élève</span><span>Matricule</span><span>Tuteur</span><span>Statut</span>
-            </div>
-            @for (student of enrollmentSourceStudents(); track student.id) {
-              <label class="enrollment-row" [class.selected]="enrollmentSelectedStudentIds().includes(student.id)" role="row">
-                <input type="checkbox" [checked]="enrollmentSelectedStudentIds().includes(student.id)" (change)="toggleEnrollmentStudent(student.id)" [attr.aria-label]="'Sélectionner ' + student.name" />
-                <span class="enrollment-avatar">{{ studentInitials(student.name) }}</span>
-                <span class="enrollment-student"><strong>{{ student.name }}</strong><small>{{ student.gender === 'F' ? 'Féminin' : 'Masculin' }} · Né(e) le {{ student.birthDate }}</small></span>
-                <span class="enrollment-matricule">{{ student.matricule }}</span>
-                <span class="enrollment-guardian"><i>family_restroom</i>{{ student.parentName || 'Tuteur à renseigner' }}</span>
-                <span class="enrollment-status" [class.pending]="student.status === 'En attente'">{{ student.status || 'Actif' }}</span>
-              </label>
-            } @empty {
-              <div class="enrollment-empty"><i>groups</i><strong>Aucun élève dans cette classe</strong><span>Choisissez une autre classe de départ pour continuer.</span></div>
-            }
-          </div>
+          <app-master-table
+            [title]="'Élèves · ' + enrollmentSourceLabel()"
+            [columnDefinitions]="enrollmentColumns"
+            [dataSource]="enrollmentDataSource"
+            [isLoading]="enrollmentLoading()"
+            [selectedRows]="enrollmentSelectedRows()"
+            [exportFileName]="'inscriptions_' + enrollmentSourceLabel()"
+            [showAdd]="false"
+            [showDelete]="false"
+            [showEdit]="false"
+            [showDetails]="false"
+            [showBulkDelete]="false"
+            [showCheckbox]="true"
+            [showContextMenu]="false"
+            [enableRowClick]="false"
+            (refresh)="chargerCandidatsInscriptions()"
+            (selectionChange)="setEnrollmentSelection($event)">
+          </app-master-table>
 
           <footer class="enrollment-actions">
-            <p><i>info</i>{{ enrollmentOperation() === 'registration' ? 'Chaque inscription ou réinscription ajoute les frais d’inscription de la classe dans les encaissements, au statut impayé.' : 'Les dossiers des élèves restent inchangés : seule leur affectation de classe est mise à jour.' }}</p>
-            <button class="primary-action" type="button" [disabled]="!enrollmentSelectedStudentIds().length || !enrollmentTargetClass() || (enrollmentOperation() === 'transfer' && enrollmentSourceClassId() === enrollmentTargetClassId())" (click)="applyEnrollmentAssignment()">
+            <p><i>info</i>{{ enrollmentOperation() === 'transfer' ? 'Le dossier reste inchangé : seule l’affectation de classe de l’année en cours est mise à jour.' : 'L’inscription est enregistrée dans l’année choisie et une échéance de frais d’inscription est créée au statut à payer.' }}</p>
+            <button class="primary-action" type="button" [disabled]="enrollmentSaving() || !enrollmentSelectedStudentIds().length || !enrollmentTargetClass() || (enrollmentOperation() === 'transfer' && enrollmentSourceClassId() === enrollmentTargetClassId())" (click)="applyEnrollmentAssignment()">
               <i>check_circle</i>{{ enrollmentActionLabel() }}
             </button>
           </footer>
@@ -396,7 +404,7 @@
           [title]="'Élèves · ' + selectedStudentListLabel()"
           [columnDefinitions]="studentColumns"
           [dataSource]="studentDataSource"
-          [isLoading]="false"
+          [isLoading]="dossiersLoading()"
           [exportFileName]="'eleves_' + selectedStudentListLabel()"
           [showAdd]="true"
           [showDelete]="true"
@@ -428,7 +436,7 @@
             <div class="student-import-body">
               <div class="student-import-notice">
                 <i>info</i>
-                <p>Les élèves importés seront placés dans <strong>Classe non définie</strong>. Le téléphone permet de rattacher automatiquement un tuteur déjà présent.</p>
+                <p>Les élèves importés seront placés dans <strong>Classe non définie</strong>. Les données du tuteur sont importées avec chaque élève ; un téléphone ou un e-mail déjà connu réutilise automatiquement le tuteur existant.</p>
               </div>
 
               <div class="student-import-field">
@@ -445,13 +453,13 @@
               </div>
 
               <div class="student-import-template">
-                <div><i>description</i><span><strong>Modèle du fichier d’import</strong><small>Téléchargez-le, complétez les lignes dans Excel puis enregistrez-le en CSV.</small></span></div>
+                <div><i>description</i><span><strong>Modèle du fichier d’import</strong><small>Il contient toutes les informations textuelles du dossier élève et du tuteur. Pour cantine et transport, indiquez oui ou non ; les pièces jointes restent ajoutables dans le dossier après l’import.</small></span></div>
                 <button type="button" (click)="downloadStudentImportTemplate()"><i>download</i>Télécharger le modèle</button>
               </div>
             </div>
             <footer>
               <button type="button" class="student-import-cancel" (click)="closeStudentImport()">Annuler</button>
-              <button type="button" class="primary-action" [disabled]="!studentImportFile()" (click)="importStudents()"><i>upload</i>Importer les élèves</button>
+              <button type="button" class="primary-action" [disabled]="!studentImportFile() || dossierSaving()" (click)="importStudents()"><i>upload</i>Importer les élèves</button>
             </footer>
           </section>
         }
@@ -468,14 +476,14 @@
         </div>
         <section class="guardian-summary-grid">
           <article><i>family_restroom</i><span><small>Tuteurs du campus</small><strong>{{ campusGuardians().length }}</strong></span></article>
-          <article><i>link</i><span><small>Apprenants rattachés</small><strong>10</strong></span></article>
-          <article><i>verified_user</i><span><small>Comptes famille actifs</small><strong>5</strong></span></article>
+          <article><i>link</i><span><small>Apprenants rattachés</small><strong>{{ campusGuardianLearnersCount() }}</strong></span></article>
+          <article><i>verified_user</i><span><small>Comptes famille actifs</small><strong>{{ campusActiveGuardianAccountsCount() }}</strong></span></article>
         </section>
         <app-master-table
           [title]="'Tuteurs · ' + currentCampus().shortName"
           [columnDefinitions]="guardianColumns"
           [dataSource]="guardianDataSource"
-          [isLoading]="false"
+          [isLoading]="dossiersLoading()"
           [exportFileName]="'tuteurs_' + currentCampus().shortName"
           [showAdd]="false"
           [showEdit]="false"
@@ -498,7 +506,7 @@
           <section class="record-layout guardian-record-layout">
             <aside class="record-profile-card panel"><div class="record-profile-cover"></div><div class="record-avatar">{{ guardian.name.slice(0, 1) }}</div><h2>{{ guardian.name }}</h2><p>{{ guardian.profession || 'Profession non renseignée' }}</p><span class="record-status"><i></i>{{ guardian.accountStatus }}</span><dl><div><dt>Téléphone</dt><dd>{{ guardian.phone }}</dd></div><div><dt>E-mail</dt><dd>{{ guardian.email || 'Non renseigné' }}</dd></div><div><dt>Apprenants</dt><dd>{{ selectedGuardianChildren().length }} dans cet établissement</dd></div><div><dt>Campus</dt><dd>{{ currentCampus().shortName }}</dd></div></dl><div class="record-contact"><i>location_on</i><span><small>Adresse</small><strong>{{ guardian.address || 'Non renseignée' }}</strong><b>{{ guardian.secondaryPhone || 'Pas de second numéro' }}</b></span></div></aside>
             <div class="record-main"><nav class="record-tabs panel" aria-label="Sections du dossier tuteur"><button [class.active]="guardianRecordTab() === 'identity'" (click)="setGuardianRecordTab('identity')"><i>person</i>Identité</button><button [class.active]="guardianRecordTab() === 'children'" (click)="setGuardianRecordTab('children')"><i>groups</i>Enfants</button><button [class.active]="guardianRecordTab() === 'access'" (click)="setGuardianRecordTab('access')"><i>lock_person</i>Compte</button></nav>
-              @if (guardianRecordTab() === 'identity') {<form class="record-tab-form" #guardianIdentityForm="ngForm" (ngSubmit)="saveGuardianRecord()"><article class="panel record-section record-editor-card"><header><div><h2>Identité et coordonnées</h2><p>Une même fiche tuteur est partagée entre tous ses enfants rattachés.</p></div><i>family_restroom</i></header><div class="record-form-grid"><label><span>Prénom(s)</span><input name="guardianFirstName" [(ngModel)]="guardianForm.firstName" required /></label><label><span>Nom</span><input name="guardianLastName" [(ngModel)]="guardianForm.lastName" required /></label><label><span>Profession</span><input name="guardianProfession" [(ngModel)]="guardianForm.profession" /></label><label><span>Téléphone / WhatsApp</span><input name="guardianPhone" [(ngModel)]="guardianForm.phone" required /></label><label><span>Téléphone secondaire</span><input name="guardianSecondaryPhone" [(ngModel)]="guardianForm.secondaryPhone" /></label><label><span>Adresse e-mail</span><input type="email" name="guardianEmail" [(ngModel)]="guardianForm.email" /></label><label class="wide"><span>Adresse</span><input name="guardianAddress" [(ngModel)]="guardianForm.address" /></label></div></article><div class="record-form-actions"><span>Les coordonnées seront répercutées dans les dossiers des enfants liés.</span><button type="submit" [disabled]="guardianIdentityForm.invalid"><i>save</i>Mettre à jour le dossier</button></div></form>}
+              @if (guardianRecordTab() === 'identity') {<form class="record-tab-form" #guardianIdentityForm="ngForm" (ngSubmit)="saveGuardianRecord()"><article class="panel record-section record-editor-card"><header><div><h2>Identité et coordonnées</h2><p>Une même fiche tuteur est partagée entre tous ses enfants rattachés.</p></div><i>family_restroom</i></header><div class="record-form-grid"><label><span>Prénom(s)</span><input name="guardianFirstName" [(ngModel)]="guardianForm.firstName" required /></label><label><span>Nom</span><input name="guardianLastName" [(ngModel)]="guardianForm.lastName" required /></label><label><span>Profession</span><input name="guardianProfession" [(ngModel)]="guardianForm.profession" /></label><label><span>Téléphone / WhatsApp</span><input name="guardianPhone" [(ngModel)]="guardianForm.phone" required /></label><label><span>Téléphone secondaire</span><input name="guardianSecondaryPhone" [(ngModel)]="guardianForm.secondaryPhone" /></label><label><span>Adresse e-mail</span><input type="email" name="guardianEmail" [(ngModel)]="guardianForm.email" /></label><label class="wide"><span>Adresse</span><input name="guardianAddress" [(ngModel)]="guardianForm.address" /></label></div></article><div class="record-form-actions"><span>Les coordonnées seront répercutées dans les dossiers des enfants liés.</span><button type="submit" [disabled]="guardianIdentityForm.invalid || dossierSaving()"><i>save</i>Mettre à jour le dossier</button></div></form>}
               @if (guardianRecordTab() === 'children') {<article class="panel record-section record-table-section"><header><div><h2>Enfants inscrits dans l’établissement</h2><p>Apprenants rattachés à ce dossier tuteur sur ce campus.</p></div><span class="record-count">{{ selectedGuardianChildren().length }} enfant(s)</span></header><div class="record-data-table guardian-children-table"><div class="head"><span>Apprenant</span><span>Matricule</span><span>Classe</span><span>Régime</span><span></span></div>@for (child of selectedGuardianChildren(); track child.id) {<div><strong>{{ child.name }}</strong><span>{{ child.matricule }}</span><span>{{ studentClassName(child) }}</span><span>{{ child.regime || 'Externe' }}</span><button type="button" (click)="viewStudent(child)"><i>folder_open</i>Voir le dossier</button></div>} @empty {<div class="record-empty"><i>groups</i><span>Aucun enfant rattaché à ce tuteur sur ce campus.</span></div>}</div></article>}
               @if (guardianRecordTab() === 'access') {<article class="panel record-section account-management-card"><header><div><h2>Compte famille</h2><p>Définissez et gérez l’accès du tuteur au portail famille.</p></div><i>manage_accounts</i></header><div class="account-summary"><span><i>verified_user</i></span><div><small>État actuel</small><strong>{{ guardian.accountStatus }}</strong><p>{{ guardian.email || 'Ajoutez une adresse e-mail pour envoyer une invitation.' }}</p></div></div><div class="account-actions"><button type="button" (click)="setGuardianAccountStatus('Invitation envoyée')"><i>mark_email_unread</i><span><strong>Autoriser la création</strong><small>Envoyer une invitation sécurisée</small></span></button><button type="button" (click)="setGuardianAccountStatus('Actif')"><i>check_circle</i><span><strong>Activer le compte</strong><small>Donner accès aux notes, absences et reçus</small></span></button><button type="button" class="warning" (click)="setGuardianAccountStatus('Désactivé')"><i>block</i><span><strong>Désactiver le compte</strong><small>Suspendre l’accès sans supprimer le dossier</small></span></button><button type="button" (click)="resetGuardianPassword()"><i>lock_reset</i><span><strong>Réinitialiser le mot de passe</strong><small>Envoyer un lien temporaire au tuteur</small></span></button></div><ul class="permission-list"><li><i>check_circle</i>Voir les notes et bulletins de ses enfants</li><li><i>check_circle</i>Recevoir les absences et messages</li><li><i>check_circle</i>Consulter les reçus de paiement</li></ul></article>}
             </div>
@@ -580,7 +588,7 @@
                       <div class="document-list">@for (document of studentForm.attachments; track document) {<button type="button"><i>description</i><span><strong>{{ document }}</strong><small>Document joint</small></span><em (click)="removeStudentAttachment(document)">close</em></button>}</div>
                     </div>
                   </article>
-                  <div class="record-form-actions"><span>Les modifications restent dans le dossier unique de l’élève.</span><button type="submit" [disabled]="studentIdentityForm.invalid"><i>save</i>Mettre à jour le dossier</button></div>
+                  <div class="record-form-actions"><span>Les modifications restent dans le dossier unique de l’élève.</span><button type="submit" [disabled]="studentIdentityForm.invalid || dossierSaving()"><i>save</i>Mettre à jour le dossier</button></div>
                 </form>
               }
 
@@ -673,45 +681,79 @@
         }
       }
 
-      @if (activeView() === 'classes' || activeView() === 'curriculum') {
-        @if (activeView() === 'curriculum' || classCurriculumOpen()) {
-          <div class="page-title curriculum-page-title">
-            <div><small>PROGRAMME ANNUEL DE LA CLASSE</small><h1>{{ selectedClass().name }} · Matières et leçons</h1><p>Affectez les matières à la classe, puis définissez les leçons prévues pour toute l’année scolaire.</p></div>
-            <div class="title-actions"><button type="button" (click)="closeClassCurriculum()"><i>arrow_back</i>Retour aux classes</button></div>
-          </div>
-
-          <section class="panel curriculum-context-bar">
-            <label><span>Classe active</span><select [ngModel]="selectedClassId()" (ngModelChange)="changeCurriculumClass($event)">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
-            <div><span><i>school</i><small>Niveau</small><strong>{{ selectedClass().level }}</strong></span><span><i>calendar_month</i><small>Année scolaire</small><strong>{{ selectedAcademicYear() }}</strong></span><span><i>menu_book</i><small>Matières affectées</small><strong>{{ assignedCurriculumSubjects().length }}</strong></span><span><i>monitoring</i><small>Progression globale</small><strong>{{ classProgramProgress(selectedClassId()) }}%</strong></span></div>
+      @if (activeView() === 'class-subjects') {
+        <div class="page-title class-subjects-page-title"><div><small>CONFIGURATION PAR CLASSE</small><h1>Matières par classe</h1><p>Sélectionnez une ou plusieurs classes, puis définissez les matières enseignées et leurs paramètres d’évaluation.</p></div><div class="title-actions"><button type="button" (click)="refreshPedagogy()" [disabled]="subjectsLoading()"><i>{{ subjectsLoading() ? 'sync' : 'refresh' }}</i>Actualiser</button><button type="button" class="primary-action" (click)="saveClassSubjectAssignments()" [disabled]="classSubjectsSaving() || isSelectedSchoolYearArchived() || !selectedClassSubjectClasses().length || !subjects().length"><i>{{ classSubjectsSaving() ? 'sync' : 'save' }}</i>{{ classSubjectsSaving() ? 'Enregistrement…' : 'Enregistrer les affectations' }}</button></div></div>
+        @if (subjectsLoading() || classesLoading()) {
+          <section class="panel subject-loading-state"><span></span><strong>Chargement de la configuration pédagogique…</strong></section>
+        } @else if (!subjects().length) {
+          <section class="panel empty-class-subjects"><i>menu_book</i><h2>Configurez d’abord les matières</h2><p>Enregistrez le catalogue des matières avant de les affecter aux classes.</p><button type="button" (click)="setView('subjects')"><i>arrow_forward</i>Ouvrir les matières</button></section>
+        } @else if (!campusClasses().length) {
+          <section class="panel empty-class-subjects"><i>class</i><h2>Aucune classe disponible</h2><p>Créez et enregistrez les classes de ce campus avant de configurer leurs matières.</p><button type="button" (click)="setView('classes')"><i>arrow_forward</i>Ouvrir les classes</button></section>
+        } @else {
+          <section class="panel class-subject-context-bar">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="class-subject-class-selector">
+              <mat-label>Classes</mat-label>
+              <mat-select multiple [ngModel]="selectedClassSubjectIds()" (ngModelChange)="changeClassSubjectSelection($event)">
+                @for (classroom of campusClasses(); track classroom.id) {
+                  <mat-option [value]="classroom.id">{{ classroom.name }} · {{ classroom.level }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <div><span><i>school</i><small>Classes sélectionnées</small><strong>{{ selectedClassSubjectClasses().length }}</strong></span><span><i>calendar_month</i><small>Année scolaire</small><strong>{{ selectedAcademicYear() }}</strong></span><span><i>location_on</i><small>Campus</small><strong>{{ currentCampus().shortName }}</strong></span><span><i>menu_book</i><small>Matières retenues</small><strong>{{ selectedClassSubjectSubjects().length }}</strong></span></div>
           </section>
 
-          <section class="panel class-subject-assignment">
-            <header><div><h2>Matières de la classe</h2><p><span>Cochez les matières enseignées dans</span> <b>{{ selectedClass().name }}</b>. <span>Seules les matières compatibles avec le niveau sont proposées.</span></p></div><span>Matières affectées : {{ assignedCurriculumSubjects().length }} / {{ compatibleCurriculumSubjects().length }}</span></header>
+          <section class="panel class-subject-catalog">
+            <header><div><h2>Matières enseignées dans {{ selectedClassSubjectLabel() }}</h2><p>Une sélection ou désélection s’applique à toutes les classes choisies.</p></div><span>{{ selectedClassSubjectSubjects().length }} / {{ subjects().length }} matière(s)</span></header>
             <div>
-              @for (subject of compatibleCurriculumSubjects(); track subject.id) {
-                <label [class.assigned]="isSubjectAssignedToClass(subject.id)">
-                  <input type="checkbox" [checked]="isSubjectAssignedToClass(subject.id)" (change)="toggleClassSubject(subject.id, $any($event.target).checked)" />
+              @for (subject of subjects(); track subject.id) {
+                <label [class.assigned]="isSubjectAssignedToSelectedClasses(subject.id)" [class.partially-assigned]="isSubjectPartiallyAssignedToSelectedClasses(subject.id)">
+                  <input type="checkbox" [checked]="isSubjectAssignedToSelectedClasses(subject.id)" [indeterminate]="isSubjectPartiallyAssignedToSelectedClasses(subject.id)" (change)="toggleSelectedClassesSubject(subject.id, $any($event.target).checked)" />
                   <span [style.background]="subject.color">{{ subject.code }}</span>
-                  <div><strong>{{ subject.name }}</strong><small>{{ subject.domain }}</small></div>
-                  <i>{{ isSubjectAssignedToClass(subject.id) ? 'check_circle' : 'add_circle_outline' }}</i>
+                  <div><strong>{{ subject.name }}</strong><small>{{ subject.domain || 'Aucun domaine' }} · {{ selectedSubjectAssignmentCount(subject.id) }}/{{ selectedClassSubjectClasses().length }} classe(s)</small></div>
+                  <i>{{ isSubjectAssignedToSelectedClasses(subject.id) ? 'check_circle' : isSubjectPartiallyAssignedToSelectedClasses(subject.id) ? 'remove_circle_outline' : 'add_circle_outline' }}</i>
                 </label>
               }
             </div>
           </section>
 
-          @if (isCollege()) {
-            <section class="panel college-subject-settings">
-              <header><div><small>PARAMÉTRAGE COLLÈGE</small><h2>Matières, coefficients et enseignants</h2><p>Pour chaque matière de la classe, définissez le coefficient du semestre et l’enseignant responsable.</p></div><span><i>verified</i>Configuration par classe</span></header>
-              <div class="college-subject-settings-head"><span>Matière</span><span>Coefficient</span><span>Enseignant responsable</span></div>
-              @for (subject of assignedCurriculumSubjects(); track subject.id) {
-                <div class="college-subject-settings-row">
-                  <div><span [style.background]="subject.color">{{ subject.code }}</span><strong>{{ subject.name }}</strong></div>
-                  <label><input type="number" min="1" max="10" [ngModel]="collegeSubjectSetting(selectedClassId(), subject.id).coefficient" (ngModelChange)="updateCollegeSubjectCoefficient(subject.id, $event)" [name]="'collegeCoefficient' + subject.id" /><small>coef.</small></label>
-                  <select [ngModel]="collegeSubjectSetting(selectedClassId(), subject.id).teacherId" (ngModelChange)="updateCollegeSubjectTeacher(subject.id, $event)" [name]="'collegeTeacher' + subject.id"><option value="">À affecter</option>@for (teacher of teachers(); track teacher.id) {<option [value]="teacher.id">{{ teacher.name }} · {{ teacher.subject }}</option>}</select>
+          <section class="panel class-subject-configuration">
+            <header><div><small>PARAMÈTRES D’ÉVALUATION</small><h2>Configuration des matières retenues</h2><p>La note maximale est proposée sur 20. Le coefficient reste facultatif à l’école primaire.</p></div><span><i>tune</i>{{ isCollege() ? 'Coefficient obligatoire' : 'Coefficient facultatif' }}</span></header>
+            @if (selectedClassSubjectSubjects().length) {
+              <div class="class-subject-configuration-head"><span>Matière</span><span>Note maximale</span><span>Coefficient</span></div>
+              @for (subject of selectedClassSubjectSubjects(); track subject.id) {
+                <div class="class-subject-configuration-row">
+                  <div><span [style.background]="subject.color">{{ subject.code }}</span><div><strong>{{ subject.name }}</strong><small>{{ selectedSubjectAssignmentCount(subject.id) }} classe(s) concernée(s)</small></div></div>
+                  <label><input type="number" min="1" max="1000" [ngModel]="selectedClassesSubjectSetting(subject.id).maxScore" (ngModelChange)="updateClassSubjectMaxScore(subject.id, $event)" /><small>points</small></label>
+                  <label><input type="number" min="0.01" max="100" [ngModel]="selectedClassesSubjectSetting(subject.id).coefficient" (ngModelChange)="updateSelectedClassesSubjectCoefficient(subject.id, $event)" [placeholder]="isCollege() ? 'Obligatoire' : 'Facultatif'" /><small>coef.</small></label>
                 </div>
               }
-            </section>
-          }
+            } @else {
+              <div class="class-subject-empty-selection"><i>playlist_add</i><strong>Aucune matière sélectionnée</strong><p>Cochez les matières ci-dessus pour afficher leur configuration.</p></div>
+            }
+            <footer><p><i>info</i>Les modifications sont appliquées aux classes sélectionnées qui utilisent chaque matière.</p><button type="button" class="primary-action" (click)="saveClassSubjectAssignments()" [disabled]="classSubjectsSaving() || isSelectedSchoolYearArchived() || !selectedClassSubjectClasses().length"><i>{{ classSubjectsSaving() ? 'sync' : 'save' }}</i>{{ classSubjectsSaving() ? 'Enregistrement…' : 'Enregistrer' }}</button></footer>
+          </section>
+        }
+      }
+
+      @if (activeView() === 'classes' || activeView() === 'curriculum') {
+        @if (activeView() === 'curriculum' || classCurriculumOpen()) {
+          @if (classesLoading() || subjectsLoading()) {
+            <section class="panel subject-loading-state"><span></span><strong>Chargement du programme annuel…</strong></section>
+          } @else if (selectedClass(); as curriculumClass) {
+          <div class="page-title curriculum-page-title">
+            <div><small>PROGRAMME ANNUEL DE LA CLASSE</small><h1>{{ curriculumClass.name }} · Matières et leçons</h1><p>Affectez les matières à la classe, puis définissez les leçons prévues pour toute l’année scolaire.</p></div>
+            <div class="title-actions"><button type="button" (click)="closeClassCurriculum()"><i>arrow_back</i>Retour aux classes</button></div>
+          </div>
+
+          <section class="panel curriculum-context-bar">
+            <label><span>Classe active</span><select [ngModel]="selectedClassId()" (ngModelChange)="changeCurriculumClass($event)">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
+            <div><span><i>school</i><small>Niveau</small><strong>{{ curriculumClass.level }}</strong></span><span><i>calendar_month</i><small>Année scolaire</small><strong>{{ selectedAcademicYear() }}</strong></span><span><i>menu_book</i><small>Matières affectées</small><strong>{{ assignedCurriculumSubjects().length }}</strong></span><span><i>monitoring</i><small>Progression globale</small><strong>{{ classProgramProgress(selectedClassId()) }}%</strong></span></div>
+          </section>
+
+          <section class="panel curriculum-assignment-summary">
+            <div><span><i>account_tree</i></span><div><h2>Matières configurées pour {{ curriculumClass.name }}</h2><p>{{ assignedCurriculumSubjects().length }} matière(s) disponible(s) pour construire le programme annuel.</p></div></div>
+            <button type="button" (click)="openClassSubjects(selectedClassId())"><i>tune</i>Configurer les matières</button>
+          </section>
 
           @if (assignedCurriculumSubjects().length) {
             <nav class="curriculum-subject-tabs" aria-label="Matières affectées à la classe">
@@ -731,7 +773,7 @@
 
             <div class="curriculum-workspace">
               <section class="panel curriculum-program-list">
-                <header><div><span [style.background]="selectedCurriculumSubject()?.color">{{ selectedCurriculumSubject()?.code }}</span><div><h2>Leçons annuelles · {{ selectedCurriculumSubject()?.name }}</h2><p>{{ selectedClass().name }} · {{ selectedAcademicYear() }} · liste complète dans l’ordre prévu</p></div></div><strong>{{ curriculumStats().progress }}%</strong></header>
+                <header><div><span [style.background]="selectedCurriculumSubject()?.color">{{ selectedCurriculumSubject()?.code }}</span><div><h2>Leçons annuelles · {{ selectedCurriculumSubject()?.name }}</h2><p>{{ curriculumClass.name }} · {{ selectedAcademicYear() }} · liste complète dans l’ordre prévu</p></div></div><strong>{{ curriculumStats().progress }}%</strong></header>
                 <div class="curriculum-main-progress"><span [style.width.%]="curriculumStats().progress"></span></div>
                 <div class="curriculum-flat-head"><span>N°</span><span>Leçon prévue</span><span>Période indicative</span><span>Séances</span><span>Avancement</span><span></span></div>
                 @for (row of selectedCurriculumLessons(); track row.lesson.id; let lessonIndex = $index) {
@@ -740,37 +782,94 @@
                     <div class="lesson-content"><strong>{{ row.lesson.title }}</strong>@if (row.objective) {<p>{{ row.objective }}</p>}</div>
                     <span class="lesson-period" [class.unspecified]="!row.period"><i>calendar_month</i>{{ row.period || 'Non précisé' }}</span>
                     <span class="lesson-sessions">{{ row.lesson.estimatedSessions }} séance{{ row.lesson.estimatedSessions > 1 ? 's' : '' }}</span>
-                    <select [ngModel]="row.lesson.status" (ngModelChange)="updateCurriculumLessonStatus(row.chapterId, row.lesson.id, $event)" [class]="curriculumStatusClass(row.lesson.status)"><option value="À faire">À faire</option><option value="En cours">En cours</option><option value="Terminée">Terminée</option></select>
-                    <button type="button" aria-label="Supprimer la leçon" (click)="deleteCurriculumLesson(row.chapterId, row.lesson.id)"><i>delete_outline</i></button>
+                    <select [ngModel]="row.lesson.status" (ngModelChange)="updateCurriculumLessonStatus(row.chapterId, row.lesson.id, $event)" [class]="curriculumStatusClass(row.lesson.status)" [disabled]="isCurriculumLessonSaving(row.lesson.id) || isSelectedSchoolYearArchived()"><option value="À faire">À faire</option><option value="En cours">En cours</option><option value="Terminée">Terminée</option></select>
+                    <button type="button" aria-label="Supprimer la leçon" (click)="deleteCurriculumLesson(row.chapterId, row.lesson.id)" [disabled]="isCurriculumLessonSaving(row.lesson.id) || isSelectedSchoolYearArchived()"><i>{{ isCurriculumLessonSaving(row.lesson.id) ? 'sync' : 'delete_outline' }}</i></button>
                   </article>
                 } @empty {
-                  <div class="empty-curriculum"><i>auto_stories</i><strong>Aucune leçon configurée</strong><p>Ajoutez la première leçon du programme de {{ selectedCurriculumSubject()?.name }} pour {{ selectedClass().name }}.</p><button type="button" (click)="startCurriculumChapterCreation()"><i>add</i>Ajouter la première leçon</button></div>
+                  <div class="empty-curriculum"><i>auto_stories</i><strong>Aucune leçon configurée</strong><p>Ajoutez la première leçon du programme de {{ selectedCurriculumSubject()?.name }} pour {{ curriculumClass.name }}.</p><button type="button" (click)="startCurriculumChapterCreation()"><i>add</i>Ajouter la première leçon</button></div>
                 }
               </section>
 
               <aside class="curriculum-side-panel">
                 @if (curriculumChapterEditorOpen()) {
                   <form class="panel curriculum-chapter-form" #chapterNgForm="ngForm" (ngSubmit)="saveCurriculumChapter()">
-                    <header><div><small>NOUVELLE LEÇON</small><h2>Ajouter au programme annuel</h2><p>{{ selectedCurriculumSubject()?.name }} · {{ selectedClass().name }}</p></div><button type="button" aria-label="Fermer" (click)="closeCurriculumChapterEditor()"><i>close</i></button></header>
+                    <header><div><small>NOUVELLE LEÇON</small><h2>Ajouter au programme annuel</h2><p>{{ selectedCurriculumSubject()?.name }} · {{ curriculumClass.name }}</p></div><button type="button" aria-label="Fermer" (click)="closeCurriculumChapterEditor()"><i>close</i></button></header>
                     <div>
                       <label><span>Intitulé de la leçon <b>*</b></span><input name="lessonTitle" [(ngModel)]="curriculumChapterForm.title" placeholder="Ex. Reconnaître les figures planes" required /></label>
-                      <label><span>{{ isCollege() ? 'Semestre' : 'Trimestre' }} <em>Facultatif</em></span><select name="lessonPeriod" [(ngModel)]="curriculumChapterForm.period"><option value="">Non précisé</option>@if (isCollege()) {<option>Semestre 1</option><option>Semestre 2</option>} @else {<option>Trimestre 1</option><option>Trimestre 2</option><option>Trimestre 3</option>}</select><small>La période sert uniquement d’indication et ne regroupe pas les leçons.</small></label>
+                      <label><span>{{ isCollege() ? 'Semestre' : 'Trimestre' }} <em>Facultatif</em></span><select name="lessonPeriod" [(ngModel)]="curriculumChapterForm.period"><option value="">Non précisé</option>@for (period of trimesterSettings; track period.id) {<option [value]="period.label">{{ period.label }}</option>}</select><small>La période sert uniquement d’indication et ne regroupe pas les leçons.</small></label>
                       <label><span>Objectif ou compétence visée</span><textarea name="lessonObjective" [(ngModel)]="curriculumChapterForm.objective" rows="4" placeholder="Ce que les élèves devront maîtriser après cette leçon."></textarea></label>
                       <label><span>Nombre estimé de séances</span><input type="number" min="1" max="20" name="lessonSessions" [(ngModel)]="curriculumChapterForm.estimatedSessions" /></label>
                     </div>
-                    <footer><button type="button" (click)="closeCurriculumChapterEditor()">Annuler</button><button class="primary-action" type="submit" [disabled]="chapterNgForm.invalid"><i>save</i>Ajouter la leçon</button></footer>
+                    <footer><button type="button" (click)="closeCurriculumChapterEditor()" [disabled]="curriculumSaving()">Annuler</button><button class="primary-action" type="submit" [disabled]="chapterNgForm.invalid || curriculumSaving() || isSelectedSchoolYearArchived()"><i>{{ curriculumSaving() ? 'sync' : 'save' }}</i>{{ curriculumSaving() ? 'Enregistrement…' : 'Ajouter la leçon' }}</button></footer>
                   </form>
                 } @else {
-                  <article class="panel curriculum-help-card"><span><i>lightbulb</i></span><h2>Construire le programme annuel</h2><p>Ajoutez directement chaque leçon dans l’ordre prévu. La période reste facultative et purement informative.</p><button type="button" (click)="startCurriculumChapterCreation()"><i>add</i>Ajouter une leçon</button></article>
+                  <article class="panel curriculum-help-card"><span><i>lightbulb</i></span><h2>Construire le programme annuel</h2><p>Ajoutez directement chaque leçon dans l’ordre prévu. La période reste facultative et purement informative.</p><button type="button" (click)="startCurriculumChapterCreation()" [disabled]="isSelectedSchoolYearArchived()"><i>add</i>Ajouter une leçon</button></article>
                   <article class="panel curriculum-link-card"><i>sync_alt</i><div><h3>Lien avec les séances</h3><p>Les leçons définies ici pourront être sélectionnées dans le cahier de texte. Leur avancement sera calculé depuis les séances validées.</p></div></article>
                 }
               </aside>
             </div>
           } @else {
-            <section class="panel empty-class-subjects"><i>library_add</i><h2>Aucune matière affectée</h2><p>Cochez au moins une matière compatible pour commencer le programme annuel de cette classe.</p></section>
+            <section class="panel empty-class-subjects"><i>library_add</i><h2>Aucune matière affectée</h2><p>Cochez au moins une matière compatible pour commencer le programme annuel de cette classe.</p><button type="button" (click)="openClassSubjects(selectedClassId())"><i>arrow_forward</i>Configurer les matières</button></section>
+          }
+          } @else {
+            <section class="panel empty-class-subjects"><i>class</i><h2>Aucune classe disponible</h2><p>Créez d’abord une classe dans ce campus avant de préparer son programme annuel.</p><button type="button" (click)="setView('classes')"><i>arrow_forward</i>Ouvrir les classes</button></section>
           }
         } @else if (!classEditorOpen()) {
-          <div class="page-title"><div><small>ORGANISATION PÉDAGOGIQUE</small><h1>{{ t('classes') }}</h1><p>Effectifs et tarification propre à chaque classe.</p></div><button class="primary-action" (click)="startClassCreation()"><i>add</i>Nouvelle classe</button></div>
+          <div class="page-title">
+            <div><small>ORGANISATION PÉDAGOGIQUE</small><h1>{{ t('classes') }}</h1><p>{{ t('classesDescription') }}</p></div>
+          </div>
+
+          @if (classesLoading()) {
+            <section class="panel class-loading-state"><i>sync</i><strong>Chargement des classes…</strong><span>Lecture des données enregistrées dans la base de l’institut.</span></section>
+          } @else if (campusClasses().length === 0 && isHighSchool()) {
+          <section class="panel empty-class-subjects high-school-empty-classes">
+            <i>account_tree</i>
+            <h2>Aucune classe créée</h2>
+            <p>Au lycée, chaque classe est créée individuellement avec son niveau, sa série et ses tarifs. Aucune classe n’est proposée automatiquement.</p>
+            @if (activeSeriesCount() > 0) {
+              <button type="button" (click)="startClassCreation()"><i>add</i>Créer une classe</button>
+            } @else {
+              <button type="button" (click)="setView('series')"><i>account_tree</i>Configurer les séries</button>
+            }
+          </section>
+          } @else if (campusClasses().length === 0) {
+          <section class="panel class-proposal-panel">
+            <header class="class-proposal-header">
+              <div>
+                <span><i>auto_awesome</i></span>
+                <div>
+                  <small>PROPOSITION PAR DÉFAUT · {{ selectedAcademicYear() }}</small>
+                  <h2>Classes proposées pour {{ currentCampus().shortName }}</h2>
+                  <p>Modifiez les libellés et les tarifs si nécessaire, cochez les classes à créer, puis enregistrez sans passer par le formulaire.</p>
+                </div>
+              </div>
+              <em><i>edit_note</i>À enregistrer</em>
+            </header>
+            <div class="class-proposal-table">
+              <div class="class-proposal-head" [class.high-school]="isHighSchool()">
+                <span>Créer</span><span>Niveau</span>@if (isHighSchool()) {<span>Série</span>}<span>Nom de la classe</span><span>Inscription</span><span>Mensualité</span>
+              </div>
+              @for (proposal of classProposals(); track proposal.key) {
+                <article class="class-proposal-row" [class.disabled]="!proposal.enabled" [class.high-school]="isHighSchool()">
+                  <label class="proposal-selection" [attr.aria-label]="'Créer ' + proposal.name"><input type="checkbox" [checked]="proposal.enabled" (change)="updateClassProposal(proposal.key, 'enabled', $any($event.target).checked)" /><i>{{ proposal.enabled ? 'check' : 'remove' }}</i></label>
+                  <select [ngModel]="proposal.level" (ngModelChange)="updateClassProposal(proposal.key, 'level', $event)">@for (level of availableClassLevels(); track level) {<option [value]="level">{{ level }}</option>}</select>
+                  @if (isHighSchool()) {
+                    <select [ngModel]="proposal.seriesId" (ngModelChange)="updateClassProposal(proposal.key, 'seriesId', $event)">@for (series of highSchoolSeries(); track series.id) {@if (series.active || series.id === proposal.seriesId) {<option [value]="series.id">{{ series.code }} · {{ series.label }}</option>}}</select>
+                  }
+                  <input [ngModel]="proposal.name" (ngModelChange)="updateClassProposal(proposal.key, 'name', $event)" placeholder="Ex. CM2 A" />
+                  <label class="proposal-amount"><input type="number" min="0" [ngModel]="proposal.registrationFee" (ngModelChange)="updateClassProposal(proposal.key, 'registrationFee', $event)" /><span>F CFA</span></label>
+                  <label class="proposal-amount"><input type="number" min="0" [ngModel]="proposal.monthlyFee" (ngModelChange)="updateClassProposal(proposal.key, 'monthlyFee', $event)" /><span>F CFA</span></label>
+                </article>
+              }
+            </div>
+            <footer>
+              <p><i>info</i>Les classes décochées ne seront pas créées. Une classe déjà présente est simplement mise à jour avec les valeurs saisies.</p>
+              <div class="class-proposal-actions"><button type="button" class="secondary-action" (click)="startClassCreation()" [disabled]="classesSaving() || (isHighSchool() && !highSchoolSeries().length)"><i>add</i>Ajouter une classe</button><button type="button" (click)="enregistrerPropositionsClasses()" [disabled]="classesSaving()"><i>{{ classesSaving() ? 'sync' : 'save' }}</i>{{ classesSaving() ? 'Enregistrement…' : 'Enregistrer' }}</button></div>
+            </footer>
+          </section>
+          }
+
+          @if (!classesLoading() && campusClasses().length > 0) {
           <section class="primary-class-grid">
             @for (classroom of campusClasses(); track classroom.id) {
               <article class="panel primary-class-card">
@@ -785,6 +884,7 @@
             }
             <button class="add-primary-card" (click)="startClassCreation()"><i>add</i><strong>Créer une classe</strong><span>{{ isHighSchool() ? 'Niveau, série, tarifs et matières' : 'Niveau, tarifs et matières' }}</span></button>
           </section>
+          }
         } @else {
           <div class="page-title">
             <div><small>CONFIGURATION DE CLASSE</small><h1>{{ classForm.id ? 'Modifier la classe' : 'Nouvelle classe' }}</h1><p>Les tarifs saisis s’appliquent uniquement à cette classe.</p></div>
@@ -821,12 +921,15 @@
 
       @if (activeView() === 'series') {
         @if (!seriesEditorOpen()) {
-          <div class="page-title series-page-title"><div><small>ORGANISATION DU LYCÉE</small><h1>{{ t('series') }}</h1><p>Définissez les séries proposées par le lycée, puis rattachez chaque classe à sa série.</p></div><button type="button" class="primary-action" (click)="startSeriesCreation()"><i>add</i>Nouvelle série</button></div>
+          <div class="page-title series-page-title"><div><small>ORGANISATION DU LYCÉE</small><h1>{{ t('series') }}</h1><p>Définissez les séries proposées par le lycée, puis rattachez chaque classe à sa série.</p></div><button type="button" class="primary-action" (click)="startSeriesCreation()" [disabled]="seriesLoading() || seriesSaving()"><i>add</i>Nouvelle série</button></div>
           <section class="series-summary-grid">
             <article class="panel"><i>account_tree</i><span><small>Séries configurées</small><strong>{{ highSchoolSeries().length }}</strong></span></article>
             <article class="panel"><i>check_circle</i><span><small>Séries actives</small><strong>{{ activeSeriesCount() }}</strong></span></article>
             <article class="panel"><i>class</i><span><small>Classes rattachées</small><strong>{{ campusClasses().length }}</strong></span></article>
           </section>
+          @if (seriesLoading()) {
+            <section class="panel class-loading-state"><i>sync</i><strong>Chargement des séries…</strong><span>Lecture du référentiel du lycée dans la base de l’institut.</span></section>
+          } @else {
           <section class="panel series-register">
             <header><div><span><i>account_tree</i></span><div><h2>Référentiel des séries</h2><p>S, L, G et T sont proposées par défaut et restent entièrement configurables.</p></div></div><strong>{{ highSchoolSeries().length }} série(s)</strong></header>
             <div class="series-table-head"><span>Code</span><span>Intitulé</span><span>Description</span><span>Classes</span><span>État</span><span>Actions</span></div>
@@ -837,12 +940,13 @@
                 <p>{{ series.description || 'Aucune description' }}</p>
                 <span>{{ seriesClassCount(series.id) }} classe(s)</span>
                 <em [class.inactive]="!series.active"><i>{{ series.active ? 'check_circle' : 'pause_circle' }}</i>{{ series.active ? 'Active' : 'Inactive' }}</em>
-                <div class="series-row-actions"><button type="button" (click)="editSeries(series)" aria-label="Modifier la série"><i>edit</i></button><button type="button" (click)="removeSeries(series)" aria-label="Supprimer la série"><i>delete</i></button></div>
+                <div class="series-row-actions"><button type="button" (click)="editSeries(series)" [disabled]="seriesSaving()" aria-label="Modifier la série"><i>edit</i></button><button type="button" (click)="removeSeries(series)" [disabled]="seriesSaving()" aria-label="Supprimer la série"><i>delete</i></button></div>
               </article>
             }
           </section>
+          }
         } @else {
-          <div class="page-title"><div><small>CONFIGURATION D’UNE SÉRIE</small><h1>{{ seriesForm.id ? 'Modifier la série' : 'Nouvelle série' }}</h1><p>Le code sera affiché dans les classes, les dossiers élèves et les bulletins.</p></div><div class="title-actions"><button type="button" (click)="closeSeriesEditor()"><i>close</i>Annuler</button><button type="button" class="primary-action" (click)="saveSeries()"><i>save</i>Enregistrer la série</button></div></div>
+          <div class="page-title"><div><small>CONFIGURATION D’UNE SÉRIE</small><h1>{{ seriesForm.id ? 'Modifier la série' : 'Nouvelle série' }}</h1><p>Le code sera affiché dans les classes, les dossiers élèves et les bulletins.</p></div><div class="title-actions"><button type="button" (click)="closeSeriesEditor()" [disabled]="seriesSaving()"><i>close</i>Annuler</button><button type="button" class="primary-action" (click)="saveSeries()" [disabled]="seriesSaving()"><i>{{ seriesSaving() ? 'sync' : 'save' }}</i>{{ seriesSaving() ? 'Enregistrement…' : 'Enregistrer la série' }}</button></div></div>
           <section class="panel series-editor-card">
             <header><div><span><i>account_tree</i></span><div><h2>Informations de la série</h2><p>Renseignez un code court et un intitulé compréhensible.</p></div></div></header>
             <div class="series-editor-grid">
@@ -852,39 +956,56 @@
               <label class="series-description-field"><span>Description</span><textarea [(ngModel)]="seriesForm.description" rows="4" placeholder="Disciplines dominantes et orientation de la série"></textarea></label>
               <label class="series-active-field"><input type="checkbox" [(ngModel)]="seriesForm.active" /><span><strong>Série active</strong><small>Disponible lors de la création d’une classe.</small></span></label>
             </div>
-            <footer><button type="button" (click)="closeSeriesEditor()">Annuler</button><button type="button" class="primary-action" (click)="saveSeries()"><i>save</i>Enregistrer</button></footer>
+            <footer><button type="button" (click)="closeSeriesEditor()" [disabled]="seriesSaving()">Annuler</button><button type="button" class="primary-action" (click)="saveSeries()" [disabled]="seriesSaving()"><i>{{ seriesSaving() ? 'sync' : 'save' }}</i>{{ seriesSaving() ? 'Enregistrement…' : 'Enregistrer' }}</button></footer>
           </section>
         }
       }
 
       @if (activeView() === 'subjects') {
         @if (!subjectEditorOpen()) {
-          <div class="page-title"><div><small>PROGRAMME {{ isHighSchool() ? 'DU LYCÉE' : isCollege() ? 'DU COLLÈGE' : 'DU PRIMAIRE' }}</small><h1>{{ t('subjects') }}</h1><p>{{ isHighSchool() ? 'Matières du lycée, niveaux et affectations aux classes et aux séries.' : isCollege() ? 'Matières du collège, niveaux et affectations aux classes.' : 'Matières prédéfinies du primaire sénégalais, niveaux et affectations aux classes.' }}</p></div><div class="title-actions"><button type="button" (click)="openClassCurriculum(selectedClass())"><i>account_tree</i>Programmes par classe</button><button class="primary-action" (click)="startSubjectCreation()"><i>add</i>Ajouter une matière optionnelle</button></div></div>
-          <section class="subject-grid">
-            @for (subject of subjects(); track subject.id) {
-              <article class="panel subject-card"><span [style.background]="subject.color">{{ subject.name.slice(0, 1) }}</span><div><small>{{ subject.levels.join(', ') }}</small><h2>{{ subject.name }}</h2><p>{{ subject.domain }} · {{ subject.teachers }} enseignants · {{ subjectAssignedClassCount(subject.id) }} classes</p></div><b><span>Évaluation</span>{{ isCollege() ? 'Sur 20' : 'Par domaine' }}</b><button type="button" (click)="editSubject(subject)">edit</button></article>
-            }
-          </section>
+          <div class="page-title"><div><small>RÉFÉRENTIEL PÉDAGOGIQUE</small><h1>{{ t('subjects') }}</h1><p>Constituez le catalogue des matières enseignées par l’établissement. Les liaisons avec les classes se règlent séparément.</p></div><div class="title-actions"><button type="button" (click)="refreshPedagogy()" [disabled]="subjectsLoading()"><i>{{ subjectsLoading() ? 'sync' : 'refresh' }}</i>Actualiser</button><button type="button" (click)="openClassSubjects()"><i>account_tree</i>Matières par classe</button><button class="primary-action" (click)="startSubjectCreation()"><i>add</i>Ajouter une matière</button></div></div>
+          @if (subjectsLoading()) {
+            <section class="panel subject-loading-state"><span></span><strong>Chargement des matières…</strong></section>
+          } @else if (!subjects().length) {
+            <section class="panel subject-proposal-panel">
+              <header><div><span><i>auto_awesome</i></span><div><small>PROPOSITION INITIALE</small><h2>{{ subjectProposalTitle() }}</h2><p>{{ subjectProposalDescription() }}</p></div></div><strong>{{ selectedSubjectProposalCodes().length }} sélectionnée(s)</strong></header>
+              <div class="subject-proposal-grid">
+                @for (subject of predefinedSubjects(); track subject.code) {
+                  <label [class.selected]="isSubjectProposalSelected(subject.code)" [class.franco-arabic]="subject.francoArabic">
+                    <input type="checkbox" [checked]="isSubjectProposalSelected(subject.code)" (change)="toggleSubjectProposal(subject.code, $any($event.target).checked)" />
+                    <span [style.background]="subject.color">{{ subject.code }}</span>
+                    <div><strong>{{ subject.name }}</strong><small>{{ subject.domain }}</small>@if (subject.francoArabic) {<em>Franco-arabe</em>}</div>
+                    <i>{{ isSubjectProposalSelected(subject.code) ? 'check_circle' : 'radio_button_unchecked' }}</i>
+                  </label>
+                }
+              </div>
+              <footer><p><i>info</i>Cette proposition reste modifiable avant l’enregistrement.</p><button type="button" class="primary-action" (click)="savePredefinedSubjects()" [disabled]="subjectsSaving() || !selectedSubjectProposalCodes().length"><i>{{ subjectsSaving() ? 'sync' : 'save' }}</i>{{ subjectsSaving() ? 'Enregistrement…' : 'Enregistrer les matières sélectionnées' }}</button></footer>
+            </section>
+          } @else {
+            <section class="subject-grid">
+              @for (subject of subjects(); track subject.id) {
+                <article class="panel subject-card"><span [style.background]="subject.color">{{ subject.code }}</span><div><small>{{ subject.francoArabic ? 'ENSEIGNEMENT FRANCO-ARABE' : 'MATIÈRE' }}</small><h2>{{ subject.name }}</h2><p>{{ subject.domain || 'Aucun domaine' }}</p></div><b><span>Code</span>{{ subject.code }}</b><button type="button" (click)="editSubject(subject)" aria-label="Modifier la matière"><i>edit</i></button></article>
+              }
+            </section>
+          }
         } @else {
           <div class="page-title">
-            <div><small>CONFIGURATION PÉDAGOGIQUE</small><h1>{{ subjectForm.id ? 'Modifier la matière' : 'Nouvelle matière optionnelle' }}</h1><p>Définissez la matière et les niveaux concernés. Les barèmes se configurent dans le référentiel d’évaluation.</p></div>
-            <div class="title-actions"><button type="button" (click)="closeSubjectEditor()"><i>close</i>Annuler</button><button mat-flat-button class="primary-action" type="submit" form="subject-form"><mat-icon>save</mat-icon>Enregistrer la matière</button></div>
+            <div><small>CONFIGURATION PÉDAGOGIQUE</small><h1>{{ subjectForm.id ? 'Modifier la matière' : 'Nouvelle matière' }}</h1><p>Ajoutez uniquement la matière et, si nécessaire, son domaine pédagogique. L’affectation aux classes se fait dans « Matières par classe ».</p></div>
+            <div class="title-actions"><button type="button" (click)="closeSubjectEditor()"><i>close</i>Annuler</button><button mat-flat-button class="primary-action" type="submit" form="subject-form" [disabled]="subjectsSaving()"><mat-icon>{{ subjectsSaving() ? 'sync' : 'save' }}</mat-icon>{{ subjectsSaving() ? 'Enregistrement…' : 'Enregistrer la matière' }}</button></div>
           </div>
           <form id="subject-form" class="student-enrollment-form compact-editor-form" #subjectNgForm="ngForm" (ngSubmit)="saveSubject()">
             <div class="required-note"><span class="required-marker">*</span> Champs obligatoires</div>
             <article class="panel registration-form">
-              <header><div><h2>Définition de la matière</h2><p>Programme, domaine pédagogique et niveaux concernés.</p></div><span>Configuration</span></header>
+              <header><div><h2>Définition de la matière</h2><p>Nom, code court et domaine pédagogique facultatif.</p></div><span>Référentiel</span></header>
               <section class="student-form-section">
                 <div class="form-grid form-grid-3">
-                  <mat-form-field appearance="outline" [hideRequiredMarker]="true"><mat-label>Matière <span class="required-marker">*</span></mat-label><mat-select name="subjectName" [(ngModel)]="subjectForm.name" required>@for (name of subjectCatalog; track name) {<mat-option [value]="name">{{ name }}</mat-option>}</mat-select></mat-form-field>
+                  <mat-form-field appearance="outline" [hideRequiredMarker]="true"><mat-label>Matière <span class="required-marker">*</span></mat-label><input matInput name="subjectName" [(ngModel)]="subjectForm.name" placeholder="Ex. Informatique" required /></mat-form-field>
                   <mat-form-field appearance="outline" [hideRequiredMarker]="true"><mat-label>Code <span class="required-marker">*</span></mat-label><input matInput name="subjectCode" [(ngModel)]="subjectForm.code" placeholder="Ex. MATH" required /></mat-form-field>
-                  <mat-form-field appearance="outline" [hideRequiredMarker]="true"><mat-label>Domaine <span class="required-marker">*</span></mat-label><mat-select name="subjectDomain" [(ngModel)]="subjectForm.domain" required>@for (domain of subjectDomains; track domain) {<mat-option [value]="domain">{{ domain }}</mat-option>}</mat-select></mat-form-field>
-                  <mat-form-field appearance="outline" class="span-2" [hideRequiredMarker]="true"><mat-label>Niveaux concernés <span class="required-marker">*</span></mat-label><mat-select name="subjectLevels" [(ngModel)]="subjectForm.levels" multiple required>@for (level of availableClassLevels(); track level) {<mat-option [value]="level">{{ level }}</mat-option>}</mat-select></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Couleur</mat-label><input matInput type="color" name="subjectColor" [(ngModel)]="subjectForm.color" /></mat-form-field>
+                  <mat-form-field appearance="outline"><mat-label>Domaine</mat-label><mat-select name="subjectDomain" [(ngModel)]="subjectForm.domain"><mat-option value="">Aucun domaine</mat-option>@for (domain of subjectDomains(); track domain) {<mat-option [value]="domain">{{ domain }}</mat-option>}</mat-select></mat-form-field>
                 </div>
               </section>
             </article>
-            <div class="student-form-actions"><button type="button" (click)="closeSubjectEditor()">Annuler</button><button mat-flat-button class="primary-action" type="submit" [disabled]="subjectNgForm.invalid"><mat-icon>save</mat-icon>Enregistrer la matière</button></div>
+            <div class="student-form-actions"><button type="button" (click)="closeSubjectEditor()">Annuler</button><button mat-flat-button class="primary-action" type="submit" [disabled]="subjectNgForm.invalid || subjectsSaving()"><mat-icon>{{ subjectsSaving() ? 'sync' : 'save' }}</mat-icon>{{ subjectsSaving() ? 'Enregistrement…' : 'Enregistrer la matière' }}</button></div>
           </form>
         }
       }
@@ -897,14 +1018,14 @@
               <h1>{{ t('teachers') }}</h1>
               <p>Recherchez, ajoutez et gérez les affectations des enseignants du campus.</p>
             </div>
-            <button class="primary-action" (click)="startTeacherRegistration()"><i>person_add</i>Nouvel enseignant</button>
+            <div class="title-actions"><button type="button" (click)="openWorkforceImport('teacher')"><i>group_add</i>Importer plusieurs enseignants</button><button class="primary-action" (click)="startTeacherRegistration()"><i>person_add</i>Nouvel enseignant</button></div>
           </div>
 
           <app-master-table
             [title]="'Enseignants · ' + currentCampus().shortName"
             [columnDefinitions]="teacherColumns"
             [dataSource]="teacherDataSource"
-            [isLoading]="false"
+            [isLoading]="dossiersLoading()"
             [exportFileName]="'enseignants_' + currentCampus().shortName"
             [showAdd]="true"
             [showDelete]="true"
@@ -1078,7 +1199,7 @@
 
             <div class="student-form-actions">
               <button type="button" (click)="closeTeacherEditor()">Annuler</button>
-              <button mat-flat-button class="primary-action" type="submit" [disabled]="teacherEnrollmentForm.invalid">
+              <button mat-flat-button class="primary-action" type="submit" [disabled]="teacherEnrollmentForm.invalid || dossierSaving()">
                 <mat-icon>save</mat-icon>{{ teacherForm.id ? 'Mettre à jour le dossier' : 'Enregistrer l’enseignant' }}
               </button>
             </div>
@@ -1156,7 +1277,7 @@
                       <div class="document-list">@for (document of teacherForm.attachments; track document) {<button type="button"><i>description</i><span><strong>{{ document }}</strong><small>Document joint</small></span><em (click)="removeTeacherAttachment(document)">close</em></button>}</div>
                     </div>
                   </article>
-                  <div class="record-form-actions"><span>Les modifications mettent à jour le dossier enseignant.</span><button type="submit"><i>save</i>Mettre à jour le dossier</button></div>
+                  <div class="record-form-actions"><span>Les modifications mettent à jour le dossier enseignant.</span><button type="submit" [disabled]="teacherProfileForm.invalid || dossierSaving()"><i>save</i>Mettre à jour le dossier</button></div>
                 </form>
               }
 
@@ -1233,13 +1354,13 @@
         @if (!staffEditorOpen()) {
           <div class="page-title">
             <div><small>ADMINISTRATION DE L’ÉTABLISSEMENT</small><h1>{{ t('staff') }}</h1><p>Gérez les personnels rattachés {{ isHighSchool() ? 'au lycée' : isCollege() ? 'au collège' : 'à l’école primaire' }} : administration, vie scolaire, entretien et services.</p></div>
-            <button class="primary-action" type="button" (click)="startStaffRegistration()"><i>person_add</i>Nouveau personnel</button>
+            <div class="title-actions"><button type="button" (click)="openWorkforceImport('staff')"><i>group_add</i>Importer plusieurs personnels</button><button class="primary-action" type="button" (click)="startStaffRegistration()"><i>person_add</i>Nouveau personnel</button></div>
           </div>
           <app-master-table
             [title]="'Personnel · ' + currentCampus().shortName"
             [columnDefinitions]="staffColumns"
             [dataSource]="staffDataSource"
-            [isLoading]="false"
+            [isLoading]="dossiersLoading()"
             [exportFileName]="'personnel_' + currentCampus().shortName"
             [showAdd]="true"
             [showDelete]="true"
@@ -1290,9 +1411,43 @@
                 <div class="attachment-field span-3"><div class="attachment-heading"><strong>Pièces jointes</strong><span>Pièce d’identité, contrat, diplôme ou autre justificatif</span></div><label class="attachment-dropzone"><input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" (change)="onStaffFilesSelected($event)" /><i>upload_file</i><span><b>Joindre des fichiers</b><small>PDF, JPG ou PNG</small></span></label>@if (staffForm.attachments.length) {<div class="file-chips">@for (attachment of staffForm.attachments; track attachment) {<span><i>description</i>{{ attachment }}<button type="button" (click)="removeStaffAttachment(attachment)">close</button></span>}</div>}</div>
               </div></section>
             </article>
-            <div class="student-form-actions"><button type="button" (click)="closeStaffEditor()">Annuler</button><button mat-flat-button class="primary-action" type="submit" [disabled]="staffEnrollmentForm.invalid"><mat-icon>save</mat-icon>{{ staffForm.id ? 'Mettre à jour le dossier' : 'Enregistrer le personnel' }}</button></div>
+            <div class="student-form-actions"><button type="button" (click)="closeStaffEditor()">Annuler</button><button mat-flat-button class="primary-action" type="submit" [disabled]="staffEnrollmentForm.invalid || dossierSaving()"><mat-icon>save</mat-icon>{{ staffForm.id ? 'Mettre à jour le dossier' : 'Enregistrer le personnel' }}</button></div>
           </form>
         }
+      }
+
+      @if (workforceImportKind(); as importKind) {
+        <div class="student-import-overlay" (click)="closeWorkforceImport()"></div>
+        <section class="student-import-modal" role="dialog" aria-modal="true" aria-labelledby="workforce-import-title">
+          <div class="student-import-modal-head">
+            <div>
+              <small class="student-import-eyebrow"><i>group_add</i>IMPORT GROUPÉ</small>
+              <h2 id="workforce-import-title">Importer plusieurs {{ workforceImportLabel(true) }}</h2>
+              <p>Créez ou rattachez plusieurs dossiers au campus en une seule opération.</p>
+            </div>
+            <button type="button" aria-label="Fermer" (click)="closeWorkforceImport()"><i>close</i></button>
+          </div>
+          <div class="student-import-body">
+            <div class="student-import-notice">
+              <i>info</i>
+              <p>Un matricule, un téléphone ou un e-mail déjà connu permet de <strong>réutiliser le dossier existant</strong> au lieu de créer un doublon. Les pièces jointes pourront être ajoutées ensuite depuis le dossier individuel.</p>
+            </div>
+            <div class="student-import-field">
+              <label for="workforce-import-file">Fichier des {{ workforceImportLabel(true) }} <b>*</b></label>
+              <label class="student-import-file-picker" for="workforce-import-file">
+                <i>upload_file</i>
+                <span><strong>{{ workforceImportFile()?.name || 'Sélectionner le fichier à importer' }}</strong><small>Fichier CSV conforme au modèle E-Scolarité</small></span>
+                <em>{{ workforceImportFile() ? 'Changer' : 'Parcourir' }}</em>
+              </label>
+              <input id="workforce-import-file" type="file" accept=".csv,text/csv" (change)="onWorkforceImportFileSelected($event)" />
+            </div>
+            <div class="student-import-template">
+              <div><i>description</i><span><strong>Modèle d’import des {{ workforceImportLabel(true) }}</strong><small>{{ importKind === 'teacher' ? 'Le modèle contient l’identité, la qualification, le contrat et le mode de rémunération.' : 'Le modèle contient l’identité, la fonction, le contrat et le salaire mensuel.' }}</small></span></div>
+              <button type="button" (click)="downloadWorkforceImportTemplate()"><i>download</i>Télécharger le modèle</button>
+            </div>
+          </div>
+          <footer><button type="button" class="student-import-cancel" (click)="closeWorkforceImport()">Annuler</button><button type="button" class="primary-action" [disabled]="!workforceImportFile() || dossierSaving()" (click)="importWorkforce()"><i>{{ dossierSaving() ? 'sync' : 'upload' }}</i>{{ dossierSaving() ? 'Import en cours…' : 'Importer les ' + workforceImportLabel(true) }}</button></footer>
+        </section>
       }
 
       @if (activeView() === 'staff-detail') {
@@ -1301,7 +1456,7 @@
           <section class="record-layout teacher-record-layout staff-record-layout">
             <aside class="record-profile-card panel teacher-profile-card"><div class="record-profile-cover"></div><div class="record-avatar">{{ person.name.slice(0, 1) }}</div><h2>{{ person.name }}</h2><p>{{ person.matricule }}</p><span class="record-status"><i></i>{{ person.status }}</span><dl><div><dt>Fonction</dt><dd>{{ person.function }}</dd></div><div><dt>Contrat</dt><dd>{{ person.contractType }}</dd></div><div><dt>Prise de service</dt><dd>{{ person.hireDate }}</dd></div><div><dt>Salaire</dt><dd>{{ person.salary || 'Non renseigné' }} F CFA</dd></div></dl><div class="record-contact"><i>call</i><span><small>Coordonnées</small><strong>{{ person.phone }}</strong><b>{{ person.email || 'E-mail non renseigné' }}</b></span></div></aside>
             <div class="record-main"><nav class="record-tabs teacher-record-tabs panel" aria-label="Sections du dossier du personnel"><button [class.active]="staffRecordTab() === 'profile'" (click)="setStaffRecordTab('profile')"><i>person</i>Identité</button><button [class.active]="staffRecordTab() === 'employment'" (click)="setStaffRecordTab('employment')"><i>badge</i>Emploi et rémunération</button><button [class.active]="staffRecordTab() === 'access'" (click)="setStaffRecordTab('access')"><i>lock_person</i>Accès</button></nav>
-              @if (staffRecordTab() === 'profile') {<form class="record-tab-form" #staffProfileForm="ngForm" (ngSubmit)="saveStaffRecord()"><article class="panel record-section record-editor-card"><header><div><h2>Informations personnelles</h2><p>Identité, coordonnées et contact d’urgence.</p></div><i>badge</i></header><div class="record-form-grid"><label><span>Matricule</span><input name="recordStaffMatricule" [(ngModel)]="staffForm.matricule" required /></label><label><span>Prénom(s)</span><input name="recordStaffFirstName" [(ngModel)]="staffForm.firstName" required /></label><label><span>Nom</span><input name="recordStaffLastName" [(ngModel)]="staffForm.lastName" required /></label><label><span>Sexe</span><select name="recordStaffGender" [(ngModel)]="staffForm.gender"><option value="F">Féminin</option><option value="M">Masculin</option></select></label><label><span>Date de naissance</span><input type="date" name="recordStaffBirthDate" [(ngModel)]="staffForm.birthDate" required /></label><label><span>Lieu de naissance</span><input name="recordStaffBirthPlace" [(ngModel)]="staffForm.birthPlace" required /></label><label><span>Téléphone</span><input name="recordStaffPhone" [(ngModel)]="staffForm.phone" required /></label><label><span>Adresse du domicile</span><input name="recordStaffAddress" [(ngModel)]="staffForm.address" required /></label><label><span>Adresse e-mail</span><input type="email" name="recordStaffEmail" [(ngModel)]="staffForm.email" /></label><label><span>Personne à contacter</span><input name="recordStaffEmergencyContact" [(ngModel)]="staffForm.emergencyContact" /></label><label><span>Téléphone d’urgence</span><input name="recordStaffEmergencyPhone" [(ngModel)]="staffForm.emergencyPhone" /></label></div></article><article class="panel record-section record-editor-card"><header><div><h2>Documents du dossier</h2><p>Pièces d’identité, contrat et justificatifs.</p></div><i>folder</i></header><div class="record-document-editor"><label class="attachment-dropzone"><input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" (change)="onStaffFilesSelected($event)" /><i>upload_file</i><span><b>Ajouter des documents</b><small>PDF, JPG ou PNG</small></span></label><div class="document-list">@for (document of staffForm.attachments; track document) {<button type="button"><i>description</i><span><strong>{{ document }}</strong><small>Document joint</small></span><em (click)="removeStaffAttachment(document)">close</em></button>}</div></div></article><div class="record-form-actions"><span>Les modifications mettent à jour le dossier du personnel.</span><button type="submit" [disabled]="staffProfileForm.invalid"><i>save</i>Mettre à jour le dossier</button></div></form>}
+              @if (staffRecordTab() === 'profile') {<form class="record-tab-form" #staffProfileForm="ngForm" (ngSubmit)="saveStaffRecord()"><article class="panel record-section record-editor-card"><header><div><h2>Informations personnelles</h2><p>Identité, coordonnées et contact d’urgence.</p></div><i>badge</i></header><div class="record-form-grid"><label><span>Matricule</span><input name="recordStaffMatricule" [(ngModel)]="staffForm.matricule" required /></label><label><span>Prénom(s)</span><input name="recordStaffFirstName" [(ngModel)]="staffForm.firstName" required /></label><label><span>Nom</span><input name="recordStaffLastName" [(ngModel)]="staffForm.lastName" required /></label><label><span>Sexe</span><select name="recordStaffGender" [(ngModel)]="staffForm.gender"><option value="F">Féminin</option><option value="M">Masculin</option></select></label><label><span>Date de naissance</span><input type="date" name="recordStaffBirthDate" [(ngModel)]="staffForm.birthDate" required /></label><label><span>Lieu de naissance</span><input name="recordStaffBirthPlace" [(ngModel)]="staffForm.birthPlace" required /></label><label><span>Téléphone</span><input name="recordStaffPhone" [(ngModel)]="staffForm.phone" required /></label><label><span>Adresse du domicile</span><input name="recordStaffAddress" [(ngModel)]="staffForm.address" required /></label><label><span>Adresse e-mail</span><input type="email" name="recordStaffEmail" [(ngModel)]="staffForm.email" /></label><label><span>Personne à contacter</span><input name="recordStaffEmergencyContact" [(ngModel)]="staffForm.emergencyContact" /></label><label><span>Téléphone d’urgence</span><input name="recordStaffEmergencyPhone" [(ngModel)]="staffForm.emergencyPhone" /></label></div></article><article class="panel record-section record-editor-card"><header><div><h2>Documents du dossier</h2><p>Pièces d’identité, contrat et justificatifs.</p></div><i>folder</i></header><div class="record-document-editor"><label class="attachment-dropzone"><input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" (change)="onStaffFilesSelected($event)" /><i>upload_file</i><span><b>Ajouter des documents</b><small>PDF, JPG ou PNG</small></span></label><div class="document-list">@for (document of staffForm.attachments; track document) {<button type="button"><i>description</i><span><strong>{{ document }}</strong><small>Document joint</small></span><em (click)="removeStaffAttachment(document)">close</em></button>}</div></div></article><div class="record-form-actions"><span>Les modifications mettent à jour le dossier du personnel.</span><button type="submit" [disabled]="staffProfileForm.invalid || dossierSaving()"><i>save</i>Mettre à jour le dossier</button></div></form>}
               @if (staffRecordTab() === 'employment') {<section class="record-two-columns"><article class="panel record-section"><header><div><h2>Situation professionnelle</h2><p>Fonction et rattachement administratif.</p></div><i>work</i></header><div class="teaching-load"><span><small>Fonction</small><strong>{{ person.function }}</strong></span><span><small>Type de contrat</small><strong>{{ person.contractType }}</strong></span><span><small>Prise de service</small><strong>{{ person.hireDate }}</strong></span></div></article><article class="panel record-section"><header><div><h2>Rémunération</h2><p>Le personnel est rémunéré au mois.</p></div><i>payments</i></header><div class="teaching-load"><span><small>Salaire mensuel fixe</small><strong>{{ person.salary || 'Non renseigné' }} F CFA</strong></span><span><small>Mode de paiement</small><strong>Mensuel</strong></span><span><small>Statut</small><strong>{{ person.status }}</strong></span></div></article></section>}
               @if (staffRecordTab() === 'access') {
                 <article class="panel record-section account-management-card">
@@ -1386,11 +1541,11 @@
           <div>
             <small>CONFIGURATION DU PLANNING</small>
             <h1>Configurer l’emploi du temps</h1>
-            <p>Définissez les créneaux, puis choisissez la matière ou la pause et l’enseignant pour chaque journée.</p>
+            <p>{{ t('Définissez les créneaux et les matières, puis affectez chaque matière à un enseignant.') }}</p>
           </div>
           <div class="title-actions">
             <button type="button" (click)="setView('timetable')"><i>visibility</i>Voir l’emploi du temps</button>
-            <button type="submit" form="timetable-builder-form" class="primary-action"><i>save</i>Enregistrer</button>
+            <button type="submit" form="timetable-builder-form" class="primary-action" [disabled]="timetableLoading()"><i>{{ timetableLoading() ? 'sync' : 'save' }}</i>{{ timetableLoading() ? 'Enregistrement…' : 'Enregistrer' }}</button>
           </div>
         </div>
 
@@ -1403,16 +1558,19 @@
               }
             </select>
           </label>
-          <label>
+          @if (!isCollege()) {<label>
             <span>Salle</span>
             <select [ngModel]="selectedRoomId()" (ngModelChange)="selectRoom($event)">
-              @for (room of campusRooms(); track room.id) {
+              @if (roomsLoading()) {<option value="">Chargement des salles…</option>} @else if (!campusRooms().length) {<option value="">Aucune salle disponible</option>} @else {@for (room of campusRooms(); track room.id) {
                 <option [value]="room.id">{{ room.name }}</option>
-              }
+              }}
             </select>
-          </label>
+          </label>}
           <strong><i>event_repeat</i>Applicable à toute l’année scolaire {{ selectedAcademicYear() }}</strong>
         </div>
+        @if (!roomsLoading() && !campusRooms().length) {
+          <section class="panel timetable-room-warning"><i>meeting_room</i><span><strong>Aucune salle disponible pour ce campus</strong><small>Ajoutez d’abord une salle dans l’espace Institut, puis revenez ici pour enregistrer l’emploi du temps.</small></span></section>
+        }
 
         <form id="timetable-builder-form" class="panel timetable-builder" (ngSubmit)="saveTimetable()">
           <div class="timetable-builder-head">
@@ -1456,20 +1614,16 @@
                     [attr.aria-label]="'Matière du ' + day.label">
                     <option value="">Choisir une matière</option>
                     <option value="Pause">Pause</option>
-                    @for (subject of subjects(); track subject.id) {
+                    @for (subject of assignedCurriculumSubjects(); track subject.id) {
                       <option [value]="subject.name">{{ subject.name }}</option>
                     }
                   </select>
-                  <select
-                    [(ngModel)]="row.cells[day.key].teacherId"
-                    [name]="'teacher-' + row.id + '-' + day.key"
-                    [disabled]="!row.cells[day.key].subject || row.cells[day.key].subject === 'Pause'"
-                    [attr.aria-label]="'Enseignant du ' + day.label">
-                    <option [ngValue]="null">Choisir un enseignant</option>
-                    @for (teacher of campusTeachers(); track teacher.id) {
-                      <option [ngValue]="teacher.id">{{ teacher.name }}</option>
-                    }
-                  </select>
+                  @if (isCollege() && row.cells[day.key].subject && row.cells[day.key].subject !== 'Pause') {
+                    <select class="timetable-cell-room" [ngModel]="row.cells[day.key].roomId" (ngModelChange)="row.cells[day.key].roomId = $event" [name]="'room-' + row.id + '-' + day.key" [attr.aria-label]="'Salle du ' + day.label">
+                      <option [ngValue]="null">Choisir une salle</option>
+                      @for (room of campusRooms(); track room.id) {<option [ngValue]="room.id">{{ room.name }}</option>}
+                    </select>
+                  }
                 </div>
               }
             </article>
@@ -1477,9 +1631,41 @@
           <footer class="timetable-builder-actions">
             <button type="button" class="add-time-row" (click)="addTimetableRow()"><i>add</i>Ajouter un créneau</button>
             <span>Les pauses n’exigent pas d’enseignant.</span>
-            <button type="submit" class="primary-action"><i>save</i>Enregistrer l’emploi du temps</button>
           </footer>
         </form>
+
+        <section class="panel timetable-teacher-assignments">
+          <header>
+            <div><span><i>co_present</i></span><div><h2>{{ t('Affectation des enseignants') }}</h2><p>{{ t('Choisissez une seule fois l’enseignant responsable de chaque matière utilisée dans le planning.') }}</p></div></div>
+            <em>{{ timetableSelectedSubjects().length }} {{ t('matière(s)') }}</em>
+          </header>
+          @if (timetableSelectedSubjects().length) {
+            <div class="timetable-teacher-assignment-grid">
+              @for (subject of timetableSelectedSubjects(); track subject.id) {
+                <article>
+                  <span [style.background]="subject.color">{{ subject.code }}</span>
+                  <strong>{{ subject.name }}</strong>
+                  <select
+                    [ngModel]="timetableTeacherId(subject.name)"
+                    (ngModelChange)="assignTimetableTeacher(subject.name, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [attr.aria-label]="'Enseignant de ' + subject.name">
+                    <option [ngValue]="null">{{ t('Choisir un enseignant') }}</option>
+                    @for (teacher of campusTeachers(); track teacher.id) {
+                      <option [ngValue]="teacher.id">{{ teacher.name }}</option>
+                    }
+                  </select>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="timetable-teacher-assignment-empty"><i>auto_stories</i><strong>{{ t('Ajoutez au moins une matière dans le planning pour pouvoir affecter un enseignant.') }}</strong></div>
+          }
+          <footer>
+            <span><i>info</i>{{ t('Les pauses ne nécessitent pas d’enseignant.') }}</span>
+            <button type="submit" form="timetable-builder-form" class="primary-action" [disabled]="timetableLoading()"><i>{{ timetableLoading() ? 'sync' : 'save' }}</i>{{ timetableLoading() ? 'Enregistrement…' : 'Enregistrer l’emploi du temps' }}</button>
+          </footer>
+        </section>
       }
 
       @if (activeView() === 'timetable') {
@@ -1503,16 +1689,19 @@
               }
             </select>
           </label>
-          <label>
+          @if (!isCollege()) {<label>
             <span>Salle</span>
             <select [ngModel]="selectedRoomId()" (ngModelChange)="selectRoom($event)">
-              @for (room of campusRooms(); track room.id) {
+              @if (roomsLoading()) {<option value="">Chargement des salles…</option>} @else if (!campusRooms().length) {<option value="">Aucune salle disponible</option>} @else {@for (room of campusRooms(); track room.id) {
                 <option [value]="room.id">{{ room.name }}</option>
-              }
+              }}
             </select>
-          </label>
+          </label>}
           <strong><i>verified</i>Planning annuel · {{ selectedAcademicYear() }}</strong>
         </div>
+        @if (timetableLoading()) {
+          <section class="panel subject-loading-state"><span></span><strong>Chargement de l’emploi du temps…</strong></section>
+        } @else {
         <section class="panel timetable-view-sheet">
           <div class="timetable-view-head">
             <span>HORAIRE</span>
@@ -1534,7 +1723,7 @@
                   } @else if (row.cells[day.key].subject) {
                     <strong>{{ row.cells[day.key].subject }}</strong>
                     <small>{{ teacherName(row.cells[day.key].teacherId) }}</small>
-                    <em>{{ selectedRoom().name }}</em>
+                    <em>{{ isCollege() ? roomNameById(row.cells[day.key].roomId) : selectedRoom().name }}</em>
                   } @else {
                     <span>Créneau libre</span>
                   }
@@ -1543,6 +1732,7 @@
             </article>
           }
         </section>
+        }
       }
 
       @if (activeView() === 'attendance') {
@@ -1572,7 +1762,7 @@
                   }
                 </div>
               </div>
-              <footer><p><i>info</i>Les doublons ne seront pas recréés. Les pauses et les créneaux libres sont ignorés.</p><div><button type="button" (click)="closeSessionGenerator()">Annuler</button><button class="primary-action" type="submit" [disabled]="sessionGeneratorForm.invalid"><i>event_repeat</i>Générer la période</button></div></footer>
+              <footer><p><i>info</i>Les doublons ne seront pas recréés. Les pauses et les créneaux libres sont ignorés.</p><div><button type="button" (click)="closeSessionGenerator()">Annuler</button><button class="primary-action" type="submit" [disabled]="sessionGeneratorForm.invalid || sessionsLoading()"><i>{{ sessionsLoading() ? 'progress_activity' : 'event_repeat' }}</i>{{ sessionsLoading() ? 'Génération en cours…' : 'Générer la période' }}</button></div></footer>
             </form>
           }
 
@@ -1585,27 +1775,27 @@
 
           <div class="session-toolbar">
             <label><span>Classe</span><select [ngModel]="selectedClassId()" (ngModelChange)="selectClass($event)">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
-            <label><span>Statut</span><select [ngModel]="sessionStatusFilter()" (ngModelChange)="sessionStatusFilter.set($event)"><option value="Toutes">Toutes les séances</option><option value="Planifiée">Planifiées</option><option value="À compléter">À compléter</option><option value="Terminée">Terminées</option></select></label>
+            <label><span>Statut</span><select [ngModel]="sessionStatusFilter()" (ngModelChange)="setSessionStatusFilter($event)"><option value="Toutes">Toutes les séances</option><option value="Planifiée">Planifiées</option><option value="À compléter">À compléter</option><option value="Terminée">Terminées</option></select></label>
             <span><i>sync</i>Métadonnées synchronisées avec l’emploi du temps</span>
           </div>
 
-          <section class="panel session-register">
-            <header><div><h2>Liste des séances</h2><p>{{ visibleSessions().length }} séances affichées pour {{ selectedClass().name }}</p></div><button type="button"><i>download</i>Exporter</button></header>
-            <div class="session-register-head"><span>Date</span><span>Créneau</span><span>Matière</span><span>Enseignant</span><span>Classe / salle</span><span>Statut</span><span></span></div>
-            @for (session of visibleSessions(); track session.id) {
-              <article class="session-register-row" (click)="openSession(session)">
-                <div class="session-date"><b>{{ formatSessionDate(session.date).split(' ')[0] }}</b><span>{{ formatSessionDate(session.date).replace(formatSessionDate(session.date).split(' ')[0], '').trim() }}</span></div>
-                <strong>{{ session.startTime }} – {{ session.endTime }}</strong>
-                <div class="session-subject" [style.--subject-color]="subjectColor(session.subject)"><i></i><span><strong>{{ session.subject }}</strong><small>{{ session.lessonTitle || 'Leçon à préciser' }}</small></span></div>
-                <div class="session-teacher"><span>{{ teacherName(session.teacherId).slice(0, 1) }}</span><strong>{{ teacherName(session.teacherId) }}</strong></div>
-                <div><strong>{{ sessionClassName(session) }}</strong><small>{{ sessionRoomName(session) }}</small></div>
-                <em class="session-status" [class]="'session-status ' + sessionStatusClass(session.status)">{{ session.status }}</em>
-                <button type="button" aria-label="Ouvrir la séance" (click)="$event.stopPropagation(); openSession(session)"><i>arrow_forward</i></button>
-              </article>
-            } @empty {
-              <div class="empty-session-register"><i>event_busy</i><strong>Aucune séance dans cette sélection</strong><span>Générez une période ou modifiez les filtres.</span></div>
-            }
-          </section>
+          <app-master-table
+            [title]="'Séances · ' + selectedClass().name"
+            [columnDefinitions]="sessionColumns"
+            [dataSource]="sessionDataSource"
+            [isLoading]="sessionsLoading()"
+            [showAdd]="false"
+            [showEdit]="false"
+            [showDelete]="false"
+            [showDetails]="true"
+            [showCheckbox]="false"
+            [showContextMenu]="false"
+            [showBulkDelete]="false"
+            [exportFileName]="'seances_' + selectedClass().name"
+            (refresh)="chargerSeances(true)"
+            (details)="openSession($event)"
+            (rowClick)="openSession($event)">
+          </app-master-table>
         } @else if (selectedSession(); as session) {
           <div class="page-title session-detail-title">
             <div><small>FICHE DE SÉANCE</small><h1>{{ session.subject }} · {{ sessionClassName(session) }}</h1><p>{{ formatSessionDate(session.date) }} · {{ session.startTime }}–{{ session.endTime }}</p></div>
@@ -1664,7 +1854,18 @@
 
       @if (activeView() === 'assessments') {
         @if (!selectedAssessment()) {
-          <div class="page-title assessment-page-title"><div><small>ÉVALUATIONS DE LA CLASSE</small><h1>{{ t('assessments') }}</h1><p>{{ isCollege() ? 'Retrouvez les devoirs, contrôles et compositions par matière et par semestre.' : 'Retrouvez les épreuves classées par domaine, ressources et compétences.' }}</p></div><div class="title-actions"><button><i>tune</i>{{ isCollege() ? 'Configurer les évaluations' : 'Configurer le référentiel' }}</button><button class="primary-action"><i>add</i>Nouvelle évaluation</button></div></div>
+          <div class="page-title assessment-page-title"><div><small>ÉVALUATIONS DE LA CLASSE</small><h1>{{ t('assessments') }}</h1><p>{{ isCollege() ? 'Retrouvez les devoirs, contrôles et compositions par matière et par semestre.' : 'Retrouvez les épreuves classées par domaine, ressources et compétences.' }}</p></div><div class="title-actions"><button><i>tune</i>{{ isCollege() ? 'Configurer les évaluations' : 'Configurer le référentiel' }}</button><button class="primary-action" type="button" (click)="openAssessmentEditor()"><i>add</i>Nouvelle évaluation</button></div></div>
+
+          @if (assessmentEditorOpen()) {
+            <form class="panel session-generator" #assessmentEditorForm="ngForm" (ngSubmit)="createAssessment()">
+              <header><div><span><i>edit_note</i></span><div><h2>Nouvelle évaluation</h2><p>Le barème est repris automatiquement de la composante primaire sélectionnée.</p></div></div><button type="button" aria-label="Fermer" (click)="closeAssessmentEditor()"><i>close</i></button></header>
+              <div class="session-generator-grid">
+                <label><span>Titre</span><input name="assessmentTitle" [(ngModel)]="assessmentForm.title" required placeholder="Ex. Contrôle des ressources 1" /></label><label><span>Date</span><input type="date" name="assessmentDate" [(ngModel)]="assessmentForm.date" required /></label><label><span>Trimestre</span><select name="assessmentPeriod" [(ngModel)]="assessmentForm.period"><option>Trimestre 1</option><option>Trimestre 2</option><option>Trimestre 3</option></select></label><label><span>Type</span><select name="assessmentType" [(ngModel)]="assessmentForm.type"><option value="controle">Contrôle</option><option value="devoir">Devoir</option><option value="formative">Évaluation formative</option><option value="essai">Essai</option><option value="composition">Composition</option></select></label>
+                <label><span>Domaine</span><select name="assessmentDomain" [(ngModel)]="assessmentForm.domainId" (ngModelChange)="assessmentForm.componentId = assessmentEditorComponents()[0]?.id ?? ''">@for (domain of primaryEvaluationDomains; track domain.id) {<option [value]="domain.id">{{ domain.label }}</option>}</select></label><label><span>Composante / barème</span><select name="assessmentComponent" [(ngModel)]="assessmentForm.componentId">@for (component of assessmentEditorComponents(); track component.id) {<option [value]="component.id">{{ component.label }} · /{{ component.scale }}</option>}</select></label><label><span>Enseignant</span><select name="assessmentTeacher" [(ngModel)]="assessmentForm.teacherId"><option value="">Non précisé</option>@for (teacher of campusTeachers(); track teacher.id) {<option [value]="teacher.id">{{ teacher.name }}</option>}</select></label>
+              </div>
+              <footer><p><i>info</i>La liste des élèves de la classe sera préparée automatiquement.</p><div><button type="button" (click)="closeAssessmentEditor()">Annuler</button><button class="primary-action" type="submit" [disabled]="assessmentEditorForm.invalid || assessmentSaving()"><i>{{ assessmentSaving() ? 'progress_activity' : 'save' }}</i>{{ assessmentSaving() ? 'Création…' : 'Créer l’évaluation' }}</button></div></footer>
+            </form>
+          }
 
           <div class="assessment-toolbar evaluation-filter-bar">
             @if (isCollege()) {
@@ -1688,7 +1889,7 @@
                 <footer><span><i>co_present</i>{{ teacherName(assessment.teacherId) }}</span><button type="button" (click)="$event.stopPropagation(); openAssessment(assessment)">Voir les résultats<i>arrow_forward</i></button></footer>
               </article>
             } @empty {
-              <article class="panel empty-assessments"><i>assignment_late</i><h2>Aucune évaluation trouvée</h2><p>Modifiez {{ isCollege() ? 'le semestre, la classe ou la matière' : 'le trimestre, la classe ou le domaine' }} pour afficher d’autres évaluations.</p><button type="button"><i>add</i>Créer une évaluation</button></article>
+              <article class="panel empty-assessments"><i>assignment_late</i><h2>Aucune évaluation trouvée</h2><p>Modifiez {{ isCollege() ? 'le semestre, la classe ou la matière' : 'le trimestre, la classe ou le domaine' }} pour afficher d’autres évaluations.</p><button type="button" (click)="openAssessmentEditor()"><i>add</i>Créer une évaluation</button></article>
             }
           </section>
         } @else if (selectedAssessment(); as assessment) {
@@ -2001,7 +2202,7 @@
       }
 
       @if (activeView() === 'fees') {
-        <div class="page-title fee-page-title"><div><small>RÈGLES DE FACTURATION</small><h1>{{ t('fees') }}</h1><p>Définissez les montants par classe et année scolaire ; les échéances seront générées automatiquement.</p></div><div class="title-actions"><button type="button" (click)="openAdditionalFeeEditor()" [disabled]="isFeeYearLocked()"><i>add</i>Autre paiement</button><button type="button" class="primary-action" (click)="saveFeeConfigurations()" [disabled]="isFeeYearLocked()"><i>save</i>Enregistrer les tarifs</button></div></div>
+        <div class="page-title fee-page-title"><div><small>RÈGLES DE FACTURATION</small><h1>{{ t('fees') }}</h1><p>Définissez les montants par classe et année scolaire ; les échéances seront générées automatiquement.</p></div><div class="title-actions"><button type="button" (click)="actualiserFinances()"><i>refresh</i>Actualiser</button><button type="button" (click)="openAdditionalFeeEditor()" [disabled]="isFeeYearLocked()"><i>add</i>Autre paiement</button><button type="button" class="primary-action" (click)="saveFeeConfigurations()" [disabled]="isFeeYearLocked()"><i>save</i>Enregistrer les tarifs</button></div></div>
 
         <div class="fee-configuration-bar" [class.locked]="isFeeYearLocked()">
           <label><span>Année scolaire</span><select [ngModel]="selectedFeeAcademicYear()" (ngModelChange)="selectFeeAcademicYear($event)">@for (academicYear of feeAcademicYears; track academicYear) {<option [value]="academicYear">{{ academicYear }}</option>}</select></label>
@@ -2012,14 +2213,12 @@
         <section class="panel class-fee-matrix" [class.locked]="isFeeYearLocked()">
           <header><div><span><i>price_change</i></span><div><h2>Frais scolaires par classe · {{ selectedFeeAcademicYear() }}</h2><p>{{ feeRows().length }} classe(s) affichée(s) pour {{ currentCampus().name }}</p></div></div>@if (isFeeYearLocked()) {<em><i>lock</i>Lecture seule</em>} @else {<em class="editable"><i>edit</i>Modifiable</em>}</header>
           <div class="class-fee-table-scroll">
-            <div class="class-fee-table-head"><span>Classe</span><span>Inscription</span><span>Mensualité</span><span>Tenue scolaire</span><span>Tenue sportive</span><span>État</span></div>
+            <div class="class-fee-table-head"><span>Classe</span><span>Inscription</span><span>Mensualité</span><span>État</span></div>
             @for (row of feeRows(); track row.classroom.id) {
               <article class="class-fee-row" [class.locked]="isFeeYearLocked()">
                 <div class="class-fee-name"><b>{{ row.classroom.level }}</b><span><strong>{{ row.classroom.name }}</strong><small>{{ row.classroom.enrolled }} élèves</small></span></div>
                 <label><input type="text" inputmode="numeric" [value]="row.configuration.registrationFee" [disabled]="isFeeYearLocked()" (input)="updateClassFee(row.classroom.id, 'registrationFee', $any($event.target).value)" /><span>F CFA</span></label>
                 <label><input type="text" inputmode="numeric" [value]="row.configuration.monthlyFee" [disabled]="isFeeYearLocked()" (input)="updateClassFee(row.classroom.id, 'monthlyFee', $any($event.target).value)" /><span>F CFA / mois</span></label>
-                <label><input type="text" inputmode="numeric" [value]="row.configuration.schoolUniformFee" [disabled]="isFeeYearLocked()" (input)="updateClassFee(row.classroom.id, 'schoolUniformFee', $any($event.target).value)" /><span>F CFA</span></label>
-                <label><input type="text" inputmode="numeric" [value]="row.configuration.sportsUniformFee" [disabled]="isFeeYearLocked()" (input)="updateClassFee(row.classroom.id, 'sportsUniformFee', $any($event.target).value)" /><span>F CFA</span></label>
                 <em [class.archived]="isFeeYearLocked()"><i>{{ isFeeYearLocked() ? 'lock' : 'check_circle' }}</i>{{ isFeeYearLocked() ? 'Archivé' : 'Actif' }}</em>
               </article>
             }
@@ -2031,7 +2230,7 @@
           <section class="panel additional-fee-editor">
             <header><div><span><i>add_card</i></span><div><h2>Nouveau paiement complémentaire</h2><p>Ajoutez une tenue, des fournitures, des frais d’examen ou une activité.</p></div></div><button type="button" (click)="closeAdditionalFeeEditor()" aria-label="Fermer"><i>close</i></button></header>
             <div class="additional-fee-form">
-              <label><span>Classe <b>*</b></span><select [(ngModel)]="additionalFeeForm.classId">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
+              <label><span>Classe <b>*</b></span><select [(ngModel)]="additionalFeeForm.classId"><option value="all">Toutes les classes du campus</option>@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
               <label><span>Intitulé <b>*</b></span><input [(ngModel)]="additionalFeeForm.label" placeholder="Ex. Frais d’examen" /></label>
               <label><span>Montant <b>*</b></span><div><input type="text" inputmode="numeric" [(ngModel)]="additionalFeeForm.amount" placeholder="10000" /><small>F CFA</small></div></label>
               <label><span>Fréquence <b>*</b></span><select [(ngModel)]="additionalFeeForm.frequency"><option value="Paiement unique">Paiement unique</option><option value="Mensuel">Mensuel</option></select></label>
@@ -2042,7 +2241,7 @@
         }
 
         <section class="additional-fees-section">
-          <header><div><small>PAIEMENTS COMPLÉMENTAIRES</small><h2>Autres frais de {{ selectedFeeAcademicYear() }}</h2><p>Frais ponctuels ou récurrents propres à une classe.</p></div><span>{{ visibleAdditionalFees().length }} paiement(s)</span></header>
+          <header><div><small>PAIEMENTS COMPLÉMENTAIRES</small><h2>Autres frais de {{ selectedFeeAcademicYear() }}</h2><p>Frais ponctuels ou récurrents propres à une classe.</p></div><label class="additional-fee-class-filter"><span>Classe</span><select [ngModel]="additionalFeeClassId()" (ngModelChange)="selectAdditionalFeeClass($event)">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label><span>{{ visibleAdditionalFees().length }} paiement(s)</span></header>
           <div class="additional-fee-grid">
             @for (fee of visibleAdditionalFees(); track fee.id) {
               <article class="panel additional-fee-card" [class.locked]="isFeeYearLocked()"><span><i>{{ fee.frequency === 'Mensuel' ? 'event_repeat' : 'receipt_long' }}</i></span><div><small>{{ additionalFeeClassName(fee.classId) }} · {{ fee.frequency }}</small><h3>{{ fee.label }}</h3><strong>{{ formatFeeAmount(fee.amount) }}</strong><em [class.optional]="!fee.required">{{ fee.required ? 'Obligatoire' : 'Facultatif' }}</em></div><button type="button" (click)="removeAdditionalFee(fee.id)" [disabled]="isFeeYearLocked()" aria-label="Supprimer"><i>{{ isFeeYearLocked() ? 'lock' : 'delete' }}</i></button></article>
@@ -2053,7 +2252,7 @@
       }
 
       @if (activeView() === 'payments') {
-        <div class="page-title collection-page-title"><div><small>REGISTRE DES ENCAISSEMENTS</small><h1>{{ t('payments') }}</h1><p>Sélectionnez une classe et une tarification, puis encaissez directement depuis la liste des élèves.</p></div></div>
+        <div class="page-title collection-page-title"><div><small>REGISTRE DES ENCAISSEMENTS</small><h1>{{ t('payments') }}</h1><p>Sélectionnez une classe et une tarification, puis encaissez directement depuis la liste des élèves.</p></div><div class="title-actions"><button type="button" (click)="actualiserFinances()"><i>refresh</i>Actualiser</button></div></div>
 
         <div class="collection-configuration-bar">
           <label><span>Année scolaire</span><select [ngModel]="selectedCollectionAcademicYear()" (ngModelChange)="selectCollectionAcademicYear($event)">@for (academicYear of feeAcademicYears; track academicYear) {<option [value]="academicYear">{{ academicYear }}</option>}</select></label>
@@ -2072,7 +2271,7 @@
         <div class="collection-list-heading"><div><small>{{ selectedCollectionFee().frequency === 'Mensuel' ? 'SUIVI MENSUEL' : 'PAIEMENT UNIQUE' }}</small><h2>{{ selectedCollectionFee().label }} · {{ selectedClass().name }}</h2><p>{{ formatFeeAmount(selectedCollectionFee().amount) }} {{ selectedCollectionFee().frequency === 'Mensuel' ? 'par mois et par élève' : 'par élève' }}</p></div><button type="button" [class.active]="collectionUnpaidOnly()" (click)="toggleCollectionUnpaidOnly()"><i>filter_alt</i>{{ collectionUnpaidOnly() ? 'Afficher tous les élèves' : 'Impayés seulement' }}</button></div>
 
         @if (selectedCollectionFee().frequency === 'Mensuel') {
-          <section class="panel payment-sheet collection-payment-sheet monthly-ledger">
+          <section class="panel payment-sheet collection-payment-sheet monthly-ledger" [style.--payment-months]="paymentMonths.length">
             <div class="payment-table-scroll">
               <div class="payment-head monthly-payment-head"><span>ÉLÈVE</span>@for (month of paymentMonths; track month) {<span>{{ month.toUpperCase() }}</span>}<span>RESTE</span></div>
               @for (student of collectionStudents(); track student.id) {
@@ -2109,40 +2308,57 @@
       }
 
       @if (activeView() === 'expense-settings') {
-        <div class="page-title fee-page-title"><div><small>RÈGLES DES DÉCAISSEMENTS</small><h1>{{ t('expense-settings') }}</h1><p>Définissez une seule fois les charges de l’école ; elles seront ensuite disponibles dans le registre des dépenses.</p></div><div class="title-actions"><button type="button" (click)="openExpenseTypeEditor()"><i>add</i>Nouveau type</button><button type="button" class="primary-action" (click)="setView('expenses')"><i>north_east</i>Ouvrir les dépenses</button></div></div>
-        <div class="fee-configuration-bar"><label><span>Année scolaire</span><select [ngModel]="selectedFeeAcademicYear()" (ngModelChange)="selectFeeAcademicYear($event)">@for (academicYear of feeAcademicYears; track academicYear) {<option [value]="academicYear">{{ academicYear }}</option>}</select></label><label><span>Campus</span><select [ngModel]="selectedCampusId()" (ngModelChange)="changeCampus($event)">@for (campus of campuses; track campus.id) {<option [value]="campus.id">{{ campus.shortName }}</option>}</select></label><div class="fee-year-state"><i>tune</i><span><small>CONFIGURATION ACTIVE</small><strong>{{ expenseTypes().length }} types de dépenses disponibles</strong></span></div></div>
-        <section class="panel class-fee-matrix expense-type-matrix"><header><div><span><i>account_balance_wallet</i></span><div><h2>Types de dépenses {{ isHighSchool() ? 'du lycée' : isCollege() ? 'du collège' : 'de l’école primaire' }}</h2><p>Par défaut : salaire du personnel et salaire des enseignants. Ajoutez ensuite les autres charges de l’établissement.</p></div></div><em class="editable"><i>edit</i>Modifiable</em></header><div class="class-fee-table-scroll"><div class="expense-type-table-head"><span>Intitulé</span><span>Fréquence</span><span>Montant provisoire</span><span></span></div>@for (type of expenseTypes(); track type.id) {<article class="expense-type-row"><div class="class-fee-name"><b><i>{{ type.id === 'teacher-salary' ? 'co_present' : type.id === 'staff-salary' ? 'badge' : 'receipt_long' }}</i></b><span><strong>{{ type.label }}</strong><small>{{ type.active ? 'Actif dans le registre' : 'Inactif' }}</small></span></div><select [ngModel]="type.frequency" (ngModelChange)="updateExpenseType(type.id, 'frequency', $event)"><option value="Unique">Unique</option><option value="Mensuel">Mensuel</option></select><label [class.locked-field]="type.id === 'staff-salary' || type.id === 'teacher-salary'"><input type="number" min="0" [disabled]="type.id === 'staff-salary' || type.id === 'teacher-salary'" [ngModel]="type.defaultAmount" (ngModelChange)="updateExpenseType(type.id, 'defaultAmount', $event)" /><span>{{ type.id === 'staff-salary' || type.id === 'teacher-salary' ? 'Selon le dossier' : 'F CFA' }}</span></label><button type="button" (click)="removeExpenseType(type.id)" [attr.aria-label]="'Supprimer ' + type.label"><i>{{ type.id.startsWith('custom-') ? 'delete' : 'lock' }}</i></button></article>}</div><footer><i>info</i><span>Pour les salaires, le montant est récupéré dans le dossier du personnel ou de l’enseignant.</span></footer></section>
-        @if (expenseTypeEditorOpen()) {<section class="panel additional-fee-editor"><header><div><span><i>add_card</i></span><div><h2>Nouveau type de dépense</h2><p>Ajoutez une charge qui apparaîtra dans la liste de sélection du registre.</p></div></div><button type="button" (click)="expenseTypeEditorOpen.set(false)" aria-label="Fermer"><i>close</i></button></header><div class="expense-type-editor-grid"><label><span>Intitulé <b>*</b></span><input [(ngModel)]="expenseTypeDraft.label" placeholder="Ex. Abonnement internet" /></label><label><span>Fréquence</span><select [(ngModel)]="expenseTypeDraft.frequency"><option value="Unique">Unique</option><option value="Mensuel">Mensuel</option></select></label><label><span>Montant provisoire</span><div><input type="number" min="0" [(ngModel)]="expenseTypeDraft.defaultAmount" /><small>F CFA</small></div></label></div><footer><button type="button" (click)="expenseTypeEditorOpen.set(false)">Annuler</button><button type="button" class="primary-action" (click)="saveExpenseType()"><i>save</i>Ajouter le type</button></footer></section>}
+        <div class="page-title fee-page-title"><div><small>RÈGLES DES DÉCAISSEMENTS</small><h1>{{ t('expense-settings') }}</h1><p>Définissez une seule fois les charges de l’école ; elles seront ensuite disponibles dans le registre des dépenses.</p></div><div class="title-actions"><button type="button" (click)="actualiserFinances()"><i>refresh</i>Actualiser</button><button type="button" (click)="openExpenseTypeEditor()"><i>add</i>Nouveau type</button><button type="button" class="primary-action" (click)="setView('expenses')"><i>north_east</i>Ouvrir les dépenses</button></div></div>
+        <div class="fee-configuration-bar"><label><span>Année scolaire</span><select [ngModel]="selectedExpenseAcademicYear()" (ngModelChange)="selectExpenseAcademicYear($event)">@for (academicYear of feeAcademicYears; track academicYear) {<option [value]="academicYear">{{ academicYear }}</option>}</select></label><label><span>Campus</span><select [ngModel]="selectedCampusId()" (ngModelChange)="changeCampus($event)">@for (campus of campuses(); track campus.id) {<option [value]="campus.id">{{ campus.shortName }}</option>}</select></label><div class="fee-year-state"><i>tune</i><span><small>CONFIGURATION ACTIVE</small><strong>{{ expenseTypes().length }} types de dépenses disponibles</strong></span></div></div>
+        <section class="panel class-fee-matrix expense-type-matrix"><header><div><span><i>account_balance_wallet</i></span><div><h2>Types de dépenses {{ isHighSchool() ? 'du lycée' : isCollege() ? 'du collège' : 'de l’école primaire' }}</h2><p>Chaque type cible obligatoirement le personnel, les enseignants ou les deux.</p></div></div><em class="editable"><i>edit</i>Modifiable</em></header><div class="class-fee-table-scroll"><div class="expense-type-table-head"><span>Intitulé</span><span>Fréquence</span><span>Personnes concernées</span><span>Montant provisoire</span><span></span></div>@for (type of expenseTypes(); track type.id) {<article class="expense-type-row"><div class="class-fee-name"><b><i>{{ type.id === 'teacher-salary' ? 'co_present' : type.id === 'staff-salary' ? 'badge' : 'receipt_long' }}</i></b><span><strong>{{ type.label }}</strong><small>{{ type.active ? 'Actif dans le registre' : 'Inactif' }}</small></span></div><select [ngModel]="type.frequency" (ngModelChange)="updateExpenseType(type.id, 'frequency', $event)" [disabled]="type.id === 'staff-salary' || type.id === 'teacher-salary'"><option value="Unique">Unique</option><option value="Mensuel">Mensuel</option></select><select [ngModel]="type.target" (ngModelChange)="updateExpenseType(type.id, 'target', $event)" [disabled]="type.id === 'staff-salary' || type.id === 'teacher-salary'"><option value="Personnel">Personnel</option><option value="Enseignants">Enseignants</option><option value="Personnel et enseignants">Les deux</option></select><label [class.locked-field]="type.id === 'staff-salary' || type.id === 'teacher-salary'"><input type="number" min="0" [disabled]="type.id === 'staff-salary' || type.id === 'teacher-salary'" [ngModel]="type.defaultAmount" (ngModelChange)="updateExpenseType(type.id, 'defaultAmount', $event)" /><span>{{ type.id === 'staff-salary' || type.id === 'teacher-salary' ? 'Selon le dossier' : 'F CFA' }}</span></label><button type="button" (click)="removeExpenseType(type.id)" [attr.aria-label]="'Supprimer ' + type.label"><i>{{ type.id !== 'staff-salary' && type.id !== 'teacher-salary' ? 'delete' : 'lock' }}</i></button></article>}</div><footer><i>info</i><span>Les charges liées à un fournisseur ou à tout autre tiers externe se saisissent uniquement dans Nouvelle opération financière.</span></footer></section>
+        @if (expenseTypeEditorOpen()) {<section class="panel additional-fee-editor"><header><div><span><i>add_card</i></span><div><h2>Nouveau type de dépense</h2><p>Créez une dépense interne et définissez les personnes concernées.</p></div></div><button type="button" (click)="expenseTypeEditorOpen.set(false)" aria-label="Fermer"><i>close</i></button></header><div class="expense-type-editor-grid"><label><span>Intitulé <b>*</b></span><input [(ngModel)]="expenseTypeDraft.label" placeholder="Ex. Prime de rendement" /></label><label><span>Fréquence</span><select [(ngModel)]="expenseTypeDraft.frequency"><option value="Unique">Unique</option><option value="Mensuel">Mensuel</option></select></label><label><span>Personnes concernées <b>*</b></span><select [(ngModel)]="expenseTypeDraft.target"><option value="Personnel">Personnel</option><option value="Enseignants">Enseignants</option><option value="Personnel et enseignants">Les deux</option></select></label><label><span>Montant provisoire</span><div><input type="number" min="0" [(ngModel)]="expenseTypeDraft.defaultAmount" /><small>F CFA</small></div></label></div><footer><button type="button" (click)="expenseTypeEditorOpen.set(false)">Annuler</button><button type="button" class="primary-action" (click)="saveExpenseType()"><i>save</i>Ajouter le type</button></footer></section>}
       }
 
       @if (activeView() === 'expenses') {
-        <div class="page-title collection-page-title"><div><small>REGISTRE DES DÉPENSES</small><h1>{{ t('expenses') }}</h1><p>Sélectionnez un type de dépense puis suivez les paiements dans la liste correspondante.</p></div></div>
-        <div class="collection-configuration-bar expense-configuration-bar"><label><span>Année scolaire</span><select [ngModel]="selectedExpenseAcademicYear()" (ngModelChange)="selectExpenseAcademicYear($event)">@for (academicYear of feeAcademicYears; track academicYear) {<option [value]="academicYear">{{ academicYear }}</option>}</select></label><label class="collection-fee-select"><span>Type de dépense</span><select [ngModel]="selectedExpenseTypeId()" (ngModelChange)="selectExpenseType($event)">@for (type of expenseTypes(); track type.id) {<option [value]="type.id">{{ type.label }}</option>}</select></label><div class="collection-fee-state"><i>{{ selectedExpenseType().frequency === 'Mensuel' ? 'calendar_month' : 'payments' }}</i><span><small>FRÉQUENCE</small><strong>{{ selectedExpenseType().frequency }}</strong></span></div></div>
-        <section class="collection-summary-grid expense-summary-grid"><article class="panel"><span><i>{{ isSalaryExpenseType() ? 'groups' : 'receipt_long' }}</i></span><div><small>Éléments concernés</small><strong>{{ isSalaryExpenseType() ? salaryPeople().length : expenseExpectedEntries() }}</strong><em>{{ selectedExpenseType().label }}</em></div></article><article class="panel"><span class="success"><i>check_circle</i></span><div><small>Montant payé</small><strong>{{ formatExpenseAmount(expenseSelectedPaidTotal()) }}</strong><em>{{ expensePaidEntries() }}/{{ expenseExpectedEntries() }} paiement(s)</em></div></article><article class="panel"><span class="warning"><i>pending_actions</i></span><div><small>Reste à payer</small><strong>{{ formatExpenseAmount(expenseSelectedTotal() - expenseSelectedPaidTotal()) }}</strong><em>{{ 100 - expenseProgress() }}% restant</em></div></article><article class="panel collection-progress-card"><div><small>Progression</small><strong>{{ expenseProgress() }}%</strong></div><span><i [style.width.%]="expenseProgress()"></i></span></article></section>
-        <div class="collection-list-heading expense-list-heading"><div><small>{{ isSalaryExpenseType() ? 'PAIE MENSUELLE' : 'SUIVI DES FACTURES' }}</small><h2>{{ selectedExpenseType().label }} · {{ isSalaryExpenseType() ? selectedExpenseAcademicYear() : selectedExpensePeriod() }}</h2><p>{{ isSalaryExpenseType() ? 'Le montant affiché provient directement du dossier de chaque enseignant ou membre du personnel.' : 'Les montants réels et les dates de paiement restent visibles dans le registre.' }}</p></div><div class="expense-heading-actions">@if (!isSalaryExpenseType()) {<button type="button" class="primary-action" (click)="startExpenseRegistration()"><i>add</i>Ajouter</button>}<button type="button" [class.active]="expenseUnpaidOnly()" (click)="toggleExpenseUnpaidOnly()"><i>filter_alt</i>{{ expenseUnpaidOnly() ? 'Afficher tout' : 'À payer seulement' }}</button></div></div>
-        @if (isSalaryExpenseType()) {
-          <section class="panel payment-sheet collection-payment-sheet monthly-ledger salary-monthly-ledger"><div class="payment-table-scroll"><div class="payment-head monthly-payment-head"><span>{{ selectedExpenseTypeId() === 'teacher-salary' ? 'ENSEIGNANT' : 'PERSONNEL' }}</span>@for (month of paymentMonths; track month) {<span>{{ month.toUpperCase() }}</span>}<span>RESTE</span></div>@for (person of visibleSalaryPeople(); track person.key) {<article class="monthly-payment-row"><div class="collection-student"><span>{{ person.name.charAt(0) }}</span><div><strong>{{ person.name }}</strong><small>{{ person.reference }} · {{ person.role }} · {{ person.salaryMode === 'Horaire' ? person.hourlyRate + ' F/h' : 'Mensuel' }}</small></div></div>@for (month of paymentMonths; track month) {@if (person.salaryMode === 'Horaire') {<div class="salary-hour-cell" [class.paid]="salaryMonthlyPaymentDate(person.key, month)"><label><input type="number" min="0" [ngModel]="salaryMonthlyHours(person, month)" (ngModelChange)="updateSalaryMonthlyHours(person, month, $event)" [disabled]="!!salaryMonthlyPaymentDate(person.key, month)" [attr.aria-label]="month + ' · heures effectuées pour ' + person.name" /><span>h</span></label><button type="button" [class.paid]="salaryMonthlyPaymentDate(person.key, month)" (click)="toggleSalaryMonthlyPayment(person.key, month)" [attr.aria-label]="month + ' · ' + (salaryMonthlyPaymentDate(person.key, month) ? 'Payé' : 'Marquer payé')"><i>{{ salaryMonthlyPaymentDate(person.key, month) ? 'check' : 'payments' }}</i><small>{{ salaryMonthlyPaymentDate(person.key, month) ? 'Payé · ' + salaryMonthlyAmountLabel(person, month) : salaryMonthlyAmountLabel(person, month) }}</small></button></div>} @else {<button type="button" [class.paid]="salaryMonthlyPaymentDate(person.key, month)" (click)="toggleSalaryMonthlyPayment(person.key, month)" [attr.aria-label]="month + ' · ' + (salaryMonthlyPaymentDate(person.key, month) ? 'Payé' : 'Impayé')"><i>{{ salaryMonthlyPaymentDate(person.key, month) ? 'check' : 'remove' }}</i><small>{{ salaryMonthlyPaymentDate(person.key, month) ? 'Payé' : 'Impayé' }}</small></button>}}<b [class.debt]="salaryMonthlyBalance(person) !== '0 F CFA'">{{ salaryMonthlyBalance(person) }}</b></article>} @empty {<div class="collection-empty"><i>task_alt</i><strong>Aucun salaire en attente</strong><span>Toutes les paies de cette sélection sont à jour.</span></div>}</div><footer><i>touch_app</i>Pour un enseignant payé à l’heure, renseignez d’abord les heures effectuées, puis marquez le mois comme payé. Un second clic annule le paiement.</footer></section>
+        <div class="page-title collection-page-title"><div><small>REGISTRE DES DÉPENSES</small><h1>{{ t('expenses') }}</h1><p>Sélectionnez un type de dépense puis suivez les paiements dans la liste correspondante.</p></div><div class="title-actions"><button type="button" (click)="actualiserFinances()"><i>refresh</i>Actualiser</button></div></div>
+        <div class="collection-configuration-bar expense-configuration-bar"><label><span>Année scolaire</span><select [ngModel]="selectedExpenseAcademicYear()" (ngModelChange)="selectExpenseAcademicYear($event)">@for (academicYear of feeAcademicYears; track academicYear) {<option [value]="academicYear">{{ academicYear }}</option>}</select></label><label class="collection-fee-select"><span>Type de dépense</span><select [ngModel]="selectedExpenseTypeId()" (ngModelChange)="selectExpenseType($event)">@for (type of expenseTypes(); track type.id) {<option [value]="type.id">{{ type.label }}</option>}</select></label><label><span>Mois</span><select [ngModel]="selectedExpensePeriod()" (ngModelChange)="selectExpensePeriod($event)">@for (period of expensePeriodOptions(); track period.value) {<option [value]="period.value">{{ period.label }}</option>}</select></label><div class="collection-fee-state"><i>{{ selectedExpenseType().frequency === 'Mensuel' ? 'calendar_month' : 'payments' }}</i><span><small>FRÉQUENCE</small><strong>{{ selectedExpenseType().frequency }}</strong></span></div></div>
+        <section class="collection-summary-grid expense-summary-grid"><article class="panel"><span><i>groups</i></span><div><small>Personnes concernées</small><strong>{{ salaryPeople().length }}</strong><em>{{ selectedExpenseType().target }}</em></div></article><article class="panel"><span class="success"><i>check_circle</i></span><div><small>Montant payé</small><strong>{{ formatExpenseAmount(expenseSelectedPaidTotal()) }}</strong><em>{{ expensePaidEntries() }}/{{ expenseExpectedEntries() }} paiement(s)</em></div></article><article class="panel"><span class="warning"><i>pending_actions</i></span><div><small>Reste à payer</small><strong>{{ formatExpenseAmount(expenseSelectedTotal() - expenseSelectedPaidTotal()) }}</strong><em>{{ 100 - expenseProgress() }}% restant</em></div></article><article class="panel collection-progress-card"><div><small>Progression</small><strong>{{ expenseProgress() }}%</strong></div><span><i [style.width.%]="expenseProgress()"></i></span></article></section>
+        <div class="collection-list-heading expense-list-heading"><div><small>{{ selectedExpenseType().frequency === 'Mensuel' ? 'SUIVI MENSUEL' : 'PAIEMENT UNIQUE' }}</small><h2>{{ selectedExpenseType().label }} · {{ selectedExpenseType().frequency === 'Mensuel' ? selectedExpenseAcademicYear() : selectedExpensePeriod() }}</h2><p>La liste est générée automatiquement selon la cible configurée : {{ selectedExpenseType().target.toLowerCase() }}.</p></div><div class="expense-heading-actions"><button type="button" [class.active]="expenseUnpaidOnly()" (click)="toggleExpenseUnpaidOnly()"><i>filter_alt</i>{{ expenseUnpaidOnly() ? 'Afficher tout' : 'À payer seulement' }}</button></div></div>
+        @if (selectedExpenseType().frequency === 'Mensuel') {
+          <section class="panel payment-sheet collection-payment-sheet monthly-ledger salary-monthly-ledger" [style.--payment-months]="paymentMonths.length"><div class="payment-table-scroll"><div class="payment-head monthly-payment-head"><span>PERSONNE CONCERNÉE</span>@for (month of paymentMonths; track month) {<span>{{ month.toUpperCase() }}</span>}<span>RESTE</span></div>@for (person of visibleSalaryPeople(); track person.key) {<article class="monthly-payment-row"><div class="collection-student"><span>{{ person.name.charAt(0) }}</span><div><strong>{{ person.name }}</strong><small>{{ person.reference }} · {{ person.role }} · {{ isSalaryExpenseType() && person.salaryMode === 'Horaire' ? person.hourlyRate + ' F/h' : formatExpenseAmount(expensePersonAmount(person)) }}</small></div></div>@for (month of paymentMonths; track month) {@if (isSalaryExpenseType() && person.salaryMode === 'Horaire') {<div class="salary-hour-cell" [class.paid]="expensePersonPaymentDate(person, month)"><label><input type="number" min="0" [ngModel]="salaryMonthlyHours(person, month)" (ngModelChange)="updateSalaryMonthlyHours(person, month, $event)" [disabled]="!!expensePersonPaymentDate(person, month)" [attr.aria-label]="month + ' · heures effectuées pour ' + person.name" /><span>h</span></label><button type="button" [class.paid]="expensePersonPaymentDate(person, month)" (click)="toggleExpensePersonPayment(person, month)"><i>{{ expensePersonPaymentDate(person, month) ? 'check' : 'payments' }}</i><small>{{ expensePersonPaymentDate(person, month) ? 'Payé' : salaryMonthlyAmountLabel(person, month) }}</small></button></div>} @else {<button type="button" [class.paid]="expensePersonPaymentDate(person, month)" (click)="toggleExpensePersonPayment(person, month)"><i>{{ expensePersonPaymentDate(person, month) ? 'check' : 'remove' }}</i><small>{{ expensePersonPaymentDate(person, month) ? 'Payé' : 'Impayé' }}</small></button>}}<b [class.debt]="expensePersonBalance(person) !== '0 F CFA'">{{ expensePersonBalance(person) }}</b></article>} @empty {<div class="collection-empty"><i>groups</i><strong>Aucune personne concernée</strong><span>Vérifiez la cible du type de dépense et les affectations du campus.</span></div>}</div><footer><i>touch_app</i>Cliquez sur un mois pour enregistrer le paiement pour la personne concernée. Un second clic annule le paiement.</footer></section>
         } @else {
-          <section class="panel payment-sheet collection-payment-sheet one-time-ledger"><div class="expense-payment-head"><span>DÉPENSE</span><span>BÉNÉFICIAIRE</span><span>MONTANT</span><span>ÉTAT / DATE</span><span>ACTION</span></div>@for (expense of filteredExpenses(); track expense.id) {<article class="expense-payment-row"><div class="collection-student"><span>{{ expense.label.charAt(0) }}</span><div><strong>{{ expense.label }}</strong><small>{{ expense.frequency }}</small></div></div><span>{{ expense.beneficiary }}</span><strong>{{ formatExpenseAmount(expense.amount) }}</strong><time [class.paid]="expense.status === 'Payée'"><i>{{ expense.status === 'Payée' ? 'check_circle' : 'schedule' }}</i><span>{{ expense.status === 'Payée' ? 'Payée le ' + formatPaymentDate(expense.date) : expense.status + ' · ' + formatPaymentDate(expense.date) }}</span></time><button type="button" [class.cancel-payment]="expense.status === 'Payée'" (click)="markExpensePaid(expense)"><i>{{ expense.status === 'Payée' ? 'undo' : 'payments' }}</i>{{ expense.status === 'Payée' ? 'Annuler' : 'Marquer payée' }}</button></article>} @empty {<div class="collection-empty"><i>receipt_long</i><strong>Aucune dépense pour cette sélection</strong><span>Ajoutez la première facture ou changez la période.</span></div>}<footer><i>event_available</i>La date de décaissement est mémorisée automatiquement et reste visible dans le registre.</footer></section>
+          <section class="panel payment-sheet collection-payment-sheet one-time-ledger"><div class="expense-payment-head"><span>PERSONNE CONCERNÉE</span><span>FONCTION</span><span>MONTANT</span><span>ÉTAT / DATE</span><span>ACTION</span></div>@for (person of visibleSalaryPeople(); track person.key) {<article class="expense-payment-row"><div class="collection-student"><span>{{ person.name.charAt(0) }}</span><div><strong>{{ person.name }}</strong><small>{{ person.reference }}</small></div></div><span>{{ person.role }}</span><strong>{{ formatExpenseAmount(expensePersonAmount(person)) }}</strong><time [class.paid]="expensePersonPaymentDate(person)"><i>{{ expensePersonPaymentDate(person) ? 'check_circle' : 'schedule' }}</i><span>{{ expensePersonPaymentDate(person) ? 'Payée le ' + formatPaymentDate(expensePersonPaymentDate(person)) : 'À payer' }}</span></time><button type="button" [class.cancel-payment]="expensePersonPaymentDate(person)" (click)="toggleExpensePersonPayment(person)"><i>{{ expensePersonPaymentDate(person) ? 'undo' : 'payments' }}</i>{{ expensePersonPaymentDate(person) ? 'Annuler' : 'Marquer payée' }}</button></article>} @empty {<div class="collection-empty"><i>groups</i><strong>Aucune personne concernée</strong><span>Vérifiez la cible du type de dépense et les affectations du campus.</span></div>}<footer><i>event_available</i>Les dépenses externes se saisissent dans Nouvelle opération financière.</footer></section>
         }
-        @if (expenseEditorOpen()) {<section class="panel additional-fee-editor expense-entry-editor"><header><div><span><i>receipt_long</i></span><div><h2>Nouvelle dépense · {{ selectedExpenseType().label }}</h2><p>Enregistrez le montant réel, le bénéficiaire et la date de l’opération.</p></div></div><button type="button" (click)="closeExpenseEditor()" aria-label="Fermer"><i>close</i></button></header><div class="expense-entry-grid"><label><span>Libellé <b>*</b></span><input [(ngModel)]="expenseForm.label" /></label><label><span>Bénéficiaire / fournisseur <b>*</b></span><input [(ngModel)]="expenseForm.beneficiary" placeholder="Ex. Senelec" /></label><label><span>Montant <b>*</b></span><div><input type="number" min="0" [(ngModel)]="expenseForm.amount" /><small>F CFA</small></div></label><label><span>Date</span><input type="date" [(ngModel)]="expenseForm.date" /></label><label><span>État</span><select [(ngModel)]="expenseForm.status"><option value="Prévue">Prévue</option><option value="Payée">Payée</option><option value="Brouillon">Brouillon</option></select></label></div><footer><button type="button" (click)="closeExpenseEditor()">Annuler</button><button type="button" class="primary-action" (click)="saveExpense()"><i>save</i>Enregistrer</button></footer></section>}
       }
 
       @if (activeView() === 'finance') {
-        <div class="page-title collection-page-title"><div><small>JOURNAL FINANCIER UNIFIÉ</small><h1>{{ t('finance') }}</h1><p>Retrouvez dans un seul registre les encaissements, les dépenses et les opérations saisies manuellement.</p></div><div class="title-actions"><button type="button" class="primary-action" (click)="openFinanceEntryEditor()"><i>add</i>Nouvelle opération</button></div></div>
-        <div class="finance-filter-bar"><label><span>Année scolaire</span><select [ngModel]="selectedFinanceAcademicYear()" (ngModelChange)="selectFinanceAcademicYear($event)">@for (academicYear of feeAcademicYears; track academicYear) {<option [value]="academicYear">{{ academicYear }}</option>}</select></label><label><span>Mois</span><select [ngModel]="selectedFinancePeriod()" (ngModelChange)="selectFinancePeriod($event)">@for (period of financePeriods(); track period.value) {<option [value]="period.value">{{ period.label }}</option>}</select></label><label><span>Mouvement</span><select [ngModel]="selectedFinanceDirection()" (ngModelChange)="selectFinanceDirection($event)"><option value="Tous">Entrées et sorties</option><option value="Entrée">Entrées seulement</option><option value="Sortie">Sorties seulement</option></select></label><label><span>Motif</span><select [ngModel]="selectedFinanceReason()" (ngModelChange)="selectFinanceReason($event)"><option value="all">Tous les motifs</option>@for (reason of financeReasonOptions(); track reason) {<option [value]="reason">{{ reason }}</option>}</select></label><label class="finance-search-field"><span>Recherche</span><div><i>search</i><input [ngModel]="financeSearch()" (ngModelChange)="setFinanceSearch($event)" placeholder="Référence, tiers, mode…" /></div></label></div>
+        <div class="page-title collection-page-title"><div><small>JOURNAL FINANCIER UNIFIÉ</small><h1>{{ t('finance') }}</h1><p>Retrouvez dans un seul registre les encaissements, les dépenses et les opérations saisies manuellement.</p></div><div class="title-actions"><button type="button" (click)="actualiserFinances()"><i>refresh</i>Actualiser</button><button type="button" class="primary-action" (click)="openFinanceEntryEditor()"><i>add</i>Nouvelle opération</button></div></div>
+        @if (financeEditorOpen()) {<section class="panel additional-fee-editor finance-entry-editor"><header><div><span><i>account_balance_wallet</i></span><div><h2>Nouvelle opération financière</h2><p>Enregistrez uniquement un encaissement ou une dépense concernant un tiers externe.</p></div></div><button type="button" (click)="closeFinanceEntryEditor()" aria-label="Fermer"><i>close</i></button></header><div class="finance-entry-grid"><label><span>Mouvement <b>*</b></span><select [ngModel]="financeEntryForm.direction" (ngModelChange)="changeFinanceFormDirection($event)"><option value="Entrée">Entrée</option><option value="Sortie">Sortie</option></select></label><label><span>Motif <b>*</b></span><select [(ngModel)]="financeEntryForm.reason">@for (reason of financeReasonsForDirection(financeEntryForm.direction); track reason) {<option [value]="reason">{{ reason }}</option>}</select></label><label><span>Montant <b>*</b></span><div><input type="number" min="0" [(ngModel)]="financeEntryForm.amount" /><small>F CFA</small></div></label><label><span>Date <b>*</b></span><input type="date" [(ngModel)]="financeEntryForm.date" /></label><label><span>Mode de paiement</span><select [(ngModel)]="financeEntryForm.paymentMethod"><option value="Espèces">Espèces</option><option value="Wave">Wave</option><option value="Orange Money">Orange Money</option><option value="Virement">Virement</option><option value="Chèque">Chèque</option></select></label><label><span>Payeur ou bénéficiaire <b>*</b></span><input [(ngModel)]="financeEntryForm.thirdParty" placeholder="Nom de la personne ou société" /></label><label><span>Référence</span><input [(ngModel)]="financeEntryForm.reference" placeholder="Générée automatiquement si vide" /></label><label><span>Statut</span><select [(ngModel)]="financeEntryForm.status"><option value="Validée">Validée</option><option value="En attente">En attente</option></select></label><label class="finance-notes-field"><span>Note</span><input [(ngModel)]="financeEntryForm.notes" placeholder="Informations complémentaires" /></label></div><footer><button type="button" (click)="closeFinanceEntryEditor()">Annuler</button><button type="button" class="primary-action" (click)="saveFinanceEntry()"><i>save</i>Enregistrer l’opération</button></footer></section>}
+        <div class="finance-filter-bar"><label><span>Année scolaire</span><select [ngModel]="selectedFinanceAcademicYear()" (ngModelChange)="selectFinanceAcademicYear($event)">@for (academicYear of feeAcademicYears; track academicYear) {<option [value]="academicYear">{{ academicYear }}</option>}</select></label><label><span>Période</span><select [ngModel]="selectedFinancePeriod()" (ngModelChange)="selectFinancePeriod($event)">@for (period of financePeriods(); track period.value) {<option [value]="period.value">{{ period.label }}</option>}</select></label><label><span>Mouvement</span><select [ngModel]="selectedFinanceDirection()" (ngModelChange)="selectFinanceDirection($event)"><option value="Tous">Entrées et sorties</option><option value="Entrée">Entrées seulement</option><option value="Sortie">Sorties seulement</option></select></label><label><span>Motif</span><select [ngModel]="selectedFinanceReason()" (ngModelChange)="selectFinanceReason($event)"><option value="all">Tous les motifs</option>@for (reason of financeReasonOptions(); track reason) {<option [value]="reason">{{ reason }}</option>}</select></label></div>
         <section class="collection-summary-grid finance-summary-grid"><article class="panel"><span class="success"><i>south_west</i></span><div><small>Total des entrées</small><strong>{{ formatExpenseAmount(financeTotal('Entrée')) }}</strong><em>Opérations validées</em></div></article><article class="panel"><span class="warning"><i>north_east</i></span><div><small>Total des sorties</small><strong>{{ formatExpenseAmount(financeTotal('Sortie')) }}</strong><em>Opérations validées</em></div></article><article class="panel finance-balance-card" [class.negative]="financeBalance() < 0"><span><i>account_balance_wallet</i></span><div><small>Solde net</small><strong>{{ formatExpenseAmount(financeBalance()) }}</strong><em>Entrées moins sorties</em></div></article><article class="panel"><span><i>pending_actions</i></span><div><small>À valider</small><strong>{{ financePendingCount() }}</strong><em>{{ filteredFinanceEntries().length }} mouvement(s) affiché(s)</em></div></article></section>
-        <div class="collection-list-heading"><div><small>RÉCAPITULATIF DE CAISSE</small><h2>Entrées et sorties · {{ financePeriodLabel() }}</h2><p>Les opérations issues des encaissements et des dépenses sont regroupées automatiquement.</p></div><span class="finance-result-count">{{ filteredFinanceEntries().length }} opération(s)</span></div>
-        <section class="panel finance-ledger"><div class="finance-ledger-scroll"><div class="finance-ledger-head"><span>Date / référence</span><span>Motif</span><span>Tiers concerné</span><span>Mode</span><span>Entrée</span><span>Sortie</span><span>Statut</span><span></span></div>@for (entry of filteredFinanceEntries(); track entry.id) {<article class="finance-ledger-row"><div><time>{{ formatPaymentDate(entry.date) }}</time><small>{{ entry.reference }}</small></div><div class="finance-reason"><span [class.outgoing]="entry.direction === 'Sortie'"><i>{{ entry.direction === 'Entrée' ? 'south_west' : 'north_east' }}</i></span><div><strong>{{ entry.reason }}</strong><small>{{ entry.source }}</small></div></div><div><strong>{{ entry.thirdParty }}</strong><small>{{ entry.notes || 'Aucune note' }}</small></div><span class="finance-method">{{ entry.paymentMethod }}</span><b class="finance-incoming">{{ entry.direction === 'Entrée' ? formatExpenseAmount(entry.amount) : '—' }}</b><b class="finance-outgoing">{{ entry.direction === 'Sortie' ? formatExpenseAmount(entry.amount) : '—' }}</b><em [class.pending]="entry.status === 'En attente'" [class.cancelled]="entry.status === 'Annulée'"><i>{{ entry.status === 'Validée' ? 'check_circle' : entry.status === 'En attente' ? 'schedule' : 'cancel' }}</i>{{ entry.status }}</em><button type="button" (click)="toggleFinanceEntryStatus(entry)" [attr.aria-label]="entry.status === 'Validée' ? 'Annuler l’opération' : 'Valider l’opération'"><i>{{ entry.status === 'Validée' ? 'undo' : 'check' }}</i></button></article>} @empty {<div class="collection-empty"><i>account_balance_wallet</i><strong>Aucune opération trouvée</strong><span>Modifiez les filtres ou ajoutez une opération manuelle.</span></div>}</div><footer><i>sync</i>Les encaissements et dépenses validés alimentent automatiquement ce journal financier.</footer></section>
-        @if (financeEditorOpen()) {<section class="panel additional-fee-editor finance-entry-editor"><header><div><span><i>account_balance_wallet</i></span><div><h2>Nouvelle opération financière</h2><p>Utilisez cette saisie pour une entrée ou une sortie qui ne provient pas des registres automatiques.</p></div></div><button type="button" (click)="closeFinanceEntryEditor()" aria-label="Fermer"><i>close</i></button></header><div class="finance-entry-grid"><label><span>Mouvement <b>*</b></span><select [ngModel]="financeEntryForm.direction" (ngModelChange)="changeFinanceFormDirection($event)"><option value="Entrée">Entrée</option><option value="Sortie">Sortie</option></select></label><label><span>Motif <b>*</b></span><select [(ngModel)]="financeEntryForm.reason">@for (reason of financeReasonsForDirection(financeEntryForm.direction); track reason) {<option [value]="reason">{{ reason }}</option>}</select></label><label><span>Montant <b>*</b></span><div><input type="number" min="0" [(ngModel)]="financeEntryForm.amount" /><small>F CFA</small></div></label><label><span>Date <b>*</b></span><input type="date" [(ngModel)]="financeEntryForm.date" /></label><label><span>Mode de paiement</span><select [(ngModel)]="financeEntryForm.paymentMethod"><option value="Espèces">Espèces</option><option value="Wave">Wave</option><option value="Orange Money">Orange Money</option><option value="Virement">Virement</option><option value="Chèque">Chèque</option></select></label><label><span>Payeur ou bénéficiaire @if (!isFinanceSalaryReason()) {<b>*</b>}</span><input [(ngModel)]="financeEntryForm.thirdParty" [placeholder]="isFinanceSalaryReason() ? 'Facultatif pour les salaires' : 'Nom de la personne ou société'" /></label><label><span>Référence</span><input [(ngModel)]="financeEntryForm.reference" placeholder="Générée automatiquement si vide" /></label><label><span>Statut</span><select [(ngModel)]="financeEntryForm.status"><option value="Validée">Validée</option><option value="En attente">En attente</option></select></label><label class="finance-notes-field"><span>Note</span><input [(ngModel)]="financeEntryForm.notes" placeholder="Informations complémentaires" /></label></div><footer><button type="button" (click)="closeFinanceEntryEditor()">Annuler</button><button type="button" class="primary-action" (click)="saveFinanceEntry()"><i>save</i>Enregistrer l’opération</button></footer></section>}
+        <app-master-table
+          [title]="'Récapitulatif de caisse · ' + financePeriodLabel()"
+          [columnDefinitions]="financeColumns"
+          [dataSource]="financeDataSource"
+          [isLoading]="financesLoading()"
+          [exportFileName]="'journal_financier_' + selectedFinanceAcademicYear()"
+          [showAdd]="false"
+          [showEdit]="false"
+          [showDelete]="false"
+          [showDetails]="false"
+          [showCheckbox]="false"
+          [showBulkDelete]="false"
+          [showContextMenu]="false"
+          [showStatusToggle]="true"
+          [enableRowClick]="false"
+          [pageSize]="10"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (refresh)="actualiserFinances()"
+          (statusToggle)="toggleFinanceEntryStatus($event)">
+        </app-master-table>
       }
 
       @if (activeView() === 'settings') {
-        <div class="page-title"><div><small>CONFIGURATION {{ isHighSchool() ? 'DU LYCÉE' : isCollege() ? 'DU COLLÈGE' : 'DU PRIMAIRE' }}</small><h1>{{ t('settings') }}</h1><p>Définissez les niveaux, l’année scolaire et les dates des {{ isCollege() ? 'semestres' : 'trimestres' }} du campus.</p></div><button type="button" class="primary-action" (click)="saveSchoolSettings()"><i>save</i>Enregistrer</button></div>
+        <div class="page-title"><div><small>CONFIGURATION {{ isHighSchool() ? 'DU LYCÉE' : isCollege() ? 'DU COLLÈGE' : 'DU PRIMAIRE' }}</small><h1>{{ t('settings') }}</h1><p>Définissez les niveaux, les dates de l’année sélectionnée et les {{ isCollege() ? 'semestres' : 'trimestres' }} du campus.</p></div><div class="title-actions"><button type="button" (click)="actualiserDonneesBackend()" [disabled]="backendRefreshing()"><i>{{ backendRefreshing() ? 'sync' : 'refresh' }}</i>{{ backendRefreshing() ? 'Réactualisation…' : 'Réactualiser les données' }}</button><button type="button" class="primary-action" (click)="saveSchoolSettings()" [disabled]="isSelectedSchoolYearArchived()"><i>save</i>Enregistrer</button></div></div>
         <section class="settings-editor-grid">
           <article class="panel settings-editor levels-editor"><header><div><span><i>format_list_numbered</i></span><div><h2>Niveaux {{ isHighSchool() ? 'du lycée' : isCollege() ? 'du collège' : 'du primaire' }}</h2><p>Préremplis selon le cycle {{ isHighSchool() ? 'secondaire sénégalais' : isCollege() ? 'moyen sénégalais' : 'primaire sénégalais' }}. Vous pouvez les adapter.</p></div></div><button type="button" (click)="addPrimaryLevelSetting()"><i>add</i>Ajouter un niveau</button></header><div class="settings-level-head"><span>Code</span><span>Intitulé du niveau</span><span></span></div><div class="settings-level-list">@for (level of schoolLevelSettings; track level.id) {<div class="settings-level-row"><input [(ngModel)]="level.code" [name]="'levelCode' + level.id" [placeholder]="isHighSchool() ? 'Ex. 2nde' : isCollege() ? 'Ex. 6e' : 'Ex. CI'" /><input [(ngModel)]="level.label" [name]="'levelLabel' + level.id" [placeholder]="isHighSchool() ? 'Ex. Seconde' : isCollege() ? 'Ex. Sixième' : 'Ex. Cours d’initiation'" /><button type="button" (click)="removePrimaryLevelSetting(level.id)" [attr.aria-label]="'Retirer ' + (level.code || 'ce niveau')"><i>close</i></button></div>}</div><footer><i>info</i>Ces niveaux seront disponibles lors de la création et de la configuration des classes.</footer></article>
 
-          <article class="panel settings-editor school-year-editor"><header><div><span><i>date_range</i></span><div><h2>Année scolaire</h2><p>L’établissement définit lui-même le libellé ainsi que les dates de début et de fin.</p></div></div><em class="settings-editable-state"><i>edit</i>Modifiable</em></header><div class="settings-form-grid"><label><span>Libellé <b>*</b></span><input [(ngModel)]="schoolYearSettings.label" name="schoolYearLabel" placeholder="Ex. 2026–2027" /></label><label><span>Date de début <b>*</b></span><input type="date" [(ngModel)]="schoolYearSettings.startDate" name="schoolYearStart" /></label><label><span>Date de fin <b>*</b></span><input type="date" [(ngModel)]="schoolYearSettings.endDate" name="schoolYearEnd" /></label></div><footer><i>calendar_month</i>Ces trois champs sont éditables et pilotent les classes, les finances, les évaluations et les bulletins.</footer></article>
+          <article class="panel settings-editor school-year-editor"><header><div><span><i>date_range</i></span><div><h2>Année scolaire</h2><p>L’année est créée par la plateforme ; l’établissement définit uniquement ses dates de début et de fin.</p></div></div><em class="settings-editable-state" [class.settings-locked-state]="isSelectedSchoolYearArchived()"><i>{{ isSelectedSchoolYearArchived() ? 'lock' : 'edit' }}</i>{{ isSelectedSchoolYearArchived() ? 'Archivée' : 'Modifiable' }}</em></header><div class="settings-form-grid"><label><span>Année scolaire <b>*</b></span><select [ngModel]="schoolYearSettings.centralYearId" (ngModelChange)="selectSchoolYear($event)" name="schoolYearCentralId" [disabled]="schoolYearsLoading()"><option value="" disabled>{{ schoolYearsLoading() ? 'Chargement des années…' : 'Choisir une année' }}</option>@for (annee of anneesScolairesDisponibles(); track annee.id) {<option [value]="annee.id">{{ annee.libelle }}{{ annee.statut === 'archivee' ? ' · archivée' : '' }}</option>}</select></label><label><span>Date de début <b>*</b></span><input type="date" [(ngModel)]="schoolYearSettings.startDate" name="schoolYearStart" [disabled]="isSelectedSchoolYearArchived() || schoolSettingsLoading()" /></label><label><span>Date de fin <b>*</b></span><input type="date" [(ngModel)]="schoolYearSettings.endDate" name="schoolYearEnd" [disabled]="isSelectedSchoolYearArchived() || schoolSettingsLoading()" /></label></div><footer><i>{{ schoolSettingsLoading() ? 'sync' : 'calendar_month' }}</i>{{ schoolSettingsLoading() ? 'Chargement de la configuration de l’année…' : 'Les dates renseignées ici sont propres à cet établissement et pilotent ses classes, finances, évaluations et bulletins.' }}</footer></article>
 
           <article class="panel settings-editor trimester-editor"><header><div><span><i>view_timeline</i></span><div><h2>{{ isCollege() ? 'Semestres' : 'Trimestres' }}</h2><p>Renseignez les périodes d’évaluation de l’année scolaire.</p></div></div></header><div class="settings-term-head"><span>{{ isCollege() ? 'Semestre' : 'Trimestre' }}</span><span>Début</span><span>Fin</span></div><div class="settings-term-list">@for (term of trimesterSettings; track term.id) {<div class="settings-term-row"><input [(ngModel)]="term.label" [name]="'termLabel' + term.id" [placeholder]="isCollege() ? 'Semestre' : 'Trimestre'" /><input type="date" [(ngModel)]="term.startDate" [name]="'termStart' + term.id" /><input type="date" [(ngModel)]="term.endDate" [name]="'termEnd' + term.id" /></div>}</div><footer><i>fact_check</i>Les dates des {{ isCollege() ? 'semestres' : 'trimestres' }} servent aux évaluations, bulletins et tableaux de bord.</footer></article>
         </section>
@@ -2155,4 +2371,33 @@
       <span class="service-status"><i></i>Données du campus synchronisées</span><small>© 2026 Daara Tech</small>
     </footer>
   </div>
+
+  @if (confirmationDialog(); as dialog) {
+    <div class="confirmation-modal-backdrop" (click)="closeConfirmation()">
+      <section
+        class="confirmation-modal"
+        [class.warning]="dialog.tone === 'warning'"
+        role="alertdialog"
+        aria-modal="true"
+        [attr.aria-labelledby]="'confirmation-modal-title'"
+        [attr.aria-describedby]="'confirmation-modal-message'"
+        (click)="$event.stopPropagation()">
+        <button type="button" class="confirmation-modal-close" (click)="closeConfirmation()" aria-label="Fermer">
+          <i>close</i>
+        </button>
+        <span class="confirmation-modal-icon"><i>{{ dialog.icon }}</i></span>
+        <div class="confirmation-modal-copy">
+          <small>CONFIRMATION REQUISE</small>
+          <h2 id="confirmation-modal-title">{{ dialog.title }}</h2>
+          <p id="confirmation-modal-message">{{ dialog.message }}</p>
+        </div>
+        <footer>
+          <button type="button" (click)="closeConfirmation()">Retour</button>
+          <button type="button" class="confirmation-modal-submit" (click)="confirmPendingAction()">
+            <i>{{ dialog.icon }}</i>{{ dialog.confirmLabel }}
+          </button>
+        </footer>
+      </section>
+    </div>
+  }
 </section>

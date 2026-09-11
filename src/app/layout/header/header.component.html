@@ -32,10 +32,16 @@
             <select
               aria-label="Campus actif"
               [value]="primaryWorkspace.selectedCampusId()"
+              [disabled]="backendLoading.isLoading() && centralApi.campusInstitut().length === 0"
               (change)="changeCampus($event)">
-              <option value="keur-massar">Keur Massar</option>
-              <option value="plateau">Dakar Plateau</option>
-              <option value="rufisque">Rufisque</option>
+              @if (backendLoading.isLoading() && centralApi.campusInstitut().length === 0) {
+                <option value="" disabled>Chargement des campus…</option>
+              }
+              @for (campus of centralApi.campusInstitut(); track campus.id) {
+                <option [value]="campus.id">{{ campus.nom }}</option>
+              } @empty {
+                <option value="" disabled>Aucun campus</option>
+              }
             </select>
           </span>
         </label>
@@ -57,7 +63,11 @@
             <select
               aria-label="Année scolaire"
               [value]="primaryWorkspace.selectedAcademicYear()"
+              [disabled]="backendLoading.isLoading() && primaryWorkspace.academicYears().length === 0"
               (change)="changeAcademicYear($event)">
+              @if (backendLoading.isLoading() && primaryWorkspace.academicYears().length === 0) {
+                <option value="" disabled>Chargement des années…</option>
+              }
               @for (academicYear of primaryWorkspace.academicYears(); track academicYear) {
                 <option [value]="academicYear">{{ academicYear }}</option>
               }
@@ -69,13 +79,8 @@
               aria-label="Période active"
               [value]="primaryWorkspace.selectedPeriod()"
               (change)="changePeriod($event)">
-              @if (primaryWorkspace.establishmentType() !== 'primary') {
-                <option value="Semestre 1">Semestre 1</option>
-                <option value="Semestre 2">Semestre 2</option>
-              } @else {
-                <option value="Trimestre 1">Trimestre 1</option>
-                <option value="Trimestre 2">Trimestre 2</option>
-                <option value="Trimestre 3">Trimestre 3</option>
+              @for (period of primaryWorkspace.availablePeriods(); track period) {
+                <option [value]="period">{{ period }}</option>
               }
             </select>
           </label>
@@ -86,11 +91,11 @@
       <div class="workspace-nav-controls institute-nav-controls">
         <div class="workspace-campus-switcher institute-context-switcher">
           <i class="material-icons-outlined">corporate_fare</i>
-          <span><small>Institut client</small><strong>Joyau du Savoir</strong></span>
+          <span><small>Institut client</small><strong>{{ workspaceInstituteName || 'Institut' }}</strong></span>
         </div>
         <div class="workspace-context-select institute-summary">
           <small>Périmètre actif</small>
-          <strong>Vue consolidée · 3 campus</strong>
+          <strong>Vue consolidée · {{ centralApi.campusInstitut().length }} campus</strong>
         </div>
         <div class="workspace-context-select institute-summary">
           <small>Année scolaire</small>
@@ -120,7 +125,7 @@
           <app-platform-language-switcher />
         </li>
         <li class="nav-item user_profile">
-          <app-user-profile-menu [userName]="'Aminata Ndiaye'" [userImg]="userImg!" (accountClicked)="onAccountClicked()"
+          <app-user-profile-menu [userName]="workspaceUserName || 'Utilisateur connecté'" [userImg]="userImg!" (accountClicked)="onAccountClicked()"
             (inboxClicked)="onInboxClicked()" (settingsClicked)="onSettingsClicked()" (logoutClicked)="logout()">
           </app-user-profile-menu>
         </li>

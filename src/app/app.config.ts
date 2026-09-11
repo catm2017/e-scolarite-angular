@@ -9,6 +9,8 @@ import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { errorInterceptor } from '@core/interceptor/error.interceptor';
+import { backendLoadingInterceptor } from '@core/interceptor/backend-loading.interceptor';
+import { apiRetryInterceptor } from '@core/interceptor/api-retry.interceptor';
 import { DirectionService, LanguageService } from '@core';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
@@ -35,7 +37,11 @@ import { CustomDirectionality } from './core/providers/directionality.provider';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
-    provideHttpClient(withInterceptors([errorInterceptor])),
+    provideHttpClient(withInterceptors([
+      backendLoadingInterceptor,
+      apiRetryInterceptor,
+      errorInterceptor,
+    ])),
     provideRouter(APP_ROUTE),
     provideAnimations(),
     { provide: LocationStrategy, useClass: HashLocationStrategy },

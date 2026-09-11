@@ -26,18 +26,16 @@ export class HighSchoolComponent implements OnInit, AfterViewInit {
   @ViewChild(PrimarySchoolComponent) private readonly school!: PrimarySchoolComponent;
 
   ngOnInit(): void {
-    this.workspace.establishmentType.set('lycee');
-    this.workspace.selectedAcademicYear.set('2026–2027');
-    this.workspace.selectedPeriod.set('Semestre 1');
-    this.workspace.selectView('dashboard');
+    this.workspace.configureEstablishment('lycee');
   }
 
   ngAfterViewInit(): void {
-    // Le contexte est réaffirmé une fois le sous-espace chargé : la topbar,
-    // partagée par les établissements, doit toujours afficher l'année lycée.
-    this.workspace.selectedAcademicYear.set('2026–2027');
-    this.workspace.selectedPeriod.set('Semestre 1');
+    // Les données réelles sont chargées par le composant partagé. Ne plus
+    // injecter le scénario de maquette au montage de l'espace lycée.
+    return;
+
     this.school.schoolYearSettings = {
+      centralYearId: '',
       label: '2026–2027',
       startDate: '2026-10-01',
       endDate: '2027-07-15',
@@ -95,13 +93,13 @@ export class HighSchoolComponent implements OnInit, AfterViewInit {
     });
 
     this.school.collegeSubjectSettings.set({
-      'tle-s-a-km::1': { coefficient: 3, teacherId: 2 },
-      'tle-s-a-km::2': { coefficient: 5, teacherId: 1 },
-      'tle-s-a-km::3': { coefficient: 2, teacherId: 3 },
-      'tle-s-a-km::4': { coefficient: 2, teacherId: 4 },
-      'tle-s-a-km::5': { coefficient: 4, teacherId: 5 },
-      'tle-s-a-km::6': { coefficient: 4, teacherId: 6 },
-      'tle-s-a-km::7': { coefficient: 2, teacherId: 1 },
+      'tle-s-a-km::1': { coefficient: 3, teacherId: 2, maxScore: 20 },
+      'tle-s-a-km::2': { coefficient: 5, teacherId: 1, maxScore: 20 },
+      'tle-s-a-km::3': { coefficient: 2, teacherId: 3, maxScore: 20 },
+      'tle-s-a-km::4': { coefficient: 2, teacherId: 4, maxScore: 20 },
+      'tle-s-a-km::5': { coefficient: 4, teacherId: 5, maxScore: 20 },
+      'tle-s-a-km::6': { coefficient: 4, teacherId: 6, maxScore: 20 },
+      'tle-s-a-km::7': { coefficient: 2, teacherId: 1, maxScore: 20 },
     });
 
     this.school.students.update((students) => students.map((student) => ({
@@ -184,6 +182,7 @@ export class HighSchoolComponent implements OnInit, AfterViewInit {
       { id: 5, campusId: 'keur-massar', amount: 20000, reason: 'Frais d’examen du baccalauréat', direction: 'Entrée', date: '2026-08-15', paymentMethod: 'Orange Money', thirdParty: 'Fatou Kiné Sow · Terminale S A', reference: 'ENC-LYC-260815-041', status: 'Validée', source: 'Encaissements', notes: '' },
     ]);
 
+    this.school.preparerPropositionsClasses(true);
     this.school.selectedClassId.set('tle-s-a-km');
     this.school.selectedCurriculumSubjectId.set(1);
     this.school.selectedSubject.set('Mathématiques');

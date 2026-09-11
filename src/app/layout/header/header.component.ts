@@ -1,6 +1,6 @@
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { NgClass, CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, Renderer2, DOCUMENT, inject, HostListener, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2, DOCUMENT, inject, HostListener, ChangeDetectionStrategy, ChangeDetectorRef, effect } from '@angular/core';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { ConfigService } from '@config';
 import {
@@ -19,6 +19,8 @@ import { UserProfileMenuComponent } from '../components/user-profile-menu/user-p
 import { SearchBarComponent } from '../components/search-bar/search-bar.component';
 import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
 import { PrimaryWorkspaceService } from '../../prototype/primary-school/primary-workspace.service';
+import { CentralApiService } from '../../prototype/central-api.service';
+import { BackendLoadingService } from '../../core/service/backend-loading.service';
 
 interface Notifications {
   message: string;
@@ -63,6 +65,14 @@ export class HeaderComponent
   private authService = inject(AuthService);
   private router = inject(Router);
   readonly primaryWorkspace = inject(PrimaryWorkspaceService);
+  readonly centralApi = inject(CentralApiService);
+  readonly backendLoading = inject(BackendLoadingService);
+  private readonly campusContextEffect = effect(() => {
+    const campus = this.centralApi.campusInstitut();
+    if (campus.length > 0 && !campus.some((item) => item.id === this.primaryWorkspace.selectedCampusId())) {
+      this.primaryWorkspace.selectedCampusId.set(campus[0].id);
+    }
+  });
   private localStorageService = inject(LocalStorageService);
 
   public config!: InConfiguration;
@@ -74,6 +84,8 @@ export class HeaderComponent
   isFullScreen = false;
   isEstablishmentWorkspace = false;
   isInstituteWorkspace = false;
+  workspaceUserName = '';
+  workspaceInstituteName = '';
 
   notifications: Notifications[] = [
     {
@@ -140,6 +152,7 @@ export class HeaderComponent
     const userRole = this.authService.currentUser().roles?.[0]?.name as Role;
     this.userImg =
       './assets/images/user/' + (this.authService.currentUser().avatar || 'admin.jpg');
+    this.actualiserProfilEspace();
     this.docElement = document.documentElement;
     this.syncWorkspaceContext(userRole);
     this.subs.sink = this.router.events.subscribe((event) => {
@@ -152,8 +165,15 @@ export class HeaderComponent
   }
 
   private syncWorkspaceContext(userRole: Role): void {
-    this.isEstablishmentWorkspace = this.router.url.startsWith('/institut/etablissements/');
-    this.isInstituteWorkspace = this.router.url === '/institut';
+    const path = this.router.url.split('?')[0].split('#')[0];
+    this.isEstablishmentWorkspace = path.startsWith('/institut/etablissements/');
+    this.isInstituteWorkspace = path.startsWith('/institut')
+      && !this.isEstablishmentWorkspace
+      && path !== '/institut/site-web';
+    // Le contexte établissement est synchronisé une seule fois par le layout.
+    // Le header se contente de le consommer pour éviter de rejouer les effets
+    // métier lors de chaque NavigationEnd.
+    this.actualiserProfilEspace();
 
     if (this.isEstablishmentWorkspace || this.isInstituteWorkspace) {
       this.homePage = '/institut';
@@ -165,6 +185,16 @@ export class HeaderComponent
       this.homePage = 'student/dashboard';
     } else {
       this.homePage = 'admin/dashboard/main';
+    }
+  }
+
+  private actualiserProfilEspace(): void {
+    const user = this.centralApi.utilisateur();
+    const institut = this.centralApi.institutActuel();
+    this.workspaceUserName = user ? `${user.prenom} ${user.nom}`.trim() : '';
+    this.workspaceInstituteName = institut?.nom ?? '';
+    if (this.workspaceUserName && (this.isInstituteWorkspace || this.isEstablishmentWorkspace)) {
+      this.userImg = './assets/images/user/admin.jpg';
     }
   }
 
@@ -261,9 +291,10 @@ export class HeaderComponent
   }
 
   changeEstablishmentType(event: Event): void {
-    this.primaryWorkspace.establishmentType.set(
-      (event.target as HTMLSelectElement).value,
-    );
+    const type = (event.target as HTMLSelectElement).value;
+    if (type === 'primary' || type === 'college' || type === 'lycee') {
+      this.primaryWorkspace.configureEstablishment(type);
+    }
   }
 
   changeAcademicYear(event: Event): void {

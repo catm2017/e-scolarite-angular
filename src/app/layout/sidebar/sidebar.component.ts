@@ -5,7 +5,7 @@ import {
   RouterLink,
 } from '@angular/router';
 import { NgClass } from '@angular/common';
-import { Component, ElementRef, OnInit, Renderer2, HostListener, DOCUMENT, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2, HostListener, DOCUMENT, inject, ChangeDetectionStrategy, ChangeDetectorRef, effect } from '@angular/core';
 import { AuthService, Role } from '@core';
 import { RouteInfo } from './sidebar.metadata';
 import { TranslateModule } from '@ngx-translate/core';
@@ -21,12 +21,13 @@ import {
   InstituteView,
   InstituteWorkspaceService,
 } from '../../prototype/institute-console/institute-workspace.service';
+import { CentralApiService } from '../../prototype/central-api.service';
 
 const PRIMARY_ROUTES: RouteInfo[] = [
   { path: '', title: 'SCOLARITÉ', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
   { path: '', title: 'Tableau de bord', iconType: 'material-icons-outlined', icon: 'space_dashboard', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'dashboard' },
   { path: '', title: 'Dossiers élèves', iconType: 'material-icons-outlined', icon: 'folder_shared', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'registrations' },
-  { path: '', title: 'Inscriptions & transferts', iconType: 'material-icons-outlined', icon: 'how_to_reg', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'enrollments' },
+  { path: '', title: 'Inscriptions, réinscriptions & transferts', iconType: 'material-icons-outlined', icon: 'how_to_reg', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'enrollments' },
   { path: '', title: 'Élèves', iconType: 'material-icons-outlined', icon: 'groups', class: '', groupTitle: false, badge: '326', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'students' },
   { path: '', title: 'Tuteurs', iconType: 'material-icons-outlined', icon: 'family_restroom', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'guardians' },
   { path: '', title: 'Classes', iconType: 'material-icons-outlined', icon: 'class', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'classes' },
@@ -36,6 +37,7 @@ const PRIMARY_ROUTES: RouteInfo[] = [
   { path: '', title: 'Absences du personnel', iconType: 'material-icons-outlined', icon: 'event_busy', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'staff-attendance' },
   { path: '', title: 'PÉDAGOGIE', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
   { path: '', title: 'Matières', iconType: 'material-icons-outlined', icon: 'menu_book', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'subjects' },
+  { path: '', title: 'Matières par classe', iconType: 'material-icons-outlined', icon: 'account_tree', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'class-subjects' },
   { path: '', title: 'Programmes & leçons', iconType: 'material-icons-outlined', icon: 'auto_stories', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'curriculum' },
   { path: '', title: 'Enseignants', iconType: 'material-icons-outlined', icon: 'co_present', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'teachers' },
   { path: '', title: 'Configurer l’emploi du temps', iconType: 'material-icons-outlined', icon: 'edit_calendar', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'timetable-builder' },
@@ -56,8 +58,8 @@ const PRIMARY_ROUTES: RouteInfo[] = [
 const INSTITUTE_ROUTES: RouteInfo[] = [
   { path: '', title: 'PILOTAGE', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
   { path: '', title: 'Vue d’ensemble', iconType: 'material-icons-outlined', icon: 'space_dashboard', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'overview' },
-  { path: '', title: 'Établissements', iconType: 'material-icons-outlined', icon: 'account_balance', class: '', groupTitle: false, badge: '7', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'establishments' },
-  { path: '', title: 'Campus', iconType: 'material-icons-outlined', icon: 'location_city', class: '', groupTitle: false, badge: '3', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'campuses' },
+  { path: '', title: 'Établissements', iconType: 'material-icons-outlined', icon: 'account_balance', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'establishments' },
+  { path: '', title: 'Campus', iconType: 'material-icons-outlined', icon: 'location_city', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'campuses' },
   { path: '', title: 'Utilisateurs & accès', iconType: 'material-icons-outlined', icon: 'manage_accounts', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'users' },
   { path: '', title: 'Rôles & permissions', iconType: 'material-icons-outlined', icon: 'admin_panel_settings', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'roles' },
   { path: '', title: 'ÉQUIPE & RESSOURCES', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
@@ -97,7 +99,16 @@ export class SidebarComponent
   private sidebarService = inject(SidebarService);
   readonly primaryWorkspace = inject(PrimaryWorkspaceService);
   readonly instituteWorkspace = inject(InstituteWorkspaceService);
+  private readonly centralApi = inject(CentralApiService);
   private cdr = inject(ChangeDetectorRef);
+  private readonly campusBadgeEffect = effect(() => {
+    this.centralApi.campusInstitut();
+    this.centralApi.etablissementsInstitut();
+    if (this.isInstituteWorkspace) {
+      this.configureWorkspaceNavigation();
+      this.cdr.markForCheck();
+    }
+  });
 
   public sidebarItems!: RouteInfo[];
   public innerHeight?: number;
@@ -116,12 +127,13 @@ export class SidebarComponent
     this.elementRef.nativeElement.closest('body');
     this.subs.sink = this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
-        this.isPrimaryWorkspace = event.urlAfterRedirects.startsWith(
-          '/institut/etablissements/'
-        );
-        this.isInstituteWorkspace = event.urlAfterRedirects === '/institut';
+        this.mettreAJourContexteNavigation(event.urlAfterRedirects);
+        if (this.isInstituteWorkspace) {
+          this.instituteWorkspace.synchronizeFromUrl(event.urlAfterRedirects);
+        }
         if (this.isPrimaryWorkspace || this.isInstituteWorkspace) {
           this.configureWorkspaceNavigation();
+          this.actualiserProfilEspace();
         }
         // close sidebar on mobile screen after menu select
         this.renderer.removeClass(this.document.body, 'overlay-open');
@@ -153,16 +165,15 @@ export class SidebarComponent
     }
   }
   ngOnInit() {
-    this.isPrimaryWorkspace = this.router.url.startsWith(
-      '/institut/etablissements/'
-    );
-    this.isInstituteWorkspace = this.router.url === '/institut';
+    this.mettreAJourContexteNavigation(this.router.url);
+    if (this.isInstituteWorkspace) {
+      this.instituteWorkspace.synchronizeFromUrl(this.router.url);
+    }
 
     if (this.isPrimaryWorkspace || this.isInstituteWorkspace) {
       this.configureWorkspaceNavigation();
-      this.userFullName = 'Aminata Ndiaye';
+      this.actualiserProfilEspace();
       this.userImg = './assets/images/user/admin.jpg';
-      this.userType = 'Administratrice';
       this.initLeftSidebar();
       this.bodyTag = this.document.body;
       return;
@@ -197,16 +208,29 @@ export class SidebarComponent
     this.bodyTag = this.document.body;
   }
 
+  private actualiserProfilEspace(): void {
+    const user = this.centralApi.utilisateur();
+    this.userFullName = user ? `${user.prenom} ${user.nom}`.trim() : 'Utilisateur connecté';
+    this.userType = this.isInstituteWorkspace ? 'Administrateur institut' : 'Utilisateur établissement';
+    this.userImg = './assets/images/user/admin.jpg';
+  }
+
   selectPrimaryView(view?: string): void {
     if (view) {
-      this.primaryWorkspace.selectView(view as PrimaryView);
+      void this.router.navigateByUrl(this.primaryWorkspace.cheminVue(view as PrimaryView));
     }
   }
 
   selectInstituteView(view?: string): void {
-    if (view) {
-      this.instituteWorkspace.selectView(view as InstituteView);
+    if (view && this.instituteWorkspace.canAccessView(view)) {
+      void this.router.navigateByUrl(this.instituteWorkspace.cheminVue(view as InstituteView));
     }
+  }
+
+  isInstituteItemAccessible(item: RouteInfo): boolean {
+    if (item.groupTitle) return true;
+    if (item.workspaceView) return this.instituteWorkspace.canAccessView(item.workspaceView);
+    return this.instituteWorkspace.canAccessPath(item.path);
   }
 
   isInstituteViewActive(view?: string): boolean {
@@ -232,7 +256,27 @@ export class SidebarComponent
   }
 
   private configureWorkspaceNavigation(): void {
-    this.sidebarItems = this.isPrimaryWorkspace ? PRIMARY_ROUTES : INSTITUTE_ROUTES;
+    this.sidebarItems = this.isPrimaryWorkspace
+      ? PRIMARY_ROUTES
+      : INSTITUTE_ROUTES.map((item) => {
+        if (item.title === 'Campus') {
+          const total = this.centralApi.campusInstitut().length;
+          return { ...item, badge: total ? String(total) : '' };
+        }
+        if (item.title === 'Établissements') {
+          const total = this.centralApi.etablissementsInstitut().filter((etablissement) => etablissement.active).length;
+          return { ...item, badge: total ? String(total) : '' };
+        }
+        return item;
+      });
+  }
+
+  private mettreAJourContexteNavigation(url: string): void {
+    const path = url.split('?')[0].split('#')[0];
+    this.isPrimaryWorkspace = path.startsWith('/institut/etablissements/');
+    this.isInstituteWorkspace = path.startsWith('/institut')
+      && !this.isPrimaryWorkspace
+      && path !== '/institut/site-web';
   }
 
   initLeftSidebar() {

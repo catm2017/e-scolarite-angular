@@ -1,1 +1,8 @@
 <ngx-loading-bar color="#3173D6" />
+
+@if (backendLoading.isLoading()) {
+  <div class="backend-loading-indicator" role="status" aria-live="polite" aria-atomic="true">
+    <span class="backend-loading-spinner" aria-hidden="true"></span>
+    <span>{{ backendLoading.message() }}</span>
+  </div>
+}

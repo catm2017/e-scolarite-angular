@@ -5,8 +5,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
+import { Router } from '@angular/router';
+import { concat, toArray } from 'rxjs';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import {
   ColumnDefinition,
@@ -17,6 +18,23 @@ import {
   PrimaryView,
   PrimaryWorkspaceService,
 } from './primary-workspace.service';
+import {
+  AnneeScolaireInstitut,
+  ClasseEtablissementApi,
+  ClasseEtablissementPayload,
+  CandidatInscriptionApi,
+  CentralApiService,
+  DossiersEtablissementApi,
+  EmploiTempsEtablissementApi,
+  EvaluationEtablissementApi,
+  SeanceEtablissementApi,
+  FinancesEtablissementApi,
+  OperationInscriptionApi,
+  PedagogieEtablissementApi,
+  PersonnelEtablissementApi,
+  SerieLyceeEtablissementApi,
+} from '../central-api.service';
+import { AppToastService } from '@core/service/app-toast.service';
 
 type AttendanceStatus = 'P' | 'A' | 'R';
 type SubjectGradeKind = 'homework1' | 'homework2' | 'composition';
@@ -27,7 +45,9 @@ type StudentRecordTab = 'identity' | 'schooling' | 'payments' | 'attendance' | '
 type TeacherRecordTab = 'profile' | 'teaching' | 'timetable' | 'salaries' | 'access';
 type GuardianRecordTab = 'identity' | 'children' | 'access';
 type TeacherSalaryMode = 'Mensuel' | 'Horaire';
+type WorkforceImportKind = 'teacher' | 'staff';
 type SessionStatus = 'Planifiée' | 'À compléter' | 'Terminée';
+type SessionSortKey = 'date' | 'subject' | 'teacher' | 'status';
 type AssessmentKind = 'Devoir' | 'Évaluation formative' | 'Contrôle' | 'Essai' | 'Composition';
 type ReportAppreciation = 'Excellent' | 'Félicitations' | 'Encouragements' | 'Tableau d’honneur' | 'Passable, peut mieux faire' | 'Insuffisant';
 type TimetableDay =
@@ -41,6 +61,7 @@ type TimetableDay =
 interface TimetableCell {
   subject: string;
   teacherId: number | null;
+  roomId: string | null;
 }
 
 interface TimetableRow {
@@ -203,13 +224,13 @@ interface Campus {
 }
 
 interface PrimaryLevelSetting {
-  id: number;
+  id: number | string;
   code: string;
   label: string;
 }
 
 interface TrimesterSetting {
-  id: number;
+  id: number | string;
   label: string;
   startDate: string;
   endDate: string;
@@ -228,6 +249,17 @@ interface PrimaryClass {
 
 interface ClassFormModel {
   id: string | null;
+  level: string;
+  name: string;
+  registrationFee: string;
+  monthlyFee: string;
+  seriesId: string;
+}
+
+interface ClassProposal {
+  key: string;
+  classId: string | null;
+  enabled: boolean;
   level: string;
   name: string;
   registrationFee: string;
@@ -258,30 +290,33 @@ interface ClassFeeConfiguration {
   classId: string;
   registrationFee: string;
   monthlyFee: string;
-  schoolUniformFee: string;
-  sportsUniformFee: string;
 }
 
 type AdditionalFeeFrequency = 'Paiement unique' | 'Mensuel';
 
 type ExpenseFrequency = 'Unique' | 'Mensuel';
+type ExpenseTarget = 'Personnel' | 'Enseignants' | 'Personnel et enseignants';
 
 interface ExpenseType {
   id: string;
+  backendId?: string;
   label: string;
   frequency: ExpenseFrequency;
+  target: ExpenseTarget;
   defaultAmount: number;
   active: boolean;
 }
 
 interface SchoolExpense {
-  id: number;
+  id: string;
   typeId: string;
+  personnelId: string | null;
   label: string;
   category: string;
   frequency: ExpenseFrequency;
   amount: number;
   date: string;
+  paymentDate: string | null;
   status: 'Prévue' | 'Payée' | 'Brouillon';
   beneficiary: string;
   staffIds: number[];
@@ -289,7 +324,7 @@ interface SchoolExpense {
 }
 
 interface ExpenseFormModel {
-  id: number | null;
+  id: string | null;
   typeId: string;
   label: string;
   frequency: ExpenseFrequency;
@@ -302,6 +337,7 @@ interface ExpenseFormModel {
 
 interface ExpensePayee {
   key: string;
+  backendId: string;
   name: string;
   reference: string;
   role: string;
@@ -315,7 +351,7 @@ type FinanceStatus = 'Validée' | 'En attente' | 'Annulée';
 type FinancePaymentMethod = 'Espèces' | 'Wave' | 'Orange Money' | 'Virement' | 'Chèque';
 
 interface FinanceEntry {
-  id: number;
+  id: string | number;
   campusId: string;
   amount: number;
   reason: string;
@@ -327,6 +363,21 @@ interface FinanceEntry {
   status: FinanceStatus;
   source: 'Encaissements' | 'Dépenses' | 'Saisie manuelle';
   notes: string;
+}
+
+interface FinanceTableRow extends FinanceEntry {
+  dateLabel: string;
+  incomingAmount: string;
+  outgoingAmount: string;
+  canToggleStatus: boolean;
+}
+
+interface ConfirmationDialogState {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  icon: string;
+  tone: 'danger' | 'warning';
 }
 
 interface FinanceEntryForm {
@@ -342,7 +393,7 @@ interface FinanceEntryForm {
 }
 
 interface AdditionalSchoolFee {
-  id: number;
+  id: string | number;
   academicYear: string;
   classId: string;
   label: string;
@@ -369,10 +420,27 @@ interface CollectionFeeOption {
 
 type MonthlyPaymentRecords = Record<string, Record<number, Record<string, string | null>>>;
 type OneTimePaymentRecords = Record<string, Record<number, string | null>>;
-type EnrollmentOperation = 'registration' | 'transfer';
+type EnrollmentOperation = 'registration' | 'reenrollment' | 'transfer';
+
+interface EnrollmentCandidateRow {
+  backendId: string;
+  name: string;
+  matricule: string;
+  gender: 'F' | 'M';
+  birthDate: string;
+  guardianName: string;
+  guardianPhone: string;
+  sourceClassId: string;
+  sourceClassName: string;
+  sourceYear: string;
+  status: string;
+  img: string;
+}
+
+type SubjectId = string | number;
 
 interface PrimarySubject {
-  id: number;
+  id: SubjectId;
   name: string;
   code: string;
   domain: string;
@@ -380,10 +448,11 @@ interface PrimarySubject {
   levels: string[];
   teachers: number;
   color: string;
+  francoArabic?: boolean;
 }
 
 interface SubjectFormModel {
-  id: number | null;
+  id: SubjectId | null;
   name: string;
   code: string;
   domain: string;
@@ -392,7 +461,7 @@ interface SubjectFormModel {
   color: string;
 }
 
-type CurriculumPeriod = '' | 'Trimestre 1' | 'Trimestre 2' | 'Trimestre 3';
+type CurriculumPeriod = string;
 type CurriculumLessonStatus = 'À faire' | 'En cours' | 'Terminée';
 
 interface CurriculumLesson {
@@ -400,12 +469,13 @@ interface CurriculumLesson {
   title: string;
   estimatedSessions: number;
   status: CurriculumLessonStatus;
+  progress: number;
 }
 
 interface CurriculumChapter {
   id: string;
   classId: string;
-  subjectId: number;
+  subjectId: SubjectId;
   title: string;
   objective: string;
   period: CurriculumPeriod;
@@ -430,6 +500,7 @@ interface CurriculumLessonRow {
 
 interface Student {
   id: number;
+  backendId?: string;
   campusId: string;
   classId: string;
   matricule: string;
@@ -487,6 +558,7 @@ interface StudentFormModel {
 
 interface Guardian {
   id: number;
+  backendId?: string;
   campusId: string;
   firstName: string;
   lastName: string;
@@ -513,6 +585,9 @@ interface GuardianFormModel {
 
 interface Teacher {
   id: number;
+  backendId?: string;
+  /** Identifiant métier utilisé par les emplois du temps. */
+  teachingBackendId?: string;
   campusId: string;
   matricule: string;
   name: string;
@@ -564,6 +639,7 @@ interface TeacherFormModel {
 
 interface SchoolStaff {
   id: number;
+  backendId?: string;
   campusId: string;
   matricule: string;
   name: string;
@@ -662,7 +738,14 @@ interface TranslationSet {
 })
 export class PrimarySchoolComponent {
   private readonly workspace = inject(PrimaryWorkspaceService);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly snackBar = inject(AppToastService);
+  private readonly centralApi = inject(CentralApiService);
+  private readonly router = inject(Router);
+  private dossiersRequestKey = '';
+  private pedagogieRequestKey = '';
+  private emploiTempsRequestKey = '';
+  private seancesRequestKey = '';
+  private evaluationsRequestKey = '';
 
   readonly activeView = this.workspace.activeView;
   readonly locale = this.workspace.locale;
@@ -677,17 +760,37 @@ export class PrimarySchoolComponent {
         : '/institut/etablissements/primaire',
   );
   readonly selectedClassId = signal('cm2-a-km');
+  readonly selectedClassSubjectIds = signal<string[]>([]);
   readonly enrollmentOperation = signal<EnrollmentOperation>('registration');
-  readonly enrollmentSourceClassId = signal('unassigned');
+  readonly enrollmentSourceClassId = signal('non-affectee');
   readonly enrollmentTargetClassId = signal('cm2-a-km');
-  readonly enrollmentSelectedStudentIds = signal<number[]>([]);
+  readonly enrollmentSelectedStudentIds = signal<string[]>([]);
+  readonly enrollmentCandidates = signal<EnrollmentCandidateRow[]>([]);
+  readonly enrollmentSourceOptions = signal<Array<{ id: string; label: string; year: string }>>([]);
+  readonly enrollmentLoading = signal(false);
+  readonly enrollmentSaving = signal(false);
+  readonly dossiersLoading = signal(false);
+  readonly financesLoading = signal(false);
+  readonly schoolYearsLoading = signal(false);
+  readonly schoolSettingsLoading = signal(false);
   readonly studentImportOpen = signal(false);
   readonly studentImportFile = signal<File | null>(null);
+  readonly workforceImportKind = signal<WorkforceImportKind | null>(null);
+  readonly workforceImportFile = signal<File | null>(null);
+  readonly dossierSaving = signal(false);
   readonly selectedRoomId = signal('room-11-km');
   readonly selectedAcademicYear = this.workspace.selectedAcademicYear;
   readonly selectedTrimester = this.workspace.selectedPeriod;
   readonly selectedSubject = signal('Mathématiques');
+  readonly anneesScolairesDisponibles = signal<AnneeScolaireInstitut[]>([]);
+  readonly selectedCentralAcademicYearId = signal('');
+  readonly isSelectedSchoolYearArchived = computed(() =>
+    this.anneesScolairesDisponibles().some((annee) =>
+      annee.id === this.selectedCentralAcademicYearId() && annee.statut === 'archivee',
+    ),
+  );
   schoolYearSettings = {
+    centralYearId: '',
     label: '2026–2027',
     startDate: '2026-10-05',
     endDate: '2027-06-30',
@@ -758,12 +861,10 @@ export class PrimarySchoolComponent {
   readonly currentFeeAcademicYear = '2026–2027';
   readonly selectedFeeAcademicYear = signal(this.currentFeeAcademicYear);
   readonly selectedFeeClassId = signal('all');
+  readonly selectedAdditionalFeeClassId = signal('');
   readonly feeEditorOpen = signal(false);
   readonly classFeeConfigurations = signal<ClassFeeConfiguration[]>([]);
-  readonly additionalSchoolFees = signal<AdditionalSchoolFee[]>([
-    { id: 1, academicYear: '2026–2027', classId: 'cm2-a-km', label: 'Frais d’examen', amount: '10000', frequency: 'Paiement unique', required: true },
-    { id: 3, academicYear: '2025–2026', classId: 'cm2-a-km', label: 'Frais d’examen', amount: '7500', frequency: 'Paiement unique', required: true },
-  ]);
+  readonly additionalSchoolFees = signal<AdditionalSchoolFee[]>([]);
   additionalFeeForm: AdditionalFeeFormModel = {
     classId: 'cm2-a-km',
     label: '',
@@ -771,7 +872,7 @@ export class PrimarySchoolComponent {
     frequency: 'Paiement unique',
     required: false,
   };
-  readonly paymentMonths = ['Oct', 'Nov', 'Déc', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'];
+  paymentMonths = ['Oct', 'Nov', 'Déc', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'];
   readonly selectedCollectionAcademicYear = signal(this.currentFeeAcademicYear);
   readonly selectedCollectionFeeId = signal('monthlyFee');
   readonly collectionUnpaidOnly = signal(false);
@@ -779,36 +880,19 @@ export class PrimarySchoolComponent {
   readonly selectedExpenseTypeId = signal('staff-salary');
   readonly selectedExpensePeriod = signal('2026-08');
   readonly selectedExpenseAcademicYear = signal(this.currentFeeAcademicYear);
-  readonly expensePeriods = [
-    { value: '2026-07', label: 'Juillet 2026' },
-    { value: '2026-08', label: 'Août 2026' },
-    { value: '2026-09', label: 'Septembre 2026' },
-  ];
   readonly expenseUnpaidOnly = signal(false);
-  readonly expenseTypes = signal<ExpenseType[]>([
-    { id: 'staff-salary', label: 'Salaire du personnel', frequency: 'Mensuel', defaultAmount: 0, active: true },
-    { id: 'teacher-salary', label: 'Salaire des enseignants', frequency: 'Mensuel', defaultAmount: 0, active: true },
-  ]);
+  readonly expenseTypes = signal<ExpenseType[]>([]);
   readonly expenseTypeEditorOpen = signal(false);
-  expenseTypeDraft: Pick<ExpenseType, 'label' | 'frequency' | 'defaultAmount'> = { label: '', frequency: 'Unique', defaultAmount: 0 };
-  readonly expenses = signal<SchoolExpense[]>([
-    { id: 1, typeId: 'custom-internet', label: 'Abonnement internet · août', category: '', frequency: 'Mensuel', amount: 35000, date: '2026-08-10', status: 'Payée', beneficiary: 'Fournisseur internet', staffIds: [], notes: '' },
-  ]);
-  readonly salaryPaymentRecords = signal<Record<string, string | null>>({
-    '2026–2027::teacher-1::Oct': '2026-10-30',
-    '2026–2027::teacher-2::Oct': '2026-10-30',
-    '2026–2027::staff-1::Oct': '2026-10-30',
-  });
-  readonly salaryHourRecords = signal<Record<string, number>>({
-    '2026–2027::teacher-4::Oct': 42,
-  });
+  expenseTypeDraft: Pick<ExpenseType, 'label' | 'frequency' | 'target' | 'defaultAmount'> = { label: '', frequency: 'Unique', target: 'Personnel', defaultAmount: 0 };
+  readonly expenses = signal<SchoolExpense[]>([]);
+  readonly salaryPaymentRecords = signal<Record<string, string | null>>({});
+  readonly salaryHourRecords = signal<Record<string, number>>({});
   expenseForm: ExpenseFormModel = this.createEmptyExpenseForm();
   readonly financeEntries = signal<FinanceEntry[]>([
     { id: 1, campusId: 'keur-massar', amount: 35000, reason: 'Mensualité', direction: 'Entrée', date: '2026-08-21', paymentMethod: 'Wave', thirdParty: 'Aïssatou Ndiaye · CM2 A', reference: 'ENC-260821-014', status: 'Validée', source: 'Encaissements', notes: 'Mensualité août' },
     { id: 2, campusId: 'keur-massar', amount: 50000, reason: 'Inscription', direction: 'Entrée', date: '2026-08-21', paymentMethod: 'Espèces', thirdParty: 'Mamadou Diallo · CI A', reference: 'ENC-260821-013', status: 'Validée', source: 'Encaissements', notes: 'Inscription 2026–2027' },
     { id: 3, campusId: 'keur-massar', amount: 325000, reason: 'Salaires du personnel', direction: 'Sortie', date: '2026-08-20', paymentMethod: 'Virement', thirdParty: 'Moussa Kane', reference: 'DEC-260820-008', status: 'Validée', source: 'Dépenses', notes: 'Salaire août' },
     { id: 4, campusId: 'keur-massar', amount: 118500, reason: 'Facture d’électricité', direction: 'Sortie', date: '2026-08-16', paymentMethod: 'Virement', thirdParty: 'Senelec', reference: 'DEC-260816-006', status: 'Validée', source: 'Dépenses', notes: 'Compteur principal' },
-    { id: 5, campusId: 'keur-massar', amount: 25000, reason: 'Tenue scolaire', direction: 'Entrée', date: '2026-08-15', paymentMethod: 'Orange Money', thirdParty: 'Fatou Sarr · CE1 A', reference: 'ENC-260815-041', status: 'Validée', source: 'Encaissements', notes: '' },
     { id: 6, campusId: 'keur-massar', amount: 78500, reason: 'Facture d’eau', direction: 'Sortie', date: '2026-08-18', paymentMethod: 'Chèque', thirdParty: 'Sen’Eau', reference: 'DEC-260818-007', status: 'En attente', source: 'Dépenses', notes: 'En attente de signature' },
     { id: 7, campusId: 'keur-massar', amount: 35000, reason: 'Mensualité', direction: 'Entrée', date: '2026-08-14', paymentMethod: 'Espèces', thirdParty: 'Ibrahima Fall · CM2 A', reference: 'ENC-260814-038', status: 'Validée', source: 'Encaissements', notes: '' },
     { id: 8, campusId: 'keur-massar', amount: 450000, reason: 'Loyer des locaux', direction: 'Sortie', date: '2026-08-01', paymentMethod: 'Virement', thirdParty: 'Bailleur du campus', reference: 'DEC-260801-001', status: 'Validée', source: 'Dépenses', notes: 'Loyer août' },
@@ -816,12 +900,33 @@ export class PrimarySchoolComponent {
     { id: 10, campusId: 'plateau', amount: 330000, reason: 'Salaires du personnel', direction: 'Sortie', date: '2026-08-20', paymentMethod: 'Virement', thirdParty: 'Mame Sow', reference: 'DEC-260820-009', status: 'Validée', source: 'Dépenses', notes: '' },
   ]);
   readonly selectedFinanceAcademicYear = signal(this.currentFeeAcademicYear);
-  readonly selectedFinancePeriod = signal('2026-08');
+  readonly selectedFinancePeriod = signal('all');
   readonly selectedFinanceDirection = signal<'Tous' | FinanceDirection>('Tous');
   readonly selectedFinanceReason = signal('all');
-  readonly financeSearch = signal('');
   readonly financeEditorOpen = signal(false);
+  readonly confirmationDialog = signal<ConfirmationDialogState | null>(null);
+  private pendingConfirmationAction: (() => void) | null = null;
   financeEntryForm: FinanceEntryForm = this.createEmptyFinanceEntryForm();
+  readonly financeColumns: ColumnDefinition[] = [
+    { def: 'date', label: 'Date', type: 'dateCard', visible: true },
+    { def: 'reference', label: 'Référence', type: 'text', visible: true },
+    { def: 'reason', label: 'Motif', type: 'text', visible: true },
+    { def: 'source', label: 'Origine', type: 'text', visible: true },
+    { def: 'thirdParty', label: 'Tiers concerné', type: 'text', visible: true },
+    { def: 'paymentMethod', label: 'Mode', type: 'text', visible: true },
+    { def: 'incomingAmount', label: 'Entrée', type: 'text', visible: true },
+    { def: 'outgoingAmount', label: 'Sortie', type: 'text', visible: true },
+    {
+      def: 'status', label: 'Statut', type: 'status', visible: true,
+      statusBadgeMap: {
+        Validée: 'badge badge-solid-green',
+        'En attente': 'badge badge-solid-orange',
+        Annulée: 'badge badge-solid-red',
+      },
+    },
+    { def: 'actions', label: 'Actions', type: 'actionBtn', visible: true },
+  ];
+  readonly financeDataSource = new MatTableDataSource<FinanceTableRow>([]);
   readonly monthlyPaymentRecords = signal<MonthlyPaymentRecords>({
     '2026–2027::cm2-a-km::monthlyFee': {
       1: { Oct: '2026-10-05', Nov: '2026-11-05', Déc: '2026-12-05', Jan: '2027-01-05' },
@@ -850,6 +955,8 @@ export class PrimarySchoolComponent {
       6: null,
     },
   });
+  private readonly financeTariffIds = new Map<string, string>();
+  private financesRequestKey = '';
   readonly selectedStudentId = signal<number | null>(null);
   readonly selectedGuardianId = signal<number | null>(null);
   readonly selectedTeacherId = signal<number | null>(null);
@@ -860,8 +967,13 @@ export class PrimarySchoolComponent {
   readonly selectedAssessmentId = signal<string | null>(null);
   readonly sessionGeneratorOpen = signal(false);
   readonly sessionStatusFilter = signal<'Toutes' | SessionStatus>('Toutes');
+  readonly sessionSearch = signal('');
+  readonly sessionSortKey = signal<SessionSortKey>('date');
+  readonly sessionSortDirection = signal<'asc' | 'desc'>('asc');
+  readonly sessionPage = signal(1);
+  readonly sessionPageSize = signal(10);
   readonly classCurriculumOpen = signal(false);
-  readonly selectedCurriculumSubjectId = signal<number | null>(1);
+  readonly selectedCurriculumSubjectId = signal<SubjectId | null>(null);
   readonly curriculumChapterEditorOpen = signal(false);
   readonly excludedSessionDates = signal<string[]>([]);
   excludedSessionDate = '';
@@ -875,51 +987,27 @@ export class PrimarySchoolComponent {
   };
   curriculumChapterForm: CurriculumChapterFormModel = this.createEmptyCurriculumChapterForm();
 
-  readonly campuses: Campus[] = [
-    {
-      id: 'keur-massar',
-      name: 'Campus Keur Massar',
-      shortName: 'Keur Massar',
-      learners: 326,
-      classes: 8,
-      teachers: 17,
-      attendance: '95,4%',
-      collected: '5,8 M F',
-    },
-    {
-      id: 'plateau',
-      name: 'Campus Dakar Plateau',
-      shortName: 'Dakar Plateau',
-      learners: 248,
-      classes: 6,
-      teachers: 13,
-      attendance: '94,8%',
-      collected: '4,2 M F',
-    },
-    {
-      id: 'rufisque',
-      name: 'Campus Rufisque',
-      shortName: 'Rufisque',
-      learners: 186,
-      classes: 5,
-      teachers: 11,
-      attendance: '96,1%',
-      collected: '3,1 M F',
-    },
-  ];
+  readonly campuses = computed<Campus[]>(() => this.centralApi.campusInstitut()
+    .filter((campus) => campus.statut === 'actif')
+    .map((campus) => ({
+      id: campus.id,
+      name: campus.nom,
+      shortName: campus.nom.replace(/^Campus\s+/i, ''),
+      learners: 0,
+      classes: 0,
+      teachers: 0,
+      attendance: '—',
+      collected: '0 F',
+    })));
 
-  readonly rooms: SchoolRoom[] = [
-    { id: 'room-01-km', campusId: 'keur-massar', name: 'Salle 01' },
-    { id: 'room-03-km', campusId: 'keur-massar', name: 'Salle 03' },
-    { id: 'room-07-km', campusId: 'keur-massar', name: 'Salle 07' },
-    { id: 'room-11-km', campusId: 'keur-massar', name: 'Salle 11' },
-    { id: 'room-02-dp', campusId: 'plateau', name: 'Salle 02' },
-    { id: 'room-06-dp', campusId: 'plateau', name: 'Salle 06' },
-    { id: 'room-10-dp', campusId: 'plateau', name: 'Salle 10' },
-    { id: 'room-01-ru', campusId: 'rufisque', name: 'Salle 01' },
-    { id: 'room-04-ru', campusId: 'rufisque', name: 'Salle 04' },
-    { id: 'room-08-ru', campusId: 'rufisque', name: 'Salle 08' },
-  ];
+  readonly rooms = signal<SchoolRoom[]>([]);
+  readonly roomsLoading = signal(false);
+  readonly timetableLoading = signal(false);
+  readonly sessionsLoading = signal(false);
+  readonly assessmentsLoading = signal(false);
+  readonly assessmentSaving = signal(false);
+  readonly assessmentEditorOpen = signal(false);
+  assessmentForm = { title: '', type: 'controle', date: '', period: '', domainId: '', componentId: '', teacherId: '' };
 
   readonly classes = signal<PrimaryClass[]>([
     { id: 'ci-a-km', campusId: 'keur-massar', name: 'CI A', level: 'CI', enrolled: 42, registrationFee: '25000', monthlyFee: '18000' },
@@ -1226,106 +1314,139 @@ export class PrimarySchoolComponent {
   readonly subjectCatalog = [
     'Français',
     'Mathématiques',
-    'Étude du milieu',
-    'Éducation civique et morale',
-    'Arabe',
+    'Éducation à la science et à la vie sociale',
+    'Éducation au développement durable',
     'Éducation physique et sportive',
     'Éducation artistique',
+    'Langue nationale',
+    'Langue arabe',
+    'Éducation islamique',
+    'Coran',
+    'Hadith',
   ];
-  readonly subjectDomains = [
-    'Langues et communication',
-    'Mathématiques et sciences',
-    'Découverte du monde',
-    'Éducation à la citoyenneté',
-    'Éducation physique',
-    'Arts et culture',
+  readonly primarySubjectDomains = [
+    'Langue et communication',
+    'Mathématiques',
+    'Éducation à la science et à la vie sociale',
+    'Éducation physique, sportive et artistique',
+    'Éducation au développement durable',
+    'Langues nationales',
+    'Enseignement franco-arabe',
   ];
-  readonly subjects = signal<PrimarySubject[]>([
-    { id: 1, name: 'Français', code: 'FR', domain: 'Langues et communication', scale: 20, levels: ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'], teachers: 8, color: '#2f80ed' },
-    { id: 2, name: 'Mathématiques', code: 'MATH', domain: 'Mathématiques et sciences', scale: 20, levels: ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'], teachers: 8, color: '#7b61c9' },
-    { id: 3, name: 'Étude du milieu', code: 'EDM', domain: 'Découverte du monde', scale: 20, levels: ['CE1', 'CE2', 'CM1', 'CM2'], teachers: 6, color: '#36a37c' },
-    { id: 4, name: 'Éducation civique et morale', code: 'ECM', domain: 'Éducation à la citoyenneté', scale: 20, levels: ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'], teachers: 5, color: '#e28b4f' },
-    { id: 5, name: 'Arabe', code: 'AR', domain: 'Langues et communication', scale: 20, levels: ['CP', 'CE1', 'CE2', 'CM1', 'CM2'], teachers: 4, color: '#2779b9' },
-    { id: 6, name: 'Éducation physique et sportive', code: 'EPS', domain: 'Éducation physique', scale: 20, levels: ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'], teachers: 3, color: '#d66f57' },
-    { id: 7, name: 'Éducation artistique', code: 'ART', domain: 'Arts et culture', scale: 10, levels: ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'], teachers: 3, color: '#e3a34b' },
-  ]);
+  readonly collegeSubjectDomains = [
+    'Langues et lettres',
+    'Mathématiques',
+    'Sciences et technologie',
+    'Sciences humaines et sociales',
+    'Éducation civique',
+    'Éducation physique, sportive et artistique',
+    'Enseignement franco-arabe',
+  ];
+  readonly highSchoolSubjectDomains = [
+    'Langues et lettres',
+    'Mathématiques',
+    'Sciences expérimentales',
+    'Sciences humaines et sociales',
+    'Économie et gestion',
+    'Sciences et techniques',
+    'Éducation physique et sportive',
+    'Enseignement franco-arabe',
+  ];
+  readonly predefinedPrimarySubjects: PrimarySubject[] = [
+    { id: 'proposition-fr', name: 'Français', code: 'FR', domain: 'Langue et communication', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#2f80ed' },
+    { id: 'proposition-math', name: 'Mathématiques', code: 'MATH', domain: 'Mathématiques', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#7b61c9' },
+    { id: 'proposition-esvs', name: 'Éducation à la science et à la vie sociale', code: 'ESVS', domain: 'Éducation à la science et à la vie sociale', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#36a37c' },
+    { id: 'proposition-edd', name: 'Éducation au développement durable', code: 'EDD', domain: 'Éducation au développement durable', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#34a089' },
+    { id: 'proposition-eps', name: 'Éducation physique et sportive', code: 'EPS', domain: 'Éducation physique, sportive et artistique', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#d66f57' },
+    { id: 'proposition-art', name: 'Éducation artistique', code: 'ART', domain: 'Éducation physique, sportive et artistique', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#e3a34b' },
+    { id: 'proposition-ln', name: 'Langue nationale', code: 'LN', domain: 'Langues nationales', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#4b8e8b' },
+    { id: 'proposition-ar', name: 'Langue arabe', code: 'AR', domain: 'Enseignement franco-arabe', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#2779b9', francoArabic: true },
+    { id: 'proposition-ei', name: 'Éducation islamique', code: 'EI', domain: 'Enseignement franco-arabe', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#607d5b', francoArabic: true },
+    { id: 'proposition-coran', name: 'Coran', code: 'CORAN', domain: 'Enseignement franco-arabe', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#3d8b6d', francoArabic: true },
+    { id: 'proposition-hadith', name: 'Hadith', code: 'HAD', domain: 'Enseignement franco-arabe', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#8a6d3b', francoArabic: true },
+  ];
+  readonly collegeLevels = ['6e', '5e', '4e', '3e'];
+  readonly predefinedCollegeSubjects: PrimarySubject[] = [
+    { id: 'proposition-col-fr', name: 'Français', code: 'FR', domain: 'Langues et lettres', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#2f80ed' },
+    { id: 'proposition-col-math', name: 'Mathématiques', code: 'MATH', domain: 'Mathématiques', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#7b61c9' },
+    { id: 'proposition-col-ang', name: 'Anglais', code: 'ANG', domain: 'Langues et lettres', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#36a37c' },
+    { id: 'proposition-col-hg', name: 'Histoire-Géographie', code: 'HG', domain: 'Sciences humaines et sociales', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#e28b4f' },
+    { id: 'proposition-col-svt', name: 'Sciences de la vie et de la Terre', code: 'SVT', domain: 'Sciences et technologie', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#2779b9' },
+    { id: 'proposition-col-pc', name: 'Sciences physiques', code: 'PC', domain: 'Sciences et technologie', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#d66f57' },
+    { id: 'proposition-col-tech', name: 'Technologie', code: 'TECH', domain: 'Sciences et technologie', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#546e7a' },
+    { id: 'proposition-col-ec', name: 'Éducation civique', code: 'EC', domain: 'Éducation civique', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#e3a34b' },
+    { id: 'proposition-col-eps', name: 'Éducation physique et sportive', code: 'EPS', domain: 'Éducation physique, sportive et artistique', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#c65f5f' },
+    { id: 'proposition-col-art', name: 'Éducation artistique', code: 'ART', domain: 'Éducation physique, sportive et artistique', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#af7ac5' },
+    { id: 'proposition-col-info', name: 'Informatique', code: 'INFO', domain: 'Sciences et technologie', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#4b8e8b' },
+    { id: 'proposition-col-esp', name: 'Espagnol', code: 'ESP', domain: 'Langues et lettres', scale: 20, levels: ['4e', '3e'], teachers: 0, color: '#ef8354' },
+    { id: 'proposition-col-all', name: 'Allemand', code: 'ALL', domain: 'Langues et lettres', scale: 20, levels: ['4e', '3e'], teachers: 0, color: '#6c757d' },
+    { id: 'proposition-col-ar', name: 'Langue arabe', code: 'AR', domain: 'Enseignement franco-arabe', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#258262', francoArabic: true },
+    { id: 'proposition-col-ei', name: 'Éducation islamique', code: 'EI', domain: 'Enseignement franco-arabe', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#607d5b', francoArabic: true },
+    { id: 'proposition-col-coran', name: 'Coran', code: 'CORAN', domain: 'Enseignement franco-arabe', scale: 20, levels: this.collegeLevels, teachers: 0, color: '#3d8b6d', francoArabic: true },
+  ];
+  readonly highSchoolLevels = ['2nde', '1re', 'Tle'];
+  readonly predefinedHighSchoolSubjects: PrimarySubject[] = [
+    { id: 'proposition-lyc-fr', name: 'Français', code: 'FR', domain: 'Langues et lettres', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#2f80ed' },
+    { id: 'proposition-lyc-philo', name: 'Philosophie', code: 'PHILO', domain: 'Sciences humaines et sociales', scale: 20, levels: ['1re', 'Tle'], teachers: 0, color: '#7357a8' },
+    { id: 'proposition-lyc-math', name: 'Mathématiques', code: 'MATH', domain: 'Mathématiques', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#7b61c9' },
+    { id: 'proposition-lyc-ang', name: 'Anglais', code: 'ANG', domain: 'Langues et lettres', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#36a37c' },
+    { id: 'proposition-lyc-hg', name: 'Histoire-Géographie', code: 'HG', domain: 'Sciences humaines et sociales', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#e28b4f' },
+    { id: 'proposition-lyc-svt', name: 'Sciences de la vie et de la Terre', code: 'SVT', domain: 'Sciences expérimentales', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#2779b9' },
+    { id: 'proposition-lyc-pc', name: 'Physique-Chimie', code: 'PC', domain: 'Sciences expérimentales', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#d66f57' },
+    { id: 'proposition-lyc-ses', name: 'Sciences économiques et sociales', code: 'SES', domain: 'Économie et gestion', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#258262' },
+    { id: 'proposition-lyc-gest', name: 'Économie et gestion', code: 'GEST', domain: 'Économie et gestion', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#3b8c88' },
+    { id: 'proposition-lyc-tech', name: 'Sciences et techniques industrielles', code: 'STI', domain: 'Sciences et techniques', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#c06a3b' },
+    { id: 'proposition-lyc-info', name: 'Informatique', code: 'INFO', domain: 'Sciences et techniques', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#4b8e8b' },
+    { id: 'proposition-lyc-eps', name: 'Éducation physique et sportive', code: 'EPS', domain: 'Éducation physique et sportive', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#c65f5f' },
+    { id: 'proposition-lyc-esp', name: 'Espagnol', code: 'ESP', domain: 'Langues et lettres', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#ef8354' },
+    { id: 'proposition-lyc-all', name: 'Allemand', code: 'ALL', domain: 'Langues et lettres', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#6c757d' },
+    { id: 'proposition-lyc-ar', name: 'Langue arabe', code: 'AR', domain: 'Enseignement franco-arabe', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#258262', francoArabic: true },
+    { id: 'proposition-lyc-ei', name: 'Éducation islamique', code: 'EI', domain: 'Enseignement franco-arabe', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#607d5b', francoArabic: true },
+  ];
+  readonly predefinedSubjects = computed<readonly PrimarySubject[]>(() =>
+    this.workspace.establishmentType() === 'primary'
+      ? this.predefinedPrimarySubjects
+      : this.workspace.establishmentType() === 'college'
+        ? this.predefinedCollegeSubjects
+        : this.predefinedHighSchoolSubjects,
+  );
+  readonly subjectDomains = computed<readonly string[]>(() =>
+    this.workspace.establishmentType() === 'primary'
+      ? this.primarySubjectDomains
+      : this.workspace.establishmentType() === 'college'
+        ? this.collegeSubjectDomains
+        : this.highSchoolSubjectDomains,
+  );
+  readonly subjectProposalTitle = computed(() =>
+    this.workspace.establishmentType() === 'primary'
+      ? 'Matières du primaire sénégalais'
+      : this.workspace.establishmentType() === 'college'
+        ? 'Matières du collège sénégalais'
+        : 'Matières du lycée sénégalais',
+  );
+  readonly subjectProposalDescription = computed(() =>
+    this.workspace.establishmentType() === 'primary'
+      ? 'Cochez les matières enseignées dans votre établissement. Les enseignements franco-arabes sont clairement identifiés.'
+      : 'Sélectionnez le socle commun et les matières optionnelles enseignées dans votre établissement. Les enseignements franco-arabes sont clairement identifiés.',
+  );
+  readonly defaultSubjectProposalCodes = computed<readonly string[]>(() =>
+    this.workspace.establishmentType() === 'primary'
+      ? ['FR', 'MATH', 'ESVS', 'EDD', 'EPS', 'ART', 'LN']
+      : this.workspace.establishmentType() === 'college'
+        ? ['FR', 'MATH', 'ANG', 'HG', 'SVT', 'PC', 'EC', 'EPS']
+        : ['FR', 'PHILO', 'MATH', 'ANG', 'HG', 'SVT', 'PC', 'EPS'],
+  );
+  readonly selectedSubjectProposalCodes = signal<string[]>([...this.defaultSubjectProposalCodes()]);
+  readonly subjects = signal<PrimarySubject[]>([]);
+  readonly subjectsLoading = signal(false);
+  readonly subjectsSaving = signal(false);
+  readonly classSubjectsSaving = signal(false);
+  readonly curriculumSaving = signal(false);
+  readonly curriculumLessonSavingIds = signal<string[]>([]);
+  readonly classSubjectAssignments = signal<Record<string, SubjectId[]>>({});
+  readonly collegeSubjectSettings = signal<Record<string, { coefficient: number | null; teacherId: number | null; maxScore: number }>>({});
 
-  readonly classSubjectAssignments = signal<Record<string, number[]>>({
-    'ci-a-km': [1, 2, 4, 6, 7],
-    'cp-a-km': [1, 2, 4, 5, 6, 7],
-    'ce1-a-km': [1, 2, 3, 4, 5, 6, 7],
-    'ce2-a-km': [1, 2, 3, 4, 5, 6, 7],
-    'cm1-a-km': [1, 2, 3, 4, 5, 6, 7],
-    'cm2-a-km': [1, 2, 3, 4, 5, 6, 7],
-    'ci-a-dp': [1, 2, 4, 6, 7],
-    'ce1-a-dp': [1, 2, 3, 4, 5, 6, 7],
-    'cm2-a-dp': [1, 2, 3, 4, 5, 6, 7],
-    'ci-a-ru': [1, 2, 4, 6, 7],
-    'ce2-a-ru': [1, 2, 3, 4, 5, 6, 7],
-    'cm2-a-ru': [1, 2, 3, 4, 5, 6, 7],
-  });
-  readonly collegeSubjectSettings = signal<Record<string, { coefficient: number; teacherId: number | null }>>({
-    '3e-a-km::1': { coefficient: 4, teacherId: 1 },
-    '3e-a-km::2': { coefficient: 4, teacherId: 2 },
-    '3e-a-km::3': { coefficient: 3, teacherId: 3 },
-    '3e-a-km::4': { coefficient: 3, teacherId: 4 },
-    '3e-a-km::5': { coefficient: 2, teacherId: 1 },
-    '3e-a-km::6': { coefficient: 2, teacherId: 2 },
-    '3e-a-km::7': { coefficient: 1, teacherId: 3 },
-  });
-
-  readonly curriculumChapters = signal<CurriculumChapter[]>([
-    {
-      id: 'cm2-fr-lecture', classId: 'cm2-a-km', subjectId: 1, order: 1,
-      title: 'Lecture et compréhension', period: 'Trimestre 1',
-      objective: 'Comprendre des textes narratifs, informatifs et prescriptifs adaptés au niveau CM2.',
-      lessons: [
-        { id: 'cm2-fr-lecture-1', title: 'Comprendre un texte narratif', estimatedSessions: 3, status: 'Terminée' },
-        { id: 'cm2-fr-lecture-2', title: 'Identifier les personnages et les événements', estimatedSessions: 2, status: 'Terminée' },
-        { id: 'cm2-fr-lecture-3', title: 'Dégager l’idée générale d’un texte', estimatedSessions: 3, status: 'En cours' },
-        { id: 'cm2-fr-lecture-4', title: 'Lire et exploiter un texte informatif', estimatedSessions: 3, status: 'À faire' },
-      ],
-    },
-    {
-      id: 'cm2-fr-grammaire', classId: 'cm2-a-km', subjectId: 1, order: 2,
-      title: 'Grammaire', period: 'Trimestre 1',
-      objective: 'Maîtriser la structure de la phrase et les principales fonctions grammaticales.',
-      lessons: [
-        { id: 'cm2-fr-grammar-1', title: 'Le groupe nominal', estimatedSessions: 2, status: 'Terminée' },
-        { id: 'cm2-fr-grammar-2', title: 'Les compléments du verbe', estimatedSessions: 3, status: 'En cours' },
-        { id: 'cm2-fr-grammar-3', title: 'La phrase complexe', estimatedSessions: 3, status: 'À faire' },
-      ],
-    },
-    {
-      id: 'cm2-fr-production', classId: 'cm2-a-km', subjectId: 1, order: 3,
-      title: 'Production d’écrits', period: 'Trimestre 2',
-      objective: 'Produire des écrits cohérents en respectant une consigne et une structure.',
-      lessons: [
-        { id: 'cm2-fr-writing-1', title: 'Rédiger un récit court', estimatedSessions: 4, status: 'À faire' },
-        { id: 'cm2-fr-writing-2', title: 'Écrire une lettre', estimatedSessions: 3, status: 'À faire' },
-      ],
-    },
-    {
-      id: 'cm2-math-numeration', classId: 'cm2-a-km', subjectId: 2, order: 1,
-      title: 'Numération', period: 'Trimestre 1',
-      objective: 'Lire, écrire, comparer et décomposer les nombres entiers et décimaux.',
-      lessons: [
-        { id: 'cm2-math-num-1', title: 'Les grands nombres', estimatedSessions: 3, status: 'Terminée' },
-        { id: 'cm2-math-num-2', title: 'Les nombres décimaux', estimatedSessions: 4, status: 'En cours' },
-        { id: 'cm2-math-num-3', title: 'Comparer et ranger des nombres décimaux', estimatedSessions: 3, status: 'À faire' },
-      ],
-    },
-    {
-      id: 'cm2-math-calcul', classId: 'cm2-a-km', subjectId: 2, order: 2,
-      title: 'Techniques opératoires', period: 'Trimestre 1',
-      objective: 'Choisir et effectuer les opérations adaptées à une situation problème.',
-      lessons: [
-        { id: 'cm2-math-calc-1', title: 'Multiplication des nombres entiers', estimatedSessions: 3, status: 'Terminée' },
-        { id: 'cm2-math-calc-2', title: 'La division décimale', estimatedSessions: 4, status: 'En cours' },
-        { id: 'cm2-math-calc-3', title: 'Résolution de problèmes', estimatedSessions: 5, status: 'À faire' },
-      ],
-    },
-  ]);
+  readonly curriculumChapters = signal<CurriculumChapter[]>([]);
 
   readonly teachers = signal<Teacher[]>([
     { id: 1, campusId: 'keur-massar', matricule: 'ENS-26001', name: 'Moussa Kane', gender: 'M', email: 'm.kane@joyau.sn', phone: '77 221 45 66', subject: 'Polyvalent', degree: 'CAEM', hireDate: '05/10/2021', status: 'Actif', contractType: 'Permanent', address: 'Keur Massar', birthDate: '18/03/1986', emergencyContact: 'Aminata Kane', emergencyPhone: '77 410 20 15', experience: '12', salary: '325000', hourlyRate: '' },
@@ -1401,6 +1522,13 @@ export class PrimarySchoolComponent {
     ]),
   ];
   timetableDraftRows = this.cloneTimetableRows(this.timetableRows());
+  /**
+   * Une matière est affectée une seule fois à un enseignant pour la classe
+   * sélectionnée. Les cellules gardent l'identifiant pour l'affichage et les
+   * séances, mais ne demandent plus ce choix à chaque créneau.
+   */
+  timetableTeacherAssignments: Record<string, number | null> =
+    this.affectationsEnseignantsDepuisEmploiTemps(this.timetableDraftRows);
 
   readonly sessions = signal<SchoolSession[]>([
     {
@@ -1453,8 +1581,10 @@ export class PrimarySchoolComponent {
     { label: 'Entretien des salles', category: 'Dépense', amount: '− 95 000 F', date: '26 juil.', positive: false },
   ];
 
-  readonly currentCampus = computed(
-    () => this.campuses.find((campus) => campus.id === this.selectedCampusId()) ?? this.campuses[0],
+  readonly currentCampus = computed<Campus>(() =>
+    this.campuses().find((campus) => campus.id === this.selectedCampusId())
+      ?? this.campuses()[0]
+      ?? { id: '', name: 'Aucun campus', shortName: 'Aucun campus', learners: 0, classes: 0, teachers: 0, attendance: '—', collected: '0 F' },
   );
   readonly campusClasses = computed(() =>
     this.classes().filter((item) => item.campusId === this.selectedCampusId()),
@@ -1472,29 +1602,18 @@ export class PrimarySchoolComponent {
         (classId === 'unassigned' ? !student.classId : student.classId === classId),
     );
   });
-  readonly enrollmentSourceStudents = computed(() =>
-    this.students().filter(
-      (student) =>
-        student.campusId === this.selectedCampusId() &&
-        (this.enrollmentSourceClassId() === 'unassigned'
-          ? !student.classId
-          : student.classId === this.enrollmentSourceClassId()),
-    ),
-  );
-  readonly enrollmentSourceClass = computed(
-    () =>
-      this.classes().find((item) => item.id === this.enrollmentSourceClassId()) ?? null,
-  );
+  readonly enrollmentSourceStudents = computed(() => this.enrollmentCandidates()
+    .filter((student) => student.sourceClassId === this.enrollmentSourceClassId()));
   readonly enrollmentSourceLabel = computed(
-    () => this.enrollmentSourceClass()?.name ?? 'Classe non définie',
+    () => this.enrollmentSourceOptions().find((item) => item.id === this.enrollmentSourceClassId())?.label
+      ?? 'Classe non définie',
   );
   readonly enrollmentTargetClass = computed(
     () => this.classes().find((item) => item.id === this.enrollmentTargetClassId()) ?? null,
   );
-  readonly enrollmentAllSelected = computed(() => {
-    const sourceStudents = this.enrollmentSourceStudents();
+  readonly enrollmentSelectedRows = computed(() => {
     const selectedIds = new Set(this.enrollmentSelectedStudentIds());
-    return sourceStudents.length > 0 && sourceStudents.every((student) => selectedIds.has(student.id));
+    return this.enrollmentSourceStudents().filter((student) => selectedIds.has(student.backendId));
   });
   readonly selectedClass = computed(
     () =>
@@ -1508,6 +1627,16 @@ export class PrimarySchoolComponent {
   readonly assignedCurriculumSubjects = computed(() => {
     const assignedIds = this.classSubjectAssignments()[this.selectedClassId()] ?? [];
     return this.compatibleCurriculumSubjects().filter((subject) => assignedIds.includes(subject.id));
+  });
+  readonly selectedClassSubjectClasses = computed(() => {
+    const selectedIds = new Set(this.selectedClassSubjectIds());
+    return this.campusClasses().filter((classroom) => selectedIds.has(classroom.id));
+  });
+  readonly selectedClassSubjectSubjects = computed(() => {
+    const classIds = this.selectedClassSubjectClasses().map((classroom) => classroom.id);
+    return this.subjects().filter((subject) => classIds.some((classId) =>
+      (this.classSubjectAssignments()[classId] ?? []).includes(subject.id),
+    ));
   });
   readonly selectedCurriculumSubject = computed(() =>
     this.subjects().find((subject) => subject.id === this.selectedCurriculumSubjectId()) ?? null,
@@ -1542,7 +1671,9 @@ export class PrimarySchoolComponent {
       inProgress,
       remaining: lessons.length - completed,
       plannedSessions,
-      progress: lessons.length ? Math.round((completed / lessons.length) * 100) : 0,
+      progress: lessons.length
+        ? Math.round(lessons.reduce((total, lesson) => total + lesson.progress, 0) / lessons.length)
+        : 0,
     };
   });
   readonly visibleSessions = computed(() => {
@@ -1553,6 +1684,25 @@ export class PrimarySchoolComponent {
       .sort((first, second) =>
         `${first.date}-${first.startTime}`.localeCompare(`${second.date}-${second.startTime}`),
       );
+  });
+  readonly filteredSessionTableRows = computed(() => {
+    const search = this.sessionSearch().trim().toLocaleLowerCase('fr');
+    const direction = this.sessionSortDirection() === 'asc' ? 1 : -1;
+    const key = this.sessionSortKey();
+    return this.visibleSessions()
+      .filter((session) => !search || [session.subject, this.teacherName(session.teacherId), this.sessionClassName(session), this.sessionRoomName(session), session.status, session.date]
+        .join(' ').toLocaleLowerCase('fr').includes(search))
+      .sort((first, second) => {
+        const firstValue = key === 'date' ? `${first.date}-${first.startTime}` : key === 'subject' ? first.subject : key === 'teacher' ? this.teacherName(first.teacherId) : first.status;
+        const secondValue = key === 'date' ? `${second.date}-${second.startTime}` : key === 'subject' ? second.subject : key === 'teacher' ? this.teacherName(second.teacherId) : second.status;
+        return firstValue.localeCompare(secondValue, 'fr') * direction;
+      });
+  });
+  readonly sessionPageCount = computed(() => Math.max(1, Math.ceil(this.filteredSessionTableRows().length / this.sessionPageSize())));
+  readonly pagedSessions = computed(() => {
+    const page = Math.min(this.sessionPage(), this.sessionPageCount());
+    const start = (page - 1) * this.sessionPageSize();
+    return this.filteredSessionTableRows().slice(start, start + this.sessionPageSize());
   });
   readonly selectedSession = computed(() =>
     this.sessions().find((session) => session.id === this.selectedSessionId()) ?? null,
@@ -1581,21 +1731,33 @@ export class PrimarySchoolComponent {
     this.assessments().find((assessment) => assessment.id === this.selectedAssessmentId()) ?? null,
   );
   readonly campusRooms = computed(() =>
-    this.rooms.filter((room) => room.campusId === this.selectedCampusId()),
+    this.rooms().filter((room) => room.campusId === this.selectedCampusId()),
   );
   readonly selectedRoom = computed(
     () =>
-      this.rooms.find((room) => room.id === this.selectedRoomId()) ??
-      this.campusRooms()[0],
+      this.rooms().find((room) => room.id === this.selectedRoomId()) ??
+      this.campusRooms()[0] ??
+      { id: '', campusId: this.selectedCampusId(), name: 'Salle non définie' },
   );
   readonly campusTeachers = computed(() =>
-    this.teachers().filter((teacher) => teacher.campusId === this.selectedCampusId()),
+    this.teachers().filter((teacher) =>
+      teacher.campusId === this.selectedCampusId()
+      && teacher.status === 'Actif'
+      && Boolean(teacher.teachingBackendId),
+    ),
   );
   readonly campusStaff = computed(() =>
     this.schoolStaff().filter((person) => person.campusId === this.selectedCampusId()),
   );
   readonly campusGuardians = computed(() =>
     this.guardians().filter((guardian) => guardian.campusId === this.selectedCampusId()),
+  );
+  /** Indicateurs calculés uniquement à partir des dossiers réellement chargés. */
+  readonly campusGuardianLearnersCount = computed(() =>
+    this.campusGuardians().reduce((total, guardian) => total + guardian.childrenCount, 0),
+  );
+  readonly campusActiveGuardianAccountsCount = computed(() =>
+    this.campusGuardians().filter((guardian) => guardian.accountStatus === 'Actif').length,
   );
   readonly selectedStudent = computed(() =>
     this.students().find((student) => student.id === this.selectedStudentId()) ??
@@ -1659,7 +1821,29 @@ export class PrimarySchoolComponent {
   ];
 
   readonly studentDataSource = new MatTableDataSource<Student>([]);
+  readonly sessionDataSource = new MatTableDataSource<SchoolSession>([]);
+  readonly sessionColumns: ColumnDefinition[] = [
+    { def: 'date', label: 'Date', type: 'dateCard', visible: true },
+    { def: 'schedule', label: 'Créneau', type: 'time', visible: true },
+    { def: 'subject', label: 'Matière', type: 'text', visible: true },
+    { def: 'teacherName', label: 'Enseignant', type: 'text', visible: true },
+    { def: 'roomName', label: 'Salle', type: 'text', visible: true },
+    { def: 'status', label: 'Statut', type: 'status', visible: true, statusBadgeMap: { Planifiée: 'badge badge-solid-blue', 'À compléter': 'badge badge-solid-orange', Terminée: 'badge badge-solid-green' } },
+    { def: 'actions', label: 'Actions', type: 'actionBtn', visible: true },
+  ];
+  readonly enrollmentDataSource = new MatTableDataSource<EnrollmentCandidateRow>([]);
+  readonly enrollmentColumns: ColumnDefinition[] = [
+    { def: 'select', label: 'Sélection', type: 'check', visible: true },
+    { def: 'name', label: 'Élève', type: 'nameWithImage', visible: true },
+    { def: 'matricule', label: 'Matricule', type: 'text', visible: true },
+    { def: 'gender', label: 'Sexe', type: 'status', visible: true, statusBadgeMap: { F: 'badge badge-solid-purple', M: 'badge badge-solid-green' } },
+    { def: 'sourceClassName', label: 'Classe de départ', type: 'text', visible: true },
+    { def: 'guardianName', label: 'Tuteur', type: 'text', visible: true },
+    { def: 'guardianPhone', label: 'Téléphone tuteur', type: 'phone', visible: true },
+    { def: 'status', label: 'Statut', type: 'status', visible: true, statusBadgeMap: { Disponible: 'badge badge-solid-green', 'À réinscrire': 'badge badge-solid-orange' } },
+  ];
   studentForm: StudentFormModel = this.createEmptyStudentForm();
+  private studentAttachmentFiles: File[] = [];
 
   readonly guardianColumns: ColumnDefinition[] = [
     { def: 'name', label: 'Tuteur', type: 'nameWithImage', visible: true },
@@ -1684,12 +1868,15 @@ export class PrimarySchoolComponent {
   guardianForm: GuardianFormModel = this.createEmptyGuardianForm();
 
   readonly classEditorOpen = signal(false);
-  readonly highSchoolSeries = signal<HighSchoolSeries[]>([
-    { id: 'serie-s', code: 'S', label: 'Série scientifique', description: 'Sciences, mathématiques et technologies.', color: '#2f80ed', active: true },
-    { id: 'serie-l', code: 'L', label: 'Série littéraire', description: 'Lettres, langues et sciences humaines.', color: '#7b61c9', active: true },
-    { id: 'serie-g', code: 'G', label: 'Série gestion', description: 'Gestion, économie, commerce et administration.', color: '#36a37c', active: true },
-    { id: 'serie-t', code: 'T', label: 'Série technique', description: 'Technologies, industrie et enseignement technique.', color: '#e28b4f', active: true },
-  ]);
+  readonly classProposals = signal<ClassProposal[]>([]);
+  readonly classProposalsCampusId = signal<string | null>(null);
+  readonly classProposalsSaved = signal(false);
+  readonly classesLoading = signal(false);
+  readonly classesSaving = signal(false);
+  readonly backendRefreshing = signal(false);
+  readonly highSchoolSeries = signal<HighSchoolSeries[]>([]);
+  readonly seriesLoading = signal(false);
+  readonly seriesSaving = signal(false);
   readonly seriesEditorOpen = signal(false);
   seriesForm: HighSchoolSeriesForm = this.createEmptySeriesForm();
   classForm: ClassFormModel = this.createEmptyClassForm();
@@ -1717,6 +1904,7 @@ export class PrimarySchoolComponent {
   ];
   readonly teacherDataSource = new MatTableDataSource<Teacher>([]);
   teacherForm: TeacherFormModel = this.createEmptyTeacherForm();
+  private teacherAttachmentFiles: File[] = [];
   readonly staffEditorOpen = signal(false);
   readonly staffRecordTab = signal<StaffRecordTab>('profile');
   readonly selectedStaffId = signal<number | null>(null);
@@ -1742,6 +1930,7 @@ export class PrimarySchoolComponent {
   ];
   readonly staffDataSource = new MatTableDataSource<SchoolStaff>([]);
   staffForm: SchoolStaffFormModel = this.createEmptyStaffForm();
+  private staffAttachmentFiles: File[] = [];
 
   readonly breadcrumbItems = computed(() => {
     const view = this.activeView();
@@ -1770,6 +1959,9 @@ export class PrimarySchoolComponent {
       return [this.t('classes')];
     }
     if (view === 'curriculum') {
+      return [this.t('subjects')];
+    }
+    if (view === 'class-subjects') {
       return [this.t('subjects')];
     }
     if (view === 'subjects' && this.subjectEditorOpen()) {
@@ -1821,6 +2013,9 @@ export class PrimarySchoolComponent {
     if (view === 'curriculum') {
       return this.t('classCurriculum');
     }
+    if (view === 'class-subjects') {
+      return this.workspace.translate('Matières par classe');
+    }
     if (view === 'subjects' && this.subjectEditorOpen()) {
       return this.subjectForm.id ? this.t('editSubject') : this.t('newSubject');
     }
@@ -1847,12 +2042,13 @@ export class PrimarySchoolComponent {
     fr: {
       dashboard: 'Tableau de bord',
       registrations: 'Dossiers élèves',
-      enrollments: 'Inscriptions & transferts',
+      enrollments: 'Inscriptions, réinscriptions & transferts',
       'staff-attendance': 'Absences du personnel',
       students: 'Élèves',
       'student-detail': 'Détails de l’élève',
       guardians: 'Tuteurs',
       classes: 'Classes',
+      classesDescription: 'Préparez les classes du campus puis configurer les paiements',
       series: 'Séries',
       subjects: 'Matières',
       curriculum: 'Programmes & leçons',
@@ -1898,12 +2094,13 @@ export class PrimarySchoolComponent {
     wo: {
       dashboard: 'Xool bu ëpp',
       registrations: 'Dosye taalibé yi',
-      enrollments: 'Bind ak soppi kalaas yi',
+      enrollments: 'Bind, bindaat ak soppi kalaas yi',
       'staff-attendance': 'Ñàkk ci nit ñi ci ekool',
       students: 'Taalibé yi',
       'student-detail': 'Xibaaru taalibe bi',
       guardians: 'Kilifa yi',
       classes: 'Kalaas yi',
+      classesDescription: 'Waajal kalaas yi ci campus bi, te defaralal fay yi',
       series: 'Sëri yi',
       subjects: 'Mbaar yi',
       curriculum: 'Porogaraam ak njàngat yi',
@@ -1949,12 +2146,13 @@ export class PrimarySchoolComponent {
     en: {
       dashboard: 'Dashboard',
       registrations: 'Student records',
-      enrollments: 'Enrollments & transfers',
+      enrollments: 'Enrollments, re-enrollments & transfers',
       'staff-attendance': 'Staff absences',
       students: 'Students',
       'student-detail': 'Student details',
       guardians: 'Guardians',
       classes: 'Classes',
+      classesDescription: 'Prepare the campus classes, then configure payments',
       series: 'Streams',
       subjects: 'Subjects',
       curriculum: 'Curricula & lessons',
@@ -2000,12 +2198,13 @@ export class PrimarySchoolComponent {
     ar: {
       dashboard: 'لوحة القيادة',
       registrations: 'ملفات التلاميذ',
-      enrollments: 'التسجيل والتحويلات',
+      enrollments: 'التسجيل وإعادة التسجيل والتحويلات',
       'staff-attendance': 'غيابات الموظفين',
       students: 'التلاميذ',
       'student-detail': 'تفاصيل التلميذ',
       guardians: 'الأولياء',
       classes: 'الأقسام',
+      classesDescription: 'حضّر أقسام الحرم ثم اضبط المدفوعات',
       series: 'الشُعب',
       subjects: 'المواد',
       curriculum: 'البرامج والدروس',
@@ -2051,7 +2250,45 @@ export class PrimarySchoolComponent {
   };
 
   constructor() {
+    // La synchronisation URL → espace est volontairement centralisée dans le
+    // layout. La répéter ici reconstruisait le contexte métier pendant la
+    // création de ce composant particulièrement riche en signaux et effets.
+    // Les listes de démonstration sont remplacées dès l'entrée dans un espace
+    // connecté afin de ne jamais présenter une donnée locale comme enregistrée.
+    this.students.set([]);
+    this.guardians.set([]);
+    this.teachers.set([]);
+    this.schoolStaff.set([]);
+    this.sessions.set([]);
+    this.assessments.set([]);
+    this.financeEntries.set([]);
+    this.monthlyPaymentRecords.set({});
+    this.oneTimePaymentRecords.set({});
     this.initializeFeeConfigurations();
+    this.preparerPropositionsClasses();
+    this.ensureClassSubjectSelection();
+    this.chargerAnneesScolaires();
+
+    effect(() => {
+      const campusId = this.selectedCampusId();
+      const typeEtablissement = this.workspace.establishmentType();
+      if (campusId && this.centralApi.estConnecte()) {
+        this.chargerDossiers(typeEtablissement, campusId);
+      }
+    });
+
+    effect(() => {
+      const campusId = this.selectedCampusId();
+      if (campusId && this.centralApi.estConnecte()) {
+        this.chargerSalles(campusId);
+      }
+    });
+
+    effect(() => {
+      if (this.workspace.establishmentType() === 'lycee' && this.centralApi.estConnecte()) {
+        this.chargerSeriesLycee();
+      }
+    });
 
     effect(() => {
       this.workspace.sessionListRequest();
@@ -2090,12 +2327,10 @@ export class PrimarySchoolComponent {
 
     effect(() => {
       const campusId = this.selectedCampusId();
-      const selectedRoom = this.rooms.find((room) => room.id === this.selectedRoomId());
+      const selectedRoom = this.rooms().find((room) => room.id === this.selectedRoomId());
       if (selectedRoom?.campusId !== campusId) {
-        const firstRoom = this.rooms.find((room) => room.campusId === campusId);
-        if (firstRoom) {
-          this.selectedRoomId.set(firstRoom.id);
-        }
+        const firstRoom = this.rooms().find((room) => room.campusId === campusId);
+        this.selectedRoomId.set(firstRoom?.id ?? '');
       }
     });
 
@@ -2106,6 +2341,83 @@ export class PrimarySchoolComponent {
         img: `assets/images/user/user${(index % 9) + 1}.jpg`,
         className: this.studentClassName(student),
       }));
+    });
+
+    effect(() => {
+      this.sessionDataSource.data = this.visibleSessions().map((session) => ({
+        ...session,
+        schedule: `${session.startTime} – ${session.endTime}`,
+        teacherName: this.teacherName(session.teacherId),
+        roomName: this.sessionRoomName(session),
+      }));
+    });
+
+    effect(() => {
+      this.enrollmentDataSource.data = [...this.enrollmentSourceStudents()];
+    });
+
+    effect(() => {
+      const view = this.activeView();
+      const campusId = this.selectedCampusId();
+      const anneeId = this.selectedCentralAcademicYearId();
+      this.enrollmentOperation();
+      if (view === 'enrollments' && campusId && anneeId && this.centralApi.estConnecte()) {
+        this.chargerCandidatsInscriptions();
+      }
+    });
+
+    effect(() => {
+      const view = this.activeView();
+      const campusId = this.selectedCampusId();
+      const anneeId = this.selectedCentralAcademicYearId();
+      const classeId = this.selectedClassId();
+      if (view === 'assessments' && campusId && anneeId && classeId && this.centralApi.estConnecte()) this.chargerEvaluations();
+    });
+
+    effect(() => {
+      const view = this.activeView();
+      const campusId = this.selectedCampusId();
+      const anneeId = this.selectedCentralAcademicYearId();
+      const classeId = this.selectedClassId();
+      if (view === 'attendance' && campusId && anneeId && classeId && this.centralApi.estConnecte()) {
+        this.chargerSeances();
+      }
+    });
+
+    effect(() => {
+      const view = this.activeView();
+      const campusId = this.selectedCampusId();
+      const anneeId = this.selectedCentralAcademicYearId();
+      if (['subjects', 'class-subjects', 'curriculum', 'timetable', 'timetable-builder'].includes(view) && campusId && anneeId && this.centralApi.estConnecte()) {
+        this.chargerPedagogie();
+      }
+    });
+
+    effect(() => {
+      const view = this.activeView();
+      const campusId = this.selectedCampusId();
+      const anneeId = this.selectedCentralAcademicYearId();
+      const classeId = this.selectedClassId();
+      if (['timetable', 'timetable-builder'].includes(view) && campusId && anneeId && classeId && this.centralApi.estConnecte()) {
+        this.chargerEmploiTemps();
+      }
+    });
+
+    effect(() => {
+      const view = this.activeView();
+      const campusId = this.selectedCampusId();
+      this.anneesScolairesDisponibles();
+      this.students();
+      const annee = view === 'fees'
+        ? this.selectedFeeAcademicYear()
+        : view === 'payments'
+          ? this.selectedCollectionAcademicYear()
+          : view === 'expense-settings' || view === 'expenses'
+            ? this.selectedExpenseAcademicYear()
+            : this.selectedFinanceAcademicYear();
+      if (['fees', 'payments', 'expense-settings', 'expenses', 'finance'].includes(view) && campusId && annee && this.centralApi.estConnecte()) {
+        this.chargerFinances(annee);
+      }
     });
 
     effect(() => {
@@ -2137,6 +2449,36 @@ export class PrimarySchoolComponent {
           img: `assets/images/user/user${((index + 1) % 9) + 1}.jpg`,
         }));
     });
+
+    effect(() => {
+      this.financeDataSource.data = this.filteredFinanceEntries().map((entry) => ({
+        ...entry,
+        dateLabel: this.formatPaymentDate(entry.date),
+        incomingAmount: entry.direction === 'Entrée' ? this.formatExpenseAmount(entry.amount) : '—',
+        outgoingAmount: entry.direction === 'Sortie' ? this.formatExpenseAmount(entry.amount) : '—',
+        canToggleStatus: entry.source === 'Saisie manuelle',
+      }));
+    });
+  }
+
+  requestConfirmation(
+    state: Omit<ConfirmationDialogState, 'tone'> & { tone?: ConfirmationDialogState['tone'] },
+    action: () => void,
+  ): void {
+    this.pendingConfirmationAction = action;
+    this.confirmationDialog.set({ ...state, tone: state.tone ?? 'danger' });
+  }
+
+  closeConfirmation(): void {
+    this.pendingConfirmationAction = null;
+    this.confirmationDialog.set(null);
+  }
+
+  confirmPendingAction(): void {
+    const action = this.pendingConfirmationAction;
+    this.pendingConfirmationAction = null;
+    this.confirmationDialog.set(null);
+    action?.();
   }
 
   setView(view: PrimaryView): void {
@@ -2157,6 +2499,11 @@ export class PrimarySchoolComponent {
       this.staffEditorOpen.set(false);
     }
     this.workspace.selectView(view);
+    const destination = this.workspace.cheminVue(view);
+    const cheminActuel = this.router.url.split('?')[0].split('#')[0];
+    if (cheminActuel !== destination) {
+      void this.router.navigateByUrl(destination);
+    }
   }
 
   setLocale(locale: PrimaryLocale): void {
@@ -2168,16 +2515,19 @@ export class PrimarySchoolComponent {
   }
 
   t(key: string): string {
-    return this.translations[this.locale()][key] ?? this.translations.fr[key] ?? key;
+    return this.translations[this.locale()][key]
+      ?? this.translations.fr[key]
+      ?? this.workspace.translate(key);
   }
 
   changeCampus(campusId: string): void {
     this.selectedCampusId.set(campusId);
+    this.chargerClasses();
     const campusClasses = this.classes().filter((item) => item.campusId === campusId);
     const firstClass = campusClasses[0];
     if (firstClass) {
       this.selectedClassId.set(firstClass.id);
-      this.enrollmentSourceClassId.set(firstClass.id);
+      this.enrollmentSourceClassId.set('non-affectee');
       this.enrollmentTargetClassId.set(campusClasses[1]?.id ?? firstClass.id);
       this.enrollmentSelectedStudentIds.set([]);
     }
@@ -2196,111 +2546,128 @@ export class PrimarySchoolComponent {
   changeEnrollmentOperation(operation: EnrollmentOperation): void {
     this.enrollmentOperation.set(operation);
     this.enrollmentSelectedStudentIds.set([]);
-
-    if (operation === 'registration') {
-      this.enrollmentSourceClassId.set('unassigned');
-      return;
-    }
-
-    const campusClasses = this.campusClasses();
-    this.enrollmentSourceClassId.set(campusClasses[0]?.id ?? 'unassigned');
-    this.enrollmentTargetClassId.set(campusClasses[1]?.id ?? campusClasses[0]?.id ?? '');
+    this.enrollmentCandidates.set([]);
+    this.enrollmentSourceOptions.set([]);
   }
 
   changeEnrollmentTarget(classId: string): void {
     this.enrollmentTargetClassId.set(classId);
   }
 
-  toggleEnrollmentStudent(studentId: number): void {
-    this.enrollmentSelectedStudentIds.update((selectedIds) =>
-      selectedIds.includes(studentId)
-        ? selectedIds.filter((id) => id !== studentId)
-        : [...selectedIds, studentId],
-    );
-  }
-
-  toggleAllEnrollmentStudents(): void {
-    if (this.enrollmentAllSelected()) {
-      this.enrollmentSelectedStudentIds.set([]);
-      return;
-    }
-    this.enrollmentSelectedStudentIds.set(
-      this.enrollmentSourceStudents().map((student) => student.id),
-    );
+  setEnrollmentSelection(rows: EnrollmentCandidateRow[]): void {
+    this.enrollmentSelectedStudentIds.set(rows.map((row) => row.backendId));
   }
 
   enrollmentActionLabel(): string {
     return this.enrollmentOperation() === 'registration'
-      ? 'Inscrire / réinscrire et préparer l’encaissement'
-      : 'Transférer vers la nouvelle classe';
+      ? 'Inscrire et préparer l’encaissement'
+      : this.enrollmentOperation() === 'reenrollment'
+        ? 'Réinscrire et préparer l’encaissement'
+        : 'Transférer vers la nouvelle classe';
   }
 
   applyEnrollmentAssignment(): void {
-    const sourceClass = this.enrollmentSourceClass();
     const targetClass = this.enrollmentTargetClass();
-    const selectedIds = new Set(this.enrollmentSelectedStudentIds());
+    const selectedIds = this.enrollmentSelectedStudentIds();
+    const anneeId = this.selectedCentralAcademicYearId();
 
-    if (!targetClass || !selectedIds.size) {
+    if (!targetClass || !selectedIds.length || !anneeId) {
       this.snackBar.open('Sélectionnez au moins un élève et une classe de destination.', 'Fermer', {
         duration: 2800,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'center',
       });
       return;
     }
-
-    this.students.update((students) =>
-      students.map((student) =>
-        selectedIds.has(student.id)
-          ? { ...student, classId: targetClass.id, status: 'Actif' }
-          : student,
-      ),
-    );
-
-    if (!sourceClass || sourceClass.id !== targetClass.id) {
-      const movedCount = selectedIds.size;
-      this.classes.update((classes) =>
-        classes.map((classroom) => {
-          if (sourceClass && classroom.id === sourceClass.id) {
-            return { ...classroom, enrolled: Math.max(0, classroom.enrolled - movedCount) };
-          }
-          if (classroom.id === targetClass.id) {
-            return { ...classroom, enrolled: classroom.enrolled + movedCount };
-          }
-          return classroom;
-        }),
-      );
+    if (this.enrollmentOperation() === 'transfer' && this.enrollmentSourceClassId() === targetClass.id) {
+      this.snackBar.error('La classe de départ et la classe de destination doivent être différentes.');
+      return;
     }
-
-    const count = selectedIds.size;
-    const isRegistration = this.enrollmentOperation() === 'registration';
-    if (isRegistration) {
-      const ledgerKey = `${this.selectedAcademicYear()}::${targetClass.id}::registrationFee`;
-      this.oneTimePaymentRecords.update((records) => {
-        const existingLedger = records[ledgerKey] ?? {};
-        const updatedLedger = [...selectedIds].reduce<Record<number, string | null>>(
-          (ledger, studentId) => ({ ...ledger, [studentId]: existingLedger[studentId] ?? null }),
-          { ...existingLedger },
+    if (this.enrollmentSaving()) return;
+    this.enrollmentSaving.set(true);
+    const operation = this.operationInscriptionApi();
+    this.centralApi.enregistrerInscriptionsEtablissement({
+      type_etablissement: this.codeTypeEtablissementApi(),
+      campus_id: this.selectedCampusId(),
+      annee_scolaire_centrale_id: anneeId,
+      operation,
+      classe_source_id: this.enrollmentSourceClassId() || null,
+      classe_cible_id: targetClass.id,
+      eleve_ids: selectedIds,
+    }).subscribe({
+      next: (resultat) => {
+        this.enrollmentSaving.set(false);
+        this.enrollmentSelectedStudentIds.set([]);
+        this.chargerClasses();
+        this.chargerDossiers(this.workspace.establishmentType(), this.selectedCampusId());
+        this.chargerCandidatsInscriptions();
+        const creeFrais = operation === 'inscription' || operation === 'reinscription';
+        const toast = this.snackBar.success(
+          creeFrais ? `${resultat.message} Les frais d’inscription sont prêts à encaisser.` : resultat.message,
+          creeFrais ? 'Voir encaissements' : 'Fermer',
         );
-        return { ...records, [ledgerKey]: updatedLedger };
-      });
-      this.selectedCollectionAcademicYear.set(this.selectedAcademicYear());
-      this.selectCollectionClass(targetClass.id);
-      this.selectedCollectionFeeId.set('registrationFee');
-    }
-
-    this.enrollmentSelectedStudentIds.set([]);
-    const message = isRegistration
-      ? `${count} élève(s) inscrit(s) ou réinscrit(s) en ${targetClass.name}. Les frais d’inscription sont prêts à encaisser.`
-      : `${count} élève(s) transféré(s) en ${targetClass.name}.`;
-    const snack = this.snackBar.open(message, isRegistration ? 'Voir encaissements' : 'Fermer', {
-      duration: 3200,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+        if (creeFrais) toast.onAction().subscribe(() => this.setView('payments'));
+      },
+      error: (response) => {
+        this.enrollmentSaving.set(false);
+        this.snackBar.error(response.error?.message ?? 'L’opération d’inscription n’a pas pu être enregistrée.');
+      },
     });
-    if (isRegistration) {
-      snack.onAction().subscribe(() => this.setView('payments'));
-    }
+  }
+
+  chargerCandidatsInscriptions(): void {
+    const anneeId = this.selectedCentralAcademicYearId();
+    if (!anneeId || !this.selectedCampusId()) return;
+    this.enrollmentLoading.set(true);
+    this.centralApi.candidatsInscriptionsEtablissement(
+      this.codeTypeEtablissementApi(),
+      this.selectedCampusId(),
+      anneeId,
+      this.operationInscriptionApi(),
+    ).subscribe({
+      next: (resultat) => {
+        const candidats = resultat.data.map((item, index) => this.presenterCandidatInscription(item, index));
+        this.enrollmentCandidates.set(candidats);
+        this.enrollmentSourceOptions.set(resultat.classes_sources.map((source) => ({
+          id: source.id,
+          label: source.libelle,
+          year: source.annee ?? '',
+        })));
+        const sourceActuelleExiste = resultat.classes_sources.some((source) => source.id === this.enrollmentSourceClassId());
+        this.enrollmentSourceClassId.set(sourceActuelleExiste ? this.enrollmentSourceClassId() : resultat.classes_sources[0]?.id ?? '');
+        this.enrollmentSelectedStudentIds.set([]);
+        this.enrollmentLoading.set(false);
+      },
+      error: (response) => {
+        this.enrollmentLoading.set(false);
+        this.enrollmentCandidates.set([]);
+        this.enrollmentSourceOptions.set([]);
+        this.snackBar.error(response.error?.message ?? 'Impossible de charger les élèves disponibles.');
+      },
+    });
+  }
+
+  private operationInscriptionApi(): OperationInscriptionApi {
+    return this.enrollmentOperation() === 'registration'
+      ? 'inscription'
+      : this.enrollmentOperation() === 'reenrollment'
+        ? 'reinscription'
+        : 'transfert';
+  }
+
+  private presenterCandidatInscription(item: CandidatInscriptionApi, index: number): EnrollmentCandidateRow {
+    return {
+      backendId: item.eleve_id,
+      name: `${item.prenom} ${item.nom}`.trim(),
+      matricule: item.matricule,
+      gender: item.sexe === 'M' ? 'M' : 'F',
+      birthDate: item.date_naissance ?? 'Non renseignée',
+      guardianName: item.tuteur_nom ?? 'Tuteur à renseigner',
+      guardianPhone: item.tuteur_telephone ?? 'Non renseigné',
+      sourceClassId: item.classe_source_id,
+      sourceClassName: item.classe_source,
+      sourceYear: item.annee_source ?? '',
+      status: item.statut,
+      img: `assets/images/user/user${(index % 9) + 1}.jpg`,
+    };
   }
 
   staffAbsencePeople(type = this.staffAbsenceForm.personType): StaffAbsencePerson[] {
@@ -2391,8 +2758,17 @@ export class PrimarySchoolComponent {
   }
 
   deleteStaffAbsence(absenceId: number): void {
-    this.staffAbsences.update((absences) => absences.filter((absence) => absence.id !== absenceId));
-    this.snackBar.open('Absence supprimée.', 'Fermer', { duration: 2200 });
+    const absence = this.staffAbsences().find((item) => item.id === absenceId);
+    const personName = absence ? this.staffAbsencePerson(absence)?.name : '';
+    this.requestConfirmation({
+      title: 'Supprimer cette absence ?',
+      message: `L’absence${personName ? ` de ${personName}` : ''} sera définitivement retirée du registre.`,
+      confirmLabel: 'Supprimer',
+      icon: 'delete_outline',
+    }, () => {
+      this.staffAbsences.update((absences) => absences.filter((item) => item.id !== absenceId));
+      this.snackBar.open('Absence supprimée.', 'Fermer', { duration: 2200 });
+    });
   }
 
   selectedStudentListLabel(): string {
@@ -2421,13 +2797,17 @@ export class PrimarySchoolComponent {
   downloadStudentImportTemplate(): void {
     const headers = [
       'matricule', 'prenom_eleve', 'nom_eleve', 'sexe', 'date_naissance',
-      'lieu_naissance', 'nationalite', 'telephone_tuteur', 'prenom_tuteur',
-      'nom_tuteur', 'profession_tuteur', 'email_tuteur', 'adresse_tuteur', 'regime',
+      'lieu_naissance', 'nationalite', 'adresse_eleve', 'groupe_sanguin',
+      'observations_medicales', 'regime', 'cantine', 'transport',
+      'prenom_tuteur', 'nom_tuteur', 'telephone_tuteur',
+      'telephone_secondaire_tuteur', 'email_tuteur', 'profession_tuteur',
+      'adresse_tuteur', 'lien_tuteur',
     ];
     const example = [
       'PRI-260049', 'Awa', 'Ndiaye', 'F', '2015-03-12', 'Dakar', 'Sénégalaise',
-      '77 842 10 24', 'Mariama', 'Ba', 'Commerçante', 'mariama.ba@example.sn',
-      'Keur Massar', 'Externe',
+      'Keur Massar', 'O+', '', 'Externe', 'non', 'non', 'Mariama', 'Ba',
+      '77 842 10 24', '76 410 20 15', 'mariama.ba@example.sn', 'Commerçante',
+      'Unité 11, Keur Massar', 'Mère',
     ];
     const blob = new Blob([`\ufeff${headers.join(';')}\n${example.join(';')}\n`], {
       type: 'text/csv;charset=utf-8;',
@@ -2449,69 +2829,213 @@ export class PrimarySchoolComponent {
 
     try {
       const rows = this.parseStudentImportCsv(await file.text());
-      const campusId = this.selectedCampusId();
-      const existingMatricules = new Set(this.students().map((student) => student.matricule.toLowerCase()));
-      const guardians = this.guardians();
-      let nextId = Math.max(...this.students().map((student) => student.id), 0) + 1;
-      const imported = rows.flatMap((row) => {
+      const eleves = rows.flatMap((row) => {
         const firstName = this.studentImportValue(row, 'prenom_eleve', 'prenom', 'first_name');
         const lastName = this.studentImportValue(row, 'nom_eleve', 'nom', 'last_name');
         if (!firstName || !lastName) {
           return [];
         }
-        const guardianPhone = this.studentImportValue(row, 'telephone_tuteur', 'telephone', 'phone_tuteur');
-        const guardian = guardians.find((item) =>
-          item.campusId === campusId && this.normalizedPhone(item.phone) === this.normalizedPhone(guardianPhone),
-        );
-        const id = nextId++;
-        let matricule = this.studentImportValue(row, 'matricule');
-        if (!matricule || existingMatricules.has(matricule.toLowerCase())) {
-          matricule = `PRI-26${String(id + 46).padStart(4, '0')}`;
-        }
-        existingMatricules.add(matricule.toLowerCase());
         const importedGender = this.studentImportValue(row, 'sexe', 'gender').toLowerCase();
-        const guardianFirstName = this.studentImportValue(row, 'prenom_tuteur');
-        const guardianLastName = this.studentImportValue(row, 'nom_tuteur');
-        const date = this.studentImportValue(row, 'date_naissance', 'birth_date');
         return [{
-          id,
-          campusId,
-          classId: '',
-          matricule,
-          name: `${firstName} ${lastName}`.trim(),
-          gender: importedGender.startsWith('f') ? 'F' : 'M',
-          birthDate: this.toDisplayDate(date),
-          birthPlace: this.studentImportValue(row, 'lieu_naissance', 'birth_place'),
-          nationality: this.studentImportValue(row, 'nationalite') || 'Sénégalaise',
-          guardianId: guardian?.id,
-          parentName: guardian?.name || `${guardianFirstName} ${guardianLastName}`.trim(),
-          parentFirstName: guardian?.firstName || guardianFirstName,
-          parentLastName: guardian?.lastName || guardianLastName,
-          parentProfession: guardian?.profession || this.studentImportValue(row, 'profession_tuteur'),
-          parentPhone: guardian?.phone || guardianPhone,
-          email: guardian?.email || this.studentImportValue(row, 'email_tuteur'),
-          address: guardian?.address || this.studentImportValue(row, 'adresse_tuteur'),
+          matricule: this.studentImportValue(row, 'matricule') || null,
+          prenom: firstName,
+          nom: lastName,
+          sexe: importedGender.startsWith('f') ? 'F' : 'M',
+          date_naissance: this.studentImportValue(row, 'date_naissance', 'birth_date') || null,
+          lieu_naissance: this.studentImportValue(row, 'lieu_naissance', 'birth_place') || null,
+          nationalite: this.studentImportValue(row, 'nationalite') || 'Sénégalaise',
+          adresse: this.studentImportValue(row, 'adresse_eleve', 'adresse') || null,
+          telephone_tuteur: this.studentImportValue(row, 'telephone_tuteur', 'telephone', 'phone_tuteur') || null,
+          prenom_tuteur: this.studentImportValue(row, 'prenom_tuteur', 'prenom_responsable', 'guardian_first_name') || null,
+          nom_tuteur: this.studentImportValue(row, 'nom_tuteur', 'nom_responsable', 'guardian_last_name') || null,
+          telephone_secondaire_tuteur: this.studentImportValue(row, 'telephone_secondaire_tuteur', 'second_phone_tuteur') || null,
+          email_tuteur: this.studentImportValue(row, 'email_tuteur', 'guardian_email') || null,
+          profession_tuteur: this.studentImportValue(row, 'profession_tuteur', 'guardian_profession') || null,
+          adresse_tuteur: this.studentImportValue(row, 'adresse_tuteur', 'guardian_address') || null,
+          lien_tuteur: this.studentImportValue(row, 'lien_tuteur', 'lien_parente', 'relation_tuteur') || null,
+          groupe_sanguin: this.studentImportValue(row, 'groupe_sanguin') || null,
+          notes_medicales: this.studentImportValue(row, 'observations_medicales', 'notes_medicales') || null,
           regime: this.studentImportValue(row, 'regime') || 'Externe',
-          status: guardian ? 'Actif' : 'En attente',
-          portalAccount: guardian?.accountStatus || 'Non créé',
-        } as Student];
+          cantine: this.studentImportBoolean(row, 'cantine'),
+          transport: this.studentImportBoolean(row, 'transport'),
+        }];
       });
 
-      if (!imported.length) {
+      if (!eleves.length) {
         this.snackBar.open('Aucun élève valide : renseignez au minimum prénom et nom.', 'Fermer', { duration: 3500 });
         return;
       }
-      this.students.update((items) => [...imported, ...items]);
-      this.selectClass('unassigned');
-      this.closeStudentImport();
-      this.snackBar.open(
-        `${imported.length} dossier${imported.length > 1 ? 's' : ''} importé${imported.length > 1 ? 's' : ''} dans « Classe non définie ».`,
-        'Fermer',
-        { duration: 3600 },
-      );
+      if (eleves.some((eleve) => !eleve.prenom_tuteur || !eleve.nom_tuteur || !eleve.telephone_tuteur)) {
+        this.snackBar.open('Chaque ligne doit inclure le prénom, le nom et le téléphone du tuteur.', 'Fermer', { duration: 4000 });
+        return;
+      }
+      if (this.dossierSaving()) return;
+      this.dossierSaving.set(true);
+      this.centralApi.importerElevesEtablissement({
+        type_etablissement: this.codeTypeEtablissementApi(),
+        campus_id: this.selectedCampusId(),
+        eleves,
+      }).subscribe({
+        next: (resultat) => {
+          this.dossierSaving.set(false);
+          this.appliquerDossiersApi(resultat, this.selectedCampusId());
+          this.selectClass('unassigned');
+          this.closeStudentImport();
+          const complement = resultat.tuteurs_crees || resultat.tuteurs_reutilises
+            ? ` ${resultat.tuteurs_crees} tuteur${resultat.tuteurs_crees > 1 ? 's créés' : ' créé'} · ${resultat.tuteurs_reutilises} réutilisé${resultat.tuteurs_reutilises > 1 ? 's' : ''}.`
+            : '';
+          this.snackBar.open(`${resultat.message}${complement}`, 'Fermer', { duration: 4200 });
+        },
+        error: (response) => {
+          this.dossierSaving.set(false);
+          this.snackBar.open(response.error?.message ?? 'L’import des élèves a échoué.', 'Fermer', { duration: 4200 });
+        },
+      });
     } catch {
       this.snackBar.open('Le fichier ne peut pas être lu. Téléchargez le modèle puis enregistrez-le au format CSV.', 'Fermer', { duration: 4000 });
     }
+  }
+
+  private studentImportBoolean(row: Record<string, string>, ...keys: string[]): boolean {
+    const value = this.studentImportValue(row, ...keys).trim().toLowerCase();
+    return ['1', 'oui', 'o', 'true', 'vrai'].includes(value);
+  }
+
+  openWorkforceImport(kind: WorkforceImportKind): void {
+    this.workforceImportFile.set(null);
+    this.workforceImportKind.set(kind);
+  }
+
+  closeWorkforceImport(): void {
+    this.workforceImportFile.set(null);
+    this.workforceImportKind.set(null);
+  }
+
+  onWorkforceImportFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.workforceImportFile.set(input.files?.[0] ?? null);
+    input.value = '';
+  }
+
+  workforceImportLabel(plural = false): string {
+    if (this.workforceImportKind() === 'teacher') return plural ? 'enseignants' : 'enseignant';
+    return plural ? 'membres du personnel' : 'personnel';
+  }
+
+  downloadWorkforceImportTemplate(): void {
+    const teacher = this.workforceImportKind() === 'teacher';
+    const commonHeaders = [
+      'matricule', 'prenom', 'nom', 'sexe', 'date_naissance', 'lieu_naissance',
+      'telephone', 'email', 'adresse', 'date_embauche', 'type_contrat', 'statut',
+      'contact_urgence_nom', 'contact_urgence_telephone',
+    ];
+    const headers = teacher
+      ? [...commonHeaders, 'specialite', 'diplome', 'experience_annees', 'type_remuneration', 'salaire_mensuel', 'montant_heure']
+      : [...commonHeaders, 'fonction', 'salaire_mensuel'];
+    const commonExample = [
+      teacher ? 'ENS-260012' : 'PER-260018', 'Fatou', 'Ndiaye', 'F', '1990-05-14', 'Dakar',
+      '77 123 45 67', 'fatou.ndiaye@example.sn', 'Keur Massar', '2026-09-01', 'Permanent', 'actif',
+      'Moussa Ndiaye', '76 234 56 78',
+    ];
+    const example = teacher
+      ? [...commonExample, 'Mathématiques', 'Licence', '6', 'mensuelle', '250000', '']
+      : [...commonExample, 'Secrétaire scolaire', '180000'];
+    const blob = new Blob([`\ufeff${headers.join(';')}\n${example.join(';')}\n`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = teacher ? 'modele_import_enseignants_e-scolarite.csv' : 'modele_import_personnels_e-scolarite.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async importWorkforce(): Promise<void> {
+    const kind = this.workforceImportKind();
+    const file = this.workforceImportFile();
+    if (!kind || !file) {
+      this.snackBar.error('Sélectionnez le fichier CSV préparé à partir du modèle.');
+      return;
+    }
+
+    try {
+      const rows = this.parseStudentImportCsv(await file.text());
+      const personnes = rows.flatMap<Record<string, unknown>>((row): Array<Record<string, unknown>> => {
+        const prenom = this.studentImportValue(row, 'prenom', 'first_name');
+        const nom = this.studentImportValue(row, 'nom', 'last_name');
+        if (!prenom || !nom) return [];
+        const sexeBrut = this.studentImportValue(row, 'sexe', 'gender').toLowerCase();
+        const statutBrut = this.studentImportValue(row, 'statut', 'status').toLowerCase();
+        const commun: Record<string, unknown> = {
+          matricule: this.studentImportValue(row, 'matricule') || null,
+          prenom,
+          nom,
+          sexe: sexeBrut.startsWith('f') ? 'F' : sexeBrut.startsWith('m') ? 'M' : null,
+          date_naissance: this.studentImportValue(row, 'date_naissance', 'birth_date') || null,
+          lieu_naissance: this.studentImportValue(row, 'lieu_naissance', 'birth_place') || null,
+          telephone: this.studentImportValue(row, 'telephone', 'phone') || null,
+          email: this.studentImportValue(row, 'email') || null,
+          adresse: this.studentImportValue(row, 'adresse', 'address') || null,
+          date_embauche: this.studentImportValue(row, 'date_embauche', 'hire_date') || null,
+          type_contrat: this.studentImportValue(row, 'type_contrat', 'contrat') || null,
+          statut: statutBrut.includes('suspend') ? 'suspendu' : statutBrut.includes('cong') ? 'conge' : 'actif',
+          contact_urgence_nom: this.studentImportValue(row, 'contact_urgence_nom', 'personne_a_contacter') || null,
+          contact_urgence_telephone: this.studentImportValue(row, 'contact_urgence_telephone', 'telephone_urgence') || null,
+          salaire_mensuel: this.workforceImportNumber(row, 'salaire_mensuel', 'salaire'),
+        };
+        if (kind === 'teacher') {
+          const remuneration = this.studentImportValue(row, 'type_remuneration', 'mode_remuneration').toLowerCase();
+          return [{
+            ...commun,
+            specialite: this.studentImportValue(row, 'specialite', 'matiere') || null,
+            diplome: this.studentImportValue(row, 'diplome') || null,
+            experience_annees: this.workforceImportNumber(row, 'experience_annees', 'experience'),
+            type_remuneration: remuneration.startsWith('h') ? 'horaire' : 'mensuelle',
+            montant_heure: this.workforceImportNumber(row, 'montant_heure', 'tarif_horaire'),
+          }];
+        }
+        return [{ ...commun, fonction: this.studentImportValue(row, 'fonction') || null }];
+      });
+
+      if (!personnes.length) {
+        this.snackBar.error('Aucun dossier valide : renseignez au minimum le prénom et le nom.');
+        return;
+      }
+      if (kind === 'staff' && personnes.some((personne) => !personne['fonction'])) {
+        this.snackBar.error('Chaque membre du personnel doit avoir une fonction.');
+        return;
+      }
+      if (this.dossierSaving()) return;
+      this.dossierSaving.set(true);
+      const donnees = {
+        type_etablissement: this.codeTypeEtablissementApi(),
+        campus_id: this.selectedCampusId(),
+        personnes,
+      };
+      const requete = kind === 'teacher'
+        ? this.centralApi.importerEnseignantsEtablissement(donnees)
+        : this.centralApi.importerPersonnelsEtablissement(donnees);
+      requete.subscribe({
+        next: (resultat) => {
+          this.dossierSaving.set(false);
+          this.appliquerDossiersApi(resultat, this.selectedCampusId());
+          this.closeWorkforceImport();
+          this.snackBar.success(`${resultat.message} ${resultat.crees} créé(s) · ${resultat.reutilises} dossier(s) existant(s) réutilisé(s).`);
+        },
+        error: (response) => {
+          this.dossierSaving.set(false);
+          this.snackBar.error(response.error?.message ?? `L’import des ${this.workforceImportLabel(true)} a échoué.`);
+        },
+      });
+    } catch {
+      this.snackBar.error('Le fichier ne peut pas être lu. Téléchargez le modèle puis conservez le format CSV.');
+    }
+  }
+
+  private workforceImportNumber(row: Record<string, string>, ...keys: string[]): number | null {
+    const value = this.studentImportValue(row, ...keys).replace(/\s/g, '').replace(',', '.');
+    if (!value) return null;
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0 ? number : null;
   }
 
   openSessionGenerator(): void {
@@ -2521,6 +3045,39 @@ export class PrimarySchoolComponent {
 
   closeSessionGenerator(): void {
     this.sessionGeneratorOpen.set(false);
+  }
+
+  setSessionSearch(value: string): void {
+    this.sessionSearch.set(value);
+    this.sessionPage.set(1);
+  }
+
+  setSessionStatusFilter(value: 'Toutes' | SessionStatus): void {
+    this.sessionStatusFilter.set(value);
+    this.sessionPage.set(1);
+  }
+
+  toggleSessionSort(key: SessionSortKey): void {
+    if (this.sessionSortKey() === key) {
+      this.sessionSortDirection.update((direction) => direction === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sessionSortKey.set(key);
+      this.sessionSortDirection.set('asc');
+    }
+    this.sessionPage.set(1);
+  }
+
+  sessionSortIcon(key: SessionSortKey): string {
+    return this.sessionSortKey() !== key ? 'unfold_more' : this.sessionSortDirection() === 'asc' ? 'arrow_upward' : 'arrow_downward';
+  }
+
+  setSessionPage(page: number): void {
+    this.sessionPage.set(Math.min(Math.max(1, page), this.sessionPageCount()));
+  }
+
+  setSessionPageSize(value: string): void {
+    this.sessionPageSize.set(Number(value) || 10);
+    this.sessionPage.set(1);
   }
 
   addExcludedSessionDate(): void {
@@ -2559,58 +3116,34 @@ export class PrimarySchoolComponent {
       return;
     }
 
-    const excludedDates = new Set(this.excludedSessionDates());
-    const holidays = new Set(this.schoolHolidays.map((holiday) => holiday.date));
-    const existingIds = new Set(this.sessions().map((session) => session.id));
-    const generated: SchoolSession[] = [];
-    const dayKeys: Partial<Record<number, TimetableDay>> = {
-      1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday', 5: 'friday', 6: 'saturday',
-    };
-
-    for (let cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
-      const date = this.toIsoDate(cursor);
-      const day = dayKeys[cursor.getDay()];
-      if (!day || excludedDates.has(date) || (!includeHolidays && holidays.has(date))) {
-        continue;
-      }
-
-      this.timetableRows().forEach((row) => {
-        const cell = row.cells[day];
-        if (!cell.subject || cell.subject === 'Pause') {
-          return;
-        }
-        const id = `session-${this.selectedClassId()}-${date}-${row.id}`;
-        if (existingIds.has(id)) {
-          return;
-        }
-        existingIds.add(id);
-        generated.push({
-          id,
-          classId: this.selectedClassId(),
-          roomId: this.selectedRoomId(),
-          date,
-          startTime: row.startTime,
-          endTime: row.endTime,
-          subject: cell.subject,
-          teacherId: cell.teacherId,
-          status: 'Planifiée',
-          description: '',
-          lessonTitle: '',
-          programUnit: this.programUnitForSubject(cell.subject),
-          programProgress: this.programProgressForSubject(cell.subject),
-        });
-      });
+    const context = this.pedagogyContext();
+    const classeId = this.selectedClassId();
+    if (!context || !classeId) {
+      this.snackBar.error('Sélectionnez une classe avant de générer les séances.');
+      return;
     }
-
-    this.sessions.update((sessions) => [...sessions, ...generated]);
-    this.sessionGeneratorOpen.set(false);
-    this.snackBar.open(
-      generated.length
-        ? `${generated.length} séances ont été générées depuis l’emploi du temps.`
-        : 'Aucune nouvelle séance à générer pour cette période.',
-      'Fermer',
-      { duration: 3200, verticalPosition: 'bottom', horizontalPosition: 'center' },
-    );
+    const datesExclues = [
+      ...this.excludedSessionDates(),
+      ...(!includeHolidays ? this.schoolHolidays.map((holiday) => holiday.date) : []),
+    ].filter((date, index, dates) => dates.indexOf(date) === index);
+    this.sessionsLoading.set(true);
+    this.centralApi.genererSeancesEtablissement(classeId, {
+      ...context,
+      date_debut: startDate,
+      date_fin: endDate,
+      dates_exclues: datesExclues,
+    }).subscribe({
+      next: (resultat) => {
+        this.sessionsLoading.set(false);
+        this.appliquerSeancesBackend(resultat.data);
+        this.sessionGeneratorOpen.set(false);
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => {
+        this.sessionsLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'Les séances n’ont pas pu être générées.');
+      },
+    });
   }
 
   openSession(session: SchoolSession): void {
@@ -2678,7 +3211,7 @@ export class PrimarySchoolComponent {
   }
 
   sessionRoomName(session: SchoolSession): string {
-    return this.rooms.find((room) => room.id === session.roomId)?.name ?? 'Salle non affectée';
+    return this.rooms().find((room) => room.id === session.roomId)?.name ?? 'Salle non affectée';
   }
 
   sessionStatusClass(status: SessionStatus): string {
@@ -2695,6 +3228,7 @@ export class PrimarySchoolComponent {
 
   openTimetableBuilder(): void {
     this.timetableDraftRows = this.cloneTimetableRows(this.timetableRows());
+    this.timetableTeacherAssignments = this.affectationsEnseignantsDepuisEmploiTemps(this.timetableDraftRows);
     this.activeView.set('timetable-builder');
   }
 
@@ -2706,7 +3240,44 @@ export class PrimarySchoolComponent {
     row.cells[day].subject = subject;
     if (subject === 'Pause' || !subject) {
       row.cells[day].teacherId = null;
+      row.cells[day].roomId = null;
+      return;
     }
+    this.timetableTeacherAssignments[subject] ??= null;
+    row.cells[day].teacherId = this.timetableTeacherAssignments[subject];
+    if (!this.isCollege()) row.cells[day].roomId = this.selectedRoomId();
+  }
+
+  timetableSelectedSubjects(): PrimarySubject[] {
+    const selectedNames = new Set<string>();
+    this.timetableDraftRows.forEach((row) => {
+      this.timetableDays.forEach((day) => {
+        const subject = row.cells[day.key].subject;
+        if (subject && subject !== 'Pause') selectedNames.add(subject);
+      });
+    });
+    return this.assignedCurriculumSubjects().filter((subject) => selectedNames.has(subject.name));
+  }
+
+  timetableTeacherId(subjectName: string): number | null {
+    return this.timetableTeacherAssignments[subjectName] ?? null;
+  }
+
+  assignTimetableTeacher(subjectName: string, teacherId: string | number | null): void {
+    const normalizedTeacherId = teacherId === null || teacherId === ''
+      ? null
+      : Number(teacherId);
+    this.timetableTeacherAssignments = {
+      ...this.timetableTeacherAssignments,
+      [subjectName]: normalizedTeacherId,
+    };
+    this.timetableDraftRows.forEach((row) => {
+      this.timetableDays.forEach((day) => {
+        if (row.cells[day.key].subject === subjectName) {
+          row.cells[day.key].teacherId = normalizedTeacherId;
+        }
+      });
+    });
   }
 
   addTimetableRow(): void {
@@ -2719,12 +3290,79 @@ export class PrimarySchoolComponent {
   }
 
   saveTimetable(): void {
-    this.timetableRows.set(this.cloneTimetableRows(this.timetableDraftRows));
-    this.activeView.set('timetable');
-    this.snackBar.open('L’emploi du temps a été enregistré.', 'Fermer', {
-      duration: 3000,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    const context = this.pedagogyContext();
+    const classroom = this.selectedClass();
+    const salleId = this.selectedRoomId();
+    if (!context || !classroom) {
+      this.snackBar.error('Sélectionnez une classe avant d’enregistrer l’emploi du temps.');
+      return;
+    }
+    if (!this.isCollege() && !salleId) {
+      this.snackBar.error('Ajoutez puis sélectionnez une salle disponible pour ce campus.');
+      return;
+    }
+    const jours: Record<TimetableDay, number> = {
+      monday: 1,
+      tuesday: 2,
+      wednesday: 3,
+      thursday: 4,
+      friday: 5,
+      saturday: 6,
+    };
+    const matiereNonConfiguree = this.timetableDraftRows.some((row) => this.timetableDays.some((day) => {
+      const subject = row.cells[day.key].subject;
+      return Boolean(subject && subject !== 'Pause' && typeof this.subjects().find((item) => item.name === subject)?.id !== 'string');
+    }));
+    if (matiereNonConfiguree) {
+      this.snackBar.error('Configurez d’abord les matières de cette classe avant de créer son emploi du temps.');
+      return;
+    }
+    const matieresSansEnseignant = this.timetableSelectedSubjects()
+      .filter((subject) => !this.timetableTeacherId(subject.name));
+    if (matieresSansEnseignant.length) {
+      this.snackBar.error('Affectez un enseignant à chaque matière utilisée dans l’emploi du temps.');
+      return;
+    }
+    const celluleSansSalle = this.isCollege() && this.timetableDraftRows.some((row) => this.timetableDays.some((day) => {
+      const cellule = row.cells[day.key];
+      return Boolean(cellule.subject && cellule.subject !== 'Pause' && !cellule.roomId);
+    }));
+    if (celluleSansSalle) {
+      this.snackBar.error('Choisissez une salle pour chaque créneau de cours du collège.');
+      return;
+    }
+    const creneaux = this.timetableDraftRows.map((row) => ({
+      heure_debut: row.startTime,
+      heure_fin: row.endTime,
+      cellules: this.timetableDays.map((day) => {
+        const cell = row.cells[day.key];
+        const subject = this.subjects().find((item) => item.name === cell.subject);
+        const teacher = this.teachers().find((item) => item.id === this.timetableTeacherId(cell.subject));
+        return {
+          jour_semaine: jours[day.key],
+          est_pause: cell.subject === 'Pause',
+          matiere_id: cell.subject && cell.subject !== 'Pause' && typeof subject?.id === 'string' ? subject.id : null,
+          enseignant_id: cell.subject && cell.subject !== 'Pause' ? teacher?.teachingBackendId ?? null : null,
+          salle_id: cell.subject && cell.subject !== 'Pause' ? (this.isCollege() ? cell.roomId : salleId) : null,
+        };
+      }),
+    }));
+    this.timetableLoading.set(true);
+    this.centralApi.enregistrerEmploiTempsEtablissement(String(classroom.id), {
+      ...context,
+      salle_id: this.isCollege() ? null : salleId,
+      creneaux,
+    }).subscribe({
+      next: (resultat) => {
+        this.timetableLoading.set(false);
+        this.appliquerEmploiTempsBackend(resultat.data);
+        this.activeView.set('timetable');
+        this.snackBar.success(resultat.message ?? 'L’emploi du temps annuel a été enregistré.');
+      },
+      error: (response) => {
+        this.timetableLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'L’emploi du temps n’a pas pu être enregistré.');
+      },
     });
   }
 
@@ -2745,8 +3383,13 @@ export class PrimarySchoolComponent {
     );
   }
 
+  roomNameById(roomId: string | null): string {
+    return this.rooms().find((room) => room.id === roomId)?.name ?? 'Salle non affectée';
+  }
+
   startStudentRegistration(): void {
     this.studentForm = this.createEmptyStudentForm();
+    this.studentAttachmentFiles = [];
     this.activeView.set('registrations');
   }
 
@@ -2836,6 +3479,7 @@ export class PrimarySchoolComponent {
   }
 
   private loadStudentForm(student: Student): void {
+    this.studentAttachmentFiles = [];
     const names = this.splitStudentName(student.name);
     const guardianNames = this.splitStudentName(student.parentName ?? '');
     this.studentForm = {
@@ -2868,36 +3512,199 @@ export class PrimarySchoolComponent {
   }
 
   deleteStudent(student: Student): void {
-    if (!confirm(`Supprimer le dossier de ${student.name} ?`)) {
-      return;
-    }
-    this.students.update((items) => items.filter((item) => item.id !== student.id));
-    this.snackBar.open('Le dossier élève a été supprimé.', 'Fermer', {
-      duration: 2500,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    this.requestConfirmation({
+      title: 'Supprimer ce dossier élève ?',
+      message: `Le dossier de ${student.name} sera définitivement supprimé.`,
+      confirmLabel: 'Supprimer le dossier',
+      icon: 'delete_outline',
+    }, () => {
+      this.students.update((items) => items.filter((item) => item.id !== student.id));
+      this.snackBar.open('Le dossier élève a été supprimé.', 'Fermer', {
+        duration: 2500,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'center',
+      });
     });
   }
 
   deleteStudents(students: Student[]): void {
-    if (!students.length || !confirm(`Supprimer les ${students.length} dossiers sélectionnés ?`)) {
-      return;
-    }
-    const ids = new Set(students.map((student) => student.id));
-    this.students.update((items) => items.filter((item) => !ids.has(item.id)));
-    this.snackBar.open(`${students.length} dossiers élèves supprimés.`, 'Fermer', {
-      duration: 2500,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    if (!students.length) return;
+    this.requestConfirmation({
+      title: 'Supprimer les dossiers sélectionnés ?',
+      message: `${students.length} dossiers élèves seront définitivement supprimés.`,
+      confirmLabel: `Supprimer les ${students.length} dossiers`,
+      icon: 'delete_outline',
+    }, () => {
+      const ids = new Set(students.map((student) => student.id));
+      this.students.update((items) => items.filter((item) => !ids.has(item.id)));
+      this.snackBar.open(`${students.length} dossiers élèves supprimés.`, 'Fermer', {
+        duration: 2500,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'center',
+      });
     });
   }
 
   refreshStudents(): void {
-    this.studentDataSource.data = [...this.studentDataSource.data];
+    this.centralApi.invaliderCache('institut:dossiers:');
+    this.chargerDossiers(this.workspace.establishmentType(), this.selectedCampusId(), true);
   }
 
   refreshGuardians(): void {
-    this.guardianDataSource.data = [...this.guardianDataSource.data];
+    this.centralApi.invaliderCache('institut:dossiers:');
+    this.chargerDossiers(this.workspace.establishmentType(), this.selectedCampusId(), true);
+  }
+
+  private chargerDossiers(typeEtablissement: string, campusId: string, notifier = false): void {
+    const typeApi = typeEtablissement === 'primary' ? 'primaire' : typeEtablissement;
+    const cle = `${typeApi}:${campusId}`;
+    this.dossiersRequestKey = cle;
+    this.dossiersLoading.set(true);
+    this.centralApi.dossiersEtablissement(typeApi, campusId).subscribe({
+      next: (dossiers) => {
+        if (this.dossiersRequestKey !== cle) {
+          return;
+        }
+        this.appliquerDossiersApi(dossiers, campusId);
+        this.dossiersLoading.set(false);
+        if (notifier) {
+          this.snackBar.open('Les dossiers ont été réactualisés depuis la base de données.', 'Fermer', { duration: 2800 });
+        }
+      },
+      error: (response) => {
+        if (this.dossiersRequestKey === cle) this.dossiersLoading.set(false);
+        if (notifier) {
+          this.snackBar.open(response.error?.message ?? 'Impossible de réactualiser les dossiers.', 'Fermer', { duration: 3800 });
+        }
+      },
+    });
+  }
+
+  private appliquerDossiersApi(dossiers: DossiersEtablissementApi, campusId: string): void {
+    const tuteurIds = new Map<string, number>();
+    const tuteurs = dossiers.tuteurs.map((tuteur, index): Guardian => {
+      const id = index + 1;
+      tuteurIds.set(tuteur.id, id);
+      return {
+        id,
+        backendId: tuteur.id,
+        campusId,
+        firstName: tuteur.prenom,
+        lastName: tuteur.nom,
+        name: `${tuteur.prenom} ${tuteur.nom}`.trim(),
+        profession: tuteur.profession ?? '',
+        phone: tuteur.telephone ?? '',
+        secondaryPhone: tuteur.telephone_secondaire ?? '',
+        email: tuteur.email ?? '',
+        address: tuteur.adresse ?? '',
+        childrenCount: Number(tuteur.nombre_enfants ?? 0),
+        accountStatus: this.statutComptePortail(tuteur.statut_compte),
+      };
+    });
+    this.guardians.set(tuteurs);
+
+    this.students.set(dossiers.eleves.map((eleve, index): Student => {
+      const tuteur = eleve.tuteur;
+      return {
+        id: index + 1,
+        backendId: eleve.id,
+        campusId,
+        classId: eleve.classe_id ?? '',
+        matricule: eleve.matricule,
+        name: `${eleve.prenom} ${eleve.nom}`.trim(),
+        gender: eleve.sexe === 'F' ? 'F' : 'M',
+        birthDate: this.toDisplayDate(eleve.date_naissance ?? ''),
+        birthPlace: eleve.lieu_naissance ?? '',
+        nationality: eleve.nationalite ?? '',
+        guardianId: tuteur ? tuteurIds.get(tuteur.id) : undefined,
+        parentName: tuteur ? `${tuteur.prenom} ${tuteur.nom}`.trim() : '',
+        parentFirstName: tuteur?.prenom ?? '',
+        parentLastName: tuteur?.nom ?? '',
+        parentRelationship: tuteur?.lien_parente ?? '',
+        parentProfession: tuteur?.profession ?? '',
+        parentPhone: tuteur?.telephone ?? '',
+        secondaryPhone: tuteur?.telephone_secondaire ?? '',
+        email: tuteur?.email ?? '',
+        address: eleve.adresse ?? tuteur?.adresse ?? '',
+        bloodGroup: eleve.groupe_sanguin ?? '',
+        medicalNotes: eleve.notes_medicales ?? '',
+        regime: eleve.regime ?? 'Externe',
+        transport: Boolean(eleve.transport),
+        canteen: Boolean(eleve.cantine),
+        status: tuteur ? 'Actif' : 'En attente',
+        attachments: [...(eleve.pieces_jointes ?? [])],
+        portalAccount: this.statutComptePortail(tuteur?.statut_compte),
+      };
+    }));
+
+    this.teachers.set(dossiers.enseignants.map((personne, index) =>
+      this.mapperEnseignantApi(personne, campusId, index + 1),
+    ));
+    this.schoolStaff.set(dossiers.personnels.map((personne, index) =>
+      this.mapperPersonnelApi(personne, campusId, index + 1),
+    ));
+  }
+
+  private mapperEnseignantApi(personne: PersonnelEtablissementApi, campusId: string, id: number): Teacher {
+    return {
+      id,
+      backendId: personne.id,
+      teachingBackendId: personne.enseignant_id ?? undefined,
+      campusId,
+      matricule: personne.matricule,
+      name: `${personne.prenom} ${personne.nom}`.trim(),
+      gender: personne.sexe === 'F' ? 'F' : 'M',
+      email: personne.email ?? '',
+      phone: personne.telephone ?? '',
+      subject: personne.specialite ?? '',
+      degree: personne.diplome ?? '',
+      hireDate: this.toDisplayDate(personne.date_embauche ?? ''),
+      status: personne.statut === 'conge' ? 'En congé' : 'Actif',
+      contractType: personne.type_contrat ?? '',
+      address: personne.adresse ?? '',
+      birthDate: this.toDisplayDate(personne.date_naissance ?? ''),
+      birthPlace: personne.lieu_naissance ?? '',
+      emergencyContact: personne.contact_urgence_nom ?? '',
+      emergencyPhone: personne.contact_urgence_telephone ?? '',
+      experience: personne.experience_annees === null || personne.experience_annees === undefined ? '' : String(personne.experience_annees),
+      salary: personne.montant_mensuel === null || personne.montant_mensuel === undefined ? '' : String(personne.montant_mensuel),
+      hourlyRate: personne.montant_heure === null || personne.montant_heure === undefined ? '' : String(personne.montant_heure),
+      salaryMode: personne.type_remuneration === 'horaire' ? 'Horaire' : 'Mensuel',
+      attachments: [...(personne.pieces_jointes ?? [])],
+      portalAccount: this.statutComptePortail(personne.statut_compte),
+    };
+  }
+
+  private mapperPersonnelApi(personne: PersonnelEtablissementApi, campusId: string, id: number): SchoolStaff {
+    return {
+      id,
+      backendId: personne.id,
+      campusId,
+      matricule: personne.matricule,
+      name: `${personne.prenom} ${personne.nom}`.trim(),
+      gender: personne.sexe === 'F' ? 'F' : 'M',
+      email: personne.email ?? '',
+      phone: personne.telephone ?? '',
+      function: personne.fonction ?? '',
+      birthDate: this.toDisplayDate(personne.date_naissance ?? ''),
+      birthPlace: personne.lieu_naissance ?? '',
+      address: personne.adresse ?? '',
+      hireDate: this.toDisplayDate(personne.date_embauche ?? ''),
+      contractType: personne.type_contrat ?? '',
+      status: personne.statut === 'suspendu' ? 'Suspendu' : personne.statut === 'conge' ? 'En congé' : 'Actif',
+      salary: personne.montant_mensuel === null || personne.montant_mensuel === undefined ? '' : String(personne.montant_mensuel),
+      hourlyRate: '',
+      emergencyContact: personne.contact_urgence_nom ?? '',
+      emergencyPhone: personne.contact_urgence_telephone ?? '',
+      attachments: [...(personne.pieces_jointes ?? [])],
+      portalAccount: this.statutComptePortail(personne.statut_compte),
+    };
+  }
+
+  private statutComptePortail(statut?: string | null): PortalAccountStatus {
+    if (statut === 'actif') return 'Actif';
+    if (statut === 'inactif' || statut === 'suspendu') return 'Désactivé';
+    return 'Non créé';
   }
 
   private loadGuardianForm(guardian: Guardian): void {
@@ -2924,29 +3731,39 @@ export class PrimarySchoolComponent {
       this.snackBar.open('Renseignez le prénom, le nom et le téléphone du tuteur.', 'Fermer', { duration: 3000 });
       return;
     }
-    this.guardians.update((items) => items.map((guardian) => guardian.id !== guardianId ? guardian : {
-      ...guardian,
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
-      profession: form.profession.trim(),
-      phone: form.phone.trim(),
-      secondaryPhone: form.secondaryPhone.trim(),
-      email: form.email.trim(),
-      address: form.address.trim(),
-    }));
-    this.students.update((items) => items.map((student) => student.guardianId !== guardianId ? student : {
-      ...student,
-      parentName: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
-      parentFirstName: form.firstName.trim(),
-      parentLastName: form.lastName.trim(),
-      parentProfession: form.profession.trim(),
-      parentPhone: form.phone.trim(),
-      secondaryPhone: form.secondaryPhone.trim(),
-      email: form.email.trim(),
-      address: form.address.trim(),
-    }));
-    this.snackBar.open('Le dossier tuteur a été mis à jour.', 'Fermer', { duration: 2800 });
+    const tuteur = this.guardians().find((item) => item.id === guardianId);
+    if (!tuteur?.backendId) {
+      this.snackBar.open('Ce dossier tuteur doit être rechargé depuis la base de données.', 'Fermer', { duration: 3200 });
+      return;
+    }
+    if (this.dossierSaving()) return;
+    this.dossierSaving.set(true);
+    this.centralApi.enregistrerTuteurEtablissement(tuteur.backendId, {
+      type_etablissement: this.codeTypeEtablissementApi(),
+      campus_id: this.selectedCampusId(),
+      prenom: form.firstName.trim(),
+      nom: form.lastName.trim(),
+      profession: form.profession.trim() || null,
+      telephone: form.phone.trim(),
+      telephone_secondaire: form.secondaryPhone.trim() || null,
+      email: form.email.trim() || null,
+      adresse: form.address.trim() || null,
+    }).subscribe({
+      next: (resultat) => {
+        this.dossierSaving.set(false);
+        this.appliquerDossiersApi(resultat, this.selectedCampusId());
+        const actualise = this.guardians().find((item) => item.backendId === tuteur.backendId);
+        if (actualise) {
+          this.selectedGuardianId.set(actualise.id);
+          this.loadGuardianForm(actualise);
+        }
+        this.snackBar.open(resultat.message, 'Fermer', { duration: 2800 });
+      },
+      error: (response) => {
+        this.dossierSaving.set(false);
+        this.snackBar.open(response.error?.message ?? 'La mise à jour du tuteur a échoué.', 'Fermer', { duration: 3800 });
+      },
+    });
   }
 
   setGuardianAccountStatus(status: PortalAccountStatus): void {
@@ -2961,131 +3778,84 @@ export class PrimarySchoolComponent {
 
   saveStudent(): void {
     const form = this.studentForm;
-    let guardian = form.guardianMode === 'existing'
+    const eleveExistant = form.id === null ? undefined : this.students().find((item) => item.id === form.id);
+    const tuteurExistant = form.guardianMode === 'existing'
       ? this.guardians().find((item) => item.id === Number(form.guardianId))
       : undefined;
-
-    if (guardian) {
-      const updatedGuardian: Guardian = {
-        ...guardian,
-        firstName: form.parentFirstName.trim(),
-        lastName: form.parentLastName.trim(),
-        name: `${form.parentFirstName.trim()} ${form.parentLastName.trim()}`.trim(),
-        profession: form.parentProfession.trim(),
-        phone: form.parentPhone.trim(),
-        secondaryPhone: form.secondaryPhone.trim(),
-        email: form.email.trim(),
-        address: form.address.trim(),
-      };
-      this.guardians.update((items) =>
-        items.map((item) => item.id === updatedGuardian.id ? updatedGuardian : item),
-      );
-      guardian = updatedGuardian;
+    if (form.guardianMode === 'existing' && !tuteurExistant?.backendId) {
+      this.snackBar.open('Sélectionnez un tuteur existant.', 'Fermer', { duration: 3000 });
+      return;
     }
-
-    if (!guardian) {
-      const guardianId = Math.max(...this.guardians().map((item) => item.id), 0) + 1;
-      guardian = {
-        id: guardianId,
-        campusId: this.selectedCampusId(),
-        firstName: form.parentFirstName.trim(),
-        lastName: form.parentLastName.trim(),
-        name: `${form.parentFirstName.trim()} ${form.parentLastName.trim()}`.trim(),
-        profession: form.parentProfession.trim(),
-        phone: form.parentPhone.trim(),
-        secondaryPhone: form.secondaryPhone.trim(),
-        email: form.email.trim(),
-        address: form.address.trim(),
-        childrenCount: 1,
-        accountStatus: form.email.trim() ? 'Invitation envoyée' : 'Non créé',
-      };
-      this.guardians.update((items) => [guardian as Guardian, ...items]);
-    }
-
-    const name = `${form.firstName.trim()} ${form.lastName.trim()}`.trim();
-    const nextId =
-      form.id ?? Math.max(...this.students().map((student) => student.id), 0) + 1;
-    const student: Student = {
-      id: nextId,
-      campusId: this.selectedCampusId(),
-      classId:
-        this.students().find((item) => item.id === form.id)?.classId ??
-        (this.selectedClassId() === 'unassigned' ? '' : this.selectedClassId()),
-      matricule:
-        form.matricule.trim() ||
-        `PRI-26${String(nextId + 46).padStart(4, '0')}`,
-      name,
-      gender: form.gender,
-      birthDate: this.toDisplayDate(form.birthDate),
-      guardianId: guardian.id,
-      parentPhone: guardian.phone,
-      parentName: guardian.name,
-      status: 'Actif',
-      birthPlace: form.birthPlace.trim(),
-      nationality: form.nationality.trim(),
-      parentRelationship: form.parentRelationship,
-      parentFirstName: guardian.firstName,
-      parentLastName: guardian.lastName,
-      parentProfession: guardian.profession,
-      secondaryPhone: guardian.secondaryPhone,
-      email: guardian.email,
-      address: guardian.address,
-      bloodGroup: form.bloodGroup,
-      medicalNotes: form.medicalNotes.trim(),
-      regime: form.regime,
+    if (this.dossierSaving()) return;
+    this.dossierSaving.set(true);
+    const conserverDetail = this.activeView() === 'student-detail';
+    const donneesEleve: Record<string, unknown> = {
+      type_etablissement: this.codeTypeEtablissementApi(),
+      campus_id: this.selectedCampusId(),
+      id: eleveExistant?.backendId ?? null,
+      matricule: form.matricule.trim() || null,
+      prenom: form.firstName.trim(),
+      nom: form.lastName.trim(),
+      sexe: form.gender,
+      date_naissance: form.birthDate || null,
+      lieu_naissance: form.birthPlace.trim() || null,
+      nationalite: form.nationality.trim() || null,
+      adresse: form.address.trim() || null,
+      groupe_sanguin: form.bloodGroup || null,
+      notes_medicales: form.medicalNotes.trim() || null,
+      regime: form.regime || null,
       transport: form.transport,
-      canteen: form.canteen,
-      attachments: [...form.attachments],
-      portalAccount: guardian.accountStatus,
+      cantine: form.canteen,
+      documents_conserves: [...form.attachments],
+      tuteur: {
+        mode: form.guardianMode === 'existing' ? 'existant' : 'nouveau',
+        id: tuteurExistant?.backendId ?? null,
+        prenom: form.parentFirstName.trim(),
+        nom: form.parentLastName.trim(),
+        lien_parente: form.parentRelationship || null,
+        profession: form.parentProfession.trim() || null,
+        telephone: form.parentPhone.trim(),
+        telephone_secondaire: form.secondaryPhone.trim() || null,
+        email: form.email.trim() || null,
+        adresse: form.address.trim() || null,
+      },
     };
-
-    this.students.update((items) => {
-      const existingIndex = items.findIndex((item) => item.id === nextId);
-      if (existingIndex === -1) {
-        return [student, ...items];
-      }
-      return items.map((item) => (item.id === nextId ? student : item));
+    this.centralApi.enregistrerEleveEtablissement(
+      this.avecPiecesJointes(donneesEleve, this.studentAttachmentFiles),
+    ).subscribe({
+      next: (resultat) => {
+        this.dossierSaving.set(false);
+        this.appliquerDossiersApi(resultat, this.selectedCampusId());
+        const eleve = this.students().find((item) => item.backendId === resultat.eleve_id);
+        if (conserverDetail && eleve) {
+          this.selectedStudentId.set(eleve.id);
+          this.loadStudentForm(eleve);
+          this.studentRecordTab.set('identity');
+          this.activeView.set('student-detail');
+        } else {
+          this.activeView.set('students');
+        }
+        this.snackBar.open(resultat.message, 'Fermer', { duration: 3000, verticalPosition: 'bottom', horizontalPosition: 'center' });
+      },
+      error: (response) => {
+        this.dossierSaving.set(false);
+        this.snackBar.open(response.error?.message ?? 'L’enregistrement du dossier élève a échoué.', 'Fermer', { duration: 4000 });
+      },
     });
-    this.attendance.update((state) => ({ ...state, [nextId]: state[nextId] ?? 'P' }));
-    const gradeBookKey = this.subjectGradeBookKey();
-    this.subjectGrades.update((gradeBooks) => ({
-      ...gradeBooks,
-      [gradeBookKey]: {
-        ...(gradeBooks[gradeBookKey] ?? {}),
-        [nextId]: gradeBooks[gradeBookKey]?.[nextId] ?? {
-          homework1: null,
-          homework2: null,
-          composition: null,
-        },
-      },
-    }));
-    this.activeView.set('students');
-    this.snackBar.open(
-      form.id
-        ? 'Le dossier élève a été mis à jour.'
-        : 'Le dossier élève a été créé avec succès.',
-      'Fermer',
-      {
-        duration: 3000,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'center',
-      },
-    );
   }
 
   saveStudentRecord(): void {
-    const studentId = this.studentForm.id;
     this.saveStudent();
-    if (studentId !== null) {
-      this.selectedStudentId.set(studentId);
-      this.studentRecordTab.set('identity');
-      this.activeView.set('student-detail');
-    }
   }
 
   onStudentFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const names = Array.from(input.files ?? []).map((file) => file.name);
+    const files = Array.from(input.files ?? []);
+    const names = files.map((file) => file.name);
+    this.studentAttachmentFiles = [
+      ...this.studentAttachmentFiles.filter((file) => !names.includes(file.name)),
+      ...files,
+    ];
     this.studentForm.attachments = [
       ...new Set([...this.studentForm.attachments, ...names]),
     ];
@@ -3093,6 +3863,7 @@ export class PrimarySchoolComponent {
   }
 
   removeStudentAttachment(name: string): void {
+    this.studentAttachmentFiles = this.studentAttachmentFiles.filter((file) => file.name !== name);
     this.studentForm.attachments = this.studentForm.attachments.filter(
       (attachment) => attachment !== name,
     );
@@ -3127,29 +3898,432 @@ export class PrimarySchoolComponent {
       this.snackBar.open('Sélectionnez la série de la classe.', 'Fermer', { duration: 2800 });
       return;
     }
-    const id =
-      form.id ??
-      `${form.level}-${form.name}-${this.selectedCampusId()}-${Date.now()}`
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-');
-    const existingClassroom = this.classes().find((item) => item.id === id);
-    const classroom: PrimaryClass = {
-      id,
-      campusId: this.selectedCampusId(),
-      level: form.level,
-      name: form.name.trim(),
-      enrolled: existingClassroom?.enrolled ?? 0,
-      registrationFee: form.registrationFee,
-      monthlyFee: form.monthlyFee,
-      seriesId: this.isHighSchool() ? form.seriesId : null,
+    const payload: ClasseEtablissementPayload = {
+      id: form.id,
+      niveau: form.level.trim(),
+      nom: form.name.trim(),
+      frais_inscription: Number(form.registrationFee),
+      mensualite: Number(form.monthlyFee),
+      serie: this.isHighSchool() ? form.seriesId : null,
     };
+    this.sauvegarderClassesBackend([payload], form.id ? 'La classe a été mise à jour.' : 'La classe a été créée.', () => {
+      this.classEditorOpen.set(false);
+    });
+  }
 
-    this.classes.update((items) =>
-      items.some((item) => item.id === id)
-        ? items.map((item) => (item.id === id ? classroom : item))
-        : [classroom, ...items],
+  availableClassLevels(): string[] {
+    return this.schoolLevelSettings.map((level) => level.code);
+  }
+
+  /**
+   * Prépare les classes habituelles d'un cycle, à partir des niveaux définis
+   * dans les paramètres. Les valeurs déjà présentes dans le registre du
+   * campus sont reprises et restent modifiables avant l'enregistrement.
+   */
+  preparerPropositionsClasses(force = false): void {
+    const campusId = this.selectedCampusId();
+    if (!force && this.classProposalsCampusId() === campusId) {
+      return;
+    }
+
+    const classesDuCampus = this.classes().filter((item) => item.campusId === campusId);
+    this.classProposals.set(
+      this.definitionsClassesParDefaut().map((definition, index) => {
+        const existante = classesDuCampus.find((classe) =>
+          classe.level === definition.level
+          && (!this.isHighSchool() || classe.seriesId === definition.seriesId),
+        );
+
+        return {
+          key: 'proposition-' + campusId + '-' + definition.level + '-' + (definition.seriesId || 'general') + '-' + index,
+          classId: existante?.id ?? null,
+          enabled: true,
+          level: definition.level,
+          name: existante?.name ?? definition.name,
+          registrationFee: existante?.registrationFee ?? definition.registrationFee,
+          monthlyFee: existante?.monthlyFee ?? definition.monthlyFee,
+          seriesId: existante?.seriesId ?? definition.seriesId,
+        };
+      }),
     );
-    if (!this.classFeeConfigurations().some((configuration) => configuration.classId === id)) {
+    this.classProposalsCampusId.set(campusId);
+    this.classProposalsSaved.set(false);
+  }
+
+  updateClassProposal(
+    key: string,
+    field: 'enabled' | 'level' | 'name' | 'registrationFee' | 'monthlyFee' | 'seriesId',
+    value: string | boolean,
+  ): void {
+    this.classProposals.update((proposals) =>
+      proposals.map((proposal) =>
+        proposal.key === key ? { ...proposal, [field]: value } : proposal,
+      ),
+    );
+    this.classProposalsSaved.set(false);
+  }
+
+  enregistrerPropositionsClasses(): void {
+    const propositions = this.classProposals().filter((proposal) => proposal.enabled);
+    if (!propositions.length) {
+      this.snackBar.open('Sélectionnez au moins une classe à enregistrer.', 'Fermer', { duration: 2800 });
+      return;
+    }
+
+    const invalide = propositions.some((proposal) =>
+      !proposal.level.trim()
+      || !proposal.name.trim()
+      || Number(proposal.registrationFee) < 0
+      || Number(proposal.monthlyFee) < 0
+      || !Number.isFinite(Number(proposal.registrationFee))
+      || !Number.isFinite(Number(proposal.monthlyFee))
+      || (this.isHighSchool() && !proposal.seriesId),
+    );
+    if (invalide) {
+      this.snackBar.open(
+        this.isHighSchool()
+          ? 'Vérifiez le niveau, la série, le nom et les tarifs proposés.'
+          : 'Vérifiez le niveau, le nom et les tarifs proposés.',
+        'Fermer',
+        { duration: 3200 },
+      );
+      return;
+    }
+
+    const cles = new Set<string>();
+    const doublon = propositions.some((proposal) => {
+      const cle = proposal.level.trim().toLowerCase() + '::' + proposal.name.trim().toLowerCase() + '::' + proposal.seriesId;
+      if (cles.has(cle)) {
+        return true;
+      }
+      cles.add(cle);
+      return false;
+    });
+    if (doublon) {
+      this.snackBar.open('Chaque classe proposée doit avoir un nom distinct.', 'Fermer', { duration: 2800 });
+      return;
+    }
+
+    const payload = propositions.map((proposal): ClasseEtablissementPayload => ({
+      id: proposal.classId,
+      niveau: proposal.level.trim(),
+      nom: proposal.name.trim(),
+      frais_inscription: Number(proposal.registrationFee),
+      mensualite: Number(proposal.monthlyFee),
+      serie: this.isHighSchool() ? proposal.seriesId : null,
+    }));
+    this.sauvegarderClassesBackend(
+      payload,
+      String(payload.length) + ' classe(s) enregistrée(s) dans la base de données.',
+      () => this.classProposalsSaved.set(true),
+    );
+  }
+
+  private sauvegarderClassesBackend(
+    classes: ClasseEtablissementPayload[],
+    message: string,
+    apresSucces?: () => void,
+  ): void {
+    const anneeId = this.selectedCentralAcademicYearId();
+    if (!anneeId) {
+      this.snackBar.open('Configurez d’abord l’année scolaire dans Paramètres.', 'Fermer', { duration: 3200 });
+      return;
+    }
+    this.classesSaving.set(true);
+    this.centralApi.enregistrerClassesEtablissement(
+      this.codeTypeEtablissementApi(),
+      this.selectedCampusId(),
+      anneeId,
+      classes,
+    ).subscribe({
+      next: ({ data }) => {
+        this.appliquerClassesBackend(data);
+        this.classesSaving.set(false);
+        apresSucces?.();
+        this.snackBar.open(message, 'Fermer', {
+          duration: 3200,
+          verticalPosition: 'bottom',
+          horizontalPosition: 'center',
+        });
+      },
+      error: (response) => {
+        this.classesSaving.set(false);
+        this.snackBar.open(
+          response.error?.message ?? 'Les classes n’ont pas pu être enregistrées dans la base de données.',
+          'Fermer',
+          { duration: 4200 },
+        );
+      },
+    });
+  }
+
+  private chargerClasses(afficherErreur = false): void {
+    const anneeId = this.selectedCentralAcademicYearId();
+    const campusId = this.selectedCampusId();
+    if (!anneeId || !campusId) return;
+
+    this.classesLoading.set(true);
+    this.centralApi.classesEtablissement(this.codeTypeEtablissementApi(), campusId, anneeId).subscribe({
+      next: ({ data }) => {
+        this.appliquerClassesBackend(data);
+        this.classesLoading.set(false);
+        if (!data.length) this.preparerPropositionsClasses(true);
+      },
+      error: (response) => {
+        this.classesLoading.set(false);
+        if (afficherErreur) {
+          this.snackBar.open(
+            response.error?.message ?? 'Impossible de réactualiser les classes.',
+            'Fermer',
+            { duration: 3500 },
+          );
+        }
+      },
+    });
+  }
+
+  private chargerSalles(campusId: string): void {
+    this.roomsLoading.set(true);
+    this.centralApi.sallesInstitut(campusId).subscribe({
+      next: ({ data }) => {
+        const autresCampus = this.rooms().filter((room) => room.campusId !== campusId);
+        const sallesCampus = data
+          .filter((salle) => salle.statut === 'disponible')
+          .map((salle): SchoolRoom => ({
+            id: salle.id,
+            campusId: salle.campus_id,
+            name: salle.nom,
+          }));
+        this.rooms.set([...autresCampus, ...sallesCampus]);
+        if (!sallesCampus.some((room) => room.id === this.selectedRoomId())) {
+          this.selectedRoomId.set(sallesCampus[0]?.id ?? '');
+        }
+        this.roomsLoading.set(false);
+      },
+      error: () => this.roomsLoading.set(false),
+    });
+  }
+
+  private chargerEmploiTemps(force = false): void {
+    const context = this.pedagogyContext();
+    const classeId = this.selectedClassId();
+    if (!context || !classeId) return;
+    const key = `${context['type_etablissement']}:${context['campus_id']}:${context['annee_scolaire_centrale_id']}:${classeId}`;
+    if (!force && this.emploiTempsRequestKey === key) return;
+    this.emploiTempsRequestKey = key;
+    this.timetableLoading.set(true);
+    this.centralApi.emploiTempsEtablissement(
+      context['type_etablissement'],
+      context['campus_id'],
+      context['annee_scolaire_centrale_id'],
+      classeId,
+    ).subscribe({
+      next: ({ data }) => {
+        if (this.emploiTempsRequestKey !== key) return;
+        this.timetableLoading.set(false);
+        this.appliquerEmploiTempsBackend(data);
+      },
+      error: (response) => {
+        if (this.emploiTempsRequestKey !== key) return;
+        this.emploiTempsRequestKey = '';
+        this.timetableLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'L’emploi du temps n’a pas pu être chargé.');
+      },
+    });
+  }
+
+  chargerSeances(force = false): void {
+    const context = this.pedagogyContext();
+    const classeId = this.selectedClassId();
+    if (!context || !classeId) return;
+    const key = `${context['type_etablissement']}:${context['campus_id']}:${context['annee_scolaire_centrale_id']}:${classeId}`;
+    if (!force && this.seancesRequestKey === key) return;
+    this.seancesRequestKey = key;
+    this.sessionsLoading.set(true);
+    this.centralApi.seancesEtablissement(
+      context['type_etablissement'],
+      context['campus_id'],
+      context['annee_scolaire_centrale_id'],
+      classeId,
+    ).subscribe({
+      next: ({ data }) => {
+        if (this.seancesRequestKey !== key) return;
+        this.sessionsLoading.set(false);
+        this.appliquerSeancesBackend(data);
+      },
+      error: (response) => {
+        if (this.seancesRequestKey !== key) return;
+        this.seancesRequestKey = '';
+        this.sessionsLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'Les séances n’ont pas pu être chargées.');
+      },
+    });
+  }
+
+  private chargerEvaluations(force = false): void {
+    const context = this.pedagogyContext();
+    const classeId = this.selectedClassId();
+    if (!context || !classeId) return;
+    const key = `${context['type_etablissement']}:${context['campus_id']}:${context['annee_scolaire_centrale_id']}:${classeId}`;
+    if (!force && this.evaluationsRequestKey === key) return;
+    this.evaluationsRequestKey = key;
+    this.assessmentsLoading.set(true);
+    this.centralApi.evaluationsEtablissement(context['type_etablissement'], context['campus_id'], context['annee_scolaire_centrale_id'], classeId).subscribe({
+      next: ({ data }) => {
+        if (this.evaluationsRequestKey !== key) return;
+        this.assessmentsLoading.set(false);
+        this.appliquerEvaluationsBackend(data);
+      },
+      error: (response) => {
+        if (this.evaluationsRequestKey !== key) return;
+        this.evaluationsRequestKey = '';
+        this.assessmentsLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'Les évaluations n’ont pas pu être chargées.');
+      },
+    });
+  }
+
+  private appliquerEvaluationsBackend(evaluations: EvaluationEtablissementApi[]): void {
+    const types: Record<string, AssessmentKind> = { devoir: 'Devoir', controle: 'Contrôle', essai: 'Essai', formative: 'Évaluation formative', composition: 'Composition' };
+    const statuts: Record<string, PrimaryAssessment['status']> = { brouillon: 'Brouillon', a_corriger: 'À corriger', corrigee: 'Corrigée' };
+    const primaryBooks: Record<string, Record<number, PrimaryEvaluationScores>> = {};
+    const mapped = evaluations.map((evaluation): PrimaryAssessment => {
+      const domainId = evaluation.domaine_evaluation ?? this.selectedEvaluationDomainId();
+      const componentId = evaluation.composante_evaluation ?? this.selectedEvaluationDomain().components[0]?.id ?? '';
+      const results = evaluation.resultats.map((result): AssessmentResult => {
+        const studentId = this.students().find((student) => student.backendId === result.eleve_id)?.id ?? -1;
+        const score = result.note === null ? null : Number(result.note);
+        if (studentId > 0) {
+          const key = `${evaluation.periode ?? this.selectedTrimester()}::${evaluation.classe_id}::${domainId}`;
+          primaryBooks[key] = { ...(primaryBooks[key] ?? {}), [studentId]: { ...(primaryBooks[key]?.[studentId] ?? {}), [componentId]: score } };
+        }
+        return { studentId, participated: Boolean(result.a_participe), score, appreciation: result.appreciation ?? '', attachments: [] };
+      }).filter((result) => result.studentId > 0);
+      return {
+        id: evaluation.id, title: evaluation.titre, type: types[evaluation.type] ?? 'Contrôle', trimester: evaluation.periode ?? this.selectedTrimester(),
+        classId: evaluation.classe_id, subject: this.assessmentSubjectLabel(domainId, componentId), evaluationDomainId: domainId, componentId,
+        date: evaluation.date_evaluation, scale: Number(evaluation.bareme), teacherId: this.teachers().find((teacher) => teacher.teachingBackendId === evaluation.enseignant_id)?.id ?? null,
+        status: statuts[evaluation.statut] ?? 'Brouillon', results,
+      };
+    });
+    this.assessments.set(mapped);
+    this.primaryEvaluationGrades.update((state) => ({ ...state, ...primaryBooks }));
+  }
+
+  private assessmentSubjectLabel(domainId: string, componentId: string): string {
+    const domain = this.primaryEvaluationDomains.find((item) => item.id === domainId);
+    return domain?.components.find((item) => item.id === componentId)?.label ?? domain?.label ?? 'Évaluation primaire';
+  }
+
+  private appliquerSeancesBackend(seances: SeanceEtablissementApi[]): void {
+    const statut: Record<SeanceEtablissementApi['statut'], SessionStatus> = {
+      planifiee: 'Planifiée',
+      a_completer: 'À compléter',
+      terminee: 'Terminée',
+    };
+    this.sessions.set(seances.map((seance): SchoolSession => {
+      const subject = seance.matiere_libelle ?? 'Matière non définie';
+      return {
+        id: seance.id,
+        classId: seance.classe_id,
+        roomId: seance.salle_id ?? '',
+        date: seance.date_seance,
+        startTime: String(seance.heure_debut).slice(0, 5),
+        endTime: String(seance.heure_fin).slice(0, 5),
+        subject,
+        teacherId: this.teachers().find((teacher) => teacher.teachingBackendId === seance.enseignant_id)?.id ?? null,
+        status: statut[seance.statut] ?? 'Planifiée',
+        description: seance.cahier_texte ?? '',
+        lessonTitle: seance.lecon_libelle ?? '',
+        programUnit: this.programUnitForSubject(subject),
+        programProgress: this.programProgressForSubject(subject),
+      };
+    }));
+  }
+
+  private appliquerEmploiTempsBackend(emploiTemps: EmploiTempsEtablissementApi): void {
+    const jours: Record<number, TimetableDay> = {
+      1: 'monday',
+      2: 'tuesday',
+      3: 'wednesday',
+      4: 'thursday',
+      5: 'friday',
+      6: 'saturday',
+    };
+    const rows = emploiTemps.creneaux.map((creneau, index) => {
+      const row = this.createTimetableRow(index + 1, creneau.heure_debut, creneau.heure_fin, []);
+      creneau.cellules.forEach((cellule) => {
+        const jour = jours[cellule.jour_semaine];
+        if (!jour) return;
+        const teacherId = this.teachers().find((teacher) => teacher.teachingBackendId === cellule.enseignant_id)?.id ?? null;
+        row.cells[jour] = {
+          subject: cellule.est_pause ? 'Pause' : cellule.matiere_libelle ?? '',
+          teacherId,
+          roomId: cellule.salle_id,
+        };
+      });
+      return row;
+    });
+    this.timetableRows.set(rows);
+    this.timetableDraftRows = this.cloneTimetableRows(rows);
+    this.timetableTeacherAssignments = this.affectationsEnseignantsDepuisEmploiTemps(rows);
+    if (emploiTemps.salle_id) this.selectedRoomId.set(emploiTemps.salle_id);
+  }
+
+  private appliquerClassesBackend(data: ClasseEtablissementApi[]): void {
+    const campusId = this.selectedCampusId();
+    const autresCampus = this.classes().filter((classe) => classe.campusId !== campusId);
+    const classesCampus = data.map((classe): PrimaryClass => ({
+      id: classe.id,
+      campusId,
+      level: classe.niveau,
+      name: classe.nom,
+      enrolled: classe.effectif,
+      registrationFee: String(classe.frais_inscription),
+      monthlyFee: String(classe.mensualite),
+      seriesId: classe.serie,
+    }));
+    this.classes.set([...autresCampus, ...classesCampus]);
+    this.classProposalsSaved.set(classesCampus.length > 0);
+    if (classesCampus[0]) {
+      this.selectedClassId.set(classesCampus[0].id);
+      this.selectedClassSubjectIds.set([classesCampus[0].id]);
+    } else {
+      this.selectedClassSubjectIds.set([]);
+    }
+  }
+
+  private definitionsClassesParDefaut(): Array<Omit<ClassProposal, 'key' | 'classId' | 'enabled'>> {
+    const levels = this.availableClassLevels();
+
+    if (this.isHighSchool()) {
+      // Au lycée, une classe n'a de sens qu'avec une série explicitement
+      // choisie. Il n'y a donc pas de proposition automatique : chaque
+      // classe est créée depuis le formulaire après configuration des séries.
+      return [];
+    }
+
+    return levels.map((level, index) => {
+      const college = this.isCollege();
+      const palier = college ? (index < 2 ? 0 : 1) : Math.floor(index / 2);
+      return {
+        level,
+        name: level + ' A',
+        registrationFee: String((college ? 35000 : 25000) + palier * (college ? 5000 : 2500)),
+        monthlyFee: String((college ? 25000 : 18000) + palier * (college ? 3000 : 2000)),
+        seriesId: '',
+      };
+    });
+  }
+
+  private identifiantClasseProposee(proposition: ClassProposal, suffixe: number): string {
+    return (proposition.level + '-' + proposition.name + '-' + this.selectedCampusId() + '-' + suffixe)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-');
+  }
+
+  private initialiserDependancesClasse(classroom: PrimaryClass): void {
+    if (!this.classFeeConfigurations().some((configuration) => configuration.classId === classroom.id)) {
       this.classFeeConfigurations.update((configurations) => [
         ...configurations,
         ...this.feeAcademicYears.map((academicYear) =>
@@ -3157,26 +4331,30 @@ export class PrimarySchoolComponent {
         ),
       ]);
     }
-    if (!this.classSubjectAssignments()[id]) {
-      const recommendedSubjects = this.subjects()
-        .filter((subject) => subject.levels.includes(form.level))
-        .map((subject) => subject.id);
+    if (!this.classSubjectAssignments()[classroom.id]) {
       this.classSubjectAssignments.update((assignments) => ({
         ...assignments,
-        [id]: recommendedSubjects,
+        [classroom.id]: [],
       }));
     }
-    this.selectedClassId.set(id);
-    this.classEditorOpen.set(false);
-    this.snackBar.open(
-      form.id ? 'La classe a été mise à jour.' : 'La classe a été créée.',
-      'Fermer',
-      { duration: 3000, verticalPosition: 'bottom', horizontalPosition: 'center' },
-    );
   }
 
-  availableClassLevels(): string[] {
-    return this.schoolLevelSettings.map((level) => level.code);
+  private synchroniserPropositionClasse(classroom: PrimaryClass): void {
+    if (this.classProposalsCampusId() !== classroom.campusId) {
+      return;
+    }
+    this.classProposals.update((propositions) => propositions.map((proposition) =>
+      proposition.classId === classroom.id
+        ? {
+          ...proposition,
+          level: classroom.level,
+          name: classroom.name,
+          registrationFee: classroom.registrationFee,
+          monthlyFee: classroom.monthlyFee,
+          seriesId: classroom.seriesId ?? '',
+        }
+        : proposition,
+    ));
   }
 
   seriesName(seriesId: string | null | undefined): string {
@@ -3194,6 +4372,32 @@ export class PrimarySchoolComponent {
 
   activeSeriesCount(): number {
     return this.highSchoolSeries().filter((series) => series.active).length;
+  }
+
+  private chargerSeriesLycee(): void {
+    this.seriesLoading.set(true);
+    this.centralApi.seriesLyceeEtablissement().subscribe({
+      next: ({ data }) => {
+        this.highSchoolSeries.set(data.map((serie) => this.mapperSerieLyceeApi(serie)));
+        this.seriesLoading.set(false);
+        this.preparerPropositionsClasses(true);
+      },
+      error: (response) => {
+        this.seriesLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'Les séries du lycée n’ont pas pu être chargées.');
+      },
+    });
+  }
+
+  private mapperSerieLyceeApi(serie: SerieLyceeEtablissementApi): HighSchoolSeries {
+    return {
+      id: serie.id,
+      code: serie.code,
+      label: serie.libelle,
+      description: serie.description ?? '',
+      color: serie.couleur,
+      active: serie.actif,
+    };
   }
 
   startSeriesCreation(): void {
@@ -3224,26 +4428,32 @@ export class PrimarySchoolComponent {
       this.snackBar.open('Ce code de série existe déjà.', 'Fermer', { duration: 2800 });
       return;
     }
-    const id = this.seriesForm.id ?? `serie-${code.toLowerCase()}-${Date.now()}`;
-    const series: HighSchoolSeries = {
-      id,
+    if (this.seriesSaving()) return;
+    this.seriesSaving.set(true);
+    this.centralApi.enregistrerSerieLyceeEtablissement({
       code,
-      label,
-      description: this.seriesForm.description.trim(),
-      color: this.seriesForm.color || '#2f80ed',
-      active: this.seriesForm.active,
-    };
-    this.highSchoolSeries.update((items) =>
-      items.some((item) => item.id === id)
-        ? items.map((item) => item.id === id ? series : item)
-        : [...items, series],
-    );
-    this.seriesEditorOpen.set(false);
-    this.snackBar.open(
-      this.seriesForm.id ? 'La série a été mise à jour.' : 'La série a été ajoutée.',
-      'Fermer',
-      { duration: 2600 },
-    );
+      libelle: label,
+      description: this.seriesForm.description.trim() || null,
+      couleur: this.seriesForm.color || '#2f80ed',
+      actif: this.seriesForm.active,
+    }, this.seriesForm.id).subscribe({
+      next: (resultat) => {
+        const series = this.mapperSerieLyceeApi(resultat.data);
+        this.highSchoolSeries.update((items) =>
+          items.some((item) => item.id === series.id)
+            ? items.map((item) => item.id === series.id ? series : item)
+            : [...items, series].sort((premiere, seconde) => premiere.code.localeCompare(seconde.code)),
+        );
+        this.seriesSaving.set(false);
+        this.seriesEditorOpen.set(false);
+        this.preparerPropositionsClasses(true);
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => {
+        this.seriesSaving.set(false);
+        this.snackBar.error(response.error?.message ?? 'La série n’a pas pu être enregistrée.');
+      },
+    });
   }
 
   removeSeries(series: HighSchoolSeries): void {
@@ -3256,7 +4466,192 @@ export class PrimarySchoolComponent {
       );
       return;
     }
-    this.highSchoolSeries.update((items) => items.filter((item) => item.id !== series.id));
+    this.requestConfirmation({
+      title: 'Supprimer cette série ?',
+      message: `La série ${series.code} · ${series.label} sera définitivement supprimée.`,
+      confirmLabel: 'Supprimer la série',
+      icon: 'delete_outline',
+    }, () => {
+      this.seriesSaving.set(true);
+      this.centralApi.supprimerSerieLyceeEtablissement(series.id).subscribe({
+        next: (resultat) => {
+          this.highSchoolSeries.update((items) => items.filter((item) => item.id !== series.id));
+          this.seriesSaving.set(false);
+          this.preparerPropositionsClasses(true);
+          this.snackBar.success(resultat.message);
+        },
+        error: (response) => {
+          this.seriesSaving.set(false);
+          this.snackBar.error(response.error?.message ?? 'La série n’a pas pu être supprimée.');
+        },
+      });
+    });
+  }
+
+  private chargerFinances(anneeLibelle: string, notifier = false): void {
+    const anneeId = this.anneesScolairesDisponibles().find((annee) => annee.libelle === anneeLibelle)?.id;
+    const campusId = this.selectedCampusId();
+    if (!anneeId || !campusId) return;
+    const cle = `${this.codeTypeEtablissementApi()}:${campusId}:${anneeId}`;
+    this.financesRequestKey = cle;
+    this.financesLoading.set(true);
+    this.centralApi.financesEtablissement(this.codeTypeEtablissementApi(), campusId, anneeId).subscribe({
+      next: (resultat) => {
+        if (this.financesRequestKey !== cle) return;
+        this.appliquerFinancesApi(resultat);
+        this.financesLoading.set(false);
+        if (notifier) this.snackBar.success('Les données financières ont été réactualisées.');
+      },
+      error: (response) => {
+        if (this.financesRequestKey === cle) this.financesLoading.set(false);
+        if (notifier) this.snackBar.error(response.error?.message ?? 'Impossible de charger les données financières.');
+      },
+    });
+  }
+
+  private appliquerFinancesApi(resultat: FinancesEtablissementApi): void {
+    const annee = resultat.annee_scolaire.libelle;
+    this.paymentMonths = resultat.periodes_mensuelles.map((periode) => this.paymentMonthLabel(periode.valeur) ?? periode.libelle);
+    if (!this.expensePeriodOptions().some((periode) => periode.value === this.selectedExpensePeriod())) {
+      this.selectedExpensePeriod.set(this.expensePeriodOptions()[0]?.value ?? this.selectedExpensePeriod());
+    }
+    const nouvellesConfigurations = resultat.tarifications.configurations.map((item): ClassFeeConfiguration => ({
+      academicYear: annee,
+      classId: item.classe_id,
+      registrationFee: String(item.registrationFee ?? 0),
+      monthlyFee: String(item.monthlyFee ?? 0),
+    }));
+    this.classFeeConfigurations.update((items) => [
+      ...items.filter((item) => item.academicYear !== annee),
+      ...nouvellesConfigurations,
+    ]);
+    this.additionalSchoolFees.update((items) => [
+      ...items.filter((item) => item.academicYear !== annee),
+      ...resultat.tarifications.frais_supplementaires.map((item): AdditionalSchoolFee => ({
+        id: item.id,
+        academicYear: annee,
+        classId: item.classe_id,
+        label: item.libelle,
+        amount: String(item.montant),
+        frequency: item.frequence === 'mensuel' ? 'Mensuel' : 'Paiement unique',
+        required: item.obligatoire,
+      })),
+    ]);
+
+    this.financeTariffIds.clear();
+    const monthly: MonthlyPaymentRecords = {};
+    const unique: OneTimePaymentRecords = {};
+    const studentsByBackendId = new Map(this.students().filter((student) => student.backendId).map((student) => [student.backendId as string, student]));
+    resultat.echeances.forEach((echeance) => {
+      const feeId = this.feeInterfaceId(echeance.code, echeance.tarif_scolaire_id);
+      const ledgerKey = `${annee}::${echeance.classe_id}::${feeId}`;
+      this.financeTariffIds.set(ledgerKey, echeance.tarif_scolaire_id);
+      const student = studentsByBackendId.get(echeance.eleve_id);
+      if (!student) return;
+      if (echeance.frequence === 'mensuel' && echeance.periode) {
+        const month = this.paymentMonthLabel(echeance.periode);
+        if (!month) return;
+        monthly[ledgerKey] ??= {};
+        monthly[ledgerKey][student.id] ??= {};
+        monthly[ledgerKey][student.id][month] = echeance.date_paiement;
+      } else {
+        unique[ledgerKey] ??= {};
+        unique[ledgerKey][student.id] = echeance.date_paiement;
+      }
+    });
+    this.monthlyPaymentRecords.set(monthly);
+    this.oneTimePaymentRecords.set(unique);
+
+    this.expenseTypes.set(resultat.types_depenses.map((item): ExpenseType => ({
+      id: item.id,
+      backendId: item.backend_id,
+      label: item.libelle,
+      frequency: item.frequence === 'mensuel' ? 'Mensuel' : 'Unique',
+      target: item.cible === 'enseignants' ? 'Enseignants' : item.cible === 'tous' ? 'Personnel et enseignants' : 'Personnel',
+      defaultAmount: Number(item.montant_provisoire ?? 0),
+      active: item.actif,
+    })));
+    if (!this.expenseTypes().some((item) => item.id === this.selectedExpenseTypeId())) {
+      this.selectedExpenseTypeId.set(this.expenseTypes()[0]?.id ?? '');
+    }
+    this.expenses.set(resultat.depenses.map((item): SchoolExpense => ({
+      id: item.id,
+      typeId: item.type_id,
+      personnelId: item.personnel_id,
+      label: item.libelle,
+      category: '',
+      frequency: item.frequence === 'mensuel' ? 'Mensuel' : 'Unique',
+      amount: Number(item.montant),
+      date: item.date,
+      paymentDate: item.date_paiement,
+      status: item.statut,
+      beneficiary: item.beneficiaire ?? '',
+      staffIds: [],
+      notes: item.notes ?? '',
+    })));
+    const salaryPayments: Record<string, string | null> = {};
+    const salaryHours: Record<string, number> = {};
+    resultat.paies.forEach((ligne) => {
+      const month = this.paymentMonthLabel(ligne.periode);
+      if (!month) return;
+      const key = `${annee}::${ligne.personnel_id}::${month}`;
+      salaryPayments[key] = ligne.date_paiement;
+      salaryHours[key] = Number(ligne.nombre_heures ?? 0);
+    });
+    this.salaryPaymentRecords.set(salaryPayments);
+    this.salaryHourRecords.set(salaryHours);
+    this.financeEntries.set(resultat.operations.map((item): FinanceEntry => ({
+      id: item.id,
+      campusId: this.selectedCampusId(),
+      amount: Number(item.montant),
+      reason: item.motif,
+      direction: item.sens === 'entree' ? 'Entrée' : 'Sortie',
+      date: item.date,
+      paymentMethod: this.paymentMethodLabel(item.mode_paiement),
+      thirdParty: item.tiers ?? '',
+      reference: item.reference ?? '—',
+      status: item.statut === 'validee' ? 'Validée' : item.statut === 'annulee' ? 'Annulée' : 'En attente',
+      source: item.source === 'saisie_manuelle' ? 'Saisie manuelle' : item.sens === 'entree' ? 'Encaissements' : 'Dépenses',
+      notes: item.notes ?? '',
+    })));
+    this.ensureCollectionFeeSelection();
+  }
+
+  private feeInterfaceId(code: string, tarifId: string): string {
+    return ({ inscription: 'registrationFee', mensualite: 'monthlyFee' } as Record<string, string>)[code]
+      ?? `additional-${tarifId}`;
+  }
+
+  private paymentMonthLabel(period: string): string | null {
+    const month = Number(period.slice(5, 7));
+    return ({ 1: 'Jan', 2: 'Fév', 3: 'Mar', 4: 'Avr', 5: 'Mai', 6: 'Juin', 7: 'Juil', 8: 'Août', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Déc' } as Record<number, string>)[month] ?? null;
+  }
+
+  private paymentMethodLabel(mode: string | null): FinancePaymentMethod {
+    return ({ wave: 'Wave', orange_money: 'Orange Money', virement: 'Virement', cheque: 'Chèque' } as Record<string, FinancePaymentMethod>)[mode ?? ''] ?? 'Espèces';
+  }
+
+  private paymentMethodCode(mode: FinancePaymentMethod): string {
+    return ({ Espèces: 'espece', Wave: 'wave', 'Orange Money': 'orange_money', Virement: 'virement', Chèque: 'cheque' } as Record<FinancePaymentMethod, string>)[mode];
+  }
+
+  private financeContext(anneeLibelle: string): Record<string, string> | null {
+    const anneeId = this.anneesScolairesDisponibles().find((annee) => annee.libelle === anneeLibelle)?.id;
+    if (!anneeId || !this.selectedCampusId()) return null;
+    return { type_etablissement: this.codeTypeEtablissementApi(), campus_id: this.selectedCampusId(), annee_scolaire_centrale_id: anneeId };
+  }
+
+  actualiserFinances(): void {
+    this.centralApi.invaliderCache('institut:finances:');
+    const view = this.activeView();
+    const annee = view === 'fees'
+      ? this.selectedFeeAcademicYear()
+      : view === 'payments'
+        ? this.selectedCollectionAcademicYear()
+        : view === 'expense-settings' || view === 'expenses'
+          ? this.selectedExpenseAcademicYear()
+          : this.selectedFinanceAcademicYear();
+    this.chargerFinances(annee, true);
   }
 
   selectFeeAcademicYear(academicYear: string): void {
@@ -3291,7 +4686,7 @@ export class PrimarySchoolComponent {
 
   updateClassFee(
     classId: string,
-    field: keyof Pick<ClassFeeConfiguration, 'registrationFee' | 'monthlyFee' | 'schoolUniformFee' | 'sportsUniformFee'>,
+    field: keyof Pick<ClassFeeConfiguration, 'registrationFee' | 'monthlyFee'>,
     rawValue: string,
   ): void {
     if (this.isFeeYearLocked()) {
@@ -3328,30 +4723,26 @@ export class PrimarySchoolComponent {
       return;
     }
 
-    if (this.selectedFeeAcademicYear() === this.currentFeeAcademicYear) {
-      const currentConfigurations = this.classFeeConfigurations();
-      this.classes.update((classes) =>
-        classes.map((classroom) => {
-          const configuration = currentConfigurations.find(
-            (item) =>
-              item.academicYear === this.currentFeeAcademicYear && item.classId === classroom.id,
-          );
-          return configuration
-            ? {
-                ...classroom,
-                registrationFee: configuration.registrationFee,
-                monthlyFee: configuration.monthlyFee,
-              }
-            : classroom;
-        }),
-      );
+    const context = this.financeContext(this.selectedFeeAcademicYear());
+    if (!context) {
+      this.snackBar.error('Configurez d’abord l’année scolaire dans Paramètres.');
+      return;
     }
-
-    this.snackBar.open(
-      `${this.feeRows().length} tarification(s) enregistrée(s) pour ${this.selectedFeeAcademicYear()}.`,
-      'Fermer',
-      { duration: 3000, verticalPosition: 'bottom', horizontalPosition: 'center' },
-    );
+    const rows = this.feeRows();
+    this.centralApi.enregistrerTarificationsEtablissement({
+      ...context,
+      classes: rows.map((row) => ({
+        classe_id: row.classroom.id,
+        frais_inscription: Number(row.configuration.registrationFee || 0),
+        mensualite: Number(row.configuration.monthlyFee || 0),
+      })),
+    }).subscribe({
+      next: (resultat) => {
+        this.chargerFinances(this.selectedFeeAcademicYear());
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => this.snackBar.error(response.error?.message ?? 'Les tarifs n’ont pas pu être enregistrés.'),
+    });
   }
 
   openAdditionalFeeEditor(): void {
@@ -3363,10 +4754,7 @@ export class PrimarySchoolComponent {
       });
       return;
     }
-    const classId =
-      this.selectedFeeClassId() === 'all'
-        ? this.campusClasses()[0]?.id ?? ''
-        : this.selectedFeeClassId();
+    const classId = this.additionalFeeClassId();
     this.additionalFeeForm = {
       classId,
       label: '',
@@ -3394,45 +4782,85 @@ export class PrimarySchoolComponent {
       });
       return;
     }
-    this.additionalSchoolFees.update((fees) => [
-      ...fees,
-      {
-        id: Date.now(),
-        academicYear: this.selectedFeeAcademicYear(),
-        classId: form.classId,
-        label: form.label.trim(),
-        amount: form.amount.replace(/[^0-9]/g, ''),
-        frequency: form.frequency,
-        required: form.required,
+    const context = this.financeContext(this.selectedFeeAcademicYear());
+    if (!context) {
+      this.snackBar.error('Configurez d’abord l’année scolaire dans Paramètres.');
+      return;
+    }
+    this.centralApi.ajouterFraisEtablissement({
+      ...context,
+      classe_ids: form.classId === 'all'
+        ? this.campusClasses().map((classroom) => classroom.id)
+        : [form.classId],
+      libelle: form.label.trim(),
+      montant: Number(form.amount.replace(/[^0-9]/g, '')),
+      frequence: form.frequency === 'Mensuel' ? 'mensuel' : 'unique',
+      obligatoire: form.required,
+    }).subscribe({
+      next: (resultat) => {
+        this.feeEditorOpen.set(false);
+        this.chargerFinances(this.selectedFeeAcademicYear());
+        this.snackBar.success(resultat.message);
       },
-    ]);
-    this.feeEditorOpen.set(false);
-    this.snackBar.open('Le paiement complémentaire a été ajouté.', 'Fermer', {
-      duration: 3000,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+      error: (response) => this.snackBar.error(response.error?.message ?? 'Le paiement complémentaire n’a pas pu être ajouté.'),
     });
   }
 
   visibleAdditionalFees(): AdditionalSchoolFee[] {
-    const campusClassIds = new Set(this.campusClasses().map((classroom) => classroom.id));
+    const selectedClassId = this.additionalFeeClassId();
     return this.additionalSchoolFees().filter(
       (fee) =>
         fee.academicYear === this.selectedFeeAcademicYear() &&
-        campusClassIds.has(fee.classId) &&
-        (this.selectedFeeClassId() === 'all' || fee.classId === this.selectedFeeClassId()),
+        fee.classId === selectedClassId,
     );
+  }
+
+  selectAdditionalFeeClass(classId: string): void {
+    this.selectedAdditionalFeeClassId.set(classId);
+  }
+
+  additionalFeeClassId(): string {
+    const campusClasses = this.campusClasses();
+    const selected = this.selectedAdditionalFeeClassId();
+    if (campusClasses.some((classroom) => classroom.id === selected)) {
+      return selected;
+    }
+    const current = this.selectedFeeClassId();
+    return campusClasses.some((classroom) => classroom.id === current)
+      ? current
+      : campusClasses[0]?.id ?? '';
   }
 
   additionalFeeClassName(classId: string): string {
     return this.classes().find((classroom) => classroom.id === classId)?.name ?? 'Classe';
   }
 
-  removeAdditionalFee(feeId: number): void {
+  removeAdditionalFee(feeId: string | number): void {
     if (this.isFeeYearLocked()) {
       return;
     }
-    this.additionalSchoolFees.update((fees) => fees.filter((fee) => fee.id !== feeId));
+    const context = this.financeContext(this.selectedFeeAcademicYear());
+    if (!context || typeof feeId !== 'string') return;
+    const fee = this.additionalSchoolFees().find((item) => item.id === feeId);
+    this.requestConfirmation({
+      title: 'Supprimer ce frais scolaire ?',
+      message: `Le frais « ${fee?.label ?? 'sélectionné'} » sera supprimé de la tarification de la classe.`,
+      confirmLabel: 'Supprimer le frais',
+      icon: 'delete_outline',
+    }, () => {
+      this.centralApi.supprimerFraisEtablissement(
+        feeId,
+        context['type_etablissement'],
+        context['campus_id'],
+        context['annee_scolaire_centrale_id'],
+      ).subscribe({
+        next: (resultat) => {
+          this.chargerFinances(this.selectedFeeAcademicYear());
+          this.snackBar.success(resultat.message);
+        },
+        error: (response) => this.snackBar.error(response.error?.message ?? 'Le paiement complémentaire n’a pas pu être supprimé.'),
+      });
+    });
   }
 
   formatFeeAmount(value: string): string {
@@ -3461,11 +4889,64 @@ export class PrimarySchoolComponent {
     this.ensureSelectedCurriculumSubject();
   }
 
-  isSubjectAssignedToClass(subjectId: number): boolean {
+  isSubjectAssignedToClass(subjectId: SubjectId): boolean {
     return (this.classSubjectAssignments()[this.selectedClassId()] ?? []).includes(subjectId);
   }
 
-  toggleClassSubject(subjectId: number, assigned: boolean): void {
+  isSubjectAssignedToSelectedClasses(subjectId: SubjectId): boolean {
+    const classes = this.selectedClassSubjectClasses();
+    return classes.length > 0 && classes.every((classroom) =>
+      (this.classSubjectAssignments()[classroom.id] ?? []).includes(subjectId),
+    );
+  }
+
+  isSubjectPartiallyAssignedToSelectedClasses(subjectId: SubjectId): boolean {
+    const classes = this.selectedClassSubjectClasses();
+    const assignedCount = classes.filter((classroom) =>
+      (this.classSubjectAssignments()[classroom.id] ?? []).includes(subjectId),
+    ).length;
+    return assignedCount > 0 && assignedCount < classes.length;
+  }
+
+  selectedSubjectAssignmentCount(subjectId: SubjectId): number {
+    return this.selectedClassSubjectClasses().filter((classroom) =>
+      (this.classSubjectAssignments()[classroom.id] ?? []).includes(subjectId),
+    ).length;
+  }
+
+  selectedClassSubjectLabel(): string {
+    const classes = this.selectedClassSubjectClasses();
+    if (!classes.length) return 'aucune classe';
+    if (classes.length === 1) return classes[0].name;
+    return `${classes.length} classes sélectionnées`;
+  }
+
+  changeClassSubjectSelection(classIds: string[]): void {
+    const availableIds = new Set(this.campusClasses().map((classroom) => classroom.id));
+    const selectedIds = [...new Set(classIds)].filter((classId) => availableIds.has(classId));
+    this.selectedClassSubjectIds.set(selectedIds);
+    if (selectedIds[0]) {
+      this.selectedClassId.set(selectedIds[0]);
+    }
+    this.ensureSelectedCurriculumSubject();
+  }
+
+  toggleSelectedClassesSubject(subjectId: SubjectId, assigned: boolean): void {
+    const classIds = this.selectedClassSubjectClasses().map((classroom) => classroom.id);
+    this.classSubjectAssignments.update((assignments) => {
+      const next = { ...assignments };
+      classIds.forEach((classId) => {
+        const current = next[classId] ?? [];
+        next[classId] = assigned
+          ? [...new Set([...current, subjectId])]
+          : current.filter((id) => id !== subjectId);
+      });
+      return next;
+    });
+    this.ensureSelectedCurriculumSubject();
+  }
+
+  toggleClassSubject(subjectId: SubjectId, assigned: boolean): void {
     const classId = this.selectedClassId();
     this.classSubjectAssignments.update((assignments) => {
       const current = assignments[classId] ?? [];
@@ -3477,10 +4958,11 @@ export class PrimarySchoolComponent {
     this.ensureSelectedCurriculumSubject();
   }
 
-  collegeSubjectSetting(classId: string, subjectId: number): { coefficient: number; teacherId: number | null } {
+  collegeSubjectSetting(classId: string, subjectId: SubjectId): { coefficient: number | null; teacherId: number | null; maxScore: number } {
     return this.collegeSubjectSettings()[`${classId}::${subjectId}`] ?? {
-      coefficient: 1,
+      coefficient: this.isCollege() ? 1 : null,
       teacherId: null,
+      maxScore: 20,
     };
   }
 
@@ -3500,7 +4982,7 @@ export class PrimarySchoolComponent {
   selectedCollegeSubjectCoefficient(): number {
     const subject = this.selectedCollegeSubject();
     return subject
-      ? this.collegeSubjectSetting(this.selectedClassId(), subject.id).coefficient
+      ? this.collegeSubjectSetting(this.selectedClassId(), subject.id).coefficient ?? 1
       : 1;
   }
 
@@ -3511,17 +4993,19 @@ export class PrimarySchoolComponent {
       : 'Non affecté';
   }
 
-  updateCollegeSubjectCoefficient(subjectId: number, value: string | number): void {
+  updateCollegeSubjectCoefficient(subjectId: SubjectId, value: string | number): void {
     const classId = this.selectedClassId();
     const key = `${classId}::${subjectId}`;
-    const coefficient = Math.max(1, Math.min(10, Number(value) || 1));
+    const coefficient = value === '' || value === null
+      ? null
+      : Math.max(0.01, Math.min(100, Number(value) || 1));
     this.collegeSubjectSettings.update((settings) => ({
       ...settings,
       [key]: { ...this.collegeSubjectSetting(classId, subjectId), coefficient },
     }));
   }
 
-  updateCollegeSubjectTeacher(subjectId: number, value: string | number): void {
+  updateCollegeSubjectTeacher(subjectId: SubjectId, value: string | number): void {
     const classId = this.selectedClassId();
     const key = `${classId}::${subjectId}`;
     this.collegeSubjectSettings.update((settings) => ({
@@ -3533,7 +5017,7 @@ export class PrimarySchoolComponent {
     }));
   }
 
-  selectCurriculumSubject(subjectId: number): void {
+  selectCurriculumSubject(subjectId: SubjectId): void {
     this.selectedCurriculumSubjectId.set(subjectId);
     this.curriculumChapterEditorOpen.set(false);
   }
@@ -3542,7 +5026,7 @@ export class PrimarySchoolComponent {
     return this.classSubjectAssignments()[classId]?.length ?? 0;
   }
 
-  subjectAssignedClassCount(subjectId: number): number {
+  subjectAssignedClassCount(subjectId: SubjectId): number {
     return this.campusClasses().filter((classroom) =>
       (this.classSubjectAssignments()[classroom.id] ?? []).includes(subjectId),
     ).length;
@@ -3556,16 +5040,16 @@ export class PrimarySchoolComponent {
       return 0;
     }
     return Math.round(
-      (lessons.filter((lesson) => lesson.status === 'Terminée').length / lessons.length) * 100,
+      lessons.reduce((total, lesson) => total + lesson.progress, 0) / lessons.length,
     );
   }
 
-  subjectProgramProgress(classId: string, subjectId: number): number {
+  subjectProgramProgress(classId: string, subjectId: SubjectId): number {
     const lessons = this.curriculumChapters()
       .filter((chapter) => chapter.classId === classId && chapter.subjectId === subjectId)
       .flatMap((chapter) => chapter.lessons);
     return lessons.length
-      ? Math.round((lessons.filter((lesson) => lesson.status === 'Terminée').length / lessons.length) * 100)
+      ? Math.round(lessons.reduce((total, lesson) => total + lesson.progress, 0) / lessons.length)
       : 0;
   }
 
@@ -3580,7 +5064,10 @@ export class PrimarySchoolComponent {
 
   saveCurriculumChapter(): void {
     const subjectId = this.selectedCurriculumSubjectId();
-    if (subjectId === null) {
+    const context = this.pedagogyContext();
+    const classroom = this.selectedClass();
+    if (subjectId === null || !context || !classroom) {
+      this.snackBar.error('Sélectionnez une classe et une matière avant d’ajouter la leçon.');
       return;
     }
     const lessonTitle = this.curriculumChapterForm.title.trim();
@@ -3592,74 +5079,106 @@ export class PrimarySchoolComponent {
       });
       return;
     }
-    const classId = this.selectedClassId();
-    const createdAt = Date.now();
-    const order = this.selectedCurriculumChapters().length + 1;
-    const chapter: CurriculumChapter = {
-      id: `chapter-${classId}-${subjectId}-${createdAt}`,
-      classId,
-      subjectId,
-      title: lessonTitle,
-      objective: this.curriculumChapterForm.objective.trim(),
-      period: this.curriculumChapterForm.period,
-      order,
-      lessons: [{
-        id: `lesson-${classId}-${subjectId}-${createdAt}`,
-        title: lessonTitle,
-        estimatedSessions: Number(this.curriculumChapterForm.estimatedSessions) || 1,
-        status: 'À faire',
-      }],
-    };
-    this.curriculumChapters.update((chapters) => [...chapters, chapter]);
-    this.curriculumChapterEditorOpen.set(false);
-    this.snackBar.open('La leçon a été ajoutée au programme annuel.', 'Fermer', {
-      duration: 3000,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    if (this.curriculumSaving()) return;
+    this.curriculumSaving.set(true);
+    this.centralApi.ajouterLeconEtablissement(String(classroom.id), String(subjectId), {
+      ...context,
+      libelle: lessonTitle,
+      objectifs: this.curriculumChapterForm.objective.trim() || null,
+      periode: this.curriculumChapterForm.period || null,
+      nombre_seances_estime: Number(this.curriculumChapterForm.estimatedSessions) || 1,
+    }).subscribe({
+      next: (resultat) => {
+        this.curriculumSaving.set(false);
+        this.curriculumChapterEditorOpen.set(false);
+        this.applyPedagogyData(resultat);
+        this.snackBar.success(resultat.message ?? 'La leçon a été ajoutée au programme annuel.');
+      },
+      error: (response) => {
+        this.curriculumSaving.set(false);
+        this.snackBar.error(response.error?.message ?? 'La leçon n’a pas pu être enregistrée.');
+      },
     });
   }
 
   deleteCurriculumChapter(chapterId: string): void {
-    this.curriculumChapters.update((chapters) =>
-      chapters.filter((chapter) => chapter.id !== chapterId),
-    );
+    const chapter = this.curriculumChapters().find((item) => item.id === chapterId);
+    const lesson = chapter?.lessons[0];
+    if (lesson) this.deleteCurriculumLesson(chapterId, lesson.id);
   }
 
   deleteCurriculumLesson(chapterId: string, lessonId: string): void {
-    this.curriculumChapters.update((chapters) =>
-      chapters.flatMap((chapter) => {
-        if (chapter.id !== chapterId) {
-          return [chapter];
-        }
-        const lessons = chapter.lessons.filter((lesson) => lesson.id !== lessonId);
-        return lessons.length ? [{ ...chapter, lessons }] : [];
-      }),
-    );
+    const lesson = this.curriculumChapters().find((item) => item.id === chapterId)?.lessons.find((item) => item.id === lessonId);
+    this.requestConfirmation({
+      title: 'Supprimer cette leçon ?',
+      message: `La leçon « ${lesson?.title ?? 'sélectionnée'} » sera définitivement retirée du programme.`,
+      confirmLabel: 'Supprimer la leçon',
+      icon: 'delete_outline',
+    }, () => {
+      const context = this.pedagogyContext();
+      if (!context || this.isCurriculumLessonSaving(lessonId)) return;
+      this.setCurriculumLessonSaving(lessonId, true);
+      this.centralApi.supprimerLeconEtablissement(
+        lessonId,
+        context['type_etablissement'],
+        context['campus_id'],
+        context['annee_scolaire_centrale_id'],
+      ).subscribe({
+        next: (resultat) => {
+          this.setCurriculumLessonSaving(lessonId, false);
+          this.applyPedagogyData(resultat);
+          this.snackBar.success(resultat.message ?? 'La leçon a été supprimée du programme annuel.');
+        },
+        error: (response) => {
+          this.setCurriculumLessonSaving(lessonId, false);
+          this.snackBar.error(response.error?.message ?? 'La leçon n’a pas pu être supprimée.');
+        },
+      });
+    });
   }
 
   updateCurriculumLessonStatus(
-    chapterId: string,
+    _chapterId: string,
     lessonId: string,
     status: CurriculumLessonStatus,
   ): void {
-    this.curriculumChapters.update((chapters) =>
-      chapters.map((chapter) => chapter.id === chapterId
-        ? {
-            ...chapter,
-            lessons: chapter.lessons.map((lesson) =>
-              lesson.id === lessonId ? { ...lesson, status } : lesson,
-            ),
-          }
-        : chapter),
-    );
+    const context = this.pedagogyContext();
+    if (!context || this.isCurriculumLessonSaving(lessonId)) return;
+    const statutsApi: Record<CurriculumLessonStatus, 'a_faire' | 'en_cours' | 'terminee'> = {
+      'À faire': 'a_faire',
+      'En cours': 'en_cours',
+      'Terminée': 'terminee',
+    };
+    this.setCurriculumLessonSaving(lessonId, true);
+    this.centralApi.enregistrerAvancementLeconEtablissement(lessonId, {
+      ...context,
+      statut: statutsApi[status],
+    }).subscribe({
+      next: (resultat) => {
+        this.setCurriculumLessonSaving(lessonId, false);
+        this.applyPedagogyData(resultat);
+        this.snackBar.success(resultat.message ?? 'L’avancement de la leçon a été enregistré.');
+      },
+      error: (response) => {
+        this.setCurriculumLessonSaving(lessonId, false);
+        this.snackBar.error(response.error?.message ?? 'L’avancement de la leçon n’a pas pu être enregistré.');
+      },
+    });
+  }
+
+  isCurriculumLessonSaving(lessonId: string): boolean {
+    return this.curriculumLessonSavingIds().includes(lessonId);
+  }
+
+  private setCurriculumLessonSaving(lessonId: string, saving: boolean): void {
+    this.curriculumLessonSavingIds.update((ids) => saving
+      ? [...new Set([...ids, lessonId])]
+      : ids.filter((id) => id !== lessonId));
   }
 
   curriculumChapterProgress(chapter: CurriculumChapter): number {
     return chapter.lessons.length
-      ? Math.round(
-          (chapter.lessons.filter((lesson) => lesson.status === 'Terminée').length /
-            chapter.lessons.length) * 100,
-        )
+      ? Math.round(chapter.lessons.reduce((total, lesson) => total + lesson.progress, 0) / chapter.lessons.length)
       : 0;
   }
 
@@ -3706,9 +5225,270 @@ export class PrimarySchoolComponent {
       completed: lessons.length ? completed : 11,
       remaining: lessons.length ? lessons.length - completed : 5,
       progress: lessons.length
-        ? Math.round((completed / lessons.length) * 100)
+        ? Math.round(lessons.reduce((total, lesson) => total + lesson.progress, 0) / lessons.length)
         : session.programProgress,
     };
+  }
+
+  toggleSubjectProposal(code: string, selected: boolean): void {
+    this.selectedSubjectProposalCodes.update((codes) => selected
+      ? [...new Set([...codes, code])]
+      : codes.filter((item) => item !== code));
+  }
+
+  isSubjectProposalSelected(code: string): boolean {
+    return this.selectedSubjectProposalCodes().includes(code);
+  }
+
+  savePredefinedSubjects(): void {
+    const context = this.pedagogyContext();
+    const selected = this.predefinedSubjects().filter((subject) => this.isSubjectProposalSelected(subject.code));
+    if (!context) {
+      this.snackBar.error('Configurez l’année scolaire et sélectionnez un campus avant d’enregistrer les matières.');
+      return;
+    }
+    if (!selected.length) {
+      this.snackBar.error('Cochez au moins une matière à enregistrer.');
+      return;
+    }
+    this.subjectsSaving.set(true);
+    this.centralApi.enregistrerCatalogueMatieresEtablissement({
+      ...context,
+      matieres: selected.map((subject) => ({
+        code: subject.code,
+        libelle: subject.name,
+        domaine: subject.domain || null,
+      })),
+    }).subscribe({
+      next: (resultat) => {
+        this.subjectsSaving.set(false);
+        this.applyPedagogyData(resultat);
+        this.snackBar.success(resultat.message ?? 'Les matières ont été enregistrées.');
+      },
+      error: (response) => {
+        this.subjectsSaving.set(false);
+        this.snackBar.error(response.error?.message ?? 'Les matières n’ont pas pu être enregistrées.');
+      },
+    });
+  }
+
+  refreshPedagogy(): void {
+    this.centralApi.invaliderCache('institut:pedagogie:');
+    this.chargerPedagogie(true);
+  }
+
+  openClassSubjects(classId?: string): void {
+    if (classId) {
+      this.selectedClassId.set(classId);
+      this.selectedClassSubjectIds.set([classId]);
+    } else {
+      this.ensureClassSubjectSelection();
+    }
+    this.setView('class-subjects');
+    this.ensureSelectedCurriculumSubject();
+  }
+
+  updateClassSubjectMaxScore(subjectId: SubjectId, value: string | number): void {
+    const maxScore = Math.max(1, Math.min(1000, Number(value) || 20));
+    this.collegeSubjectSettings.update((settings) => ({
+      ...settings,
+      ...Object.fromEntries(this.selectedClassSubjectClasses()
+        .filter((classroom) => (this.classSubjectAssignments()[classroom.id] ?? []).includes(subjectId))
+        .map((classroom) => [
+          `${classroom.id}::${subjectId}`,
+          { ...this.collegeSubjectSetting(classroom.id, subjectId), maxScore },
+        ])),
+    }));
+  }
+
+  updateSelectedClassesSubjectCoefficient(subjectId: SubjectId, value: string | number): void {
+    const coefficient = value === '' || value === null
+      ? null
+      : Math.max(0.01, Math.min(100, Number(value) || 1));
+    this.collegeSubjectSettings.update((settings) => ({
+      ...settings,
+      ...Object.fromEntries(this.selectedClassSubjectClasses()
+        .filter((classroom) => (this.classSubjectAssignments()[classroom.id] ?? []).includes(subjectId))
+        .map((classroom) => [
+          `${classroom.id}::${subjectId}`,
+          { ...this.collegeSubjectSetting(classroom.id, subjectId), coefficient },
+        ])),
+    }));
+  }
+
+  selectedClassesSubjectSetting(subjectId: SubjectId): { coefficient: number | null; teacherId: number | null; maxScore: number } {
+    const classroom = this.selectedClassSubjectClasses().find((item) =>
+      (this.classSubjectAssignments()[item.id] ?? []).includes(subjectId),
+    );
+    return classroom
+      ? this.collegeSubjectSetting(classroom.id, subjectId)
+      : { coefficient: this.isCollege() ? 1 : null, teacherId: null, maxScore: 20 };
+  }
+
+  saveClassSubjectAssignments(): void {
+    const context = this.pedagogyContext();
+    const classrooms = this.selectedClassSubjectClasses();
+    if (!context || !classrooms.length) {
+      this.snackBar.error('Sélectionnez au moins une classe avant d’enregistrer ses matières.');
+      return;
+    }
+    const payloads = classrooms.map((classroom) => ({
+      classroom,
+      matieres: (this.classSubjectAssignments()[classroom.id] ?? []).map((subjectId) => {
+        const configuration = this.collegeSubjectSetting(classroom.id, subjectId);
+        return {
+          matiere_id: String(subjectId),
+          coefficient: configuration.coefficient,
+          note_maximale: configuration.maxScore,
+        };
+      }),
+    }));
+    if (this.isCollege() && payloads.some((payload) =>
+      payload.matieres.some((setting) => setting.coefficient === null),
+    )) {
+      this.snackBar.error('Renseignez le coefficient de chaque matière avant l’enregistrement.');
+      return;
+    }
+    this.classSubjectsSaving.set(true);
+    // Les classes partagent les mêmes lignes de matières et leurs index MySQL.
+    // Une écriture séquentielle évite que plusieurs transactions concurrentes
+    // prennent ces verrous dans un ordre différent et provoquent un deadlock.
+    concat(...payloads.map((payload) =>
+      this.centralApi.enregistrerMatieresClasseEtablissement(String(payload.classroom.id), {
+        ...context,
+        matieres: payload.matieres,
+      }),
+    )).pipe(toArray()).subscribe({
+      next: () => {
+        this.classSubjectsSaving.set(false);
+        this.chargerPedagogie(true);
+        this.snackBar.success(
+          classrooms.length === 1
+            ? 'Les matières de la classe ont été enregistrées.'
+            : 'Les matières des classes sélectionnées ont été enregistrées.',
+        );
+      },
+      error: (response) => {
+        this.classSubjectsSaving.set(false);
+        this.snackBar.error(response.error?.message ?? 'Les matières de la classe n’ont pas pu être enregistrées.');
+      },
+    });
+  }
+
+  private chargerPedagogie(force = false): void {
+    const context = this.pedagogyContext();
+    if (!context) return;
+    const key = `${context['type_etablissement']}:${context['campus_id']}:${context['annee_scolaire_centrale_id']}`;
+    // Ne pas lire subjectsLoading() ici : cette méthode est appelée depuis un
+    // effect Angular. Observer puis modifier ce signal créait une boucle de
+    // requêtes lors du passage Matières -> Programmes -> Matières.
+    if (!force && this.pedagogieRequestKey === key) return;
+    this.pedagogieRequestKey = key;
+    this.subjectsLoading.set(true);
+    this.centralApi.pedagogieEtablissement(
+      context['type_etablissement'],
+      context['campus_id'],
+      context['annee_scolaire_centrale_id'],
+    ).subscribe({
+      next: (resultat) => {
+        if (this.pedagogieRequestKey !== key) return;
+        this.subjectsLoading.set(false);
+        this.applyPedagogyData(resultat);
+      },
+      error: (response) => {
+        if (this.pedagogieRequestKey !== key) return;
+        this.pedagogieRequestKey = '';
+        this.subjectsLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'Les données pédagogiques n’ont pas pu être chargées.');
+      },
+    });
+  }
+
+  private applyPedagogyData(resultat: PedagogieEtablissementApi): void {
+    const subjects = resultat.matieres.map((subject) => {
+      const proposal = this.predefinedSubjects().find((item) => item.code === subject.code);
+      return {
+        id: subject.id,
+        name: subject.libelle,
+        code: subject.code,
+        domain: subject.domaine ?? '',
+        scale: 20,
+        levels: [...this.availableClassLevels()],
+        teachers: this.teachers().filter((teacher) => teacher.subject === subject.libelle).length,
+        color: proposal?.color ?? this.subjectColorForCode(subject.code),
+        francoArabic: proposal?.francoArabic ?? subject.domaine === 'Enseignement franco-arabe',
+      } satisfies PrimarySubject;
+    });
+    const assignments: Record<string, SubjectId[]> = {};
+    const settings: Record<string, { coefficient: number | null; teacherId: number | null; maxScore: number }> = {};
+    resultat.classes_matieres.forEach((link) => {
+      assignments[link.classe_id] = [...(assignments[link.classe_id] ?? []), link.matiere_id];
+      settings[`${link.classe_id}::${link.matiere_id}`] = {
+        coefficient: link.coefficient === null ? null : Number(link.coefficient),
+        teacherId: null,
+        maxScore: Number(link.note_maximale ?? 20),
+      };
+    });
+    const curriculumChapters = (resultat.programmes ?? []).flatMap((programme) =>
+      programme.lecons.map((lesson): CurriculumChapter => ({
+        id: lesson.id,
+        classId: programme.classe_id,
+        subjectId: programme.matiere_id,
+        title: lesson.libelle,
+        objective: lesson.objectifs ?? '',
+        period: lesson.periode ?? '',
+        order: Number(lesson.ordre),
+        lessons: [{
+          id: lesson.id,
+          title: lesson.libelle,
+          estimatedSessions: Number(lesson.nombre_seances_estime) || 1,
+          progress: Number(lesson.pourcentage) || 0,
+          status: lesson.statut === 'terminee'
+            ? 'Terminée'
+            : lesson.statut === 'en_cours'
+              ? 'En cours'
+              : 'À faire',
+        }],
+      })),
+    );
+    this.subjects.set(subjects);
+    this.classSubjectAssignments.set(assignments);
+    this.collegeSubjectSettings.set(settings);
+    this.curriculumChapters.set(curriculumChapters);
+    this.ensureSelectedCurriculumSubject();
+  }
+
+  private pedagogyContext(): Record<string, string> | null {
+    const academicYearId = this.selectedCentralAcademicYearId();
+    const campusId = this.selectedCampusId();
+    if (!academicYearId || !campusId) return null;
+    return {
+      type_etablissement: this.codeTypeEtablissementApi(),
+      campus_id: campusId,
+      annee_scolaire_centrale_id: academicYearId,
+    };
+  }
+
+  private subjectColorForCode(code: string): string {
+    const palette = ['#2f80ed', '#7b61c9', '#36a37c', '#e28b4f', '#2779b9', '#d66f57', '#4b8e8b', '#8a6d3b'];
+    const index = [...code].reduce((total, character) => total + character.charCodeAt(0), 0) % palette.length;
+    return palette[index];
+  }
+
+  private ensureClassSubjectSelection(): void {
+    const classrooms = this.campusClasses();
+    const availableIds = new Set(classrooms.map((classroom) => classroom.id));
+    const currentIds = this.selectedClassSubjectIds().filter((classId) => availableIds.has(classId));
+    if (currentIds.length) {
+      if (currentIds.length !== this.selectedClassSubjectIds().length) {
+        this.selectedClassSubjectIds.set(currentIds);
+      }
+      return;
+    }
+    const fallbackId = availableIds.has(this.selectedClassId())
+      ? this.selectedClassId()
+      : classrooms[0]?.id;
+    this.selectedClassSubjectIds.set(fallbackId ? [fallbackId] : []);
   }
 
   startSubjectCreation(): void {
@@ -3735,34 +5515,35 @@ export class PrimarySchoolComponent {
 
   saveSubject(): void {
     const form = this.subjectForm;
-    const nextId =
-      form.id ?? Math.max(...this.subjects().map((subject) => subject.id), 0) + 1;
-    const subject: PrimarySubject = {
-      id: nextId,
-      name: form.name.trim(),
+    const context = this.pedagogyContext();
+    if (!context || !form.name.trim() || !form.code.trim()) {
+      this.snackBar.error('Renseignez le nom et le code de la matière.');
+      return;
+    }
+    this.subjectsSaving.set(true);
+    this.centralApi.enregistrerMatiereEtablissement({
+      ...context,
+      id: typeof form.id === 'string' ? form.id : null,
+      libelle: form.name.trim(),
       code: form.code.trim().toUpperCase(),
-      domain: form.domain,
-      scale: Number(form.scale),
-      levels: [...form.levels],
-      teachers:
-        this.subjects().find((item) => item.id === nextId)?.teachers ?? 0,
-      color: form.color,
-    };
-    this.subjects.update((items) =>
-      items.some((item) => item.id === nextId)
-        ? items.map((item) => (item.id === nextId ? subject : item))
-        : [subject, ...items],
-    );
-    this.subjectEditorOpen.set(false);
-    this.snackBar.open(
-      form.id ? 'La matière a été mise à jour.' : 'La matière a été ajoutée.',
-      'Fermer',
-      { duration: 3000, verticalPosition: 'bottom', horizontalPosition: 'center' },
-    );
+      domaine: form.domain || null,
+    }).subscribe({
+      next: (resultat) => {
+        this.subjectsSaving.set(false);
+        this.subjectEditorOpen.set(false);
+        this.applyPedagogyData(resultat);
+        this.snackBar.success(resultat.message ?? (form.id ? 'La matière a été mise à jour.' : 'La matière a été ajoutée.'));
+      },
+      error: (response) => {
+        this.subjectsSaving.set(false);
+        this.snackBar.error(response.error?.message ?? 'La matière n’a pas pu être enregistrée.');
+      },
+    });
   }
 
   startTeacherRegistration(): void {
     this.teacherForm = this.createEmptyTeacherForm();
+    this.teacherAttachmentFiles = [];
     this.teacherEditorOpen.set(true);
   }
 
@@ -3776,6 +5557,7 @@ export class PrimarySchoolComponent {
   }
 
   private loadTeacherForm(teacher: Teacher): void {
+    this.teacherAttachmentFiles = [];
     const names = this.splitStudentName(teacher.name);
     this.teacherForm = {
       id: teacher.id,
@@ -3804,32 +5586,42 @@ export class PrimarySchoolComponent {
   }
 
   deleteTeacher(teacher: Teacher): void {
-    if (!confirm(`Supprimer le dossier enseignant de ${teacher.name} ?`)) {
-      return;
-    }
-    this.teachers.update((items) => items.filter((item) => item.id !== teacher.id));
-    this.snackBar.open('Le dossier enseignant a été supprimé.', 'Fermer', {
-      duration: 2500,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    this.requestConfirmation({
+      title: 'Supprimer ce dossier enseignant ?',
+      message: `Le dossier enseignant de ${teacher.name} sera définitivement supprimé.`,
+      confirmLabel: 'Supprimer le dossier',
+      icon: 'delete_outline',
+    }, () => {
+      this.teachers.update((items) => items.filter((item) => item.id !== teacher.id));
+      this.snackBar.open('Le dossier enseignant a été supprimé.', 'Fermer', {
+        duration: 2500,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'center',
+      });
     });
   }
 
   deleteTeachers(teachers: Teacher[]): void {
-    if (!teachers.length || !confirm(`Supprimer les ${teachers.length} enseignants sélectionnés ?`)) {
-      return;
-    }
-    const ids = new Set(teachers.map((teacher) => teacher.id));
-    this.teachers.update((items) => items.filter((item) => !ids.has(item.id)));
-    this.snackBar.open(`${teachers.length} dossiers enseignants supprimés.`, 'Fermer', {
-      duration: 2500,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    if (!teachers.length) return;
+    this.requestConfirmation({
+      title: 'Supprimer les enseignants sélectionnés ?',
+      message: `${teachers.length} dossiers enseignants seront définitivement supprimés.`,
+      confirmLabel: `Supprimer les ${teachers.length} dossiers`,
+      icon: 'delete_outline',
+    }, () => {
+      const ids = new Set(teachers.map((teacher) => teacher.id));
+      this.teachers.update((items) => items.filter((item) => !ids.has(item.id)));
+      this.snackBar.open(`${teachers.length} dossiers enseignants supprimés.`, 'Fermer', {
+        duration: 2500,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'center',
+      });
     });
   }
 
   refreshTeachers(): void {
-    this.teacherDataSource.data = [...this.teacherDataSource.data];
+    this.centralApi.invaliderCache('institut:dossiers:');
+    this.chargerDossiers(this.workspace.establishmentType(), this.selectedCampusId(), true);
   }
 
   studentClassName(student: Student): string {
@@ -3925,71 +5717,71 @@ export class PrimarySchoolComponent {
 
   saveTeacher(): void {
     const form = this.teacherForm;
-    const nextId =
-      form.id ?? Math.max(...this.teachers().map((teacher) => teacher.id), 0) + 1;
-    const teacher: Teacher = {
-      id: nextId,
-      campusId: this.selectedCampusId(),
-      matricule:
-        form.matricule.trim() ||
-        `ENS-26${String(nextId).padStart(3, '0')}`,
-      name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
-      gender: form.gender,
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      subject: form.specialization.trim(),
-      degree: form.degree.trim(),
-      hireDate: this.toDisplayDate(form.hireDate),
-      status: form.status,
-      contractType: form.contractType,
-      address: form.address.trim(),
-      birthDate: this.toDisplayDate(form.birthDate),
-      birthPlace: form.birthPlace.trim(),
-      emergencyContact: form.emergencyContact.trim(),
-      emergencyPhone: form.emergencyPhone.trim(),
-      experience: form.experience,
-      salary: form.salary,
-      hourlyRate: form.hourlyRate,
-      salaryMode: form.salaryMode,
-      attachments: [...form.attachments],
-      portalAccount:
-        this.teachers().find((item) => item.id === nextId)?.portalAccount ??
-        (form.email.trim() ? 'Invitation envoyée' : 'Non créé'),
+    const existant = form.id === null ? undefined : this.teachers().find((item) => item.id === form.id);
+    const conserverDetail = this.activeView() === 'teacher-detail';
+    if (this.dossierSaving()) return;
+    this.dossierSaving.set(true);
+    const donneesEnseignant: Record<string, unknown> = {
+      type_etablissement: this.codeTypeEtablissementApi(),
+      campus_id: this.selectedCampusId(),
+      id: existant?.backendId ?? null,
+      matricule: form.matricule.trim() || null,
+      prenom: form.firstName.trim(),
+      nom: form.lastName.trim(),
+      sexe: form.gender,
+      date_naissance: form.birthDate || null,
+      lieu_naissance: form.birthPlace.trim() || null,
+      telephone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      adresse: form.address.trim() || null,
+      date_embauche: form.hireDate || null,
+      type_contrat: form.contractType || null,
+      statut: form.status === 'En congé' ? 'conge' : 'actif',
+      contact_urgence_nom: form.emergencyContact.trim() || null,
+      contact_urgence_telephone: form.emergencyPhone.trim() || null,
+      specialite: form.specialization.trim() || null,
+      diplome: form.degree.trim() || null,
+      experience_annees: form.experience === '' ? null : Number(form.experience),
+      type_remuneration: form.salaryMode === 'Horaire' ? 'horaire' : 'mensuelle',
+      salaire_mensuel: form.salary === '' ? null : Number(form.salary),
+      montant_heure: form.hourlyRate === '' ? null : Number(form.hourlyRate),
+      documents_conserves: [...form.attachments],
     };
-
-    this.teachers.update((items) => {
-      const exists = items.some((item) => item.id === nextId);
-      return exists
-        ? items.map((item) => (item.id === nextId ? teacher : item))
-        : [teacher, ...items];
-    });
-    this.teacherEditorOpen.set(false);
-    this.snackBar.open(
-      form.id
-        ? 'Le dossier enseignant a été mis à jour.'
-        : 'L’enseignant a été ajouté avec succès.',
-      'Fermer',
-      {
-        duration: 3000,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'center',
+    this.centralApi.enregistrerEnseignantEtablissement(
+      this.avecPiecesJointes(donneesEnseignant, this.teacherAttachmentFiles),
+    ).subscribe({
+      next: (resultat) => {
+        this.dossierSaving.set(false);
+        this.appliquerDossiersApi(resultat, this.selectedCampusId());
+        const enseignant = this.teachers().find((item) => item.backendId === resultat.personnel_id);
+        this.teacherEditorOpen.set(false);
+        if (conserverDetail && enseignant) {
+          this.selectedTeacherId.set(enseignant.id);
+          this.loadTeacherForm(enseignant);
+          this.teacherRecordTab.set('profile');
+          this.activeView.set('teacher-detail');
+        }
+        this.snackBar.open(resultat.message, 'Fermer', { duration: 3000, verticalPosition: 'bottom', horizontalPosition: 'center' });
       },
-    );
+      error: (response) => {
+        this.dossierSaving.set(false);
+        this.snackBar.open(response.error?.message ?? 'L’enregistrement de l’enseignant a échoué.', 'Fermer', { duration: 4000 });
+      },
+    });
   }
 
   saveTeacherRecord(): void {
-    const teacherId = this.teacherForm.id;
     this.saveTeacher();
-    if (teacherId !== null) {
-      this.selectedTeacherId.set(teacherId);
-      this.teacherRecordTab.set('profile');
-      this.activeView.set('teacher-detail');
-    }
   }
 
   onTeacherFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const names = Array.from(input.files ?? []).map((file) => file.name);
+    const files = Array.from(input.files ?? []);
+    const names = files.map((file) => file.name);
+    this.teacherAttachmentFiles = [
+      ...this.teacherAttachmentFiles.filter((file) => !names.includes(file.name)),
+      ...files,
+    ];
     this.teacherForm.attachments = [
       ...new Set([...this.teacherForm.attachments, ...names]),
     ];
@@ -3997,6 +5789,7 @@ export class PrimarySchoolComponent {
   }
 
   removeTeacherAttachment(name: string): void {
+    this.teacherAttachmentFiles = this.teacherAttachmentFiles.filter((file) => file.name !== name);
     this.teacherForm.attachments = this.teacherForm.attachments.filter(
       (attachment) => attachment !== name,
     );
@@ -4004,6 +5797,7 @@ export class PrimarySchoolComponent {
 
   startStaffRegistration(): void {
     this.staffForm = this.createEmptyStaffForm();
+    this.staffAttachmentFiles = [];
     this.staffEditorOpen.set(true);
     this.activeView.set('staff');
   }
@@ -4031,93 +5825,118 @@ export class PrimarySchoolComponent {
   }
 
   deleteStaff(person: SchoolStaff): void {
-    if (!confirm(`Supprimer le dossier de ${person.name} ?`)) {
-      return;
-    }
-    this.schoolStaff.update((items) => items.filter((item) => item.id !== person.id));
-    this.snackBar.open('Le dossier du personnel a été supprimé.', 'Fermer', {
-      duration: 2500,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    this.requestConfirmation({
+      title: 'Supprimer ce dossier du personnel ?',
+      message: `Le dossier de ${person.name} sera définitivement supprimé.`,
+      confirmLabel: 'Supprimer le dossier',
+      icon: 'delete_outline',
+    }, () => {
+      this.schoolStaff.update((items) => items.filter((item) => item.id !== person.id));
+      this.snackBar.open('Le dossier du personnel a été supprimé.', 'Fermer', {
+        duration: 2500,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'center',
+      });
     });
   }
 
   deleteStaffMembers(personnel: SchoolStaff[]): void {
-    if (!personnel.length || !confirm(`Supprimer les ${personnel.length} dossiers sélectionnés ?`)) {
-      return;
-    }
-    const ids = new Set(personnel.map((person) => person.id));
-    this.schoolStaff.update((items) => items.filter((item) => !ids.has(item.id)));
-    this.snackBar.open(`${personnel.length} dossiers du personnel supprimés.`, 'Fermer', {
-      duration: 2500,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    if (!personnel.length) return;
+    this.requestConfirmation({
+      title: 'Supprimer les dossiers sélectionnés ?',
+      message: `${personnel.length} dossiers du personnel seront définitivement supprimés.`,
+      confirmLabel: `Supprimer les ${personnel.length} dossiers`,
+      icon: 'delete_outline',
+    }, () => {
+      const ids = new Set(personnel.map((person) => person.id));
+      this.schoolStaff.update((items) => items.filter((item) => !ids.has(item.id)));
+      this.snackBar.open(`${personnel.length} dossiers du personnel supprimés.`, 'Fermer', {
+        duration: 2500,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'center',
+      });
     });
   }
 
   refreshStaff(): void {
-    this.staffDataSource.data = [...this.staffDataSource.data];
+    this.centralApi.invaliderCache('institut:dossiers:');
+    this.chargerDossiers(this.workspace.establishmentType(), this.selectedCampusId(), true);
   }
 
   saveStaff(): void {
     const form = this.staffForm;
-    const nextId = form.id ?? Math.max(...this.schoolStaff().map((person) => person.id), 0) + 1;
-    const person: SchoolStaff = {
-      id: nextId,
-      campusId: this.selectedCampusId(),
-      matricule: form.matricule.trim() || `PER-26${String(nextId).padStart(3, '0')}`,
-      name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
-      gender: form.gender,
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      function: form.function.trim(),
-      birthDate: this.toDisplayDate(form.birthDate),
-      birthPlace: form.birthPlace.trim(),
-      address: form.address.trim(),
-      hireDate: this.toDisplayDate(form.hireDate),
-      contractType: form.contractType,
-      status: form.status,
-      salary: form.salary,
-      hourlyRate: form.hourlyRate,
-      emergencyContact: form.emergencyContact.trim(),
-      emergencyPhone: form.emergencyPhone.trim(),
-      attachments: [...form.attachments],
-      portalAccount: this.schoolStaff().find((item) => item.id === nextId)?.portalAccount ??
-        (form.email.trim() ? 'Invitation envoyée' : 'Non créé'),
+    const existant = form.id === null ? undefined : this.schoolStaff().find((item) => item.id === form.id);
+    const conserverDetail = this.activeView() === 'staff-detail';
+    if (this.dossierSaving()) return;
+    this.dossierSaving.set(true);
+    const donneesPersonnel: Record<string, unknown> = {
+      type_etablissement: this.codeTypeEtablissementApi(),
+      campus_id: this.selectedCampusId(),
+      id: existant?.backendId ?? null,
+      matricule: form.matricule.trim() || null,
+      prenom: form.firstName.trim(),
+      nom: form.lastName.trim(),
+      sexe: form.gender,
+      date_naissance: form.birthDate || null,
+      lieu_naissance: form.birthPlace.trim() || null,
+      telephone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      adresse: form.address.trim() || null,
+      fonction: form.function.trim(),
+      date_embauche: form.hireDate || null,
+      type_contrat: form.contractType || null,
+      statut: form.status === 'Suspendu' ? 'suspendu' : form.status === 'En congé' ? 'conge' : 'actif',
+      contact_urgence_nom: form.emergencyContact.trim() || null,
+      contact_urgence_telephone: form.emergencyPhone.trim() || null,
+      salaire_mensuel: form.salary === '' ? null : Number(form.salary),
+      documents_conserves: [...form.attachments],
     };
-    this.schoolStaff.update((items) => items.some((item) => item.id === nextId)
-      ? items.map((item) => item.id === nextId ? person : item)
-      : [person, ...items]);
-    this.staffEditorOpen.set(false);
-    this.snackBar.open(form.id ? 'Le dossier du personnel a été mis à jour.' : 'Le membre du personnel a été ajouté.', 'Fermer', {
-      duration: 3000,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    this.centralApi.enregistrerPersonnelEtablissement(
+      this.avecPiecesJointes(donneesPersonnel, this.staffAttachmentFiles),
+    ).subscribe({
+      next: (resultat) => {
+        this.dossierSaving.set(false);
+        this.appliquerDossiersApi(resultat, this.selectedCampusId());
+        const personnel = this.schoolStaff().find((item) => item.backendId === resultat.personnel_id);
+        this.staffEditorOpen.set(false);
+        if (conserverDetail && personnel) {
+          this.selectedStaffId.set(personnel.id);
+          this.loadStaffForm(personnel);
+          this.staffRecordTab.set('profile');
+          this.activeView.set('staff-detail');
+        }
+        this.snackBar.open(resultat.message, 'Fermer', { duration: 3000, verticalPosition: 'bottom', horizontalPosition: 'center' });
+      },
+      error: (response) => {
+        this.dossierSaving.set(false);
+        this.snackBar.open(response.error?.message ?? 'L’enregistrement du personnel a échoué.', 'Fermer', { duration: 4000 });
+      },
     });
   }
 
   saveStaffRecord(): void {
-    const staffId = this.staffForm.id;
     this.saveStaff();
-    if (staffId !== null) {
-      this.selectedStaffId.set(staffId);
-      this.staffRecordTab.set('profile');
-      this.activeView.set('staff-detail');
-    }
   }
 
   onStaffFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const names = Array.from(input.files ?? []).map((file) => file.name);
+    const files = Array.from(input.files ?? []);
+    const names = files.map((file) => file.name);
+    this.staffAttachmentFiles = [
+      ...this.staffAttachmentFiles.filter((file) => !names.includes(file.name)),
+      ...files,
+    ];
     this.staffForm.attachments = [...new Set([...this.staffForm.attachments, ...names])];
     input.value = '';
   }
 
   removeStaffAttachment(name: string): void {
+    this.staffAttachmentFiles = this.staffAttachmentFiles.filter((file) => file.name !== name);
     this.staffForm.attachments = this.staffForm.attachments.filter((attachment) => attachment !== name);
   }
 
   private loadStaffForm(person: SchoolStaff): void {
+    this.staffAttachmentFiles = [];
     const names = this.splitStudentName(person.name);
     this.staffForm = {
       id: person.id,
@@ -4301,8 +6120,6 @@ export class PrimarySchoolComponent {
       classId: classroom.id,
       registrationFee: adjust(classroom.registrationFee, 2500),
       monthlyFee: adjust(classroom.monthlyFee, 1500),
-      schoolUniformFee: String(Math.max(0, 15000 + yearDifference * 1000)),
-      sportsUniformFee: String(Math.max(0, 10000 + yearDifference * 1000)),
     };
   }
 
@@ -4311,19 +6128,26 @@ export class PrimarySchoolComponent {
   }
 
   addPrimaryLevelSetting(): void {
-    const nextId = Math.max(0, ...this.schoolLevelSettings.map((level) => level.id)) + 1;
     this.schoolLevelSettings = [
       ...this.schoolLevelSettings,
-      { id: nextId, code: '', label: '' },
+      { id: `nouveau-${Date.now()}`, code: '', label: '' },
     ];
   }
 
-  removePrimaryLevelSetting(id: number): void {
+  removePrimaryLevelSetting(id: number | string): void {
     if (this.schoolLevelSettings.length <= 1) {
       this.snackBar.open('Conservez au moins un niveau.', 'Fermer', { duration: 2600 });
       return;
     }
-    this.schoolLevelSettings = this.schoolLevelSettings.filter((level) => level.id !== id);
+    const level = this.schoolLevelSettings.find((item) => item.id === id);
+    this.requestConfirmation({
+      title: 'Supprimer ce niveau ?',
+      message: `Le niveau ${level?.code || level?.label || 'sélectionné'} sera retiré de la configuration.`,
+      confirmLabel: 'Supprimer le niveau',
+      icon: 'delete_outline',
+    }, () => {
+      this.schoolLevelSettings = this.schoolLevelSettings.filter((item) => item.id !== id);
+    });
   }
 
   saveSchoolSettings(): void {
@@ -4332,26 +6156,164 @@ export class PrimarySchoolComponent {
     const invalidTerm = this.trimesterSettings.some((term) => !term.label.trim() || !term.startDate || !term.endDate || term.startDate > term.endDate);
     const periodLabel = this.isCollege() ? 'semestres' : 'trimestres';
 
-    if (!year.label.trim() || !year.startDate || !year.endDate || year.startDate > year.endDate || invalidLevel || invalidTerm) {
+    if (!year.centralYearId || !year.startDate || !year.endDate || year.startDate > year.endDate || invalidLevel || invalidTerm) {
       this.snackBar.open(`Vérifiez l’année scolaire, les niveaux et les dates des ${periodLabel}.`, 'Fermer', { duration: 3500 });
       return;
     }
 
-    const academicYear = year.label.trim();
-    if (!this.feeAcademicYears.includes(academicYear)) {
-      this.workspace.academicYears.update((years) => [...years, academicYear].sort());
+    if (this.isSelectedSchoolYearArchived()) {
+      this.snackBar.open('Cette année scolaire est archivée et ne peut plus être modifiée.', 'Fermer', { duration: 3200 });
+      return;
     }
-    this.workspace.selectedAcademicYear.set(academicYear);
-    this.selectedFeeAcademicYear.set(academicYear);
-    this.selectedCollectionAcademicYear.set(academicYear);
-    this.selectedExpenseAcademicYear.set(academicYear);
-    this.selectedFinanceAcademicYear.set(academicYear);
-    this.workspace.selectedPeriod.set(this.trimesterSettings[0].label);
-    this.snackBar.open(
-      `Paramètres ${this.isHighSchool() ? 'du lycée' : this.isCollege() ? 'du collège' : 'du primaire'} enregistrés.`,
-      'Fermer',
-      { duration: 2800 },
-    );
+
+    this.centralApi.enregistrerAnneeScolaireEtablissement(
+      year.centralYearId,
+      this.codeTypeEtablissementApi(),
+      year.startDate,
+      year.endDate,
+      this.anneesScolairesDisponibles().find((annee) => annee.id === year.centralYearId)?.est_courante ?? false,
+      this.schoolLevelSettings.map((niveau) => ({
+        id: niveau.id,
+        code: niveau.code,
+        libelle: niveau.label,
+      })),
+      this.trimesterSettings.map((periode) => ({
+        libelle: periode.label,
+        date_debut: periode.startDate,
+        date_fin: periode.endDate,
+      })),
+    ).subscribe({
+      next: () => {
+        const academicYear = year.label;
+        this.workspace.selectedAcademicYear.set(academicYear);
+        this.selectedFeeAcademicYear.set(academicYear);
+        this.selectedCollectionAcademicYear.set(academicYear);
+        this.selectedExpenseAcademicYear.set(academicYear);
+        this.selectedFinanceAcademicYear.set(academicYear);
+        this.workspace.selectedPeriod.set(this.trimesterSettings[0].label);
+        this.chargerAnneesScolaires();
+        this.snackBar.open(
+          `Paramètres ${this.isHighSchool() ? 'du lycée' : this.isCollege() ? 'du collège' : 'du primaire'} enregistrés.`,
+          'Fermer',
+          { duration: 2800 },
+        );
+      },
+      error: (response) => this.snackBar.open(
+        response.error?.message ?? 'Les dates de l’année scolaire n’ont pas pu être enregistrées.',
+        'Fermer',
+        { duration: 3500 },
+      ),
+    });
+  }
+
+  selectSchoolYear(centralYearId: string): void {
+    const annee = this.anneesScolairesDisponibles().find((item) => item.id === centralYearId);
+    if (!annee) return;
+
+    this.selectedCentralAcademicYearId.set(annee.id);
+    this.schoolYearSettings = {
+      centralYearId: annee.id,
+      label: annee.libelle,
+      startDate: annee.configuration?.date_debut ?? '',
+      endDate: annee.configuration?.date_fin ?? '',
+    };
+    this.workspace.selectedAcademicYear.set(annee.libelle);
+    this.chargerParametresScolarite(annee.id);
+    this.chargerClasses();
+  }
+
+  actualiserDonneesBackend(): void {
+    if (this.backendRefreshing()) return;
+    this.centralApi.invaliderCache('institut:');
+    this.backendRefreshing.set(true);
+    this.centralApi.espaceInstitut().subscribe({
+      next: () => this.chargerAnneesScolaires(true),
+      error: (response) => {
+        this.backendRefreshing.set(false);
+        this.snackBar.open(
+          response.error?.message ?? 'Les données de l’établissement n’ont pas pu être réactualisées.',
+          'Fermer',
+          { duration: 3800 },
+        );
+      },
+    });
+  }
+
+  private chargerParametresScolarite(anneeCentraleId: string): void {
+    this.schoolSettingsLoading.set(true);
+    this.centralApi.parametresScolariteEtablissement(
+      anneeCentraleId,
+      this.codeTypeEtablissementApi(),
+    ).subscribe({
+      next: ({ niveaux, periodes }) => {
+        if (niveaux.length) {
+          this.schoolLevelSettings = niveaux.map((niveau) => ({
+            id: niveau.id,
+            code: niveau.code,
+            label: niveau.libelle,
+          }));
+        }
+        if (periodes.length) {
+          this.trimesterSettings = periodes.map((periode) => ({
+            id: periode.id,
+            label: periode.libelle,
+            startDate: periode.date_debut ?? '',
+            endDate: periode.date_fin ?? '',
+          }));
+        }
+        this.preparerPropositionsClasses(true);
+        this.schoolSettingsLoading.set(false);
+      },
+      error: () => this.schoolSettingsLoading.set(false),
+    });
+  }
+
+  private chargerAnneesScolaires(actualisationManuelle = false): void {
+    this.schoolYearsLoading.set(true);
+    this.centralApi.anneesScolairesInstitut(this.codeTypeEtablissementApi()).subscribe({
+      next: ({ data }) => {
+        this.anneesScolairesDisponibles.set(data);
+        this.workspace.academicYears.set(data.map((annee) => annee.libelle));
+        const annee = data.find((item) => item.configuration?.est_courante)
+          ?? data.find((item) => item.est_courante)
+          ?? data[0];
+        if (annee) {
+          this.selectSchoolYear(annee.id);
+        }
+        if (actualisationManuelle) {
+          this.backendRefreshing.set(false);
+          this.snackBar.open('Les données ont été réactualisées depuis la base de données.', 'Fermer', { duration: 2800 });
+        }
+        this.schoolYearsLoading.set(false);
+      },
+      error: (response) => {
+        this.schoolYearsLoading.set(false);
+        if (actualisationManuelle) {
+          this.backendRefreshing.set(false);
+          this.snackBar.open(
+            response.error?.message ?? 'La réactualisation des données a échoué.',
+            'Fermer',
+            { duration: 3800 },
+          );
+        }
+      },
+    });
+  }
+
+  private codeTypeEtablissementApi(): string {
+    return this.workspace.establishmentType() === 'primary'
+      ? 'primaire'
+      : this.workspace.establishmentType();
+  }
+
+  private avecPiecesJointes(donnees: Record<string, unknown>, fichiers: File[]): Record<string, unknown> | FormData {
+    if (!fichiers.length) {
+      return donnees;
+    }
+    const formulaire = new FormData();
+    formulaire.append('donnees', JSON.stringify(donnees));
+    fichiers.forEach((fichier) => formulaire.append('pieces_jointes[]', fichier, fichier.name));
+    return formulaire;
   }
 
   private createEmptyCurriculumChapterForm(): CurriculumChapterFormModel {
@@ -4377,7 +6339,7 @@ export class PrimarySchoolComponent {
           ? {
               ...chapter,
               lessons: chapter.lessons.map((lesson) =>
-                lesson.title === lessonTitle ? { ...lesson, status: 'Terminée' } : lesson,
+                lesson.title === lessonTitle ? { ...lesson, status: 'Terminée', progress: 100 } : lesson,
               ),
             }
           : chapter,
@@ -4396,11 +6358,11 @@ export class PrimarySchoolComponent {
   private createEmptySubjectForm(): SubjectFormModel {
     return {
       id: null,
-      name: 'Français',
+      name: '',
       code: '',
-      domain: 'Langues et communication',
+      domain: '',
       scale: 20,
-      levels: ['CI'],
+      levels: [...this.primaryLevels],
       color: '#2f80ed',
     };
   }
@@ -4414,6 +6376,7 @@ export class PrimarySchoolComponent {
     const cell = (index: number): TimetableCell => ({
       subject: entries[index]?.[0] ?? '',
       teacherId: entries[index]?.[1] ?? null,
+      roomId: null,
     });
 
     return {
@@ -4443,6 +6406,20 @@ export class PrimarySchoolComponent {
         saturday: { ...row.cells.saturday },
       },
     }));
+  }
+
+  private affectationsEnseignantsDepuisEmploiTemps(rows: TimetableRow[]): Record<string, number | null> {
+    const assignments: Record<string, number | null> = {};
+    rows.forEach((row) => {
+      this.timetableDays.forEach((day) => {
+        const cell = row.cells[day.key];
+        if (!cell.subject || cell.subject === 'Pause') return;
+        if (!(cell.subject in assignments) || (assignments[cell.subject] === null && cell.teacherId !== null)) {
+          assignments[cell.subject] = cell.teacherId;
+        }
+      });
+    });
+    return assignments;
   }
 
   private splitStudentName(name: string): { firstName: string; lastName: string } {
@@ -4565,6 +6542,31 @@ export class PrimarySchoolComponent {
     requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0 }));
   }
 
+  openAssessmentEditor(): void {
+    const domain = this.selectedEvaluationDomain();
+    const component = domain.components[0];
+    this.assessmentForm = { title: '', type: 'controle', date: new Date().toISOString().slice(0, 10), period: this.selectedTrimester(), domainId: domain.id, componentId: component?.id ?? '', teacherId: String(this.campusTeachers()[0]?.id ?? '') };
+    this.assessmentEditorOpen.set(true);
+  }
+
+  closeAssessmentEditor(): void { this.assessmentEditorOpen.set(false); }
+
+  assessmentEditorComponents(): PrimaryEvaluationComponent[] {
+    return this.primaryEvaluationDomains.find((domain) => domain.id === this.assessmentForm.domainId)?.components ?? [];
+  }
+
+  createAssessment(): void {
+    const context = this.pedagogyContext();
+    const component = this.assessmentEditorComponents().find((item) => item.id === this.assessmentForm.componentId);
+    const teacher = this.campusTeachers().find((item) => item.id === Number(this.assessmentForm.teacherId));
+    if (!context || !component || !this.assessmentForm.title.trim() || !this.assessmentForm.date) { this.snackBar.error('Renseignez le titre, la date, le domaine et la composante évaluée.'); return; }
+    this.assessmentSaving.set(true);
+    this.centralApi.creerEvaluationEtablissement({ ...context, classe_id: this.selectedClassId(), titre: this.assessmentForm.title.trim(), type: this.assessmentForm.type, date_evaluation: this.assessmentForm.date, periode: this.assessmentForm.period || null, domaine: this.assessmentForm.domainId, composante: component.id, bareme: component.scale, enseignant_id: teacher?.teachingBackendId ?? null }).subscribe({
+      next: (resultat) => { this.assessmentSaving.set(false); this.appliquerEvaluationsBackend(resultat.data); this.assessmentEditorOpen.set(false); this.snackBar.success(resultat.message); },
+      error: (response) => { this.assessmentSaving.set(false); this.snackBar.error(response.error?.message ?? 'L’évaluation n’a pas pu être créée.'); },
+    });
+  }
+
   openAssessmentFromStudentRecord(assessment: PrimaryAssessment): void {
     this.activeView.set('assessments');
     this.selectedEvaluationDomainId.set(assessment.evaluationDomainId);
@@ -4574,13 +6576,21 @@ export class PrimarySchoolComponent {
 
   backToAssessmentList(): void {
     this.selectedAssessmentId.set(null);
+    this.assessmentEditorOpen.set(false);
   }
 
   saveAssessmentResults(): void {
-    this.snackBar.open('Les notes et appréciations ont été enregistrées.', 'Fermer', {
-      duration: 2800,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    const assessment = this.selectedAssessment();
+    const context = this.pedagogyContext();
+    if (!assessment || !context) return;
+    const resultats = assessment.results.map((result) => {
+      const student = this.assessmentStudent(result.studentId);
+      return { eleve_id: student?.backendId, a_participe: result.participated, note: result.score, appreciation: result.appreciation || null };
+    }).filter((result): result is { eleve_id: string; a_participe: boolean; note: number | null; appreciation: string | null } => Boolean(result.eleve_id));
+    this.assessmentSaving.set(true);
+    this.centralApi.enregistrerResultatsEvaluation(assessment.id, { ...context, resultats }).subscribe({
+      next: (resultat) => { this.assessmentSaving.set(false); this.appliquerEvaluationsBackend(resultat.data); this.snackBar.success(resultat.message); },
+      error: (response) => { this.assessmentSaving.set(false); this.snackBar.error(response.error?.message ?? 'Les résultats n’ont pas pu être enregistrés.'); },
     });
   }
 
@@ -4795,7 +6805,7 @@ export class PrimarySchoolComponent {
       ]?.[studentId] ?? { homework1: null, homework2: null, composition: null };
       const homeworkAverage = this.homeworkAverageForGrade(grade);
       const averageValue = this.subjectAverageForGrade(grade);
-      const coefficient = this.collegeSubjectSetting(this.selectedClassId(), subject.id).coefficient;
+      const coefficient = this.collegeSubjectSetting(this.selectedClassId(), subject.id).coefficient ?? 1;
       return {
         subject,
         homeworkAverage: homeworkAverage === null ? '—' : homeworkAverage.toFixed(1),
@@ -4981,12 +6991,18 @@ export class PrimarySchoolComponent {
   }
 
   removeReportTemplate(): void {
-    const previewUrl = this.uploadedReportTemplate()?.previewUrl;
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    this.uploadedReportTemplate.set(null);
-    this.reportTemplateSource.set('default');
+    const template = this.uploadedReportTemplate();
+    this.requestConfirmation({
+      title: 'Supprimer ce modèle de bulletin ?',
+      message: `Le modèle « ${template?.name ?? 'personnalisé'} » sera supprimé et le modèle E-Scolarité redeviendra actif.`,
+      confirmLabel: 'Supprimer le modèle',
+      icon: 'delete_outline',
+    }, () => {
+      const previewUrl = this.uploadedReportTemplate()?.previewUrl;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      this.uploadedReportTemplate.set(null);
+      this.reportTemplateSource.set('default');
+    });
   }
 
   printReportCard(): void {
@@ -5185,8 +7201,6 @@ export class PrimarySchoolComponent {
     const baseOptions: CollectionFeeOption[] = [
       { id: 'registrationFee', label: 'Frais d’inscription', amount: configuration.registrationFee, frequency: 'Paiement unique', required: true },
       { id: 'monthlyFee', label: 'Mensualité scolaire', amount: configuration.monthlyFee, frequency: 'Mensuel', required: true },
-      { id: 'schoolUniformFee', label: 'Tenue scolaire', amount: configuration.schoolUniformFee, frequency: 'Paiement unique', required: false },
-      { id: 'sportsUniformFee', label: 'Tenue sportive', amount: configuration.sportsUniformFee, frequency: 'Paiement unique', required: false },
     ];
     const options = baseOptions.filter((fee) => Number(fee.amount) > 0);
 
@@ -5251,16 +7265,18 @@ export class PrimarySchoolComponent {
   toggleMonthlyPayment(studentId: number, month: string): void {
     const ledgerKey = this.collectionLedgerKey();
     const currentDate = this.monthlyPaymentDate(studentId, month);
-    this.monthlyPaymentRecords.update((records) => ({
-      ...records,
-      [ledgerKey]: {
-        ...(records[ledgerKey] ?? {}),
-        [studentId]: {
-          ...(records[ledgerKey]?.[studentId] ?? {}),
-          [month]: currentDate ? null : this.currentIsoDate(),
-        },
-      },
-    }));
+    if (currentDate) {
+      const student = this.students().find((item) => item.id === studentId);
+      this.requestConfirmation({
+        title: 'Annuler cet encaissement ?',
+        message: `Le paiement de ${month} pour ${student?.name ?? 'cet élève'} sera annulé et apparaîtra de nouveau comme impayé.`,
+        confirmLabel: 'Annuler l’encaissement',
+        icon: 'undo',
+        tone: 'warning',
+      }, () => this.basculerEncaissement(studentId, false, this.monthPeriod(this.selectedCollectionAcademicYear(), month)));
+      return;
+    }
+    this.basculerEncaissement(studentId, !currentDate, this.monthPeriod(this.selectedCollectionAcademicYear(), month));
   }
 
   oneTimePaymentDate(studentId: number): string | null {
@@ -5268,15 +7284,50 @@ export class PrimarySchoolComponent {
   }
 
   toggleOneTimePayment(studentId: number): void {
-    const ledgerKey = this.collectionLedgerKey();
     const currentDate = this.oneTimePaymentDate(studentId);
-    this.oneTimePaymentRecords.update((records) => ({
-      ...records,
-      [ledgerKey]: {
-        ...(records[ledgerKey] ?? {}),
-        [studentId]: currentDate ? null : this.currentIsoDate(),
+    if (currentDate) {
+      const student = this.students().find((item) => item.id === studentId);
+      this.requestConfirmation({
+        title: 'Annuler cet encaissement ?',
+        message: `Le paiement de ${student?.name ?? 'cet élève'} sera annulé et apparaîtra de nouveau comme impayé.`,
+        confirmLabel: 'Annuler l’encaissement',
+        icon: 'undo',
+        tone: 'warning',
+      }, () => this.basculerEncaissement(studentId, false, null));
+      return;
+    }
+    this.basculerEncaissement(studentId, !currentDate, null);
+  }
+
+  private basculerEncaissement(studentId: number, paye: boolean, periode: string | null): void {
+    const context = this.financeContext(this.selectedCollectionAcademicYear());
+    const student = this.students().find((item) => item.id === studentId);
+    const tarifId = this.financeTariffIds.get(this.collectionLedgerKey());
+    if (!context || !student?.backendId || !tarifId) {
+      this.snackBar.error('Cette échéance n’est pas disponible. Réactualisez les encaissements.');
+      return;
+    }
+    this.centralApi.basculerEncaissementEtablissement({
+      ...context,
+      tarif_scolaire_id: tarifId,
+      eleve_id: student.backendId,
+      periode,
+      paye,
+      mode_paiement: 'espece',
+    }).subscribe({
+      next: (resultat) => {
+        this.chargerFinances(this.selectedCollectionAcademicYear());
+        this.snackBar.success(resultat.message);
       },
-    }));
+      error: (response) => this.snackBar.error(response.error?.message ?? 'Le paiement n’a pas pu être enregistré.'),
+    });
+  }
+
+  private monthPeriod(academicYear: string, monthLabel: string): string {
+    const start = this.academicYearStart(academicYear);
+    const month = ({ Jan: 1, Fév: 2, Mar: 3, Avr: 4, Mai: 5, Juin: 6, Juil: 7, Août: 8, Sep: 9, Oct: 10, Nov: 11, Déc: 12 } as Record<string, number>)[monthLabel];
+    const year = month >= 7 ? start : start + 1;
+    return `${year}-${String(month).padStart(2, '0')}`;
   }
 
   formatPaymentDate(isoDate: string | null): string {
@@ -5343,7 +7394,9 @@ export class PrimarySchoolComponent {
   }
 
   selectedExpenseType(): ExpenseType {
-    return this.expenseTypes().find((type) => type.id === this.selectedExpenseTypeId()) ?? this.expenseTypes()[0];
+    return this.expenseTypes().find((type) => type.id === this.selectedExpenseTypeId())
+      ?? this.expenseTypes()[0]
+      ?? { id: '', label: 'Type de dépense', frequency: 'Unique', target: 'Personnel', defaultAmount: 0, active: false };
   }
 
   expenseTotal(): number {
@@ -5352,6 +7405,10 @@ export class PrimarySchoolComponent {
 
   isSalaryExpenseType(): boolean {
     return this.selectedExpenseTypeId() === 'staff-salary' || this.selectedExpenseTypeId() === 'teacher-salary';
+  }
+
+  private expenseTargetCode(target: ExpenseTarget): 'personnel' | 'enseignants' | 'tous' {
+    return target === 'Enseignants' ? 'enseignants' : target === 'Personnel et enseignants' ? 'tous' : 'personnel';
   }
 
   selectExpenseType(typeId: string): void {
@@ -5366,7 +7423,7 @@ export class PrimarySchoolComponent {
   }
 
   openExpenseTypeEditor(): void {
-    this.expenseTypeDraft = { label: '', frequency: 'Unique', defaultAmount: 0 };
+    this.expenseTypeDraft = { label: '', frequency: 'Unique', target: 'Personnel', defaultAmount: 0 };
     this.expenseTypeEditorOpen.set(true);
   }
 
@@ -5375,31 +7432,83 @@ export class PrimarySchoolComponent {
     if (!label) {
       return;
     }
-    const id = `custom-${Date.now()}`;
-    this.expenseTypes.update((types) => [...types, { id, ...this.expenseTypeDraft, active: true }]);
-    this.expenseTypeEditorOpen.set(false);
-    this.selectExpenseType(id);
-    this.snackBar.open('Type de dépense ajouté.', 'Fermer', { duration: 2500 });
+    const context = this.financeContext(this.selectedExpenseAcademicYear());
+    if (!context) return;
+    this.centralApi.enregistrerTypeDepenseEtablissement({
+      type_etablissement: context['type_etablissement'],
+      campus_id: context['campus_id'],
+      libelle: label,
+      frequence: this.expenseTypeDraft.frequency === 'Mensuel' ? 'mensuel' : 'unique',
+      cible: this.expenseTargetCode(this.expenseTypeDraft.target),
+      montant_provisoire: this.expenseTypeDraft.defaultAmount || null,
+    }).subscribe({
+      next: (resultat) => {
+        this.expenseTypeEditorOpen.set(false);
+        this.chargerFinances(this.selectedExpenseAcademicYear());
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => this.snackBar.error(response.error?.message ?? 'Le type de dépense n’a pas pu être ajouté.'),
+    });
   }
 
-  updateExpenseType(typeId: string, field: 'frequency' | 'defaultAmount', value: string | number): void {
-    this.expenseTypes.update((types) => types.map((type) => type.id === typeId ? { ...type, [field]: field === 'defaultAmount' ? Number(value) : value } as ExpenseType : type));
+  updateExpenseType(typeId: string, field: 'frequency' | 'target' | 'defaultAmount', value: string | number): void {
+    const type = this.expenseTypes().find((item) => item.id === typeId);
+    const context = this.financeContext(this.selectedExpenseAcademicYear());
+    if (!type?.backendId || !context) return;
+    const updated: ExpenseType = { ...type, [field]: field === 'defaultAmount' ? Number(value) : value } as ExpenseType;
+    this.expenseTypes.update((types) => types.map((item) => item.id === typeId ? updated : item));
+    this.centralApi.enregistrerTypeDepenseEtablissement({
+      type_etablissement: context['type_etablissement'],
+      campus_id: context['campus_id'],
+      libelle: updated.label,
+      frequence: updated.frequency === 'Mensuel' ? 'mensuel' : 'unique',
+      cible: this.expenseTargetCode(updated.target),
+      montant_provisoire: updated.defaultAmount || null,
+    }, type.backendId).subscribe({
+      next: () => undefined,
+      error: (response) => {
+        this.chargerFinances(this.selectedExpenseAcademicYear());
+        this.snackBar.error(response.error?.message ?? 'La modification n’a pas pu être enregistrée.');
+      },
+    });
   }
 
   removeExpenseType(typeId: string): void {
-    if (!typeId.startsWith('custom-')) {
+    if (typeId === 'staff-salary' || typeId === 'teacher-salary') {
       this.snackBar.open('Les types par défaut peuvent être modifiés mais pas supprimés.', 'Fermer', { duration: 3000 });
       return;
     }
-    this.expenseTypes.update((types) => types.filter((type) => type.id !== typeId));
-    if (this.selectedExpenseTypeId() === typeId) {
-      this.selectExpenseType('staff-salary');
-    }
+    const type = this.expenseTypes().find((item) => item.id === typeId);
+    const context = this.financeContext(this.selectedExpenseAcademicYear());
+    if (!type?.backendId || !context) return;
+    this.requestConfirmation({
+      title: 'Supprimer ce type de dépense ?',
+      message: `Le type « ${type.label} » sera définitivement supprimé de la configuration.`,
+      confirmLabel: 'Supprimer le type',
+      icon: 'delete_outline',
+    }, () => {
+      this.centralApi.supprimerTypeDepenseEtablissement(type.backendId as string, context['type_etablissement'], context['campus_id']).subscribe({
+        next: (resultat) => {
+          if (this.selectedExpenseTypeId() === typeId) this.selectedExpenseTypeId.set('staff-salary');
+          this.chargerFinances(this.selectedExpenseAcademicYear());
+          this.snackBar.success(resultat.message);
+        },
+        error: (response) => this.snackBar.error(response.error?.message ?? 'Le type de dépense n’a pas pu être supprimé.'),
+      });
+    });
   }
 
   selectExpensePeriod(period: string): void {
     this.selectedExpensePeriod.set(period);
     this.expenseUnpaidOnly.set(false);
+  }
+
+  expensePeriodOptions(): Array<{ value: string; label: string }> {
+    return this.paymentMonths.map((month) => {
+      const value = this.monthPeriod(this.selectedExpenseAcademicYear(), month);
+      const date = new Date(`${value}-01T00:00:00`);
+      return { value, label: new Intl.DateTimeFormat('fr-SN', { month: 'long', year: 'numeric' }).format(date) };
+    });
   }
 
   selectExpenseAcademicYear(academicYear: string): void {
@@ -5421,14 +7530,105 @@ export class PrimarySchoolComponent {
 
   salaryPeople(): ExpensePayee[] {
     const campusId = this.selectedCampusId();
-    return this.selectedExpenseTypeId() === 'teacher-salary'
-      ? this.teachers().filter((person) => person.campusId === campusId).map((person) => ({ key: `teacher-${person.id}`, name: person.name, reference: person.matricule, role: `Enseignant · ${person.subject}`, salary: Number(person.salary || 0), salaryMode: person.salaryMode ?? 'Mensuel', hourlyRate: Number(person.hourlyRate || 0) }))
-      : this.schoolStaff().filter((person) => person.campusId === campusId).map((person) => ({ key: `staff-${person.id}`, name: person.name, reference: person.matricule, role: person.function, salary: Number(person.salary || 0), salaryMode: 'Mensuel', hourlyRate: 0 }));
+    const target = this.selectedExpenseType().target;
+    const teachers = target === 'Enseignants' || target === 'Personnel et enseignants'
+      ? this.teachers().filter((person) => person.campusId === campusId && person.backendId).map((person) => ({ key: person.backendId as string, backendId: person.backendId as string, name: person.name, reference: person.matricule, role: `Enseignant · ${person.subject}`, salary: Number(person.salary || 0), salaryMode: person.salaryMode ?? 'Mensuel' as TeacherSalaryMode, hourlyRate: Number(person.hourlyRate || 0) }))
+      : [];
+    const staff = target === 'Personnel' || target === 'Personnel et enseignants'
+      ? this.schoolStaff().filter((person) => person.campusId === campusId && person.backendId).map((person) => ({ key: person.backendId as string, backendId: person.backendId as string, name: person.name, reference: person.matricule, role: person.function, salary: Number(person.salary || 0), salaryMode: 'Mensuel' as TeacherSalaryMode, hourlyRate: 0 }))
+      : [];
+    return [...teachers, ...staff].sort((a, b) => a.name.localeCompare(b.name));
   }
 
   visibleSalaryPeople(): ExpensePayee[] {
     const people = this.salaryPeople();
-    return this.expenseUnpaidOnly() ? people.filter((person) => this.paymentMonths.some((month) => !this.salaryMonthlyPaymentDate(person.key, month))) : people;
+    if (!this.expenseUnpaidOnly()) return people;
+    return this.selectedExpenseType().frequency === 'Mensuel'
+      ? people.filter((person) => this.paymentMonths.some((month) => !this.expensePersonPaymentDate(person, month)))
+      : people.filter((person) => !this.expensePersonPaymentDate(person));
+  }
+
+  private expenseRecord(person: ExpensePayee, month?: string): SchoolExpense | undefined {
+    const periode = month ? this.monthPeriod(this.selectedExpenseAcademicYear(), month) : this.selectedExpensePeriod();
+    return this.expenses().find((expense) =>
+      expense.typeId === this.selectedExpenseTypeId()
+      && expense.personnelId === person.backendId
+      && expense.date.startsWith(periode),
+    );
+  }
+
+  expensePersonPaymentDate(person: ExpensePayee, month?: string): string | null {
+    if (this.isSalaryExpenseType() && month) return this.salaryMonthlyPaymentDate(person.key, month);
+    const expense = this.expenseRecord(person, month);
+    return expense?.status === 'Payée' ? expense.paymentDate ?? expense.date : null;
+  }
+
+  expensePersonAmount(person: ExpensePayee, month?: string): number {
+    return this.isSalaryExpenseType()
+      ? this.salaryMonthlyAmount(person, month ?? this.paymentMonths[0])
+      : this.selectedExpenseType().defaultAmount;
+  }
+
+  toggleExpensePersonPayment(person: ExpensePayee, month?: string): void {
+    if (this.isSalaryExpenseType()) {
+      this.toggleSalaryMonthlyPayment(person.key, month ?? this.paymentMonths[0]);
+      return;
+    }
+    const amount = this.expensePersonAmount(person, month);
+    if (amount <= 0) {
+      this.snackBar.error('Configurez d’abord un montant provisoire supérieur à zéro pour ce type de dépense.');
+      return;
+    }
+    const context = this.financeContext(this.selectedExpenseAcademicYear());
+    if (!context) return;
+    const record = this.expenseRecord(person, month);
+    if (record) {
+      const paye = record.status !== 'Payée';
+      if (!paye) {
+        const periodLabel = month ? ` pour ${month}` : '';
+        this.requestConfirmation({
+          title: 'Annuler cette dépense ?',
+          message: `Le paiement de ${this.selectedExpenseType().label}${periodLabel} pour ${person.name} sera annulé.`,
+          confirmLabel: 'Annuler la dépense',
+          icon: 'undo',
+          tone: 'warning',
+        }, () => this.basculerDepensePersonne(record.id, context, false));
+        return;
+      }
+      this.basculerDepensePersonne(record.id, context, true);
+      return;
+    }
+    const periode = month ? this.monthPeriod(this.selectedExpenseAcademicYear(), month) : this.selectedExpensePeriod();
+    this.centralApi.enregistrerDepenseEtablissement({
+      ...context,
+      type_depense_id: this.selectedExpenseType().backendId,
+      personnel_id: person.backendId,
+      libelle: this.selectedExpenseType().label,
+      montant: amount,
+      date: `${periode}-01`,
+      statut: 'payee',
+      mode_paiement: 'espece',
+    }).subscribe({
+      next: (resultat) => {
+        this.chargerFinances(this.selectedExpenseAcademicYear());
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => this.snackBar.error(response.error?.message ?? 'Le paiement n’a pas pu être enregistré.'),
+    });
+  }
+
+  private basculerDepensePersonne(
+    expenseId: string | number,
+    context: Record<string, string>,
+    paye: boolean,
+  ): void {
+    this.centralApi.basculerDepenseEtablissement(String(expenseId), { ...context, paye }).subscribe({
+        next: (resultat) => {
+          this.chargerFinances(this.selectedExpenseAcademicYear());
+          this.snackBar.success(resultat.message);
+        },
+        error: (response) => this.snackBar.error(response.error?.message ?? 'Le paiement n’a pas pu être modifié.'),
+      });
   }
 
   salaryMonthlyPaymentDate(personKey: string, month: string): string | null {
@@ -5458,12 +7658,42 @@ export class PrimarySchoolComponent {
 
   toggleSalaryMonthlyPayment(personKey: string, month: string): void {
     const person = this.salaryPeople().find((item) => item.key === personKey);
+    const key = `${this.selectedExpenseAcademicYear()}::${personKey}::${month}`;
+    const paye = !this.salaryPaymentRecords()[key];
+    if (person && !paye) {
+      this.requestConfirmation({
+        title: 'Annuler ce paiement de salaire ?',
+        message: `Le salaire de ${person.name} pour ${month} sera marqué comme impayé.`,
+        confirmLabel: 'Annuler le paiement',
+        icon: 'undo',
+        tone: 'warning',
+      }, () => this.basculerSalaireMensuel(person, month, false));
+      return;
+    }
     if (person?.salaryMode === 'Horaire' && this.salaryMonthlyHours(person, month) <= 0) {
       this.snackBar.open('Renseignez les heures effectuées avant de marquer ce salaire comme payé.', 'Fermer', { duration: 3200 });
       return;
     }
-    const key = `${this.selectedExpenseAcademicYear()}::${personKey}::${month}`;
-    this.salaryPaymentRecords.update((records) => ({ ...records, [key]: records[key] ? null : this.currentIsoDate() }));
+    if (!person) return;
+    this.basculerSalaireMensuel(person, month, true);
+  }
+
+  private basculerSalaireMensuel(person: ExpensePayee, month: string, paye: boolean): void {
+    const context = this.financeContext(this.selectedExpenseAcademicYear());
+    if (!context) return;
+    this.centralApi.basculerPaieEtablissement({
+      ...context,
+      personnel_id: person.backendId,
+      periode: this.monthPeriod(this.selectedExpenseAcademicYear(), month),
+      nombre_heures: person.salaryMode === 'Horaire' ? this.salaryMonthlyHours(person, month) : null,
+      paye,
+    }).subscribe({
+      next: (resultat) => {
+        this.chargerFinances(this.selectedExpenseAcademicYear());
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => this.snackBar.error(response.error?.message ?? 'Le paiement du salaire n’a pas pu être enregistré.'),
+    });
   }
 
   salaryMonthlyBalance(person: ExpensePayee): string {
@@ -5471,26 +7701,32 @@ export class PrimarySchoolComponent {
     return this.formatExpenseAmount(outstanding);
   }
 
+  expensePersonBalance(person: ExpensePayee): string {
+    const outstanding = this.paymentMonths.reduce((total, month) =>
+      total + (this.expensePersonPaymentDate(person, month) ? 0 : this.expensePersonAmount(person, month)), 0);
+    return this.formatExpenseAmount(outstanding);
+  }
+
   expenseExpectedEntries(): number {
-    return this.isSalaryExpenseType() ? this.salaryPeople().length * this.paymentMonths.length : this.expenseEntriesForSelection().length;
+    return this.salaryPeople().length * (this.selectedExpenseType().frequency === 'Mensuel' ? this.paymentMonths.length : 1);
   }
 
   expensePaidEntries(): number {
-    return this.isSalaryExpenseType()
-      ? this.salaryPeople().reduce((total, person) => total + this.paymentMonths.filter((month) => Boolean(this.salaryMonthlyPaymentDate(person.key, month))).length, 0)
-      : this.expenseEntriesForSelection().filter((item) => item.status === 'Payée').length;
+    return this.selectedExpenseType().frequency === 'Mensuel'
+      ? this.salaryPeople().reduce((total, person) => total + this.paymentMonths.filter((month) => Boolean(this.expensePersonPaymentDate(person, month))).length, 0)
+      : this.salaryPeople().filter((person) => Boolean(this.expensePersonPaymentDate(person))).length;
   }
 
   expenseSelectedTotal(): number {
-    return this.isSalaryExpenseType()
-      ? this.salaryPeople().reduce((total, person) => total + this.paymentMonths.reduce((personTotal, month) => personTotal + this.salaryMonthlyAmount(person, month), 0), 0)
-      : this.expenseEntriesForSelection().reduce((total, item) => total + item.amount, 0);
+    return this.salaryPeople().reduce((total, person) => total + (this.selectedExpenseType().frequency === 'Mensuel'
+      ? this.paymentMonths.reduce((personTotal, month) => personTotal + this.expensePersonAmount(person, month), 0)
+      : this.expensePersonAmount(person)), 0);
   }
 
   expenseSelectedPaidTotal(): number {
-    return this.isSalaryExpenseType()
-      ? this.salaryPeople().reduce((total, person) => total + this.paymentMonths.reduce((personTotal, month) => personTotal + (this.salaryMonthlyPaymentDate(person.key, month) ? this.salaryMonthlyAmount(person, month) : 0), 0), 0)
-      : this.expenseEntriesForSelection().filter((item) => item.status === 'Payée').reduce((total, item) => total + item.amount, 0);
+    return this.salaryPeople().reduce((total, person) => total + (this.selectedExpenseType().frequency === 'Mensuel'
+      ? this.paymentMonths.reduce((personTotal, month) => personTotal + (this.expensePersonPaymentDate(person, month) ? this.expensePersonAmount(person, month) : 0), 0)
+      : this.expensePersonPaymentDate(person) ? this.expensePersonAmount(person) : 0), 0);
   }
 
   expenseProgress(): number {
@@ -5516,26 +7752,57 @@ export class PrimarySchoolComponent {
       this.snackBar.open('Renseignez un libellé et un montant supérieur à zéro.', 'Fermer', { duration: 3000 });
       return;
     }
-    const record: SchoolExpense = {
-      id: this.expenseForm.id ?? Math.max(...this.expenses().map((item) => item.id), 0) + 1,
-      typeId: type.id,
-      label: this.expenseForm.label.trim(),
-      category: '',
-      frequency: this.expenseForm.frequency,
-      amount,
+    const context = this.financeContext(this.selectedExpenseAcademicYear());
+    if (!type.backendId || !context) return;
+    this.centralApi.enregistrerDepenseEtablissement({
+      ...context,
+      type_depense_id: type.backendId,
+      libelle: this.expenseForm.label.trim(),
+      beneficiaire: this.expenseForm.beneficiary.trim() || null,
+      montant: amount,
       date: this.expenseForm.date,
-      status: this.expenseForm.status,
-      beneficiary: this.expenseForm.beneficiary.trim() || 'À renseigner',
-      staffIds: [],
-      notes: this.expenseForm.notes.trim(),
-    };
-    this.expenses.update((items) => this.expenseForm.id ? items.map((item) => item.id === record.id ? record : item) : [record, ...items]);
-    this.expenseEditorOpen.set(false);
-    this.snackBar.open('Dépense enregistrée.', 'Fermer', { duration: 2500 });
+      statut: this.expenseForm.status === 'Payée' ? 'payee' : this.expenseForm.status === 'Brouillon' ? 'brouillon' : 'prevue',
+      mode_paiement: 'espece',
+      notes: this.expenseForm.notes.trim() || null,
+    }).subscribe({
+      next: (resultat) => {
+        this.expenseEditorOpen.set(false);
+        this.chargerFinances(this.selectedExpenseAcademicYear());
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => this.snackBar.error(response.error?.message ?? 'La dépense n’a pas pu être enregistrée.'),
+    });
   }
 
   markExpensePaid(expense: SchoolExpense): void {
-    this.expenses.update((items) => items.map((item) => item.id === expense.id ? { ...item, status: item.status === 'Payée' ? 'Prévue' : 'Payée', date: this.currentIsoDate() } : item));
+    const context = this.financeContext(this.selectedExpenseAcademicYear());
+    if (!context) return;
+    const paye = expense.status !== 'Payée';
+    if (!paye) {
+      this.requestConfirmation({
+        title: 'Annuler cette dépense ?',
+        message: `Le paiement « ${expense.label} » sera annulé et replacé parmi les dépenses à payer.`,
+        confirmLabel: 'Annuler la dépense',
+        icon: 'undo',
+        tone: 'warning',
+      }, () => this.basculerDepenseDepuisRegistre(expense.id, context, false));
+      return;
+    }
+    this.basculerDepenseDepuisRegistre(expense.id, context, true);
+  }
+
+  private basculerDepenseDepuisRegistre(
+    expenseId: string | number,
+    context: Record<string, string>,
+    paye: boolean,
+  ): void {
+    this.centralApi.basculerDepenseEtablissement(String(expenseId), { ...context, paye }).subscribe({
+      next: (resultat) => {
+        this.chargerFinances(this.selectedExpenseAcademicYear());
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => this.snackBar.error(response.error?.message ?? 'Le paiement de la dépense n’a pas pu être modifié.'),
+    });
   }
 
   formatExpenseAmount(amount: number): string {
@@ -5558,35 +7825,22 @@ export class PrimarySchoolComponent {
     return [...new Set([
       'Mensualité',
       'Inscription',
-      'Tenue scolaire',
-      'Tenue sportive',
       ...this.additionalSchoolFees().map((fee) => fee.label),
       ...this.expenseTypes().map((type) => type.label),
     ])];
   }
 
   financeReasonsForDirection(direction: FinanceDirection): string[] {
-    return direction === 'Entrée'
-      ? [
-          'Mensualité',
-          'Inscription',
-          'Tenue scolaire',
-          'Tenue sportive',
-          ...this.additionalSchoolFees().map((fee) => fee.label),
-          'Autre encaissement',
-        ]
-      : [...this.expenseTypes().map((type) => type.label), 'Autre dépense'];
+    return direction === 'Entrée' ? ['Autre encaissement'] : ['Autre dépense'];
   }
 
   filteredFinanceEntries(): FinanceEntry[] {
-    const query = this.financeSearch().trim().toLocaleLowerCase('fr');
     return this.financeEntries()
       .filter((entry) => entry.campusId === this.selectedCampusId())
-      .filter((entry) => entry.date.startsWith(this.selectedFinancePeriod()))
+      .filter((entry) => this.selectedFinancePeriod() === 'all' || entry.date.startsWith(this.selectedFinancePeriod()))
       .filter((entry) => this.selectedFinanceDirection() === 'Tous' || entry.direction === this.selectedFinanceDirection())
       .filter((entry) => this.selectedFinanceReason() === 'all' || entry.reason === this.selectedFinanceReason())
-      .filter((entry) => !query || `${entry.reason} ${entry.thirdParty} ${entry.reference} ${entry.paymentMethod}`.toLocaleLowerCase('fr').includes(query))
-      .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+      .sort((a, b) => b.date.localeCompare(a.date) || String(b.id).localeCompare(String(a.id)));
   }
 
   financePeriods(): Array<{ value: string; label: string }> {
@@ -5597,10 +7851,10 @@ export class PrimarySchoolComponent {
       { month: 1, label: 'Janvier' }, { month: 2, label: 'Février' }, { month: 3, label: 'Mars' },
       { month: 4, label: 'Avril' }, { month: 5, label: 'Mai' }, { month: 6, label: 'Juin' },
     ];
-    return months.map(({ month, label }) => {
+    return [{ value: 'all', label: 'Toute l’année' }, ...months.map(({ month, label }) => {
       const year = month >= 7 ? academicYearStart : academicYearStart + 1;
       return { value: `${year}-${String(month).padStart(2, '0')}`, label: `${label} ${year}` };
-    });
+    })];
   }
 
   financePeriodLabel(): string {
@@ -5619,18 +7873,13 @@ export class PrimarySchoolComponent {
     return this.filteredFinanceEntries().filter((entry) => entry.status === 'En attente').length;
   }
 
-  setFinanceSearch(value: string): void {
-    this.financeSearch.set(value);
-  }
-
   selectFinancePeriod(period: string): void {
     this.selectedFinancePeriod.set(period);
   }
 
   selectFinanceAcademicYear(academicYear: string): void {
     this.selectedFinanceAcademicYear.set(academicYear);
-    const firstPeriod = this.financePeriods()[0]?.value;
-    if (firstPeriod) this.selectedFinancePeriod.set(firstPeriod);
+    this.selectedFinancePeriod.set('all');
   }
 
   selectFinanceDirection(direction: 'Tous' | FinanceDirection): void {
@@ -5643,7 +7892,7 @@ export class PrimarySchoolComponent {
 
   openFinanceEntryEditor(): void {
     this.financeEntryForm = this.createEmptyFinanceEntryForm();
-    this.financeEntryForm.date = `${this.selectedFinancePeriod()}-01`;
+    if (this.selectedFinancePeriod() !== 'all') this.financeEntryForm.date = `${this.selectedFinancePeriod()}-01`;
     this.financeEditorOpen.set(true);
   }
 
@@ -5656,44 +7905,71 @@ export class PrimarySchoolComponent {
     this.financeEntryForm.reason = this.financeReasonsForDirection(direction)[0];
   }
 
-  isFinanceSalaryReason(reason: string = this.financeEntryForm.reason): boolean {
-    return reason === 'Salaire du personnel' || reason === 'Salaire des enseignants' || reason === 'Salaires du personnel';
-  }
-
   saveFinanceEntry(): void {
     const form = this.financeEntryForm;
-    if (!form.reason || form.amount <= 0 || (!this.isFinanceSalaryReason(form.reason) && !form.thirdParty.trim())) {
+    if (!form.reason || form.amount <= 0 || !form.thirdParty.trim()) {
       this.snackBar.open('Renseignez le motif, le montant et le tiers concerné.', 'Fermer', { duration: 3000 });
       return;
     }
-    const id = Math.max(...this.financeEntries().map((entry) => entry.id), 0) + 1;
-    const prefix = form.direction === 'Entrée' ? 'ENC' : 'DEC';
-    const compactDate = form.date.replaceAll('-', '').slice(2);
-    this.financeEntries.update((entries) => [{
-      id,
-      campusId: this.selectedCampusId(),
-      amount: Number(form.amount),
-      reason: form.reason,
-      direction: form.direction,
+    const context = this.financeContext(this.selectedFinanceAcademicYear());
+    if (!context) return;
+    this.centralApi.enregistrerOperationFinanciereEtablissement({
+      ...context,
+      sens: form.direction === 'Entrée' ? 'entree' : 'sortie',
+      motif: form.reason,
+      montant: Number(form.amount),
       date: form.date,
-      paymentMethod: form.paymentMethod,
-      thirdParty: form.thirdParty.trim() || (this.isFinanceSalaryReason(form.reason) ? 'Personnel de l’établissement' : 'À renseigner'),
-      reference: form.reference.trim() || `${prefix}-${compactDate}-${String(id).padStart(3, '0')}`,
-      status: form.status,
-      source: 'Saisie manuelle',
-      notes: form.notes.trim(),
-    }, ...entries]);
-    this.financeEditorOpen.set(false);
-    this.snackBar.open('Opération financière enregistrée.', 'Fermer', { duration: 2500 });
+      mode_paiement: this.paymentMethodCode(form.paymentMethod),
+      tiers: form.thirdParty.trim() || null,
+      reference: form.reference.trim() || null,
+      statut: form.status === 'Validée' ? 'validee' : 'en_attente',
+      notes: form.notes.trim() || null,
+    }).subscribe({
+      next: (resultat) => {
+        this.financeEditorOpen.set(false);
+        this.chargerFinances(this.selectedFinanceAcademicYear());
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => this.snackBar.error(response.error?.message ?? 'L’opération financière n’a pas pu être enregistrée.'),
+    });
   }
 
   toggleFinanceEntryStatus(entry: FinanceEntry): void {
     const nextStatus: FinanceStatus = entry.status === 'Validée' ? 'Annulée' : 'Validée';
-    this.financeEntries.update((entries) => entries.map((item) => item.id === entry.id ? { ...item, status: nextStatus } : item));
+    const context = this.financeContext(this.selectedFinanceAcademicYear());
+    if (!context) return;
+    if (nextStatus === 'Annulée') {
+      this.requestConfirmation({
+        title: 'Annuler cette opération ?',
+        message: `L’opération ${entry.reference || entry.reason} d’un montant de ${this.formatExpenseAmount(entry.amount)} sera annulée.`,
+        confirmLabel: 'Annuler l’opération',
+        icon: 'undo',
+        tone: 'warning',
+      }, () => this.basculerStatutOperationFinanciere(entry, context, nextStatus));
+      return;
+    }
+    this.basculerStatutOperationFinanciere(entry, context, nextStatus);
+  }
+
+  private basculerStatutOperationFinanciere(
+    entry: FinanceEntry,
+    context: Record<string, string>,
+    nextStatus: FinanceStatus,
+  ): void {
+    this.centralApi.basculerOperationFinanciereEtablissement(String(entry.id), {
+      ...context,
+      statut: nextStatus === 'Validée' ? 'validee' : 'annulee',
+    }).subscribe({
+      next: (resultat) => {
+        this.chargerFinances(this.selectedFinanceAcademicYear());
+        this.snackBar.success(resultat.message);
+      },
+      error: (response) => this.snackBar.error(response.error?.message ?? 'Le statut de l’opération n’a pas pu être modifié.'),
+    });
   }
 
   private createEmptyFinanceEntryForm(): FinanceEntryForm {
-    return { direction: 'Entrée', reason: 'Mensualité', amount: 0, date: this.currentIsoDate(), paymentMethod: 'Espèces', thirdParty: '', reference: '', status: 'Validée', notes: '' };
+    return { direction: 'Entrée', reason: 'Autre encaissement', amount: 0, date: this.currentIsoDate(), paymentMethod: 'Espèces', thirdParty: '', reference: '', status: 'Validée', notes: '' };
   }
 
   private createEmptyExpenseForm(): ExpenseFormModel {

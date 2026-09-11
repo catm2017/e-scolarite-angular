@@ -1,0 +1,60 @@
+<main class="adhesion-page">
+  <div class="adhesion-topbar">
+    <a routerLink="/" class="adhesion-brand"><span>E</span><b>E‑Scolarité</b></a>
+    <p>Vous avez déjà un espace ? <a routerLink="/connexion">Connexion</a></p>
+  </div>
+
+  <div class="adhesion-shell">
+    <aside class="onboarding-panel">
+      <div class="panel-badge"><i>school</i> POUR LES ÉTABLISSEMENTS</div>
+      <h1>Votre école mérite un espace à son image.</h1>
+      <p>Partagez les informations essentielles. Nous créons ensuite un environnement sécurisé, adapté à votre institut.</p>
+
+      <div class="benefits">
+        <div><i>database</i><span><b>Une base isolée</b><small>Les données de votre institut restent séparées.</small></span></div>
+        <div><i>verified_user</i><span><b>Un accès administrateur</b><small>Le responsable reçoit son espace après validation.</small></span></div>
+        <div><i>support_agent</i><span><b>Un démarrage accompagné</b><small>Notre équipe vous aide à configurer votre offre.</small></span></div>
+      </div>
+
+      <div class="steps" aria-label="Étapes d’adhésion">
+        <span class="active"><b>1</b>Votre demande</span><i></i><span><b>2</b>Validation</span><i></i><span><b>3</b>Espace prêt</span>
+      </div>
+    </aside>
+
+    <form class="adhesion-form" [formGroup]="adhesion" (ngSubmit)="soumettre()">
+      <div class="form-title"><span>ÉTAPE 1 SUR 3</span><h2>Présentez votre institut</h2><p>Les champs marqués d’un astérisque sont obligatoires.</p></div>
+
+      <div class="form-section">
+        <h3><i>apartment</i> Informations de l’institut</h3>
+        <div class="form-grid two-columns">
+          <label>Nom de l’institut <em>*</em><input formControlName="nom_institut" placeholder="Ex. Institut Les Pédagogues" /></label>
+          <label>Ville<input formControlName="ville" placeholder="Ex. Dakar" /></label>
+        </div>
+        <label>Adresse<input formControlName="adresse" placeholder="Quartier, rue ou repère" /></label>
+        <div class="field-label">Types d’établissement concernés</div>
+        <div class="types">@for (type of types; track type) { <button type="button" [class.active]="typesSelectionnes().includes(type)" (click)="basculerType(type)">{{ type }}</button> }</div>
+      </div>
+
+      <div class="form-section">
+        <h3><i>person</i> Responsable du projet</h3>
+        <div class="form-grid two-columns">
+          <label>Prénom <em>*</em><input formControlName="prenom_responsable" /></label>
+          <label>Nom <em>*</em><input formControlName="nom_responsable" /></label>
+          <label>E-mail <em>*</em><input type="email" formControlName="email_responsable" placeholder="nom@ecole.sn" /></label>
+          <label>Téléphone <em>*</em><input formControlName="telephone_responsable" placeholder="77 000 00 00" /></label>
+        </div>
+      </div>
+
+      <div class="form-section compact-section">
+        <div class="form-grid two-columns">
+          <label>Effectif estimé<input type="number" min="1" formControlName="effectif_estime" placeholder="Ex. 350" /></label>
+          <label>Un besoin particulier ?<textarea rows="2" formControlName="message" placeholder="Ex. plusieurs campus, primaire et collège…"></textarea></label>
+        </div>
+      </div>
+
+      @if (succes()) { <p class="feedback success"><i>check_circle</i>{{ succes() }}</p> }
+      @if (erreur()) { <p class="feedback error"><i>error</i>{{ erreur() }}</p> }
+      <div class="form-footer"><p><i>lock</i> Vos informations sont utilisées uniquement pour étudier votre demande.</p><button class="submit" type="submit" [disabled]="chargement()">{{ chargement() ? 'Envoi en cours…' : 'Envoyer ma demande' }} <i>arrow_forward</i></button></div>
+    </form>
+  </div>
+</main>

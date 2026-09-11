@@ -14,10 +14,10 @@
     <div class="primary-context-bar card parent-context-bar">
       <div>
         <span class="primary-context-icon material-icons-outlined">corporate_fare</span>
-        <p><small>ESPACE PARENT · INSTITUT</small><strong>Joyau du Savoir</strong></p>
+        <p><small>ESPACE PARENT · INSTITUT</small><strong>{{ instituteName() }}</strong></p>
       </div>
-      <span>7 établissements</span>
-      <span>3 campus</span>
+      <span>{{ activeEstablishmentsCount() }} établissement(s) activé(s)</span>
+      <span>{{ connectedUserName() || 'Utilisateur connecté' }}</span>
       <span>2026–2027</span>
       <b><i></i>Vue consolidée</b>
     </div>
@@ -25,7 +25,7 @@
     <main class="primary-content parent-content">
       @if (activeView() === 'overview') {
         <div class="page-title">
-          <div><small>ESPACE PARENT · INSTITUT</small><h1>Pilotage de l’institut</h1><p>Une vision simple de toutes vos structures, implantations et ressources.</p></div>
+          <div><small>ESPACE PARENT · INSTITUT</small><h1>Pilotage de {{ instituteName() }}</h1><p>Une vision simple de toutes vos structures, implantations et ressources.</p></div>
           <div class="title-actions">
             <button (click)="setView('campuses')"><i>add_location_alt</i>Nouveau campus</button>
             <button class="primary-action" (click)="setView('establishments')"><i>add_business</i>Ajouter un établissement</button>
@@ -33,8 +33,8 @@
         </div>
 
         <section class="metric-grid parent-metrics">
-          <article><span class="metric-icon green"><i>account_balance</i></span><div><small>Types d’établissement</small><strong>7</strong><em>6 actifs · 1 à configurer</em></div><b>Voir</b></article>
-          <article><span class="metric-icon blue"><i>location_city</i></span><div><small>Campus</small><strong>3</strong><em>97 salles et espaces</em></div><b class="neutral">3 villes</b></article>
+          <article><span class="metric-icon green"><i>account_balance</i></span><div><small>Types d’établissement</small><strong>{{ activeEstablishmentsCount() }}</strong><em>Types réellement activés pour votre institut</em></div><b>Voir</b></article>
+          <article><span class="metric-icon blue"><i>location_city</i></span><div><small>Campus</small><strong>{{ campusCount() }}</strong><em>{{ roomCount() }} salle(s) et espace(s)</em></div><b class="neutral">Données réelles</b></article>
           <article><span class="metric-icon violet"><i>groups</i></span><div><small>Effectif consolidé</small><strong>4 280</strong><em>Tous enseignements</em></div><b>+8,6%</b></article>
           <article><span class="metric-icon orange"><i>badge</i></span><div><small>Collaborateurs</small><strong>286</strong><em>224 enseignants · 62 agents</em></div><b class="neutral">Global</b></article>
         </section>
@@ -46,8 +46,8 @@
               <button class="link-button" (click)="setView('establishments')">Tout afficher →</button>
             </header>
             <div class="establishment-list">
-              @for (item of establishments; track item.type) {
-                <button class="establishment-row" (click)="openEstablishmentSpace(item.type)" [attr.aria-label]="'Ouvrir ' + item.name">
+              @for (item of activeEstablishments(); track item.type) {
+                <button class="establishment-row" [class.disabled]="!canOpenEstablishment(item)" [disabled]="!canOpenEstablishment(item)" (click)="openEstablishmentSpace(item.type)" [attr.aria-label]="canOpenEstablishment(item) ? 'Ouvrir ' + item.name : establishmentActionLabel(item)">
                   <span class="establishment-icon" [style.background]="item.color"><i>{{ item.icon }}</i></span>
                   <span class="establishment-name"><small>{{ item.type }}</small><strong>{{ item.name }}</strong></span>
                   <span class="establishment-count"><strong>{{ item.learners }}</strong><small>apprenants</small></span>
@@ -64,10 +64,12 @@
               <header><div><h2>Répartition par campus</h2><p>Effectif et structures actives</p></div><button class="link-button" (click)="setView('campuses')">Gérer</button></header>
               @for (campus of campuses(); track campus.name) {
                 <button class="campus-line" (click)="setView('campuses')">
-                  <span>{{ campus.name.slice(7, 9).toUpperCase() }}</span>
+                  <span>{{ campus.name.slice(0, 2).toUpperCase() }}</span>
                   <div><strong>{{ campus.name }}</strong><small>{{ campus.establishments }} structures · {{ campus.rooms }} salles</small></div>
-                  <b>{{ campus.learners }}</b>
+                  <b>{{ campus.status }}</b>
                 </button>
+              } @empty {
+                <div class="campus-summary-empty"><i>location_off</i><p><strong>Aucun campus</strong><small>Créez le premier campus pour ouvrir les espaces métier.</small></p></div>
               }
             </article>
 
@@ -76,7 +78,7 @@
               <div>
                 <button (click)="setView('users')"><i>person_add</i><span>Inviter un utilisateur<small>Définir son périmètre</small></span></button>
                 <button (click)="setView('staff')"><i>badge</i><span>Ajouter un personnel<small>Institut ou campus</small></span></button>
-                <a routerLink="/institut/site-web"><i>language</i><span>Modifier le site web<small>Pages et actualités</small></span></a>
+                <a [routerLink]="hasActiveFeature('site_web_etablissement') ? '/institut/site-web' : null" [class.disabled-action]="!hasActiveFeature('site_web_etablissement')"><i>language</i><span>Modifier le site web<small>{{ hasActiveFeature('site_web_etablissement') ? 'Pages et actualités' : 'Fonctionnalité non souscrite' }}</small></span></a>
                 <button (click)="setView('subscription')"><i>extension</i><span>Gérer les modules<small>Types et fonctionnalités</small></span></button>
               </div>
             </article>
@@ -87,12 +89,11 @@
       @if (activeView() === 'establishments') {
         <div class="page-title">
           <div><small>STRUCTURES PÉDAGOGIQUES</small><h1>Établissements</h1><p>Créez un espace métier distinct pour chaque type d’enseignement proposé.</p></div>
-          <button class="primary-action"><i>add_business</i>Nouvel établissement</button>
         </div>
         <div class="scope-note"><i>account_tree</i><p><strong>Principe de fonctionnement</strong>Un établissement peut être présent sur plusieurs campus. Son espace métier, ses rôles et ses fonctionnalités restent indépendants.</p></div>
         <section class="establishment-cards">
-          @for (item of establishments; track item.type) {
-            <article class="panel establishment-card">
+          @for (item of activeEstablishments(); track item.type) {
+            <article class="panel establishment-card" [class.disabled]="!canOpenEstablishment(item)">
               <header>
                 <span class="establishment-icon" [style.background]="item.color"><i>{{ item.icon }}</i></span>
                 <em [class.pending]="item.status !== 'Actif'">{{ item.status }}</em>
@@ -105,16 +106,8 @@
                 <div><dt>Implantations</dt><dd>{{ item.campuses }} campus</dd></div>
               </dl>
               <footer>
-                <button>Configurer</button>
-                @if (item.type === 'École primaire') {
-                  <a class="open-workspace" routerLink="/institut/etablissements/primaire">Ouvrir l’espace <i>arrow_forward</i></a>
-                } @else if (item.type === 'Collège') {
-                  <a class="open-workspace" routerLink="/institut/etablissements/college">Ouvrir l’espace <i>arrow_forward</i></a>
-                } @else if (item.type === 'Lycée') {
-                  <a class="open-workspace" routerLink="/institut/etablissements/lycee">Ouvrir l’espace <i>arrow_forward</i></a>
-                } @else {
-                  <button class="open-workspace">Ouvrir l’espace <i>arrow_forward</i></button>
-                }
+                <button (click)="setView('subscription')">Configurer</button>
+                <button class="open-workspace" [disabled]="!canOpenEstablishment(item)" (click)="openEstablishmentSpace(item.type)">{{ establishmentActionLabel(item) }} <i>{{ campusCount() === 0 && item.active ? 'location_off' : 'arrow_forward' }}</i></button>
               </footer>
             </article>
           }
@@ -128,31 +121,40 @@
           <button type="button" class="primary-action" (click)="openCampusForm()"><i>add_location_alt</i>Nouveau campus</button>
         </div>
         <section class="campus-grid">
-          @for (campus of campuses(); track campus.name; let index = $index) {
+          @for (campus of campuses(); track campus.id; let index = $index) {
             <article class="panel campus-card">
               <div class="campus-visual"><span>location_city</span><em>{{ campus.status }}</em><b>0{{ index + 1 }}</b></div>
               <div class="campus-body">
                 <small>{{ campus.city }}</small><h2>{{ campus.name }}</h2>
-                <p><i>person</i>Responsable : {{ campus.manager }}</p>
-                <dl><div><dt>Structures</dt><dd>{{ campus.establishments }}</dd></div><div><dt>Effectif</dt><dd>{{ campus.learners }}</dd></div><div><dt>Salles</dt><dd>{{ campus.rooms }}</dd></div></dl>
-                <button>Voir le campus <i>arrow_forward</i></button>
+                <p><i>qr_code_2</i>Code : {{ campus.code }}</p>
+                <dl><div><dt>Structures</dt><dd>{{ campus.establishments }}</dd></div><div><dt>Téléphone</dt><dd>{{ campus.phone || '—' }}</dd></div><div><dt>Salles</dt><dd>{{ campus.rooms }}</dd></div></dl>
+                <button type="button" (click)="openCampusForm(campus)">Modifier le campus <i>edit</i></button>
               </div>
             </article>
+          } @empty {
+            <article class="panel campus-empty-state">
+              <span><i>location_off</i></span>
+              <div><small>PREMIÈRE CONFIGURATION</small><h2>Aucun campus enregistré</h2><p>Ajoutez au moins un campus avant d’ouvrir les espaces École primaire, Collège ou Lycée.</p></div>
+              <button type="button" class="primary-action" (click)="openCampusForm()"><i>add_location_alt</i>Créer le premier campus</button>
+            </article>
           }
-          <button type="button" class="add-campus-card" (click)="openCampusForm()"><i>add_location_alt</i><strong>Créer un campus</strong><span>Adresse, responsable et établissements accueillis</span></button>
+          @if (campusCount() > 0) {
+            <button type="button" class="add-campus-card" (click)="openCampusForm()"><i>add_location_alt</i><strong>Créer un campus</strong><span>Nom et adresse de la nouvelle implantation</span></button>
+          }
         </section>
         @if (campusFormOpen()) {
           <section class="panel campus-form-card">
             <header>
-              <div><span><i>add_location_alt</i></span><div><h2>Nouveau campus</h2><p>Commencez par son nom et son adresse. Les responsables, salles et établissements seront ajoutés ensuite.</p></div></div>
+              <div><span><i>{{ editingCampusId() ? 'edit_location_alt' : 'add_location_alt' }}</i></span><div><h2>{{ editingCampusId() ? 'Modifier le campus' : 'Nouveau campus' }}</h2><p>Renseignez son nom et son adresse. Les salles et établissements seront gérés ensuite.</p></div></div>
               <button type="button" aria-label="Fermer le formulaire" (click)="closeCampusForm()"><i>close</i></button>
             </header>
-            <form (ngSubmit)="saveCampus()">
+            <form (ngSubmit)="saveCampus()" [attr.aria-busy]="campusSaving()">
               <div class="campus-form-grid">
                 <label><span>Nom du campus <b>*</b></span><input name="campusName" [(ngModel)]="campusForm.name" placeholder="Ex. Campus Diamniadio" required /></label>
                 <label><span>Adresse <b>*</b></span><input name="campusAddress" [(ngModel)]="campusForm.address" placeholder="Ex. Diamniadio, Dakar" required /></label>
               </div>
-              <footer><span>Les champs marqués d’un <b>*</b> sont obligatoires.</span><div><button type="button" (click)="closeCampusForm()">Annuler</button><button type="submit" class="primary-action" [disabled]="!campusForm.name.trim() || !campusForm.address.trim()"><i>save</i>Créer le campus</button></div></footer>
+              @if (campusError()) {<p class="campus-form-error"><i>error_outline</i>{{ campusError() }}</p>}
+              <footer><span>Les champs marqués d’un <b>*</b> sont obligatoires.</span><div><button type="button" (click)="closeCampusForm()" [disabled]="campusSaving()">Annuler</button><button type="submit" class="primary-action" [disabled]="campusSaving() || !campusForm.name.trim() || !campusForm.address.trim()"><i>{{ campusSaving() ? 'progress_activity' : 'save' }}</i>{{ campusSaving() ? 'Enregistrement…' : editingCampusId() ? 'Enregistrer les modifications' : 'Créer le campus' }}</button></div></footer>
             </form>
           </section>
         }
@@ -255,15 +257,53 @@
       @if (activeView() === 'spaces') {
         <div class="page-title">
           <div><small>RESSOURCES PHYSIQUES</small><h1>Salles & espaces</h1><p>Centralisez les salles avant leur affectation aux établissements et emplois du temps.</p></div>
-          <button class="primary-action"><i>add</i>Ajouter une salle</button>
+          <button type="button" class="primary-action" (click)="openSpaceForm()" [disabled]="!campuses().length"><i>add</i>Ajouter une salle</button>
         </div>
         <nav class="class-tabs institute-tabs" aria-label="Salles et espaces par campus">
-          <button type="button" [class.active]="selectedSpaceCampus() === 'all'" (click)="selectSpaceCampus('all')">Tous les campus <b>{{ spaceRows.length }}</b></button>
-          @for (campus of campuses(); track campus.name) {
-            <button type="button" [class.active]="selectedSpaceCampus() === campus.name" (click)="selectSpaceCampus(campus.name)">{{ shortCampusName(campus.name) }} <b>{{ spaceCampusCount(campus.name) }}</b></button>
+          <button type="button" [class.active]="selectedSpaceCampus() === 'all'" (click)="selectSpaceCampus('all')">Tous les campus <b>{{ spaceRows().length }}</b></button>
+          @for (campus of campuses(); track campus.id) {
+            <button type="button" [class.active]="selectedSpaceCampus() === campus.id" (click)="selectSpaceCampus(campus.id)">{{ shortCampusName(campus.name) }} <b>{{ spaceCampusCount(campus.id) }}</b></button>
           }
         </nav>
-        <app-master-table title="Salles et espaces" [columnDefinitions]="spaceColumns" [dataSource]="spaceDataSource" [isLoading]="false" exportFileName="salles_et_espaces" [showAdd]="true" [showDelete]="true" [showEdit]="true" [showDetails]="true" [showBulkDelete]="true" [showCheckbox]="true" [disableRowClickToEdit]="true"></app-master-table>
+        @if (!campuses().length) {
+          <section class="panel campus-summary-empty"><i>location_off</i><p><strong>Ajoutez d’abord un campus</strong><small>Les salles et espaces sont toujours rattachés à un campus.</small></p></section>
+        } @else {
+          <app-master-table
+            title="Salles et espaces"
+            [columnDefinitions]="spaceColumns"
+            [dataSource]="spaceDataSource"
+            [isLoading]="spacesLoading()"
+            exportFileName="salles_et_espaces"
+            [showAdd]="true"
+            [showDelete]="true"
+            [showEdit]="true"
+            [showDetails]="false"
+            [showBulkDelete]="false"
+            [showCheckbox]="true"
+            [disableRowClickToEdit]="true"
+            (add)="openSpaceForm()"
+            (edit)="openSpaceForm($event)"
+            (delete)="deleteSpace($event)"
+            (refresh)="chargerSalles()"></app-master-table>
+        }
+        @if (spaceFormOpen()) {
+          <section class="panel directory-form-card space-form-card">
+            <header><div><span><i>{{ editingSpaceId() ? 'edit' : 'meeting_room' }}</i></span><div><h2>{{ editingSpaceId() ? 'Modifier la salle ou l’espace' : 'Nouvelle salle ou espace' }}</h2><p>Cette ressource sera disponible pour les emplois du temps des établissements du campus choisi.</p></div></div><button type="button" (click)="closeSpaceForm()" aria-label="Fermer"><i>close</i></button></header>
+            <form (ngSubmit)="saveSpace()" [attr.aria-busy]="spaceSaving()">
+              <div class="directory-form-grid space-form-grid">
+                <label><span>Campus <b>*</b></span><select name="spaceCampus" [(ngModel)]="spaceForm.campusId" required><option value="" disabled>Choisir un campus</option>@for (campus of campuses(); track campus.id) {<option [value]="campus.id">{{ campus.name }}</option>}</select></label>
+                <label><span>Nom <b>*</b></span><input name="spaceName" [(ngModel)]="spaceForm.name" placeholder="Ex. Salle CE2 A" required /></label>
+                <label><span>Code de référence</span><input name="spaceCode" [(ngModel)]="spaceForm.code" placeholder="Créé automatiquement si vide" /></label>
+                <label><span>Type <b>*</b></span><select name="spaceType" [(ngModel)]="spaceForm.type" required><option>Salle de classe</option><option>Laboratoire</option><option>Salle informatique</option><option>Salle polyvalente</option><option>Bibliothèque</option><option>Bureau</option><option>Terrain de sport</option><option>Autre espace</option></select></label>
+                <label><span>Capacité</span><input type="number" min="1" name="spaceCapacity" [(ngModel)]="spaceForm.capacity" placeholder="Ex. 36" /></label>
+                <label><span>État <b>*</b></span><select name="spaceStatus" [(ngModel)]="spaceForm.status"><option value="disponible">Disponible</option><option value="indisponible">Indisponible</option><option value="maintenance">Maintenance</option></select></label>
+                <label class="space-description"><span>Description ou équipement</span><textarea name="spaceDescription" [(ngModel)]="spaceForm.description" rows="3" placeholder="Ex. Vidéoprojecteur, tableau blanc, accès réseau…"></textarea></label>
+              </div>
+              @if (spaceError()) {<p class="campus-form-error"><i>error_outline</i>{{ spaceError() }}</p>}
+              <footer><span>Les champs marqués d’un <b>*</b> sont obligatoires.</span><div><button type="button" (click)="closeSpaceForm()" [disabled]="spaceSaving()">Annuler</button><button type="submit" class="primary-action" [disabled]="spaceSaving() || !spaceForm.campusId || !spaceForm.name.trim() || !spaceForm.type.trim()"><i>{{ spaceSaving() ? 'progress_activity' : 'save' }}</i>{{ spaceSaving() ? 'Enregistrement…' : editingSpaceId() ? 'Enregistrer les modifications' : 'Ajouter la salle' }}</button></div></footer>
+            </form>
+          </section>
+        }
       }
 
       @if (activeView() === 'activity-log') {
@@ -294,32 +334,46 @@
       @if (activeView() === 'subscription') {
         <div class="page-title">
           <div><small>OFFRE MODULAIRE</small><h1>Souscription</h1><p>Activez les métiers puis choisissez les fonctionnalités nécessaires dans chacun d’eux.</p></div>
-          <button class="primary-action"><i>save</i>Enregistrer l’offre</button>
+          <button class="primary-action" [disabled]="subscriptionSaving()" (click)="enregistrerSouscription()"><i>verified</i>{{ subscriptionSaving() ? 'Validation…' : 'Valider la souscription' }}</button>
         </div>
         <section class="subscription-layout">
+          @if (subscriptionError()) { <p class="subscription-error">{{ subscriptionError() }}</p> }
+          @if (subscriptionSuccess()) { <p class="subscription-success">{{ subscriptionSuccess() }}</p> }
           <article class="panel subscription-builder">
             <header><div><h2>Types d’établissement</h2><p>Chaque métier activé ajoute ses propres modules et son espace dédié.</p></div></header>
-            @for (item of subscriptionTypes(); track item.type) {
+            @for (item of subscriptionTypes(); track item.typeId) {
               <div class="subscription-row" [class.disabled]="!item.enabled">
-                <button class="subscription-toggle" [class.on]="item.enabled" (click)="toggleSubscription(item.type)" [attr.aria-label]="'Activer ou désactiver ' + item.type"><i></i></button>
+                <button class="subscription-toggle" [class.on]="item.enabled" [disabled]="true" [attr.aria-label]="item.enabled ? item.type + ' activé' : item.type + ' non activé'"><i></i></button>
                 <span class="type-icon"><i>{{ item.icon }}</i></span>
                 <div class="subscription-info"><strong>{{ item.type }}</strong><small>{{ item.description }}</small><span>@for (module of item.modules; track module) { <em>{{ module }}</em> }</span></div>
-                <b>{{ formatPrice(item.price) }}<small>/ mois</small></b>
-                <button class="configure-button">Fonctionnalités <i>chevron_right</i></button>
+                <b>{{ item.enabled ? formatPrice(item.price) : '—' }}<small>{{ item.enabled ? '/ mois maximum' : 'Non disponible' }}</small></b>
+                <button class="configure-button" [disabled]="!item.enabled || item.functionalities.length === 0" (click)="ouvrirFonctionnalites(item)"><span>{{ item.functionalities.length ? 'Fonctionnalités' : 'Non commercialisé' }}</span><i>{{ item.functionalities.length ? 'chevron_right' : 'block' }}</i></button>
               </div>
             }
           </article>
+          @if (selectedSubscriptionType(); as type) {
+            <article class="panel feature-picker">
+              <header><div><small>{{ type.type.toUpperCase() }}</small><h2>Fonctionnalités à activer</h2><p>Chaque fonctionnalité a son prix mensuel. Le site web est proposé comme une fonctionnalité distincte.</p></div><button type="button" (click)="selectedSubscriptionType.set(null)"><i>close</i></button></header>
+              <div class="feature-options">
+                @for (fonctionnalite of type.functionalities; track fonctionnalite.id) {
+                  <label class="feature-option"><input type="checkbox" [checked]="fonctionnalite.selectionnee" (change)="basculerFonctionnalite(fonctionnalite.id)" /><span><strong>{{ fonctionnalite.libelle }}</strong><small>{{ fonctionnalite.code }}</small></span><b>{{ formatPrice(fonctionnalite.prix_mensuel) }}<small>/ mois</small></b></label>
+                }
+              </div>
+            </article>
+          }
           <aside class="panel subscription-summary">
             <small>ESTIMATION MENSUELLE</small><strong>{{ formatPrice(subscriptionTotal()) }}</strong><span>hors taxes / mois</span>
-            <div><p><span>Socle Institut</span><b>15 000 F</b></p><p><span>Métiers activés</span><b>{{ activeSubscriptionCount() }} / 7</b></p><p><span>Utilisateurs inclus</span><b>Illimités</b></p></div>
-            <button>Voir le détail du calcul</button>
+            <div><p><span>Fonctionnalités choisies</span><b>{{ activeSubscriptionCount() }}</b></p><p><span>Types activés</span><b>{{ activeSubscriptionTypesCount() }}</b></p><p><span>Utilisateurs inclus</span><b>Illimités</b></p></div>
+            <button (click)="ouvrirPremierTypeActif()">Voir les fonctionnalités</button>
             <p class="trial-info"><i>science</i>Chaque nouvelle fonctionnalité peut être testée avant facturation.</p>
           </aside>
         </section>
       }
 
       @if (activeView() === 'settings') {
-        <div class="page-title"><div><small>CONFIGURATION GLOBALE</small><h1>Paramètres de l’institut</h1><p>Identité, année de référence, règles générales et préférences.</p></div><button class="primary-action"><i>save</i>Enregistrer</button></div>
+        <div class="page-title"><div><small>CONFIGURATION GLOBALE</small><h1>Paramètres de l’institut</h1><p>Identité, année de référence, règles générales et préférences.</p></div><button type="button" class="primary-action" (click)="actualiserDonneesBackend()" [disabled]="backendRefreshing()"><i>{{ backendRefreshing() ? 'sync' : 'refresh' }}</i>{{ backendRefreshing() ? 'Réactualisation…' : 'Réactualiser les données' }}</button></div>
+        @if (subscriptionSuccess()) {<div class="subscription-feedback success"><i>check_circle</i>{{ subscriptionSuccess() }}</div>}
+        @if (subscriptionError()) {<div class="subscription-feedback error"><i>error</i>{{ subscriptionError() }}</div>}
         <section class="panel settings-placeholder"><span>tune</span><h2>Configuration centrale</h2><p>Cette page accueillera les paramètres hérités par les établissements, avec possibilité de surcharge locale.</p><button>Commencer la configuration</button></section>
       }
     </main>

@@ -5,7 +5,7 @@ import { Component,
   inject,
   input,
   output,
-  viewChild, ChangeDetectionStrategy } from '@angular/core';
+  viewChild, ChangeDetectionStrategy, effect } from '@angular/core';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -34,6 +34,7 @@ export interface ColumnDefinition {
     | 'text'
     | 'number'
     | 'date'
+    | 'dateCard'
     | 'time'
     | 'phone'
     | 'email'
@@ -100,6 +101,7 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   readonly showDelete = input<boolean>(true);
   readonly showDetails = input<boolean>(false);
   readonly showSchedule = input<boolean>(false);
+  readonly showStatusToggle = input<boolean>(false);
   readonly showRefresh = input<boolean>(true);
   readonly showExport = input<boolean>(true);
   readonly showContextMenu = input<boolean>(true);
@@ -109,6 +111,7 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   readonly disableRowClickToEdit = input<boolean>(false);
   readonly pageSize = input<number>(10);
   readonly pageSizeOptions = input<number[]>([5, 10, 25, 100]);
+  readonly selectedRows = input<any[]>([]);
 
   // Outputs
   readonly add = output<void>();
@@ -116,9 +119,11 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   readonly delete = output<any>();
   readonly details = output<any>();
   readonly schedule = output<any>();
+  readonly statusToggle = output<any>();
   readonly refresh = output<void>();
   readonly bulkDelete = output<any[]>();
   readonly rowClick = output<any>();
+  readonly selectionChange = output<any[]>();
 
   // Component properties
   selection = new SelectionModel<any>(true, []);
@@ -128,6 +133,14 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   readonly sort = viewChild.required(MatSort);
   readonly filter = viewChild.required<ElementRef>('filter');
   readonly contextMenu = viewChild(MatMenuTrigger);
+
+  constructor() {
+    effect(() => {
+      const selectedRows = this.selectedRows();
+      this.selection.clear();
+      if (selectedRows.length) this.selection.select(...selectedRows);
+    });
+  }
 
   ngOnInit() {
     // Initialize table
@@ -192,6 +205,10 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
     this.schedule.emit(row);
   }
 
+  onStatusToggle(row: any) {
+    this.statusToggle.emit(row);
+  }
+
   onRefresh() {
     this.refresh.emit();
   }
@@ -233,21 +250,29 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   }
 
   isAllSelected() {
-    return this.selection.selected.length === this.dataSource().data.length;
+    const rows = this.dataSource().filteredData;
+    return rows.length > 0 && rows.every((row) => this.selection.isSelected(row));
   }
 
   masterToggle() {
     if (this.isAllSelected()) {
-      this.selection.clear();
+      this.dataSource().filteredData.forEach((row) => this.selection.deselect(row));
     } else {
-      this.dataSource().data.forEach((row) => this.selection.select(row));
+      this.dataSource().filteredData.forEach((row) => this.selection.select(row));
     }
+    this.selectionChange.emit([...this.selection.selected]);
+  }
+
+  toggleSelection(row: any): void {
+    this.selection.toggle(row);
+    this.selectionChange.emit([...this.selection.selected]);
   }
 
   removeSelectedRows() {
     const selectedRows = this.selection.selected;
     this.bulkDelete.emit(selectedRows);
     this.selection.clear();
+    this.selectionChange.emit([]);
   }
 
   onContextMenu(event: MouseEvent, item: any) {

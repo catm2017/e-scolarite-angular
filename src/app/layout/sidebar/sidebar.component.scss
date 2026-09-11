@@ -93,3 +93,14 @@
   margin-left: auto;
   font-size: 9px;
 }
+
+.sidebar .menu .list a.menu-top.subscription-locked {
+  opacity: .42;
+  cursor: not-allowed;
+  filter: grayscale(.65);
+}
+
+.sidebar .menu .list a.menu-top.subscription-locked:hover {
+  background: transparent;
+  color: inherit;
+}

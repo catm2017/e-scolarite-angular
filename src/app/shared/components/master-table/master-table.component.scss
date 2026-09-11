@@ -23,3 +23,19 @@
     color: var(--text-color);
   }
 }
+
+.table-date-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 94px;
+  padding: 5px 8px;
+  border: 1px solid #dce7f4;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f4f9ff, #edf5ff);
+
+  > mat-icon { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 6px; background: #dceeff; color: #3382c4; font-size: 16px; }
+  > span { display: grid; line-height: 1.05; }
+  strong { color: #2e5f90; font-size: 13px; font-weight: 800; }
+  small { margin-top: 2px; color: #7188a0; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+}

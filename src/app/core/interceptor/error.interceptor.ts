@@ -2,28 +2,42 @@ import { inject } from '@angular/core';
 import { HttpRequest, HttpHandlerFn, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { AuthService } from '../service/auth.service';
+import { Router } from '@angular/router';
+import { effacerSessionApiLocale } from '../../prototype/central-api.service';
+
+let redirectionSessionExpireeEnCours = false;
 
 export const errorInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn
 ): Observable<HttpEvent<unknown>> => {
-  const authenticationService = inject(AuthService);
+  const router = inject(Router);
 
   return next(req).pipe(
     catchError((err) => {
-      if (err.status === 401) {
+      if (err.status === 401 || err.status === 419) {
         // Do not auto-logout if the request is to an external AI API
         const isExternalAiApi = req.url.includes('api.openai.com') || req.url.includes('generativelanguage.googleapis.com');
-        if (!isExternalAiApi) {
-          // auto logout if 401 response returned from api
-          authenticationService.logout();
-          location.reload();
+        const isLoginRequest = req.url.endsWith('/connexion') || req.url.includes('/centrale/connexion');
+        const isAuthenticatedRequest = req.headers.has('Authorization');
+        if (!isExternalAiApi && !isLoginRequest && isAuthenticatedRequest) {
+          // Une session API expirée est supprimée localement avant de revenir
+          // à l'écran de connexion. Aucun nouvel appel de déconnexion n'est
+          // lancé afin d'éviter une boucle sur une session déjà invalide.
+          effacerSessionApiLocale();
+          if (!redirectionSessionExpireeEnCours) {
+            redirectionSessionExpireeEnCours = true;
+            void router.navigate(['/connexion'], {
+              queryParams: { session: 'expiree' },
+              replaceUrl: true,
+            }).finally(() => {
+              redirectionSessionExpireeEnCours = false;
+            });
+          }
         }
       }
 
-      const error = err.error?.message || err.statusText;
-      return throwError(() => error);
+      return throwError(() => err);
     })
   );
 };

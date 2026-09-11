@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { LoadingBarModule } from '@ngx-loading-bar/core';
+import { BackendLoadingService } from '../../core/service/backend-loading.service';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'app-page-loader',
@@ -8,7 +9,5 @@ import { LoadingBarModule } from '@ngx-loading-bar/core';
     imports: [LoadingBarModule]
 })
 export class PageLoaderComponent {
-  constructor() {
-    //constructor
-  }
+  readonly backendLoading = inject(BackendLoadingService);
 }

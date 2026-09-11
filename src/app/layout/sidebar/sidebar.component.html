@@ -32,7 +32,7 @@
             <div class="header">{{ primaryWorkspace.translate(sidebarItem.title) }}</div>
             } @else {
             @if (sidebarItem.path) {
-            <a [routerLink]="sidebarItem.path" class="menu-top">
+            <a [routerLink]="isInstituteItemAccessible(sidebarItem) ? sidebarItem.path : null" class="menu-top" [class.subscription-locked]="!isInstituteItemAccessible(sidebarItem)" [attr.aria-disabled]="!isInstituteItemAccessible(sidebarItem)">
               <i [ngClass]="[sidebarItem.iconType]">{{ sidebarItem.icon }}</i>
               <span class="hide-menu">{{ primaryWorkspace.translate(sidebarItem.title) }}</span>
               @if (sidebarItem.badge !== '') {<span [ngClass]="[sidebarItem.badgeClass]">{{ sidebarItem.badge }}</span>}
@@ -41,7 +41,7 @@
             <a
               href="#"
               (click)="$event.preventDefault(); isPrimaryWorkspace ? selectPrimaryView(sidebarItem.workspaceView) : selectInstituteView(sidebarItem.workspaceView)"
-              class="menu-top">
+              class="menu-top" [class.subscription-locked]="isInstituteWorkspace && !isInstituteItemAccessible(sidebarItem)" [attr.aria-disabled]="isInstituteWorkspace && !isInstituteItemAccessible(sidebarItem)">
               <i [ngClass]="[sidebarItem.iconType]">{{ sidebarItem.icon }}</i>
               <span class="hide-menu">{{ primaryWorkspace.translate(sidebarItem.title) }}</span>
               @if (sidebarItem.badge !== '') {

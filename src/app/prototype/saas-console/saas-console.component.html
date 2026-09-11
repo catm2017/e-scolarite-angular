@@ -5,6 +5,8 @@
     <nav>
       <button [class.active]="activeView() === 'dashboard'" (click)="activeView.set('dashboard')"><i>space_dashboard</i>Vue d’ensemble</button>
       <button [class.active]="activeView() === 'schools'" (click)="activeView.set('schools')"><i>apartment</i>Établissements <em>38</em></button>
+      <button [class.active]="activeView() === 'academic-years'" (click)="activeView.set('academic-years')"><i>date_range</i>Années scolaires</button>
+      <button [class.active]="activeView() === 'adhesions'" (click)="activeView.set('adhesions')"><i>how_to_reg</i>Adhésions <em>{{ demandes().length }}</em></button>
       <button [class.active]="activeView() === 'pricing'" (click)="activeView.set('pricing')"><i>sell</i>Tarification</button>
       <button><i>receipt_long</i>Facturation</button>
       <button><i>extension</i>Fonctionnalités</button>
@@ -23,7 +25,7 @@
       <div class="shell-search"><i>search</i>Rechercher un établissement… <kbd>⌘ K</kbd></div>
       <app-platform-language-switcher />
       <button class="icon-button"><i>notifications_none</i><span></span></button>
-      <div class="user-chip"><b>CM</b><span>Cheikh M.<small>Super administrateur</small></span></div>
+      <button class="user-chip" type="button" (click)="deconnexion()"><b>{{ user()?.prenom?.slice(0, 1) }}{{ user()?.nom?.slice(0, 1) }}</b><span>{{ user()?.prenom }} {{ user()?.nom }}<small>Se déconnecter</small></span></button>
     </header>
 
     <main class="shell-content">
@@ -33,9 +35,9 @@
           <button class="primary-action" (click)="activeView.set('schools')"><i>add</i>Nouvel établissement</button>
         </div>
         <section class="metric-grid">
-          <article><span class="metric-icon green"><i>apartment</i></span><div><small>Établissements actifs</small><strong>38</strong><em>+4 ce trimestre</em></div><b>+11%</b></article>
-          <article><span class="metric-icon violet"><i>payments</i></span><div><small>Revenu mensuel</small><strong>1,18 M F</strong><em>Revenu récurrent</em></div><b>+8,4%</b></article>
-          <article><span class="metric-icon orange"><i>hourglass_top</i></span><div><small>Essais en cours</small><strong>7</strong><em>3 expirent cette semaine</em></div><b class="neutral">Voir</b></article>
+          <article><span class="metric-icon green"><i>apartment</i></span><div><small>Instituts actifs</small><strong>{{ metrics().instituts_actifs }}</strong><em>Base centrale</em></div><b>Voir</b></article>
+          <article><span class="metric-icon violet"><i>payments</i></span><div><small>Revenu encaissé</small><strong>{{ metrics().revenu_mensuel | number }} F</strong><em>Factures réglées</em></div><b>Voir</b></article>
+          <article><span class="metric-icon orange"><i>hourglass_top</i></span><div><small>Essais en cours</small><strong>{{ metrics().essais_en_cours }}</strong><em>À suivre</em></div><b class="neutral">Voir</b></article>
           <article><span class="metric-icon blue"><i>groups</i></span><div><small>Apprenants gérés</small><strong>18 420</strong><em>Tous établissements</em></div><b>+16%</b></article>
         </section>
         <section class="content-grid">
@@ -50,7 +52,7 @@
           </article>
           <article class="panel action-panel">
             <header><div><h2>Actions prioritaires</h2><p>À traiter cette semaine</p></div><span class="count">6</span></header>
-            <div class="action-item"><i class="danger">priority_high</i><div><b>3 essais arrivent à échéance</b><small>Contacter les établissements</small></div><button>Traiter</button></div>
+            <div class="action-item"><i class="danger">priority_high</i><div><b>{{ metrics().adhesions_en_attente }} demande(s) d’adhésion</b><small>À étudier et provisionner</small></div><button (click)="activeView.set('adhesions')">Traiter</button></div>
             <div class="action-item"><i class="warning">receipt_long</i><div><b>2 factures en retard</b><small>69 000 F à recouvrer</small></div><button>Relancer</button></div>
             <div class="action-item"><i class="info">support_agent</i><div><b>1 demande de support</b><small>Priorité haute · il y a 24 min</small></div><button>Ouvrir</button></div>
           </article>
@@ -75,19 +77,49 @@
           <div><small>CATALOGUE COMMERCIAL</small><h1>Tarification modulaire</h1><p>Définissez un prix clair pour chaque capacité activable.</p></div>
           <button class="primary-action"><i>add</i>Nouvelle fonctionnalité</button>
         </div>
-        <div class="pricing-callout"><span>lightbulb</span><div><strong>Une tarification juste et prévisible</strong><p>Le socle est obligatoire. Les modules s’additionnent et peuvent être testés 30 jours avant facturation.</p></div><button>Configurer les essais</button></div>
+        <div class="pricing-callout"><span>lightbulb</span><div><strong>Une tarification juste et prévisible</strong><p>Chaque fonctionnalité est tarifée séparément, par type d’établissement. Le site web complet est lui aussi une fonctionnalité.</p></div><button>Configurer les essais</button></div>
+        <nav class="catalogue-type-tabs" aria-label="Filtrer les fonctionnalités par type d’établissement">
+          @for (type of catalogueTypes(); track type.id) {
+            <button type="button" [class.active]="catalogueTypeActif() === type.code" (click)="catalogueTypeActif.set(type.code)">{{ type.libelle }}</button>
+          }
+        </nav>
         <section class="panel module-panel">
-          <header><div><h2>Fonctionnalités commercialisées</h2><p>{{ modules.length }} capacités dans le catalogue</p></div><div class="table-filter">search&nbsp;&nbsp; Rechercher</div></header>
+          <header><div><h2>Fonctionnalités commercialisées</h2><p>{{ fonctionnalitesFiltrees().length }} fonctionnalité(s) pour ce type d’établissement</p></div><div class="table-filter">search&nbsp;&nbsp; Rechercher</div></header>
           <div class="module-grid">
-            @for (module of modules; track module.name) {
+            @for (module of fonctionnalitesFiltrees(); track module.id) {
               <article>
-                <div class="module-top"><span>{{ module.name.slice(0,1) }}</span><em [class.off]="!module.enabled">{{ module.enabled ? 'Commercialisé' : 'Brouillon' }}</em></div>
-                <small>{{ module.category }}</small><h3>{{ module.name }}</h3>
-                <div class="module-price"><strong>{{ module.price | number }} F</strong><span>/ mois</span></div>
-                <footer><span><b>{{ module.clients }}</b> clients actifs</span><button>Configurer →</button></footer>
+                <div class="module-top"><span>{{ module.fonctionnalite.slice(0,1) }}</span><em [class.off]="!module.actif">{{ module.actif ? 'Commercialisée' : 'Désactivée' }}</em></div>
+                <small>{{ module.type_etablissement }}</small><h3>{{ module.fonctionnalite }}</h3>
+                <label class="module-price"><input type="number" min="0" [(ngModel)]="module.prix_mensuel" /><span>F CFA / mois</span></label>
+                <footer><label class="catalogue-switch"><input type="checkbox" [(ngModel)]="module.actif" /><span>Disponible</span></label><button [disabled]="tarificationEnCours() === module.id" (click)="enregistrerTarification(module)">{{ tarificationEnCours() === module.id ? 'Enregistrement…' : 'Enregistrer' }}</button></footer>
               </article>
+            } @empty {
+              <div class="empty-catalogue"><i>inventory_2</i><strong>Aucune fonctionnalité développée</strong><p>Ce type d’établissement reste visible dans le catalogue. Ses fonctionnalités seront ajoutées au fur et à mesure du développement métier.</p></div>
             }
           </div>
+        </section>
+      }
+
+      @if (activeView() === 'academic-years') {
+        <div class="page-title">
+          <div><small>RÉFÉRENTIEL CENTRAL</small><h1>Années scolaires</h1><p>Créez les années disponibles pour tous les instituts. Chaque établissement définira ensuite ses propres dates.</p></div>
+          <button class="primary-action" type="button" (click)="nouvelleAnneeScolaire()"><i>add</i>Nouvelle année</button>
+        </div>
+        @if (erreur()) { <p class="request-error">{{ erreur() }}</p> }
+        <section class="academic-years-explainer"><i>account_tree</i><div><strong>Un référentiel, des calendriers indépendants</strong><p>Le back-office central publie le libellé de l’année. Les instituts conservent la maîtrise des dates de début et de fin pour chacun de leurs établissements.</p></div></section>
+        @if (anneeScolaireEnEdition(); as annee) {
+          <section class="panel academic-year-editor">
+            <header><div><h2>{{ annee.id ? 'Modifier l’année scolaire' : 'Créer une année scolaire' }}</h2><p>Le libellé sera proposé dans les paramètres des établissements.</p></div><button type="button" (click)="annulerEditionAnneeScolaire()" aria-label="Fermer"><i>close</i></button></header>
+            <div class="academic-year-form"><label><span>Libellé <b>*</b></span><input [(ngModel)]="annee.libelle" placeholder="Ex. 2027–2028" /></label><label><span>Statut</span><select [(ngModel)]="annee.statut"><option value="ouverte">Ouverte</option><option value="archivee">Archivée</option></select></label><label class="academic-year-current"><input type="checkbox" [(ngModel)]="annee.est_courante" [disabled]="annee.statut === 'archivee'" /><span>Année scolaire courante</span></label></div>
+            <footer><span>Une année archivée reste visible dans les historiques mais ne peut plus être configurée par les établissements.</span><div><button type="button" (click)="annulerEditionAnneeScolaire()">Annuler</button><button type="button" class="primary-action" [disabled]="enregistrementAnneeScolaire()" (click)="enregistrerAnneeScolaire()"><i>save</i>{{ enregistrementAnneeScolaire() ? 'Enregistrement…' : 'Enregistrer' }}</button></div></footer>
+          </section>
+        }
+        <section class="panel academic-years-panel">
+          <header><div><h2>Années publiées</h2><p>{{ anneesScolaires().length }} année(s) disponibles dans la plateforme</p></div></header>
+          <div class="academic-years-head"><span>ANNÉE SCOLAIRE</span><span>STATUT</span><span>RÉFÉRENCE</span><span></span></div>
+          @for (annee of anneesScolaires(); track annee.id) {
+            <article class="academic-year-row"><div><i>calendar_month</i><strong>{{ annee.libelle }}</strong></div><em [class.archived]="annee.statut === 'archivee'">{{ annee.statut === 'ouverte' ? 'Ouverte' : 'Archivée' }}</em><span>{{ annee.est_courante ? 'Année courante' : 'Historique / à venir' }}</span><button type="button" (click)="modifierAnneeScolaire(annee)"><i>edit</i>Modifier</button></article>
+          } @empty { <p class="empty-state">Aucune année scolaire n’est encore publiée.</p> }
         </section>
       }
 
@@ -106,6 +138,27 @@
               <div><small>MENSUALITÉ</small><strong>{{ school.amount | number }} F</strong></div>
               <em class="status" [class.trial]="school.status === 'Essai'" [class.late]="school.status === 'À relancer'">{{ school.status }}</em>
               <a routerLink="/institut">Ouvrir l’espace <span>→</span></a>
+            </article>
+          }
+        </section>
+      }
+
+      @if (activeView() === 'adhesions') {
+        <div class="page-title">
+          <div><small>DEMANDES PUBLIQUES</small><h1>Adhésions</h1><p>Étudiez une demande puis créez l’institut, sa base isolée et son administrateur.</p></div>
+          <button class="primary-action" (click)="chargerDonnees()"><i>refresh</i>Actualiser</button>
+        </div>
+        @if (erreur()) { <p class="request-error">{{ erreur() }}</p> }
+        <section class="panel requests-panel">
+          @if (demandes().length === 0) { <p class="empty-state">Aucune demande d’adhésion pour le moment.</p> }
+          @for (demande of demandes(); track demande.id) {
+            <article class="request-row">
+              <span class="client-logo">{{ demande.nom_institut.slice(0, 1) }}</span>
+              <div><h3>{{ demande.nom_institut }}</h3><p>{{ demande.ville || 'Ville non précisée' }} · {{ demande.effectif_estime || '—' }} apprenants estimés</p></div>
+              <div><small>RESPONSABLE</small><strong>{{ demande.prenom_responsable }} {{ demande.nom_responsable }}</strong><p>{{ demande.email_responsable }}</p></div>
+              <div><small>ÉTABLISSEMENTS</small><strong>{{ demande.types_etablissements?.join(', ') || 'À préciser' }}</strong></div>
+              <em class="status" [class.trial]="demande.statut === 'soumise'">{{ demande.statut }}</em>
+              <button class="approve" [disabled]="demande.statut !== 'soumise' || traitementId() === demande.id" (click)="approuver(demande)">{{ traitementId() === demande.id ? 'Provisionnement…' : 'Approuver' }}</button>
             </article>
           }
         </section>

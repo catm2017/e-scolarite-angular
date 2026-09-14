@@ -134,7 +134,7 @@
       @if (demandeEnDetail(); as demande) {
         <article class="card saas-editor">
           <h2>{{ demande.nom_institut }}</h2>
-          <dl class="saas-detail-grid"><div><dt>Responsable</dt><dd>{{ demande.prenom_responsable }} {{ demande.nom_responsable }}</dd></div><div><dt>E-mail</dt><dd>{{ demande.email_responsable }}</dd></div><div><dt>Types d’établissement</dt><dd>{{ demande.types_etablissements?.join(', ') }}</dd></div><div><dt>Statut</dt><dd>{{ demande.statut }}</dd></div></dl>
+          <dl class="saas-detail-grid"><div><dt>Prénom</dt><dd>{{ demande.prenom_responsable }}</dd></div><div><dt>Nom</dt><dd>{{ demande.nom_responsable }}</dd></div><div><dt>E-mail</dt><dd>{{ demande.email_responsable }}</dd></div><div><dt>Téléphone</dt><dd>{{ demande.telephone_responsable }}</dd></div><div><dt>Types d’établissement</dt><dd>{{ demande.types_etablissements?.join(', ') }}</dd></div><div><dt>Statut</dt><dd>{{ demande.statut }}</dd></div></dl>
           <div class="saas-form-actions"><button mat-stroked-button (click)="demandeEnDetail.set(null)">Fermer</button>@if (demande.statut === 'soumise') {<button mat-flat-button color="primary" [disabled]="!!traitementId()" (click)="approuver(demande)"><mat-icon>check</mat-icon>{{ traitementId() ? 'Provisionnement…' : 'Approuver la demande' }}</button>}</div>
         </article>
       }
@@ -145,6 +145,7 @@
       @if (institutEnDetail(); as detail) {
         <article class="card saas-editor">
           <h2>{{ detail.institut.nom }}</h2><p>Situation commerciale et historique des abonnements de l’institut.</p>
+          <div class="saas-detail-grid"><div><dt>Responsable</dt><dd>{{ detail.institut.prenom_responsable }} {{ detail.institut.nom_responsable }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ detail.institut.email_responsable || 'Non renseignée' }}</dd></div><div><dt>Téléphone</dt><dd>{{ detail.institut.telephone_responsable || 'Non renseigné' }}</dd></div></div>
           @if (detail.abonnement_actuel; as abonnement) {
             <div class="saas-detail-grid"><div><dt>Offre actuelle</dt><dd>{{ abonnement.offre }}</dd></div><div><dt>État</dt><dd>{{ abonnement.etat_abonnement }}</dd></div><div><dt>Paiement</dt><dd>{{ abonnement.etat_paiement }}</dd></div><div><dt>Période</dt><dd>{{ abonnement.date_debut | date }} · {{ abonnement.date_fin | date }}</dd></div></div>
             <app-master-table title="Historique de cet institut" [dataSource]="detailAbonnementsSource" [columnDefinitions]="abonnementsColumns" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showContextMenu]="false" [showBulkDelete]="false" />

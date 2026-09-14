@@ -155,6 +155,10 @@ export interface InstitutSaas {
   statut: string;
   abonnement_en_cours: string;
   etat_abonnement: string;
+  prenom_responsable: string | null;
+  nom_responsable: string | null;
+  email_responsable: string | null;
+  telephone_responsable: string | null;
 }
 
 export interface AbonnementSaas {

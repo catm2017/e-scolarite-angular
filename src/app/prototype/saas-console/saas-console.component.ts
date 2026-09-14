@@ -113,11 +113,16 @@ export class SaasConsoleComponent implements OnInit {
   ]);
   readonly demandesColumns = this.columns([
     ['nom_institut', 'Institut', 'text'], ['ville', 'Ville', 'text'],
-    ['email_responsable', 'Adresse e-mail', 'email'], ['statut', 'Statut', 'text'],
+    ['prenom_responsable', 'Prénom', 'text'], ['nom_responsable', 'Nom', 'text'],
+    ['email_responsable', 'Adresse e-mail', 'email'], ['telephone_responsable', 'Téléphone', 'phone'], ['statut', 'Statut', 'text'],
     ['actions', 'Consulter', 'actionBtn'],
   ]);
   readonly etablissementsColumns: ColumnDefinition[] = [
     { def: 'nom', label: 'Institut', type: 'text', visible: true, sortable: true },
+    { def: 'prenom_responsable', label: 'Prénom responsable', type: 'text', visible: true, sortable: true },
+    { def: 'nom_responsable', label: 'Nom responsable', type: 'text', visible: true, sortable: true },
+    { def: 'email_responsable', label: 'Adresse e-mail', type: 'email', visible: true, sortable: true },
+    { def: 'telephone_responsable', label: 'Téléphone', type: 'phone', visible: true, sortable: true },
     { def: 'abonnement_en_cours', label: 'Abonnement en cours', type: 'text', visible: true, sortable: true },
     { def: 'actions', label: 'Détails', type: 'actionBtn', visible: true, sortable: false },
   ];

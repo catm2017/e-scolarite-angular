@@ -1,22 +1,26 @@
-<main class="auth-page">
-  <a class="brand" routerLink="/"><span>E</span>E‑Scolarité</a>
-  <section class="auth-card">
-    <div class="eyebrow">ACCÈS SÉCURISÉ</div>
-    <h1>Connexion à votre espace</h1>
-    <p>Sélectionnez votre établissement si vous y êtes rattaché, puis saisissez vos identifiants.</p>
-
-    <form [formGroup]="connexion" (ngSubmit)="soumettre()">
-      <label class="school-picker">Établissement
-        <select formControlName="institut_id" (change)="choisirInstitut($any($event.target).value)">
-          <option value=""></option>
-          @for (institut of instituts(); track institut.id) { <option [value]="institut.id">{{ institut.nom }}</option> }
-        </select>
-      </label>
-      <label>Adresse e-mail<input type="email" formControlName="email" autocomplete="email" placeholder="vous@daara.tech" /></label>
-      <label>Mot de passe<input type="password" formControlName="password" autocomplete="current-password" placeholder="Votre mot de passe" /></label>
-      @if (erreur()) { <p class="error">{{ erreur() }}</p> }
-      <button type="submit" [disabled]="chargement()">{{ chargement() ? 'Connexion…' : 'Se connecter' }}</button>
-    </form>
-    <p class="help">Votre établissement n’est pas encore sur E‑Scolarité ? <a routerLink="/adhesion">Déposer une demande d’adhésion</a></p>
-  </section>
+<main class="signin-page">
+  <header class="signin-nav">
+    <a routerLink="/" class="signin-brand"><span>E</span>E-Scolarité</a>
+    <nav aria-label="Navigation"><a routerLink="/">Accueil</a><a routerLink="/adhesion">Adhésion</a><app-platform-language-switcher /></nav>
+  </header>
+  <div class="signin-main">
+    <section class="signin-card">
+      <div class="signin-symbol"><i class="material-icons-outlined">school</i></div>
+      <h1>Bienvenue sur E-Scolarité</h1>
+      <p class="signin-intro">Connectez-vous pour retrouver votre espace de travail.</p>
+      <form [formGroup]="connexion" (ngSubmit)="soumettre()">
+        <label for="institut">Établissement <small>Facultatif</small></label>
+        <div class="signin-field"><i class="material-icons-outlined">apartment</i><select id="institut" formControlName="institut_id" (change)="choisirInstitut($any($event.target).value)"><option value=""></option>@for (institut of instituts(); track institut.id) {<option [value]="institut.id">{{ institut.nom }}</option>}</select></div>
+        <label for="email">Adresse e-mail</label>
+        <div class="signin-field"><i class="material-icons-outlined">mail</i><input id="email" type="email" formControlName="email" autocomplete="username" placeholder="votre.adresse@exemple.sn" /></div>
+        <label for="password">Mot de passe</label>
+        <div class="signin-field"><i class="material-icons-outlined">lock</i><input id="password" [type]="passwordVisible() ? 'text' : 'password'" formControlName="password" autocomplete="current-password" placeholder="Votre mot de passe" /><button type="button" (click)="passwordVisible.set(!passwordVisible())" [attr.aria-label]="passwordVisible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"><i class="material-icons-outlined">{{ passwordVisible() ? 'visibility_off' : 'visibility' }}</i></button></div>
+        @if (erreur()) {<p class="signin-error" role="alert"><i class="material-icons-outlined">error_outline</i>{{ erreur() }}</p>}
+        <button type="submit" class="signin-submit" [disabled]="chargement()">{{ chargement() ? 'Connexion en cours…' : 'Se connecter' }}<i class="material-icons-outlined" [class.spinning]="chargement()">{{ chargement() ? 'progress_activity' : 'arrow_forward' }}</i></button>
+      </form>
+      <p class="signin-help">Un problème de connexion ? Contactez l’administrateur de votre établissement.</p>
+    </section>
+    <p class="signin-join">Votre institut n’a pas encore son espace ?<a routerLink="/adhesion">Demander une adhésion <span>→</span></a></p>
+  </div>
+  <footer class="signin-footer">© 2026 E-Scolarité · Une solution Daara Tech</footer>
 </main>

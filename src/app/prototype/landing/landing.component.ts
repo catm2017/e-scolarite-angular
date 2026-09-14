@@ -1,15 +1,25 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
+import { CentralApiService, InstitutConnexion, PackageTarification } from '../central-api.service';
 
 @Component({
   selector: 'app-landing',
-  imports: [RouterLink, PlatformLanguageSwitcherComponent],
+  imports: [RouterLink, DecimalPipe, PlatformLanguageSwitcherComponent],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LandingComponent {
+export class LandingComponent implements OnInit {
+  private readonly api = inject(CentralApiService);
+  readonly packages = signal<PackageTarification[]>([]);
+  readonly activeDemoSlide = signal(0);
+  readonly partners = signal<InstitutConnexion[]>([]);
+  scrollTo(event: Event, id: string): void {
+    event.preventDefault();
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   readonly features = [
     {
       icon: 'school',
@@ -23,30 +33,42 @@ export class LandingComponent {
     },
     {
       icon: 'menu_book',
-      title: 'Espace Daara',
-      text: 'Lecture, mémorisation, récitation et programmes de révision individualisés.',
+      title: 'Programmes et séances',
+      text: 'Organisez les leçons, préparez les emplois du temps et suivez le cahier de texte.',
     },
     {
-      icon: 'forum',
-      title: 'Communication simple',
-      text: 'Notifications et WhatsApp pour rapprocher l’école, les familles et les équipes.',
+      icon: 'groups',
+      title: 'Équipes et familles',
+      text: 'Retrouvez les dossiers des élèves, tuteurs, enseignants et personnels dans leur contexte.',
     },
     {
-      icon: 'auto_awesome',
-      title: 'Assistant intelligent',
-      text: 'Des suggestions et automatisations contrôlées pour gagner du temps au quotidien.',
+      icon: 'domain',
+      title: 'Campus et établissements',
+      text: 'Pilotez vos structures ensemble tout en conservant un espace dédié à chaque cycle.',
     },
     {
       icon: 'language',
-      title: 'Site web inclus',
+      title: 'Votre site web',
       text: 'Chaque établissement publie simplement son site vitrine depuis son back-office.',
     },
   ];
 
-  readonly modules = [
-    { label: 'Socle E‑Scolarité', price: '15 000', active: true },
-    { label: 'Finance & paiements', price: '7 500', active: true },
-    { label: 'Emplois du temps', price: '5 000', active: true },
-    { label: 'Site web établissement', price: '3 500', active: true },
+
+  readonly demoSlides = [
+    { icon: 'space_dashboard', title: 'Pilotez tout votre institut', text: 'Une vue consolidée sur vos campus, établissements, équipes et indicateurs.' },
+    { icon: 'auto_stories', title: 'Suivez chaque apprentissage', text: 'Programmes, séances, évaluations et bulletins restent liés à l’année scolaire.' },
+    { icon: 'account_balance_wallet', title: 'Gardez vos finances lisibles', text: 'Tarifs, encaissements, dépenses et relances réunis dans un même espace.' },
   ];
+
+  ngOnInit(): void {
+    this.api.institutsConnexion().subscribe({ next: ({ data }) => this.partners.set(data), error: () => this.partners.set([]) });
+    this.api.packagesPublics().subscribe({
+      next: ({ data }) => this.packages.set(data),
+      error: () => this.packages.set([]),
+    });
+  }
+
+  featureLabel(code: string): string {
+    return code.replace(/^gestion_/, '').replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+  }
 }

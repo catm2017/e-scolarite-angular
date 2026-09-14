@@ -97,9 +97,13 @@ export const APP_ROUTE: Route[] = [
   {
     path: 'saas',
     loadComponent: () =>
-      import('./prototype/saas-console/saas-console.component').then(
-        (component) => component.SaasConsoleComponent,
+      import('./prototype/layouts/saas-layout/saas-layout.component').then(
+        (component) => component.SaasLayoutComponent,
       ),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'tableau-de-bord' },
+      { path: ':vue', loadComponent: () => import('./prototype/saas-console/saas-console.component').then(c => c.SaasConsoleComponent) },
+    ],
   },
   {
     path: 'connexion',

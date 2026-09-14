@@ -228,7 +228,7 @@
           @if (staffEditorOpen()) {
             <section class="panel directory-form-card">
               <header><div><span><i>badge</i></span><div><h2>{{ staffForm.matricule ? 'Modifier le personnel' : 'Nouveau personnel' }}</h2><p>Identité, fonction et rattachement au campus dans un seul dossier.</p></div></div><button type="button" aria-label="Fermer" (click)="staffEditorOpen.set(false)"><i>close</i></button></header>
-              <form (ngSubmit)="saveStaff()"><div class="directory-form-grid"><label><span>Matricule</span><input name="staffMatricule" [(ngModel)]="staffForm.matricule" placeholder="Généré automatiquement si vide" /></label><label><span>Prénom(s) et nom <b>*</b></span><input name="staffName" [(ngModel)]="staffForm.name" required /></label><label><span>Fonction <b>*</b></span><input name="staffFunction" [(ngModel)]="staffForm.function" placeholder="Ex. Comptable" required /></label><label><span>Campus de rattachement <b>*</b></span><select name="staffCampus" [(ngModel)]="staffForm.campus" required><option value="" disabled>Choisir un campus</option>@for (campus of campuses(); track campus.name) {<option [value]="campus.name">{{ campus.name }}</option>}</select></label><label><span>Téléphone</span><input name="staffPhone" [(ngModel)]="staffForm.phone" placeholder="77 000 00 00" /></label><label><span>Adresse e-mail</span><input type="email" name="staffEmail" [(ngModel)]="staffForm.email" placeholder="nom@ecole.sn" /></label></div><footer><span><b>*</b> Champs obligatoires</span><div><button type="button" (click)="staffEditorOpen.set(false)">Annuler</button><button type="submit" class="primary-action"><i>save</i>Enregistrer le dossier</button></div></footer></form>
+              <form (ngSubmit)="saveStaff()"><div class="directory-form-grid"><label><span>Matricule</span><input name="staffMatricule" [(ngModel)]="staffForm.matricule" placeholder="Généré automatiquement si vide" /></label><label><span>Prénom(s) et nom <b>*</b></span><input name="staffName" [(ngModel)]="staffForm.name" required /></label><label><span>Fonction <b>*</b></span><input name="staffFunction" [(ngModel)]="staffForm.function" placeholder="Ex. Comptable" required /></label><label><span>Types d’établissement <b>*</b></span><select name="staffEstablishments" [(ngModel)]="staffForm.establishmentIds" multiple required>@for (establishment of establishments(); track establishment.id) {<option [value]="establishment.workspaceId">{{ establishment.type }}</option>}</select><small>Maintenez Ctrl / Cmd pour plusieurs choix.</small></label><label><span>Campus de rattachement <b>*</b></span><select name="staffCampuses" [(ngModel)]="staffForm.campusIds" multiple required>@for (campus of campuses(); track campus.id) {<option [value]="campus.id">{{ campus.name }}</option>}</select><small>Un ou plusieurs campus.</small></label><label><span>Téléphone</span><input name="staffPhone" [(ngModel)]="staffForm.phone" placeholder="77 000 00 00" /></label><label><span>Adresse e-mail</span><input type="email" name="staffEmail" [(ngModel)]="staffForm.email" placeholder="nom@ecole.sn" /></label></div><footer><span><b>*</b> Champs obligatoires</span><div><button type="button" (click)="staffEditorOpen.set(false)">Annuler</button><button type="submit" class="primary-action"><i>save</i>Enregistrer le dossier</button></div></footer></form>
             </section>
           }
           @if (activeView() === 'staff-detail' && selectedStaffRecord(); as staff) {
@@ -245,7 +245,7 @@
           @if (teacherEditorOpen()) {
             <section class="panel directory-form-card">
               <header><div><span><i>co_present</i></span><div><h2>{{ teacherForm.matricule ? 'Modifier l’enseignant' : 'Nouvel enseignant' }}</h2><p>Identité, matière et périmètre d’intervention dans l’institut.</p></div></div><button type="button" aria-label="Fermer" (click)="teacherEditorOpen.set(false)"><i>close</i></button></header>
-              <form (ngSubmit)="saveTeacher()"><div class="directory-form-grid"><label><span>Matricule</span><input name="teacherMatricule" [(ngModel)]="teacherForm.matricule" placeholder="Généré automatiquement si vide" /></label><label><span>Prénom(s) et nom <b>*</b></span><input name="teacherName" [(ngModel)]="teacherForm.name" required /></label><label><span>Établissement / cycle <b>*</b></span><select name="teacherEstablishment" [(ngModel)]="teacherForm.establishment" required><option value="" disabled>Choisir un établissement</option>@for (type of teacherInterventionTabs(); track type.label) {<option [value]="type.label">{{ type.label }}</option>}</select></label><label><span>Matière principale <b>*</b></span><input name="teacherSubject" [(ngModel)]="teacherForm.subject" placeholder="Ex. Mathématiques" required /></label><label><span>Campus principal <b>*</b></span><select name="teacherCampus" [(ngModel)]="teacherForm.campus" required><option value="" disabled>Choisir un campus</option>@for (campus of campuses(); track campus.name) {<option [value]="campus.name">{{ campus.name }}</option>}</select></label><label><span>Téléphone</span><input name="teacherPhone" [(ngModel)]="teacherForm.phone" placeholder="77 000 00 00" /></label><label><span>Adresse e-mail</span><input type="email" name="teacherEmail" [(ngModel)]="teacherForm.email" placeholder="nom@ecole.sn" /></label></div><footer><span><b>*</b> Champs obligatoires</span><div><button type="button" (click)="teacherEditorOpen.set(false)">Annuler</button><button type="submit" class="primary-action"><i>save</i>Enregistrer le dossier</button></div></footer></form>
+              <form (ngSubmit)="saveTeacher()"><div class="directory-form-grid"><label><span>Matricule</span><input name="teacherMatricule" [(ngModel)]="teacherForm.matricule" placeholder="Généré automatiquement si vide" /></label><label><span>Prénom(s) et nom <b>*</b></span><input name="teacherName" [(ngModel)]="teacherForm.name" required /></label><label><span>Types d’établissement <b>*</b></span><select name="teacherEstablishments" [(ngModel)]="teacherForm.establishmentIds" multiple required>@for (establishment of establishments(); track establishment.id) {<option [value]="establishment.workspaceId">{{ establishment.type }}</option>}</select><small>Un enseignant peut intervenir dans plusieurs cycles.</small></label><label><span>Matière principale <b>*</b></span><input name="teacherSubject" [(ngModel)]="teacherForm.subject" placeholder="Ex. Mathématiques" required /></label><label><span>Campus de rattachement <b>*</b></span><select name="teacherCampuses" [(ngModel)]="teacherForm.campusIds" multiple required>@for (campus of campuses(); track campus.id) {<option [value]="campus.id">{{ campus.name }}</option>}</select><small>Un ou plusieurs campus.</small></label><label><span>Téléphone</span><input name="teacherPhone" [(ngModel)]="teacherForm.phone" placeholder="77 000 00 00" /></label><label><span>Adresse e-mail</span><input type="email" name="teacherEmail" [(ngModel)]="teacherForm.email" placeholder="nom@ecole.sn" /></label></div><footer><span><b>*</b> Champs obligatoires</span><div><button type="button" (click)="teacherEditorOpen.set(false)">Annuler</button><button type="submit" class="primary-action"><i>save</i>Enregistrer le dossier</button></div></footer></form>
             </section>
           }
           @if (activeView() === 'teacher-detail' && selectedTeacherRecord(); as teacher) {
@@ -332,42 +332,121 @@
       }
 
       @if (activeView() === 'subscription') {
-        <div class="page-title">
-          <div><small>OFFRE MODULAIRE</small><h1>Souscription</h1><p>Activez les métiers puis choisissez les fonctionnalités nécessaires dans chacun d’eux.</p></div>
-          <button class="primary-action" [disabled]="subscriptionSaving()" (click)="enregistrerSouscription()"><i>verified</i>{{ subscriptionSaving() ? 'Validation…' : 'Valider la souscription' }}</button>
+        <div class="page-title subscription-page-title">
+          <div><small>SOUSCRIPTION E-SCOLARITÉ</small><h1>Choisissez votre offre</h1><p>Sélectionnez un package prêt à l’emploi ou composez une offre adaptée à votre institut.</p></div>
+          <button type="button" class="subscription-refresh" (click)="actualiserDonneesBackend()" [disabled]="backendRefreshing()"><i>{{ backendRefreshing() ? 'sync' : 'refresh' }}</i>{{ backendRefreshing() ? 'Actualisation…' : 'Actualiser les tarifs' }}</button>
         </div>
-        <section class="subscription-layout">
-          @if (subscriptionError()) { <p class="subscription-error">{{ subscriptionError() }}</p> }
-          @if (subscriptionSuccess()) { <p class="subscription-success">{{ subscriptionSuccess() }}</p> }
-          <article class="panel subscription-builder">
-            <header><div><h2>Types d’établissement</h2><p>Chaque métier activé ajoute ses propres modules et son espace dédié.</p></div></header>
-            @for (item of subscriptionTypes(); track item.typeId) {
-              <div class="subscription-row" [class.disabled]="!item.enabled">
-                <button class="subscription-toggle" [class.on]="item.enabled" [disabled]="true" [attr.aria-label]="item.enabled ? item.type + ' activé' : item.type + ' non activé'"><i></i></button>
-                <span class="type-icon"><i>{{ item.icon }}</i></span>
-                <div class="subscription-info"><strong>{{ item.type }}</strong><small>{{ item.description }}</small><span>@for (module of item.modules; track module) { <em>{{ module }}</em> }</span></div>
-                <b>{{ item.enabled ? formatPrice(item.price) : '—' }}<small>{{ item.enabled ? '/ mois maximum' : 'Non disponible' }}</small></b>
-                <button class="configure-button" [disabled]="!item.enabled || item.functionalities.length === 0" (click)="ouvrirFonctionnalites(item)"><span>{{ item.functionalities.length ? 'Fonctionnalités' : 'Non commercialisé' }}</span><i>{{ item.functionalities.length ? 'chevron_right' : 'block' }}</i></button>
-              </div>
-            }
-          </article>
-          @if (selectedSubscriptionType(); as type) {
-            <article class="panel feature-picker">
-              <header><div><small>{{ type.type.toUpperCase() }}</small><h2>Fonctionnalités à activer</h2><p>Chaque fonctionnalité a son prix mensuel. Le site web est proposé comme une fonctionnalité distincte.</p></div><button type="button" (click)="selectedSubscriptionType.set(null)"><i>close</i></button></header>
-              <div class="feature-options">
-                @for (fonctionnalite of type.functionalities; track fonctionnalite.id) {
-                  <label class="feature-option"><input type="checkbox" [checked]="fonctionnalite.selectionnee" (change)="basculerFonctionnalite(fonctionnalite.id)" /><span><strong>{{ fonctionnalite.libelle }}</strong><small>{{ fonctionnalite.code }}</small></span><b>{{ formatPrice(fonctionnalite.prix_mensuel) }}<small>/ mois</small></b></label>
+
+        @if (subscriptionError()) { <div class="subscription-feedback error"><i>error_outline</i>{{ subscriptionError() }}</div> }
+        @if (subscriptionSuccess()) { <div class="subscription-feedback success"><i>check_circle</i>{{ subscriptionSuccess() }}</div> }
+        @if (subscriptionStatus() === 'actif') { <div class="subscription-feedback success"><i>verified</i>Une souscription est active. Interrompez-la avant de préparer une nouvelle offre.</div> }
+        @if (subscriptionApproachingExpiration()) { <div class="subscription-feedback pending"><i>warning_amber</i>Votre souscription arrive à échéance dans {{ subscriptionDaysRemaining() }} jour(s). Préparez son renouvellement avant la date de fin.</div> }
+
+        @if (subscriptionLoading()) {
+          <section class="panel subscription-loading"><span></span><strong>Chargement de votre catalogue…</strong><p>Nous récupérons les tarifs et les effectifs de votre institut.</p></section>
+        } @else {
+          <nav class="subscription-mode-tabs" aria-label="Mode de souscription">
+            <button type="button" [class.active]="subscriptionMode() === 'package'" (click)="afficherPackages()"><i>inventory_2</i><span><strong>Packages</strong><small>Une offre prête à l’emploi</small></span></button>
+            <button type="button" [class.active]="subscriptionMode() === 'custom'" (click)="choisirOffreSurMesure()"><i>tune</i><span><strong>Offre sur mesure</strong><small>Fonctionnalités et durée au choix</small></span></button>
+          </nav>
+
+          <section class="subscription-checkout-layout">
+            <div class="subscription-selection">
+              @if (subscriptionMode() === 'package') {
+                <div class="subscription-section-heading"><div><small>OFFRES DISPONIBLES</small><h2>Choisissez votre package</h2><p>Seuls les packages compatibles avec vos types d’établissement sont proposés.</p></div></div>
+                <div class="subscription-package-grid">
+                  @for (packageSouscription of subscriptionPackages(); track packageSouscription.version_id) {
+                    <article class="subscription-package-card" [class.selected]="selectedPackageVersionId() === packageSouscription.version_id">
+                      <header><span class="package-icon"><i>inventory_2</i></span><span class="package-duration-badge">{{ packageSouscription.duree_jours }} jours</span></header>
+                      <p class="package-establishments">{{ packageSouscription.types_etablissements.join(' · ') }}</p>
+                      <h3>{{ packageSouscription.libelle }}</h3>
+                      <p>{{ packageSouscription.description || 'Une sélection de fonctionnalités adaptée à ces établissements.' }}</p>
+                      <div class="package-unit-prices">
+                        <span><small>Par élève</small><b>{{ packageSouscription.prix_unitaire_eleve | number }} F</b></span>
+                        <span><small>Par collaborateur</small><b>{{ packageSouscription.prix_unitaire_personnel | number }} F</b></span>
+                      </div>
+                      <ul class="package-features-list" [attr.aria-label]="'Fonctionnalités incluses dans ' + packageSouscription.libelle">
+                        @for (feature of fonctionnalitesDuPackage(packageSouscription); track feature) {<li><i>check</i>{{ feature }}</li>}
+                      </ul>
+                      <div class="package-estimate"><span>Estimation pour votre effectif</span><strong>{{ packageSouscription.montant_estime | number }} F CFA</strong><small>{{ packageSouscription.nombre_eleves }} élève(s) · {{ packageSouscription.nombre_personnels }} collaborateur(s)</small></div>
+                      <button type="button" (click)="choisirPackage(packageSouscription)"><i>{{ selectedPackageVersionId() === packageSouscription.version_id ? 'check_circle' : 'radio_button_unchecked' }}</i>{{ selectedPackageVersionId() === packageSouscription.version_id ? 'Package sélectionné' : 'Choisir ce package' }}</button>
+                    </article>
+                  } @empty {
+                    <article class="panel subscription-empty"><i>inventory_2</i><h3>Aucun package compatible</h3><p>Composez une offre sur mesure à partir des fonctionnalités disponibles pour vos établissements.</p><button type="button" (click)="choisirOffreSurMesure()">Composer mon offre</button></article>
+                  }
+                </div>
+              } @else {
+                <div class="custom-subscription-toolbar panel">
+                  <div><small>OFFRE SUR MESURE</small><h2>Composez votre souscription</h2><p>Chaque montant est calculé avec l’effectif du type d’établissement concerné.</p></div>
+                  <label><span>Durée d’accès</span><div><input type="number" min="1" max="3650" [ngModel]="subscriptionDurationDays()" (ngModelChange)="subscriptionDurationDays.set(+$event || 1)" /><small>jours</small></div></label>
+                </div>
+                <div class="subscription-type-tabs">
+                  @for (item of subscriptionTypes(); track item.typeId) {
+                    @if (item.enabled && item.functionalities.length) {
+                      <button type="button" [class.active]="selectedSubscriptionType()?.typeId === item.typeId" (click)="ouvrirFonctionnalites(item)"><i>{{ item.icon }}</i><span><strong>{{ item.type }}</strong><small>{{ item.learnerCount }} élève(s) · {{ item.staffCount }} collaborateur(s)</small></span><b>{{ nombreFonctionnalitesSelectionnees(item) }}/{{ item.functionalities.length }}</b></button>
+                    }
+                  }
+                </div>
+                @if (selectedSubscriptionType(); as type) {
+                  <article class="panel custom-feature-panel">
+                    <header>
+                      <div><span>{{ type.type.toUpperCase() }}</span><h2>Fonctionnalités à activer</h2><p>Cochez uniquement les outils nécessaires dans cet espace.</p></div>
+                      <div class="type-subscription-tools">
+                        <div class="type-effectif"><b>{{ type.learnerCount }}</b><small>élèves</small><b>{{ type.staffCount }}</b><small>collaborateurs</small></div>
+                        <div class="feature-bulk-actions"><button type="button" (click)="selectionnerToutesFonctionnalites(type, true)">Tout sélectionner</button><button type="button" (click)="selectionnerToutesFonctionnalites(type, false)">Effacer</button></div>
+                      </div>
+                    </header>
+                    @if (type.functionalities.length) {
+                      <div class="subscription-features-table">
+                        <app-master-table
+                          title="Fonctionnalités et tarifs"
+                          [columnDefinitions]="subscriptionFeatureColumns"
+                          [dataSource]="subscriptionFeatureDataSource"
+                          [selectedRows]="fonctionnalitesSelectionneesDuType(type)"
+                          [showCheckbox]="true"
+                          [showAdd]="false"
+                          [showEdit]="false"
+                          [showDelete]="false"
+                          [showDetails]="false"
+                          [showBulkDelete]="false"
+                          [showContextMenu]="false"
+                          [showExport]="false"
+                          [showRefresh]="false"
+                          [enableRowClick]="false"
+                          exportFileName="fonctionnalites_souscription"
+                          (selectionChange)="synchroniserSelectionFonctionnalites($event)">
+                        </app-master-table>
+                      </div>
+                    } @else {
+                      <p class="subscription-empty-line">Aucune fonctionnalité commercialisée pour ce type d’établissement.</p>
+                    }
+                  </article>
                 }
-              </div>
-            </article>
-          }
-          <aside class="panel subscription-summary">
-            <small>ESTIMATION MENSUELLE</small><strong>{{ formatPrice(subscriptionTotal()) }}</strong><span>hors taxes / mois</span>
-            <div><p><span>Fonctionnalités choisies</span><b>{{ activeSubscriptionCount() }}</b></p><p><span>Types activés</span><b>{{ activeSubscriptionTypesCount() }}</b></p><p><span>Utilisateurs inclus</span><b>Illimités</b></p></div>
-            <button (click)="ouvrirPremierTypeActif()">Voir les fonctionnalités</button>
-            <p class="trial-info"><i>science</i>Chaque nouvelle fonctionnalité peut être testée avant facturation.</p>
-          </aside>
-        </section>
+              }
+            </div>
+
+            <aside class="panel subscription-order-summary">
+              <span class="summary-eyebrow">RÉCAPITULATIF</span>
+              <h2>{{ subscriptionMode() === 'package' ? (selectedPackage()?.libelle || 'Votre package') : 'Votre offre sur mesure' }}</h2>
+              <p>{{ subscriptionMode() === 'package' ? (selectedPackage()?.duree_jours || subscriptionDurationDays()) : subscriptionDurationDays() }} jours d’accès</p>
+              <div class="summary-effectifs"><span><i>school</i><b>{{ subscriptionBillableLearners() }}</b><small>Élèves facturables</small></span><span><i>badge</i><b>{{ subscriptionBillableStaff() }}</b><small>Collaborateurs facturables</small></span></div>
+              @if (subscriptionMode() === 'package' && selectedPackage(); as packageSouscription) {
+                <div class="summary-calculation"><p><span>{{ packageSouscription.nombre_eleves }} × {{ packageSouscription.prix_unitaire_eleve | number }} F</span><b>{{ packageSouscription.nombre_eleves * packageSouscription.prix_unitaire_eleve | number }} F</b></p><p><span>{{ packageSouscription.nombre_personnels }} × {{ packageSouscription.prix_unitaire_personnel | number }} F</span><b>{{ packageSouscription.nombre_personnels * packageSouscription.prix_unitaire_personnel | number }} F</b></p></div>
+              } @else {
+                <div class="summary-calculation"><p><span>Tarifs journaliers × {{ subscriptionDurationDays() }} jours</span><b>{{ subscriptionCustomDailyAmount() * subscriptionDurationDays() | number }} F</b></p><p><span>Tarifs liés aux élèves</span><b>{{ subscriptionCustomLearnerAmount() | number }} F</b></p><p><span>Tarifs liés aux collaborateurs</span><b>{{ subscriptionCustomStaffAmount() | number }} F</b></p><p><span>Fonctionnalités sélectionnées</span><b>{{ activeSubscriptionCount() }}</b></p></div>
+              }
+              <div class="summary-total"><span>Montant estimé</span><strong>{{ subscriptionEstimatedTotal() | number }} F CFA</strong><small>{{ subscriptionCalculationLabel() }}</small></div>
+              <button type="button" class="summary-submit" [disabled]="subscriptionSaving() || subscriptionStatus() === 'actif' || (subscriptionMode() === 'package' && !selectedPackageVersionId())" (click)="enregistrerSouscription()"><i>play_circle</i>{{ subscriptionSaving() ? 'Activation…' : 'Démarrer la souscription' }}</button>
+              @if (subscriptionStatus() === 'actif') { <button type="button" class="subscription-interrupt" [disabled]="subscriptionSaving()" (click)="interrompreSouscription()"><i>stop_circle</i>Interrompre la souscription</button> }
+              <p class="summary-note"><i>info</i>Les accès sont immédiats. Une facture est générée à l’échéance ou lors d’une interruption, selon les effectifs alors enregistrés et la durée utilisée.</p>
+            </aside>
+          </section>
+        }
+      }
+
+      @if (activeView() === 'subscription-invoices') {
+        <div class="page-title subscription-page-title"><div><small>FACTURATION E-SCOLARITÉ</small><h1>Mes factures</h1><p>Consultez les factures émises à la fin ou à l’interruption de vos souscriptions.</p></div><button type="button" class="subscription-refresh" (click)="actualiserDonneesBackend()"><i>refresh</i>Actualiser</button></div>
+        <section class="panel"><app-master-table title="Historique des factures" [dataSource]="subscriptionInvoicesSource" [columnDefinitions]="subscriptionInvoicesColumns" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showStatusToggle]="false" [showContextMenu]="false" [showBulkDelete]="false" (refresh)="actualiserDonneesBackend()"></app-master-table></section>
       }
 
       @if (activeView() === 'settings') {
@@ -377,6 +456,20 @@
         <section class="panel settings-placeholder"><span>tune</span><h2>Configuration centrale</h2><p>Cette page accueillera les paramètres hérités par les établissements, avec possibilité de surcharge locale.</p><button>Commencer la configuration</button></section>
       }
     </main>
+
+    @if (subscriptionInterruptModalOpen()) {
+      <div class="subscription-modal-backdrop" role="presentation" (click)="subscriptionInterruptModalOpen.set(false)">
+        <section class="subscription-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="subscription-interrupt-title" (click)="$event.stopPropagation()">
+          <span class="subscription-modal-icon"><i>warning_amber</i></span>
+          <h2 id="subscription-interrupt-title">Interrompre la souscription ?</h2>
+          <p>Les accès aux fonctionnalités seront désactivés immédiatement. Une facture sera émise selon le nombre de jours utilisés et les effectifs actuels.</p>
+          <div class="subscription-modal-actions">
+            <button type="button" (click)="subscriptionInterruptModalOpen.set(false)" [disabled]="subscriptionSaving()">Conserver la souscription</button>
+            <button type="button" class="danger" (click)="confirmerInterruptionSouscription()" [disabled]="subscriptionSaving()"><i>{{ subscriptionSaving() ? 'progress_activity' : 'stop_circle' }}</i>{{ subscriptionSaving() ? 'Interruption…' : 'Oui, interrompre' }}</button>
+          </div>
+        </section>
+      </div>
+    }
 
     <footer class="shell-footer">
       <div><span class="footer-mark">E</span><p><strong>E‑Scolarité Institut</strong><small>Administration multi-établissements</small></p></div>

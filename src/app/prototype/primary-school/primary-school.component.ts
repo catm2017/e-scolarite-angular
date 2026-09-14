@@ -773,6 +773,8 @@ export class PrimarySchoolComponent {
   readonly financesLoading = signal(false);
   readonly schoolYearsLoading = signal(false);
   readonly schoolSettingsLoading = signal(false);
+  readonly configurationChecked = this.workspace.configurationChecked;
+  readonly configurationReady = this.workspace.configurationReady;
   readonly studentImportOpen = signal(false);
   readonly studentImportFile = signal<File | null>(null);
   readonly workforceImportKind = signal<WorkforceImportKind | null>(null);
@@ -2090,6 +2092,9 @@ export class PrimarySchoolComponent {
       newStaff: 'Nouveau membre du personnel',
       editStaff: 'Modifier le membre du personnel',
       classCurriculum: 'Programmes & leçons',
+      configurationRequiredTitle: 'Configuration initiale requise',
+      configurationRequiredMessage: 'Enregistrez l’année scolaire, les niveaux et les périodes académiques avant d’utiliser cet espace.',
+      configurationChecking: 'Vérification de la configuration…',
     },
     wo: {
       dashboard: 'Xool bu ëpp',
@@ -2142,6 +2147,9 @@ export class PrimarySchoolComponent {
       newStaff: 'Nit bu bees ci ekool',
       editStaff: 'Soppi nit ki ci ekool',
       classCurriculum: 'Porogaraam ak njàngat yi',
+      configurationRequiredTitle: 'Tëralin bu njëkk bi war na am',
+      configurationRequiredMessage: 'Bindal atum njàng mi, tolluwaay yi ak jamonoy njàng mi bala ngay jëfandikoo barab bii.',
+      configurationChecking: 'Ñuy seet ndax tëralin bi mat na…',
     },
     en: {
       dashboard: 'Dashboard',
@@ -2194,6 +2202,9 @@ export class PrimarySchoolComponent {
       newStaff: 'New staff member',
       editStaff: 'Edit staff member',
       classCurriculum: 'Curricula & lessons',
+      configurationRequiredTitle: 'Initial configuration required',
+      configurationRequiredMessage: 'Save the academic year, levels and academic periods before using this workspace.',
+      configurationChecking: 'Checking configuration…',
     },
     ar: {
       dashboard: 'لوحة القيادة',
@@ -2246,6 +2257,9 @@ export class PrimarySchoolComponent {
       newStaff: 'موظف جديد',
       editStaff: 'تعديل الموظف',
       classCurriculum: 'البرامج والدروس',
+      configurationRequiredTitle: 'الإعداد الأولي مطلوب',
+      configurationRequiredMessage: 'احفظ السنة الدراسية والمستويات والفترات الأكاديمية قبل استخدام هذه المساحة.',
+      configurationChecking: 'جارٍ التحقق من الإعدادات…',
     },
   };
 
@@ -2272,20 +2286,20 @@ export class PrimarySchoolComponent {
     effect(() => {
       const campusId = this.selectedCampusId();
       const typeEtablissement = this.workspace.establishmentType();
-      if (campusId && this.centralApi.estConnecte()) {
+      if (campusId && this.configurationReady() && this.centralApi.estConnecte()) {
         this.chargerDossiers(typeEtablissement, campusId);
       }
     });
 
     effect(() => {
       const campusId = this.selectedCampusId();
-      if (campusId && this.centralApi.estConnecte()) {
+      if (campusId && this.configurationReady() && this.centralApi.estConnecte()) {
         this.chargerSalles(campusId);
       }
     });
 
     effect(() => {
-      if (this.workspace.establishmentType() === 'lycee' && this.centralApi.estConnecte()) {
+      if (this.workspace.establishmentType() === 'lycee' && this.configurationReady() && this.centralApi.estConnecte()) {
         this.chargerSeriesLycee();
       }
     });
@@ -2361,7 +2375,7 @@ export class PrimarySchoolComponent {
       const campusId = this.selectedCampusId();
       const anneeId = this.selectedCentralAcademicYearId();
       this.enrollmentOperation();
-      if (view === 'enrollments' && campusId && anneeId && this.centralApi.estConnecte()) {
+      if (view === 'enrollments' && campusId && anneeId && this.configurationReady() && this.centralApi.estConnecte()) {
         this.chargerCandidatsInscriptions();
       }
     });
@@ -2371,7 +2385,7 @@ export class PrimarySchoolComponent {
       const campusId = this.selectedCampusId();
       const anneeId = this.selectedCentralAcademicYearId();
       const classeId = this.selectedClassId();
-      if (view === 'assessments' && campusId && anneeId && classeId && this.centralApi.estConnecte()) this.chargerEvaluations();
+      if (view === 'assessments' && campusId && anneeId && classeId && this.configurationReady() && this.centralApi.estConnecte()) this.chargerEvaluations();
     });
 
     effect(() => {
@@ -2379,7 +2393,7 @@ export class PrimarySchoolComponent {
       const campusId = this.selectedCampusId();
       const anneeId = this.selectedCentralAcademicYearId();
       const classeId = this.selectedClassId();
-      if (view === 'attendance' && campusId && anneeId && classeId && this.centralApi.estConnecte()) {
+      if (view === 'attendance' && campusId && anneeId && classeId && this.configurationReady() && this.centralApi.estConnecte()) {
         this.chargerSeances();
       }
     });
@@ -2388,7 +2402,7 @@ export class PrimarySchoolComponent {
       const view = this.activeView();
       const campusId = this.selectedCampusId();
       const anneeId = this.selectedCentralAcademicYearId();
-      if (['subjects', 'class-subjects', 'curriculum', 'timetable', 'timetable-builder'].includes(view) && campusId && anneeId && this.centralApi.estConnecte()) {
+      if (['subjects', 'class-subjects', 'curriculum', 'timetable', 'timetable-builder'].includes(view) && campusId && anneeId && this.configurationReady() && this.centralApi.estConnecte()) {
         this.chargerPedagogie();
       }
     });
@@ -2398,7 +2412,7 @@ export class PrimarySchoolComponent {
       const campusId = this.selectedCampusId();
       const anneeId = this.selectedCentralAcademicYearId();
       const classeId = this.selectedClassId();
-      if (['timetable', 'timetable-builder'].includes(view) && campusId && anneeId && classeId && this.centralApi.estConnecte()) {
+      if (['timetable', 'timetable-builder'].includes(view) && campusId && anneeId && classeId && this.configurationReady() && this.centralApi.estConnecte()) {
         this.chargerEmploiTemps();
       }
     });
@@ -2415,7 +2429,7 @@ export class PrimarySchoolComponent {
           : view === 'expense-settings' || view === 'expenses'
             ? this.selectedExpenseAcademicYear()
             : this.selectedFinanceAcademicYear();
-      if (['fees', 'payments', 'expense-settings', 'expenses', 'finance'].includes(view) && campusId && annee && this.centralApi.estConnecte()) {
+      if (['fees', 'payments', 'expense-settings', 'expenses', 'finance'].includes(view) && campusId && annee && this.configurationReady() && this.centralApi.estConnecte()) {
         this.chargerFinances(annee);
       }
     });
@@ -2482,6 +2496,10 @@ export class PrimarySchoolComponent {
   }
 
   setView(view: PrimaryView): void {
+    if (!this.workspace.canAccessView(view)) {
+      this.snackBar.open(this.t('configurationRequiredMessage'), 'Fermer', { duration: 3600 });
+      view = 'settings';
+    }
     if (view === 'teachers') {
       this.teacherEditorOpen.set(false);
     }
@@ -6185,6 +6203,7 @@ export class PrimarySchoolComponent {
     ).subscribe({
       next: () => {
         const academicYear = year.label;
+        this.workspace.setConfigurationState(this.workspace.establishmentType(), true, true);
         this.workspace.selectedAcademicYear.set(academicYear);
         this.selectedFeeAcademicYear.set(academicYear);
         this.selectedCollectionAcademicYear.set(academicYear);
@@ -6219,7 +6238,7 @@ export class PrimarySchoolComponent {
     };
     this.workspace.selectedAcademicYear.set(annee.libelle);
     this.chargerParametresScolarite(annee.id);
-    this.chargerClasses();
+    if (this.configurationReady() && annee.configuration_complete) this.chargerClasses();
   }
 
   actualiserDonneesBackend(): void {
@@ -6274,11 +6293,20 @@ export class PrimarySchoolComponent {
       next: ({ data }) => {
         this.anneesScolairesDisponibles.set(data);
         this.workspace.academicYears.set(data.map((annee) => annee.libelle));
-        const annee = data.find((item) => item.configuration?.est_courante)
-          ?? data.find((item) => item.est_courante)
+        const annee = data.find((item) => item.est_courante)
+          ?? data.find((item) => item.configuration?.est_courante)
           ?? data[0];
+        const typeEtablissement = this.workspace.establishmentType();
+        this.workspace.setConfigurationState(typeEtablissement, true, Boolean(annee?.configuration_complete));
         if (annee) {
           this.selectSchoolYear(annee.id);
+        }
+        if (!annee?.configuration_complete) {
+          this.workspace.selectView('settings');
+          const destination = this.workspace.cheminVue('settings');
+          if (this.router.url.split('?')[0].split('#')[0] !== destination) {
+            void this.router.navigateByUrl(destination);
+          }
         }
         if (actualisationManuelle) {
           this.backendRefreshing.set(false);
@@ -6287,6 +6315,7 @@ export class PrimarySchoolComponent {
         this.schoolYearsLoading.set(false);
       },
       error: (response) => {
+        this.workspace.setConfigurationState(this.workspace.establishmentType(), true, false);
         this.schoolYearsLoading.set(false);
         if (actualisationManuelle) {
           this.backendRefreshing.set(false);

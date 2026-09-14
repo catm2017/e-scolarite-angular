@@ -39,3 +39,37 @@
   strong { color: #2e5f90; font-size: 13px; font-weight: 800; }
   small { margin-top: 2px; color: #7188a0; font-size: 9px; font-weight: 700; text-transform: uppercase; }
 }
+.table-boolean-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #f1f3f6;
+  color: #738095;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    line-height: 16px;
+  }
+
+  &.is-active {
+    background: #e9f7f1;
+    color: #26815f;
+  }
+}
+
+:host-context(.dark) .table-boolean-status {
+  background: #343b49;
+  color: #aeb8c8;
+
+  &.is-active {
+    background: #203f37;
+    color: #78cfad;
+  }
+}

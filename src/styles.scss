@@ -1,6 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
 @use 'app/prototype/parent-console';
 @use 'app/prototype/primary-school';
+@use 'styles/prototype/primary-school-component';
+@use 'styles/prototype/institute-console';
+@use 'styles/prototype/saas-workspace';
+@use 'styles/prototype/site-editor';
+@use 'styles/prototype/landing';
+@use 'styles/prototype/public-access';
 
 // Global Modern Card Overrides
 .modern-card {

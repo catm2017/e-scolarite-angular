@@ -36,6 +36,13 @@ export const errorInterceptor: HttpInterceptorFn = (
           }
         }
       }
+      if (err.status === 403 && err.error?.souscription_requise && req.headers.has('Authorization')) {
+        // La session reste valide, mais l'accès métier est fermé : on renvoie
+        // l'institut vers le suivi de sa souscription et de ses factures.
+        localStorage.setItem('escolarite_souscription_validee', 'false');
+        localStorage.setItem('escolarite_fonctionnalites_actives', '[]');
+        void router.navigate(['/institut', 'souscription'], { replaceUrl: true });
+      }
 
       return throwError(() => err);
     })

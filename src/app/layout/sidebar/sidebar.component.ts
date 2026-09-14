@@ -28,7 +28,7 @@ const PRIMARY_ROUTES: RouteInfo[] = [
   { path: '', title: 'Tableau de bord', iconType: 'material-icons-outlined', icon: 'space_dashboard', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'dashboard' },
   { path: '', title: 'Dossiers élèves', iconType: 'material-icons-outlined', icon: 'folder_shared', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'registrations' },
   { path: '', title: 'Inscriptions, réinscriptions & transferts', iconType: 'material-icons-outlined', icon: 'how_to_reg', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'enrollments' },
-  { path: '', title: 'Élèves', iconType: 'material-icons-outlined', icon: 'groups', class: '', groupTitle: false, badge: '326', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'students' },
+  { path: '', title: 'Élèves', iconType: 'material-icons-outlined', icon: 'groups', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'students' },
   { path: '', title: 'Tuteurs', iconType: 'material-icons-outlined', icon: 'family_restroom', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'guardians' },
   { path: '', title: 'Classes', iconType: 'material-icons-outlined', icon: 'class', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'classes' },
   { path: '', title: 'Séries', iconType: 'material-icons-outlined', icon: 'account_tree', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'series' },
@@ -70,6 +70,7 @@ const INSTITUTE_ROUTES: RouteInfo[] = [
   { path: '', title: 'INSTITUT', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
   { path: '/institut/site-web', title: 'Site web', iconType: 'material-icons-outlined', icon: 'language', class: '', groupTitle: false, badge: 'Nouveau', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [] },
   { path: '', title: 'Souscription', iconType: 'material-icons-outlined', icon: 'tune', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'subscription' },
+  { path: '', title: 'Factures', iconType: 'material-icons-outlined', icon: 'receipt_long', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'subscription-invoices' },
   { path: '', title: 'Paramètres', iconType: 'material-icons-outlined', icon: 'settings', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'settings' },
 ];
 
@@ -122,6 +123,16 @@ export class SidebarComponent
   currentRoute?: string;
   isPrimaryWorkspace = false;
   isInstituteWorkspace = false;
+  isSaasWorkspace = false;
+  readonly saasNavigation = [
+    { path: '/saas/tableau-de-bord', title: 'Vue d’ensemble', icon: 'space_dashboard' },
+    { path: '/saas/etablissements', title: 'Établissements', icon: 'apartment' },
+    { path: '/saas/adhesions', title: 'Adhésions', icon: 'how_to_reg' },
+    { path: '/saas/tarification', title: 'Tarification et packages', icon: 'sell' },
+    { path: '/saas/factures-souscriptions', title: 'Factures de souscription', icon: 'receipt_long' },
+    { path: '/saas/abonnements', title: 'Abonnements', icon: 'subscriptions' },
+    { path: '/saas/annees-scolaires', title: 'Années scolaires', icon: 'calendar_month' },
+  ];
   constructor() {
     super();
     this.elementRef.nativeElement.closest('body');
@@ -131,7 +142,7 @@ export class SidebarComponent
         if (this.isInstituteWorkspace) {
           this.instituteWorkspace.synchronizeFromUrl(event.urlAfterRedirects);
         }
-        if (this.isPrimaryWorkspace || this.isInstituteWorkspace) {
+        if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace) {
           this.configureWorkspaceNavigation();
           this.actualiserProfilEspace();
         }
@@ -170,7 +181,7 @@ export class SidebarComponent
       this.instituteWorkspace.synchronizeFromUrl(this.router.url);
     }
 
-    if (this.isPrimaryWorkspace || this.isInstituteWorkspace) {
+    if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace) {
       this.configureWorkspaceNavigation();
       this.actualiserProfilEspace();
       this.userImg = './assets/images/user/admin.jpg';
@@ -211,14 +222,21 @@ export class SidebarComponent
   private actualiserProfilEspace(): void {
     const user = this.centralApi.utilisateur();
     this.userFullName = user ? `${user.prenom} ${user.nom}`.trim() : 'Utilisateur connecté';
-    this.userType = this.isInstituteWorkspace ? 'Administrateur institut' : 'Utilisateur établissement';
+    this.userType = this.isSaasWorkspace ? 'Administration E-Scolarité' : this.isInstituteWorkspace ? 'Administrateur institut' : 'Utilisateur établissement';
     this.userImg = './assets/images/user/admin.jpg';
   }
 
   selectPrimaryView(view?: string): void {
     if (view) {
-      void this.router.navigateByUrl(this.primaryWorkspace.cheminVue(view as PrimaryView));
+      const requestedView = view as PrimaryView;
+      const destination = this.primaryWorkspace.canAccessView(requestedView) ? requestedView : 'settings';
+      void this.router.navigateByUrl(this.primaryWorkspace.cheminVue(destination));
     }
+  }
+
+  isPrimaryItemAccessible(item: RouteInfo): boolean {
+    if (item.groupTitle || !item.workspaceView) return true;
+    return this.primaryWorkspace.canAccessView(item.workspaceView as PrimaryView);
   }
 
   selectInstituteView(view?: string): void {
@@ -273,6 +291,7 @@ export class SidebarComponent
 
   private mettreAJourContexteNavigation(url: string): void {
     const path = url.split('?')[0].split('#')[0];
+    this.isSaasWorkspace = path === '/saas' || path.startsWith('/saas/');
     this.isPrimaryWorkspace = path.startsWith('/institut/etablissements/');
     this.isInstituteWorkspace = path.startsWith('/institut')
       && !this.isPrimaryWorkspace

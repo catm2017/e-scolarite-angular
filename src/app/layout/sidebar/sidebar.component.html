@@ -16,7 +16,19 @@
               <div class="profile-usertitle-job ">{{userType}} </div>
             </div>
           </li>
-          @if (isPrimaryWorkspace || isInstituteWorkspace) {
+          @if (isSaasWorkspace) {
+          <li><div class="header">ADMINISTRATION SAAS</div></li>
+          @for (item of saasNavigation; track item.path) {
+            <li routerLinkActive="active-top">
+              <a [routerLink]="item.path" class="menu-top">
+                <i class="material-icons-outlined">{{ item.icon }}</i>
+                <span class="hide-menu">{{ primaryWorkspace.translate(item.title) }}</span>
+              </a>
+            </li>
+          }
+          <li><div class="header">PLATEFORME</div></li>
+          <li><a routerLink="/" class="menu-top"><i class="material-icons-outlined">language</i><span class="hide-menu">Voir le site public</span></a></li>
+          } @else if (isPrimaryWorkspace || isInstituteWorkspace) {
           @if (isPrimaryWorkspace) {
           <li>
             <a routerLink="/institut" class="menu-top primary-parent-link">
@@ -41,7 +53,9 @@
             <a
               href="#"
               (click)="$event.preventDefault(); isPrimaryWorkspace ? selectPrimaryView(sidebarItem.workspaceView) : selectInstituteView(sidebarItem.workspaceView)"
-              class="menu-top" [class.subscription-locked]="isInstituteWorkspace && !isInstituteItemAccessible(sidebarItem)" [attr.aria-disabled]="isInstituteWorkspace && !isInstituteItemAccessible(sidebarItem)">
+              class="menu-top"
+              [class.subscription-locked]="isPrimaryWorkspace ? !isPrimaryItemAccessible(sidebarItem) : !isInstituteItemAccessible(sidebarItem)"
+              [attr.aria-disabled]="isPrimaryWorkspace ? !isPrimaryItemAccessible(sidebarItem) : !isInstituteItemAccessible(sidebarItem)">
               <i [ngClass]="[sidebarItem.iconType]">{{ sidebarItem.icon }}</i>
               <span class="hide-menu">{{ primaryWorkspace.translate(sidebarItem.title) }}</span>
               @if (sidebarItem.badge !== '') {

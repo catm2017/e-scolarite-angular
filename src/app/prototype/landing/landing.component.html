@@ -1,137 +1,75 @@
-<div class="landing">
-  <header class="topbar">
-    <a class="brand" routerLink="/">
-      <span class="brand-mark">E</span>
-      <span>E‑Scolarité</span>
-    </a>
+<div class="public-landing" id="accueil">
+  <header class="landing-nav">
+    <a class="landing-brand" routerLink="/"><span>E</span>E-Scolarité</a>
     <nav aria-label="Navigation principale">
-      <a href="#solutions">Solutions</a>
-      <a href="#fonctionnalites">Fonctionnalités</a>
-      <a href="#tarifs">Tarifs</a>
+      <a href="#accueil" (click)="scrollTo($event, 'accueil')">Accueil</a>
+      <a href="#fonctionnalites" (click)="scrollTo($event, 'fonctionnalites')">Fonctionnalités</a>
+      <a href="#a-propos" (click)="scrollTo($event, 'a-propos')">À propos</a>
+      <a href="#tarifications" (click)="scrollTo($event, 'tarifications')">Tarifications</a>
+      <a href="#contact" (click)="scrollTo($event, 'contact')">Contact</a>
     </nav>
-    <div class="topbar-actions">
-      <app-platform-language-switcher />
-      <a class="text-link" routerLink="/adhesion">Adhérer</a>
-      <a class="button button-small" routerLink="/connexion">Connexion</a>
-    </div>
+    <div class="landing-actions"><app-platform-language-switcher /><a routerLink="/connexion" class="landing-login">Connexion</a><a routerLink="/adhesion" class="landing-button">Adhésion <i class="material-icons-outlined">arrow_forward</i></a></div>
   </header>
-
   <main>
-    <section class="hero">
-      <div class="hero-copy">
-        <div class="eyebrow"><span></span> Conçu pour les écoles du Sénégal</div>
-        <h1>Une seule plateforme pour faire grandir votre établissement.</h1>
-        <p>
-          Pilotez la scolarité, les finances et la communication. Activez
-          uniquement les fonctionnalités dont vous avez besoin et créez le site
-          web de votre école en quelques minutes.
-        </p>
-        <div class="hero-actions">
-          <a class="button" routerLink="/adhesion">Déposer une demande d’adhésion</a>
-          <a class="button-secondary" href="#fonctionnalites">
-            Découvrir la plateforme <span>→</span>
-          </a>
-        </div>
-        <div class="trust">
-          <div class="avatars"><span>MK</span><span>AD</span><span>FS</span></div>
-          <p><strong>Simple à prendre en main</strong><br />Accompagnement local inclus</p>
-        </div>
+    <section class="landing-hero">
+      <div class="landing-hero-copy">
+        <span class="landing-eyebrow"><span></span> L’école avance. Sa gestion aussi.</span>
+        <h1>Moins de gestion.<br>Plus de place pour <em>l’éducation.</em></h1>
+        <p>Élèves, pédagogie, finances et équipes : tout votre institut réuni dans un espace simple, pensé pour le quotidien des écoles sénégalaises.</p>
+        <div class="landing-hero-actions"><a routerLink="/adhesion" class="landing-button">Créer l’espace de mon institut <i class="material-icons-outlined">arrow_forward</i></a><a href="#demo" (click)="scrollTo($event, 'demo')" class="landing-demo-link"><i class="material-icons-outlined">play_circle</i>Découvrir la plateforme</a></div>
+        <div class="landing-reassurance"><span><i class="material-icons-outlined">check_circle</i>Offre à votre mesure</span><span><i class="material-icons-outlined">check_circle</i>Multi-campus</span></div>
       </div>
-
-      <div class="hero-visual" aria-label="Aperçu du tableau de bord">
-        <div class="visual-glow"></div>
-        <div class="dashboard-window">
-          <div class="window-top">
-            <div class="mini-brand"><span>E</span> E‑Scolarité</div>
-            <div class="window-search">Rechercher une action…</div>
-            <div class="avatar">AM</div>
-          </div>
-          <div class="window-body">
-            <aside>
-              <span class="active">▦ Vue d’ensemble</span>
-              <span>♙ Apprenants</span>
-              <span>▤ Scolarité</span>
-              <span>◷ Emploi du temps</span>
-              <span>₣ Finances</span>
-            </aside>
-            <div class="dashboard-content">
-              <div class="welcome">
-                <div><small>Bonjour Aminata 👋</small><h3>Votre établissement en un coup d’œil</h3></div>
-                <button>+ Inscrire un élève</button>
-              </div>
-              <div class="stat-grid">
-                <article><span class="green">people</span><small>Élèves actifs</small><strong>684</strong><em>+24 ce mois</em></article>
-                <article><span class="blue">payments</span><small>Recouvrements</small><strong>87%</strong><em>Objectif 92%</em></article>
-                <article><span class="orange">event_available</span><small>Présence du jour</small><strong>94%</strong><em>18 absences</em></article>
-              </div>
-              <div class="dashboard-row">
-                <article class="chart-card">
-                  <div><strong>Encaissements</strong><small>6 derniers mois</small></div>
-                  <div class="chart">
-                    <i style="height: 35%"></i><i style="height: 52%"></i><i style="height: 46%"></i>
-                    <i style="height: 71%"></i><i style="height: 63%"></i><i class="highlight" style="height: 88%"></i>
-                  </div>
-                </article>
-                <article class="tasks">
-                  <strong>À traiter</strong>
-                  <span><i>!</i><b>12 dossiers</b><small>à compléter</small></span>
-                  <span><i>₣</i><b>36 échéances</b><small>en retard</small></span>
-                  <span><i>✓</i><b>8 notes</b><small>à valider</small></span>
-                </article>
-              </div>
+      <div class="landing-preview" id="demo">
+        <div class="preview-window">
+          <div class="preview-top"><b><span>E</span>E-Scolarité</b><span class="preview-badge">Aperçu de la plateforme</span></div>
+          <div class="preview-layout">
+            <aside><i class="material-icons-outlined" [class.selected]="activeDemoSlide() === 0">dashboard</i><i class="material-icons-outlined" [class.selected]="activeDemoSlide() === 1">menu_book</i><i class="material-icons-outlined" [class.selected]="activeDemoSlide() === 2">payments</i><i class="material-icons-outlined">groups</i><i class="material-icons-outlined">settings</i></aside>
+            <div class="preview-content">
+              <small>VOTRE ESPACE DE TRAVAIL</small><h2>{{ demoSlides[activeDemoSlide()].title }}</h2><p>{{ demoSlides[activeDemoSlide()].text }}</p>
+              @if (activeDemoSlide() === 0) {
+                <div class="preview-cycle-grid"><div><i class="material-icons-outlined">school</i><strong>École primaire</strong><span>Un espace dédié</span></div><div><i class="material-icons-outlined">auto_stories</i><strong>Collège & lycée</strong><span>Des métiers adaptés</span></div></div>
+                <div class="preview-row"><span class="preview-dot"></span><div><strong>Vos campus, une même direction</strong><small>Retrouvez les données de chaque structure</small></div><i class="material-icons-outlined">arrow_forward</i></div>
+              } @else if (activeDemoSlide() === 1) {
+                <div class="preview-list">@for (item of ['Programmes et leçons', 'Emplois du temps', 'Séances et cahier de texte']; track item) {<div class="preview-row"><i class="material-icons-outlined">task_alt</i><div><strong>{{ item }}</strong><small>Une continuité sur toute l’année scolaire</small></div></div>}</div>
+              } @else {
+                <div class="preview-cycle-grid"><div><i class="material-icons-outlined">south_west</i><strong>Encaissements</strong><span>Inscription & mensualités</span></div><div><i class="material-icons-outlined">north_east</i><strong>Dépenses</strong><span>Salaires & opérations</span></div></div>
+                <div class="preview-row"><i class="material-icons-outlined">account_balance_wallet</i><div><strong>Un suivi financier centralisé</strong><small>Recherchez, filtrez et consultez les opérations</small></div></div>
+              }
             </div>
           </div>
         </div>
-        <div class="floating-card floating-payment"><span>✓</span><div><strong>Paiement reçu</strong><small>Mensualité de Fatou N.</small></div></div>
-        <div class="floating-card floating-ai"><span>✦</span><div><strong>Assistant E‑Scolarité</strong><small>36 familles peuvent être relancées</small></div></div>
+        <div class="preview-controls">@for (slide of demoSlides; track slide.title; let index = $index) {<button type="button" [class.active]="activeDemoSlide() === index" (click)="activeDemoSlide.set(index)" [attr.aria-label]="slide.title" [attr.aria-pressed]="activeDemoSlide() === index">{{ index + 1 | number: '2.0' }}</button>}<span>Explorez votre futur espace</span></div>
       </div>
     </section>
-
-    <section class="proof">
-      <p>Une plateforme pour tous vos établissements</p>
-      <div><span>ÉCOLE PRIMAIRE</span><span>COLLÈGE</span><span>LYCÉE</span><span>UNIVERSITÉ</span><span>DAARA</span></div>
+    <div class="landing-cycle-strip"><span>Une organisation, plusieurs enseignements</span><div><b>Primaire</b><span>•</span><b>Collège</b><span>•</span><b>Lycée</b><span>•</span><b>Une plateforme qui évolue avec vous</b></div></div>
+    <section class="landing-section" id="fonctionnalites">
+      <div class="landing-section-heading"><span class="landing-eyebrow">LE QUOTIDIEN, SIMPLIFIÉ</span><h2>Les bons outils.<br>Au même endroit.</h2><p>Activez les fonctionnalités utiles à votre institut et gardez une vue claire sur chaque activité.</p></div>
+      <div class="landing-feature-grid">@for (feature of features; track feature.title) {<article><span class="feature-icon"><i class="material-icons-outlined">{{ feature.icon }}</i></span><h3>{{ feature.title }}</h3><p>{{ feature.text }}</p></article>}</div>
     </section>
-
-    <section class="features" id="fonctionnalites">
-      <div class="section-heading">
-        <span class="eyebrow">TOUT AU MÊME ENDROIT</span>
-        <h2>Le quotidien de votre école devient plus simple.</h2>
-        <p>Commencez avec l’essentiel, puis ajoutez des capacités au rythme de votre établissement.</p>
-      </div>
-      <div class="feature-grid">
-        @for (feature of features; track feature.title) {
-          <article>
-            <span class="material-symbol">{{ feature.icon }}</span>
-            <h3>{{ feature.title }}</h3>
-            <p>{{ feature.text }}</p>
-            <a href="#tarifs">En savoir plus →</a>
+    @if (partners().length) {
+      <section class="landing-partners"><div><span class="landing-eyebrow">NOS ADHÉRENTS</span><h2>Chaque institut a sa place.</h2></div><div class="landing-partner-track">@for (partner of partners(); track partner.id) {<article><span><i class="material-icons-outlined">school</i></span><strong>{{ partner.nom }}</strong></article>}</div></section>
+    }
+    <section class="landing-about landing-section" id="a-propos">
+      <div class="about-diagram"><span class="diagram-caption">UNE DIRECTION COMMUNE</span><div class="diagram-institute"><i class="material-icons-outlined">account_balance</i><strong>Votre institut</strong><span>Une vision d’ensemble</span></div><div class="diagram-branches"><span>Campus</span><span>Établissements</span><span>Équipes</span></div><p>Des espaces spécialisés, reliés au même institut.</p></div>
+      <div><span class="landing-eyebrow">À PROPOS D’E-SCOLARITÉ</span><h2>Le fonctionnement de votre école, notre point de départ.</h2><p>Développée par Daara Tech, E-Scolarité rapproche la gestion numérique des pratiques réelles des établissements au Sénégal.</p><ul><li><i class="material-icons-outlined">check_circle</i>Des espaces adaptés aux différents cycles.</li><li><i class="material-icons-outlined">check_circle</i>Une base de données isolée pour chaque institut.</li><li><i class="material-icons-outlined">check_circle</i>Des accès selon les rôles et les campus autorisés.</li></ul><a class="landing-text-link" routerLink="/adhesion">Faisons connaissance <i class="material-icons-outlined">arrow_forward</i></a></div>
+    </section>
+    <section class="landing-pricing landing-section" id="tarifications">
+      <div class="landing-section-heading"><span class="landing-eyebrow">UNE OFFRE QUI VOUS RESSEMBLE</span><h2>Vos besoins décident.<br>Pas un package imposé.</h2><p>Choisissez une offre prête à l’emploi ou composez votre souscription par fonctionnalité, effectif et durée.</p></div>
+      <div class="landing-package-grid">
+        @for (package of packages(); track package.id) {
+          <article class="landing-package"><span class="package-duration">{{ package.duree_jours }} jours d’accès</span><h3>{{ package.libelle }}</h3><p class="package-target">{{ package.types_etablissements.join(' · ') }}</p><p>{{ package.description }}</p>
+            <div class="package-amount"><strong>{{ package.prix_unitaire_eleve | number }} <small>F CFA</small></strong><span>par élève pour la durée du package</span></div>
+            <p class="package-personnel"><b>{{ package.prix_unitaire_personnel | number }} F CFA</b> par enseignant / personnel</p>
+            <ul>@for (feature of package.fonctionnalites_codes; track feature) {<li><i class="material-icons-outlined">check</i>{{ featureLabel(feature) }}</li>}</ul>
+            <a routerLink="/adhesion" class="landing-button">Demander cette offre <i class="material-icons-outlined">arrow_forward</i></a>
           </article>
+        } @empty {
+          <article class="landing-custom-package"><span class="feature-icon"><i class="material-icons-outlined">tune</i></span><div><h3>Construisons votre offre ensemble</h3><p>Sélectionnez vos types d’établissement, les fonctionnalités souhaitées et votre durée d’accès.</p></div><a routerLink="/adhesion" class="landing-button">Demander une adhésion <i class="material-icons-outlined">arrow_forward</i></a></article>
         }
       </div>
+      @if (packages().length) {<p class="landing-custom-note">Besoin d’une offre différente ? <a routerLink="/adhesion">Composez votre souscription sur mesure →</a></p>}
     </section>
-
-    <section class="pricing" id="tarifs">
-      <div>
-        <span class="eyebrow light">UN PRIX JUSTE ET ÉVOLUTIF</span>
-        <h2>Payez pour ce que vous utilisez.</h2>
-        <p>Composez une offre transparente. Testez chaque fonctionnalité avant de l’activer.</p>
-        <a class="button button-light" routerLink="/adhesion">Configurer une offre</a>
-      </div>
-      <article class="price-builder">
-        <header><div><small>Simulation mensuelle</small><strong>Votre formule</strong></div><span>Sans engagement</span></header>
-        @for (module of modules; track module.label) {
-          <div class="price-line">
-            <span class="check">✓</span><b>{{ module.label }}</b><strong>{{ module.price }} F</strong>
-          </div>
-        }
-        <footer><span>Total mensuel<small>Hors consommation WhatsApp & IA</small></span><strong>31 000 <small>F CFA</small></strong></footer>
-      </article>
-    </section>
+    <section class="landing-contact" id="contact"><div><span class="landing-eyebrow">ET SI ON SIMPLIFIAIT VOTRE QUOTIDIEN ?</span><h2>Votre prochain chapitre<br>commence ici.</h2><p>Présentez-nous votre institut et vos besoins. Nous préparerons avec vous un espace adapté à vos équipes.</p></div><a routerLink="/adhesion" class="landing-button">Parlons de votre établissement <i class="material-icons-outlined">arrow_forward</i></a></section>
   </main>
-
-  <footer>
-    <div class="brand"><span class="brand-mark">E</span><span>E‑Scolarité</span></div>
-    <p>La plateforme scolaire pensée au Sénégal.</p>
-    <span>© 2026 Daara Tech</span>
-  </footer>
+  <footer class="landing-footer"><div><a routerLink="/" class="landing-brand"><span>E</span>E-Scolarité</a><p>La gestion scolaire, simplement.</p></div><nav aria-label="Liens utiles"><a href="#fonctionnalites" (click)="scrollTo($event, 'fonctionnalites')">Fonctionnalités</a><a href="#tarifications" (click)="scrollTo($event, 'tarifications')">Tarifications</a><a routerLink="/connexion">Connexion</a><a routerLink="/adhesion">Adhésion</a></nav><small>© 2026 Daara Tech</small></footer>
 </div>

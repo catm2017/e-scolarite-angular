@@ -39,17 +39,23 @@ export interface FonctionnaliteSouscription {
   code: string;
   libelle: string;
   prix_mensuel: number;
+  prix_unitaire_jour: number;
+  prix_unitaire_eleve: number;
+  prix_unitaire_personnel: number;
   devise: string;
   selectionnee: boolean;
 }
 
 export interface TypeSouscription {
   id: string | null;
+  etablissement_id?: string | null;
   type_id: string;
   code: string;
   type: string;
   nom: string;
   active: boolean;
+  nombre_eleves: number;
+  nombre_personnels: number;
   fonctionnalites: FonctionnaliteSouscription[];
 }
 
@@ -83,6 +89,21 @@ export interface SalleInstitut {
   statut: 'disponible' | 'indisponible' | 'maintenance';
 }
 
+export interface MembreEquipeInstitut {
+  id: string;
+  enseignant_id: string | null;
+  matricule: string;
+  prenom: string;
+  nom: string;
+  telephone: string | null;
+  email: string | null;
+  fonction: string | null;
+  statut: string;
+  specialite: string | null;
+  est_enseignant: boolean;
+  rattachements: Array<{ etablissement_id: string; campus_id: string; type: string; type_code: string; campus: string }>;
+}
+
 export type SalleInstitutPayload = Omit<SalleInstitut, 'id' | 'campus_nom' | 'code' | 'description'> & {
   code: string | null;
   description: string | null;
@@ -91,14 +112,89 @@ export type SalleInstitutPayload = Omit<SalleInstitut, 'id' | 'campus_nom' | 'co
 export interface SouscriptionInstitut {
   abonnement_id: string | null;
   statut: string | null;
+  version_forfait_id: string | null;
+  duree_jours: number | null;
+  montant_estime: number;
   validee: boolean;
+  date_fin?: string | null;
+  jours_restants?: number | null;
+  alerte_expiration?: boolean;
+  facture?: { id: string; numero: string; statut: string; montant_ttc: number; echeance_at: string | null } | null;
   fonctionnalites_actives: string[];
   types: TypeSouscription[];
+  packages: PackageSouscription[];
+}
+
+export interface FactureSouscriptionSaas {
+  id: string;
+  numero: string;
+  statut: string;
+  montant_ttc: number;
+  montant_regle: number;
+  emise_at: string;
+  echeance_at: string | null;
+  institut: string;
+  duree_jours: number | null;
+}
+
+export interface FactureSouscriptionInstitut {
+  id: string;
+  numero: string;
+  statut: string;
+  montant_ttc: number;
+  montant_regle: number;
+  devise: string;
+  emise_at: string;
+  echeance_at: string | null;
+}
+
+export interface InstitutSaas {
+  id: string;
+  nom: string;
+  slug: string;
+  statut: string;
+  abonnement_en_cours: string;
+  etat_abonnement: string;
+}
+
+export interface AbonnementSaas {
+  id: string;
+  institut: string;
+  offre: string;
+  type_offre: string;
+  date_debut: string | null;
+  date_fin: string | null;
+  duree_jours: number | null;
+  montant_actuel: number;
+  devise: string;
+  statut: string;
+  etat_abonnement: string;
+  etat_paiement: string;
+  facture_numero: string | null;
+}
+
+export interface PackageSouscription {
+  version_id: string;
+  type_etablissement_ids: string[];
+  types_etablissements: string[];
+  libelle: string;
+  description: string | null;
+  duree_jours: number;
+  prix_unitaire_eleve: number;
+  prix_unitaire_personnel: number;
+  devise: string;
+  fonctionnalites_types_ids: string[];
+  nombre_eleves: number;
+  nombre_personnels: number;
+  montant_estime: number;
 }
 
 export interface TarificationFonctionnalite {
   id: string;
   prix_mensuel: number;
+  prix_unitaire_jour: number;
+  prix_unitaire_eleve: number;
+  prix_unitaire_personnel: number;
   devise: string;
   actif: boolean;
   ordre: number;
@@ -106,6 +202,35 @@ export interface TarificationFonctionnalite {
   type_etablissement: string;
   code: string;
   fonctionnalite: string;
+}
+
+export interface PackageTarification {
+  id: string;
+  code: string;
+  libelle: string;
+  description: string | null;
+  actif: boolean;
+  version_id: string;
+  type_etablissement_ids: string[];
+  types_etablissements_codes: string[];
+  types_etablissements: string[];
+  duree_jours: number;
+  prix_unitaire_eleve: number;
+  prix_unitaire_personnel: number;
+  devise: string;
+  fonctionnalites_codes: string[];
+}
+
+export interface PackageTarificationPayload {
+  code: string;
+  libelle: string;
+  description: string | null;
+  actif: boolean;
+  type_etablissement_ids: string[];
+  duree_jours: number;
+  prix_unitaire_eleve: number;
+  prix_unitaire_personnel: number;
+  fonctionnalites_types_ids: string[];
 }
 
 export interface TypeEtablissementCatalogue {
@@ -136,6 +261,7 @@ export interface AnneeScolaireCentrale {
 }
 
 export interface AnneeScolaireInstitut extends AnneeScolaireCentrale {
+  configuration_complete: boolean;
   configuration: {
     id: string;
     date_debut: string;
@@ -529,12 +655,63 @@ export class CentralApiService {
     }));
   }
 
-  enregistrerTarificationFonctionnalite(id: string, prixMensuel: number, actif: boolean) {
+  enregistrerTarificationFonctionnalite(id: string, prixJour: number, prixEleve: number, prixPersonnel: number, actif: boolean) {
     this.invaliderCache('centrale:');
     return this.http.put<{ message: string }>(`${this.baseUrl}/centrale/catalogue-fonctionnalites/${id}`, {
-      prix_mensuel: prixMensuel,
+      prix_unitaire_jour: prixJour,
+      prix_unitaire_eleve: prixEleve,
+      prix_unitaire_personnel: prixPersonnel,
       actif,
     }, { headers: this.enteteAutorisation() });
+  }
+
+  packagesTarification() {
+    return this.lireAvecCache('centrale:packages', () => this.http.get<{ data: PackageTarification[] }>(`${this.baseUrl}/centrale/packages`, {
+      headers: this.enteteAutorisation(),
+    }));
+  }
+
+  facturesSouscriptionsSaas() {
+    return this.http.get<{ data: { data: FactureSouscriptionSaas[] } }>(`${this.baseUrl}/centrale/factures-souscriptions`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  institutsSaas() {
+    return this.lireAvecCache('centrale:instituts', () => this.http.get<{ data: InstitutSaas[] }>(`${this.baseUrl}/centrale/instituts`, {
+      headers: this.enteteAutorisation(),
+    }));
+  }
+
+  detailInstitutSaas(institutId: string) {
+    return this.http.get<{ institut: InstitutSaas; abonnement_actuel: AbonnementSaas | null; abonnements: AbonnementSaas[] }>(`${this.baseUrl}/centrale/instituts/${institutId}`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  abonnementsSaas() {
+    return this.lireAvecCache('centrale:abonnements', () => this.http.get<{ data: AbonnementSaas[] }>(`${this.baseUrl}/centrale/abonnements`, {
+      headers: this.enteteAutorisation(),
+    }));
+  }
+
+  reglerFactureSouscriptionSaas(factureId: string) {
+    this.invaliderCache('centrale:');
+    return this.http.post<{ message: string }>(`${this.baseUrl}/centrale/factures-souscriptions/${factureId}/regler`, {}, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  packagesPublics() {
+    return this.http.get<{ data: PackageTarification[] }>(`${this.baseUrl}/packages-publics`);
+  }
+
+  enregistrerPackageTarification(payload: PackageTarificationPayload, id?: string) {
+    this.invaliderCache('centrale:packages');
+    const url = id ? `${this.baseUrl}/centrale/packages/${id}` : `${this.baseUrl}/centrale/packages`;
+    return id
+      ? this.http.put<{ message: string; id: string }>(url, payload, { headers: this.enteteAutorisation() })
+      : this.http.post<{ message: string; id: string }>(url, payload, { headers: this.enteteAutorisation() });
   }
 
   anneesScolairesCentrales() {
@@ -574,6 +751,24 @@ export class CentralApiService {
     return this.lireAvecCache('institut:campus', () => this.http.get<{ data: CampusInstitut[] }>(`${this.baseUrl}/institut/campus`, {
       headers: this.enteteAutorisation(),
     })).pipe(tap((resultat) => this.campusInstitutState.set(resultat.data)));
+  }
+
+  equipeInstitut() {
+    return this.lireAvecCache('institut:equipe', () => this.http.get<{ data: MembreEquipeInstitut[] }>(`${this.baseUrl}/institut/equipe`, {
+      headers: this.enteteAutorisation(),
+    }));
+  }
+
+  enregistrerMembreEquipe(donnees: Record<string, unknown>) {
+    this.invaliderCache('institut:equipe');
+    return this.http.post<{ message: string; id: string }>(`${this.baseUrl}/institut/equipe`, donnees, { headers: this.enteteAutorisation() });
+  }
+
+  enregistrerRattachementsEquipe(personnelId: string, rattachements: Array<{ etablissement_id: string; campus_id: string }>) {
+    this.invaliderCache('institut:equipe');
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/equipe/${personnelId}/rattachements`, { rattachements }, {
+      headers: this.enteteAutorisation(),
+    });
   }
 
   creerCampusInstitut(donnees: { nom: string; adresse: string; telephone?: string }) {
@@ -638,11 +833,11 @@ export class CentralApiService {
     );
   }
 
-  enregistrerSouscriptionInstitut(fonctionnalitesTypesIds: string[]) {
+  enregistrerSouscriptionInstitut(fonctionnalitesTypesIds: string[], dureeJours: number, versionForfaitId: string | null = null) {
     this.invaliderCache('institut:');
     return this.http.put<SouscriptionInstitut>(
       `${this.baseUrl}/institut/souscription`,
-      { fonctionnalites_types_ids: fonctionnalitesTypesIds },
+      { fonctionnalites_types_ids: fonctionnalitesTypesIds, duree_jours: dureeJours, version_forfait_id: versionForfaitId },
       { headers: this.enteteAutorisation() },
     );
   }
@@ -654,6 +849,20 @@ export class CentralApiService {
       {},
       { headers: this.enteteAutorisation() },
     );
+  }
+
+  interrompreSouscriptionInstitut() {
+    this.invaliderCache('institut:');
+    return this.http.post<SouscriptionInstitut>(`${this.baseUrl}/institut/souscription/interrompre`, {}, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  facturesSouscriptionsInstitut() {
+    return this.lireAvecCache('institut:factures-souscriptions', () => this.http.get<{ data: FactureSouscriptionInstitut[] }>(
+      `${this.baseUrl}/institut/factures-souscriptions`,
+      { headers: this.enteteAutorisation() },
+    ));
   }
 
   anneesScolairesInstitut(typeEtablissement: string) {

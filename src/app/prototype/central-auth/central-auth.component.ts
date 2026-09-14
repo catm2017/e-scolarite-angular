@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { ReactiveFormsModule, Validators, NonNullableFormBuilder } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CentralApiService, InstitutConnexion } from '../central-api.service';
+import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
 
 @Component({
   selector: 'app-central-auth',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PlatformLanguageSwitcherComponent],
   templateUrl: './central-auth.component.html',
   styleUrl: './central-auth.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -17,6 +18,7 @@ export class CentralAuthComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   readonly chargement = signal(false);
+  readonly passwordVisible = signal(false);
   readonly erreur = signal<string | null>(null);
   readonly instituts = signal<InstitutConnexion[]>([]);
   readonly institutChoisi = signal('');

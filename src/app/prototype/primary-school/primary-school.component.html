@@ -26,6 +26,19 @@
     </div>
 
     <main class="primary-content">
+      @if (!configurationReady()) {
+        <section class="configuration-lock-banner" role="status" aria-live="polite">
+          <span><i>{{ configurationChecked() ? 'lock' : 'sync' }}</i></span>
+          <div>
+            <small>{{ configurationChecked() ? t('configurationRequiredTitle') : t('configurationChecking') }}</small>
+            <strong>{{ configurationChecked() ? t('configurationRequiredMessage') : t('configurationChecking') }}</strong>
+          </div>
+          @if (configurationChecked()) {
+            <button type="button" (click)="setView('settings')"><i>settings</i>{{ t('settings') }}</button>
+          }
+        </section>
+      }
+
       @if (financesLoading() && (activeView() === 'fees' || activeView() === 'payments' || activeView() === 'expense-settings' || activeView() === 'expenses' || activeView() === 'finance')) {
         <section class="panel data-loading-state" role="status" aria-live="polite">
           <i>sync</i><strong>Chargement des données financières…</strong><span>Les tarifs, paiements et dépenses du campus sont en cours de récupération.</span>

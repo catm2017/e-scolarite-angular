@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
@@ -9,11 +10,12 @@ import {
   InstituteView,
   InstituteWorkspaceService,
 } from './institute-workspace.service';
-import { CampusInstitut, CentralApiService, FonctionnaliteSouscription, SalleInstitut, TypeSouscription } from '../central-api.service';
+import { CampusInstitut, CentralApiService, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, SalleInstitut, SouscriptionInstitut, TypeSouscription } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
 
 interface Establishment {
   id: string | null;
+  workspaceId?: string | null;
   type: string;
   name: string;
   icon: string;
@@ -35,6 +37,8 @@ interface SubscriptionType {
   modules: string[];
   price: number;
   enabled: boolean;
+  learnerCount: number;
+  staffCount: number;
   functionalities: FonctionnaliteSouscription[];
 }
 
@@ -50,6 +54,7 @@ interface Campus {
 }
 
 interface InstituteDirectoryRow {
+  id?: string;
   matricule?: string;
   name: string;
   email?: string;
@@ -62,6 +67,8 @@ interface InstituteDirectoryRow {
   scope?: string;
   campus?: string;
   status: string;
+  campusIds?: string[];
+  establishmentIds?: string[];
 }
 
 interface InstituteSpaceRow {
@@ -124,7 +131,7 @@ interface InstituteRole {
 
 @Component({
   selector: 'app-institute-console',
-  imports: [RouterLink, BreadcrumbComponent, FormsModule, MasterTableComponent],
+  imports: [RouterLink, BreadcrumbComponent, FormsModule, MasterTableComponent, DecimalPipe],
   templateUrl: './institute-console.component.html',
   styleUrl: './institute-console.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -140,13 +147,26 @@ export class InstituteConsoleComponent implements OnInit {
   readonly instituteName = signal('Institut');
   readonly connectedUserName = signal('');
   readonly subscriptionLoading = signal(false);
+  readonly subscriptionDurationDays = signal(30);
   readonly subscriptionSaving = signal(false);
+  readonly subscriptionInterruptModalOpen = signal(false);
+  readonly subscriptionStatus = signal<string | null>(null);
+  readonly subscriptionDaysRemaining = signal<number | null>(null);
+  readonly subscriptionInvoices = signal<FactureSouscriptionInstitut[]>([]);
+  readonly subscriptionInvoicesSource = new MatTableDataSource<FactureSouscriptionInstitut & { etat_paiement: string }>();
   readonly subscriptionError = signal<string | null>(null);
   readonly subscriptionSuccess = signal<string | null>(null);
   readonly backendRefreshing = signal(false);
   readonly selectedSubscriptionType = signal<SubscriptionType | null>(null);
   readonly activeEstablishmentsCount = computed(() => this.establishments().filter((item) => item.active).length);
   readonly activeEstablishments = computed(() => this.establishments().filter((item) => item.active));
+  readonly subscriptionInvoicesColumns: ColumnDefinition[] = [
+    { def: 'numero', label: 'Référence', type: 'text', visible: true, sortable: true },
+    { def: 'montant_ttc', label: 'Montant', type: 'number', visible: true, sortable: true },
+    { def: 'emise_at', label: 'Émise le', type: 'date', visible: true, sortable: true },
+    { def: 'echeance_at', label: 'Échéance', type: 'date', visible: true, sortable: true },
+    { def: 'etat_paiement', label: 'État', type: 'status', visible: true, sortable: true, statusBadgeMap: { Payé: 'badge badge-solid-green', 'À régler': 'badge badge-solid-red' } },
+  ];
 
   readonly campuses = signal<Campus[]>([]);
   readonly campusCount = computed(() => this.campuses().length);
@@ -185,6 +205,16 @@ export class InstituteConsoleComponent implements OnInit {
   readonly userDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.userRows);
   readonly staffDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.staffRows);
   readonly teacherDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.teacherRows);
+  readonly membresEquipe = signal<MembreEquipeInstitut[]>([]);
+  readonly subscriptionFeatureDataSource = new MatTableDataSource<FonctionnaliteSouscription>([]);
+  readonly subscriptionFeatureColumns: ColumnDefinition[] = [
+    { def: 'select', label: 'Sélection', type: 'check', sortable: false },
+    { def: 'libelle', label: 'Fonctionnalité', type: 'text', sortable: true },
+    { def: 'code', label: 'Référence', type: 'text', sortable: true },
+    { def: 'prix_unitaire_jour', label: 'Par jour (F CFA)', type: 'number', sortable: true },
+    { def: 'prix_unitaire_eleve', label: 'Par élève (F CFA)', type: 'number', sortable: true },
+    { def: 'prix_unitaire_personnel', label: 'Par collaborateur (F CFA)', type: 'number', sortable: true },
+  ];
   readonly spaceRows = signal<InstituteSpaceRow[]>([]);
   readonly spaceDataSource = new MatTableDataSource<InstituteSpaceRow>([]);
   readonly spacesLoading = signal(false);
@@ -323,18 +353,61 @@ export class InstituteConsoleComponent implements OnInit {
   ];
 
   readonly subscriptionTypes = signal<SubscriptionType[]>([]);
+  readonly subscriptionPackages = signal<PackageSouscription[]>([]);
+  readonly selectedPackageVersionId = signal<string | null>(null);
+  readonly subscriptionMode = signal<'package' | 'custom'>('package');
+  readonly selectedPackage = computed(() => this.subscriptionPackages()
+    .find((item) => item.version_id === this.selectedPackageVersionId()) ?? null);
 
-  readonly subscriptionTotal = computed(
-    () =>
-      this.subscriptionTypes()
-        .reduce((sum, item) => sum + item.functionalities
-          .filter((fonctionnalite) => fonctionnalite.selectionnee)
-          .reduce((subtotal, fonctionnalite) => subtotal + fonctionnalite.prix_mensuel, 0), 0),
-  );
   readonly activeSubscriptionCount = computed(
     () => this.subscriptionTypes().flatMap((item) => item.functionalities).filter((item) => item.selectionnee).length,
   );
-  readonly activeSubscriptionTypesCount = computed(() => this.subscriptionTypes().filter((item) => item.enabled).length);
+  readonly subscriptionCustomDailyAmount = computed(() => this.subscriptionTypes()
+    .flatMap((type) => type.functionalities)
+    .filter((feature) => feature.selectionnee)
+    .reduce((total, feature) => total + feature.prix_unitaire_jour, 0));
+  readonly subscriptionCustomLearnerAmount = computed(() => this.subscriptionTypes()
+    .reduce((total, type) => total + type.functionalities
+      .filter((feature) => feature.selectionnee)
+      .reduce((subtotal, feature) => subtotal + (feature.prix_unitaire_eleve * type.learnerCount), 0), 0));
+  readonly subscriptionCustomStaffAmount = computed(() => this.subscriptionTypes()
+    .reduce((total, type) => total + type.functionalities
+      .filter((feature) => feature.selectionnee)
+      .reduce((subtotal, feature) => subtotal + (feature.prix_unitaire_personnel * type.staffCount), 0), 0));
+  readonly subscriptionEstimatedTotal = computed(() => {
+    const packageSouscription = this.selectedPackage();
+    if (this.subscriptionMode() === 'package' && packageSouscription) {
+      return packageSouscription.montant_estime;
+    }
+    return (this.subscriptionCustomDailyAmount() * this.subscriptionDurationDays())
+      + this.subscriptionCustomLearnerAmount()
+      + this.subscriptionCustomStaffAmount();
+  });
+  readonly subscriptionBillableLearners = computed(() => {
+    const packageSouscription = this.selectedPackage();
+    if (this.subscriptionMode() === 'package' && packageSouscription) return packageSouscription.nombre_eleves;
+    return this.subscriptionTypes()
+      .filter((type) => type.functionalities.some((feature) => feature.selectionnee))
+      .reduce((total, type) => total + type.learnerCount, 0);
+  });
+  readonly subscriptionBillableStaff = computed(() => {
+    const packageSouscription = this.selectedPackage();
+    if (this.subscriptionMode() === 'package' && packageSouscription) return packageSouscription.nombre_personnels;
+    return this.subscriptionTypes()
+      .filter((type) => type.functionalities.some((feature) => feature.selectionnee))
+      .reduce((total, type) => total + type.staffCount, 0);
+  });
+  readonly subscriptionCalculationLabel = computed(() => {
+    const jours = this.subscriptionMode() === 'package'
+      ? (this.selectedPackage()?.duree_jours ?? this.subscriptionDurationDays())
+      : this.subscriptionDurationDays();
+    const eleves = this.subscriptionBillableLearners();
+    const collaborateurs = this.subscriptionBillableStaff();
+    if (this.subscriptionMode() === 'package') {
+      return `Calculé pour ${eleves} élève(s) et ${collaborateurs} enseignant(s) / personnel(s), avec un accès de ${jours} jours.`;
+    }
+    return `Inclut ${jours} jour(s) d’accès, les tarifs appliqués à ${eleves} élève(s) et à ${collaborateurs} enseignant(s) / personnel(s).`;
+  });
 
   ngOnInit(): void {
     const vueDemandee = this.route.snapshot.queryParamMap.get('vue');
@@ -368,6 +441,7 @@ export class InstituteConsoleComponent implements OnInit {
         this.campuses.set(espace.campus.map((campus) => this.presenterCampus(campus)));
         this.establishments.set(espace.etablissements.map((item) => this.presenterEtablissement(item)));
         this.chargerSalles();
+        this.chargerEquipe();
         this.chargerSouscription();
       },
       error: (erreur: HttpErrorResponse) => {
@@ -383,20 +457,72 @@ export class InstituteConsoleComponent implements OnInit {
     });
   }
 
+  private chargerEquipe(): void {
+    this.api.equipeInstitut().subscribe({
+      next: ({ data }) => {
+        this.membresEquipe.set(data);
+        const personnel = data.filter((membre) => !membre.est_enseignant).map((membre) => this.presenterMembreEquipe(membre));
+        const enseignants = data.filter((membre) => membre.est_enseignant).map((membre) => this.presenterMembreEquipe(membre));
+        this.staffRows.splice(0, this.staffRows.length, ...personnel);
+        this.teacherRows.splice(0, this.teacherRows.length, ...enseignants);
+        this.staffDataSource.data = personnel;
+        this.teacherDataSource.data = enseignants;
+      },
+      error: (erreur: HttpErrorResponse) => {
+        if (erreur.status !== 401 && erreur.status !== 419) this.subscriptionError.set('La liste de l’équipe est momentanément indisponible.');
+      },
+    });
+  }
+
+  private presenterMembreEquipe(membre: MembreEquipeInstitut): InstituteDirectoryRow {
+    const rattachements = membre.rattachements ?? [];
+    return {
+      id: membre.id,
+      matricule: membre.matricule,
+      name: `${membre.prenom} ${membre.nom}`.trim(),
+      email: membre.email ?? undefined,
+      phone: membre.telephone ?? undefined,
+      function: membre.fonction ?? undefined,
+      subject: membre.specialite ?? membre.fonction ?? undefined,
+      establishment: [...new Set(rattachements.map((rattachement) => rattachement.type))].join(' · '),
+      campus: [...new Set(rattachements.map((rattachement) => rattachement.campus))].join(' · '),
+      scope: rattachements.map((rattachement) => `${rattachement.type} · ${rattachement.campus}`).join(' | '),
+      status: membre.statut === 'actif' ? 'Actif' : membre.statut,
+      campusIds: rattachements.map((rattachement) => rattachement.campus_id),
+      establishmentIds: rattachements.map((rattachement) => rattachement.etablissement_id),
+    };
+  }
+
   private chargerSouscription(): void {
     this.api.souscriptionInstitut().subscribe({
       next: (souscription) => {
         const types = souscription.types.map((item) => this.presenterSouscription(item));
         this.subscriptionTypes.set(types);
-        this.selectedSubscriptionType.set(types.find((item) => item.enabled) ?? null);
+        this.subscriptionPackages.set(souscription.packages ?? []);
+        this.subscriptionStatus.set(souscription.statut);
+        this.subscriptionDaysRemaining.set(souscription.jours_restants ?? null);
+        this.selectedPackageVersionId.set(souscription.version_forfait_id ?? null);
+        this.subscriptionMode.set(souscription.version_forfait_id
+          ? 'package'
+          : souscription.abonnement_id
+            ? 'custom'
+            : souscription.packages?.length
+              ? 'package'
+              : 'custom');
+        if (souscription.duree_jours) this.subscriptionDurationDays.set(souscription.duree_jours);
+        this.selectedSubscriptionType.set(
+          types.find((item) => item.enabled && item.functionalities.length > 0) ?? null,
+        );
+        this.rafraichirTableFonctionnalites();
         this.workspace.configureSubscriptionAccess(souscription.validee, souscription.fonctionnalites_actives);
+        this.chargerFacturesSouscription();
         if (!souscription.validee && this.activeView() !== 'subscription') {
           void this.router.navigateByUrl(this.workspace.cheminVue('subscription'), { replaceUrl: true });
         }
         this.subscriptionLoading.set(false);
         if (this.backendRefreshing()) {
           this.backendRefreshing.set(false);
-          this.subscriptionSuccess.set('Les données ont été réactualisées depuis la base de données.');
+          this.subscriptionSuccess.set('Les informations ont été réactualisées.');
         }
       },
       error: (erreur: HttpErrorResponse) => {
@@ -409,6 +535,19 @@ export class InstituteConsoleComponent implements OnInit {
         this.subscriptionLoading.set(false);
         this.backendRefreshing.set(false);
       },
+    });
+  }
+
+  private chargerFacturesSouscription(): void {
+    this.api.facturesSouscriptionsInstitut().subscribe({
+      next: ({ data }) => {
+        this.subscriptionInvoices.set(data);
+        this.subscriptionInvoicesSource.data = data.map((facture) => ({
+          ...facture,
+          etat_paiement: facture.statut === 'reglee' ? 'Payé' : 'À régler',
+        }));
+      },
+      error: () => { this.subscriptionInvoicesSource.data = []; },
     });
   }
 
@@ -442,6 +581,7 @@ export class InstituteConsoleComponent implements OnInit {
     const presentation = this.presentationType(item.code);
     return {
       id: item.id,
+      workspaceId: item.etablissement_id,
       type: item.type,
       name: item.nom,
       icon: presentation.icon,
@@ -512,6 +652,8 @@ export class InstituteConsoleComponent implements OnInit {
       modules: item.fonctionnalites.map((fonctionnalite) => fonctionnalite.libelle),
       price: item.fonctionnalites.reduce((total, fonctionnalite) => total + fonctionnalite.prix_mensuel, 0),
       enabled: item.active,
+      learnerCount: item.nombre_eleves ?? 0,
+      staffCount: item.nombre_personnels ?? 0,
       functionalities: item.fonctionnalites,
     };
   }
@@ -851,23 +993,26 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   startStaffForm(record?: InstituteDirectoryRow): void {
-    this.staffForm = record ? { ...record } : this.emptyStaffForm();
+    this.staffForm = record ? { ...record, campusIds: record.campusIds ?? [], establishmentIds: record.establishmentIds ?? [] } : this.emptyStaffForm();
     this.selectedStaffRecord.set(null);
     this.staffEditorOpen.set(true);
     if (this.activeView() === 'staff-detail') this.setView('staff');
   }
 
   saveStaff(): void {
-    if (!this.staffForm.name?.trim() || !this.staffForm.function?.trim() || !this.staffForm.campus) return;
-    const existing = this.staffRows.find((record) => record.matricule === this.staffForm.matricule);
-    const saved = { ...this.staffForm, name: this.staffForm.name.trim(), status: this.staffForm.status || 'Actif' };
-    if (existing) Object.assign(existing, saved);
-    else this.staffRows.push({ ...saved, matricule: saved.matricule || `PER-${String(this.staffRows.length + 1).padStart(3, '0')}` });
-    this.staffDataSource.data = [...this.staffRows];
-    this.selectedStaffRecord.set(existing ?? this.staffRows[this.staffRows.length - 1]);
-    this.staffRecordTab.set('identity');
-    this.staffEditorOpen.set(false);
-    this.setView('staff-detail');
+    if (!this.staffForm.name?.trim() || !this.staffForm.function?.trim() || !this.staffForm.campusIds?.length || !this.staffForm.establishmentIds?.length) return;
+    this.enregistrerMembreEquipe(this.staffForm, false);
+  }
+
+  private enregistrerMembreEquipe(form: InstituteDirectoryRow, estEnseignant: boolean): void {
+    const morceaux = form.name.trim().split(/\s+/);
+    const prenom = morceaux.shift() ?? '';
+    const nom = morceaux.join(' ') || prenom;
+    const rattachements = (form.establishmentIds ?? []).flatMap((etablissement_id) => (form.campusIds ?? []).map((campus_id) => ({ etablissement_id, campus_id })));
+    this.api.enregistrerMembreEquipe({ id: form.id, est_enseignant: estEnseignant, matricule: form.matricule, prenom, nom, telephone: form.phone, email: form.email, fonction: form.function, specialite: form.subject, rattachements }).subscribe({
+      next: () => { this.staffEditorOpen.set(false); this.teacherEditorOpen.set(false); this.chargerEquipe(); this.toast.success('Dossier enregistré.'); },
+      error: (error) => this.toast.error(error?.error?.message ?? 'Le dossier n’a pas pu être enregistré.'),
+    });
   }
 
   viewStaff(record: InstituteDirectoryRow): void {
@@ -885,23 +1030,15 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   startTeacherForm(record?: InstituteDirectoryRow): void {
-    this.teacherForm = record ? { ...record } : this.emptyTeacherForm();
+    this.teacherForm = record ? { ...record, campusIds: record.campusIds ?? [], establishmentIds: record.establishmentIds ?? [] } : this.emptyTeacherForm();
     this.selectedTeacherRecord.set(null);
     this.teacherEditorOpen.set(true);
     if (this.activeView() === 'teacher-detail') this.setView('teachers');
   }
 
   saveTeacher(): void {
-    if (!this.teacherForm.name?.trim() || !this.teacherForm.establishment || !this.teacherForm.subject?.trim() || !this.teacherForm.campus) return;
-    const existing = this.teacherRows.find((record) => record.matricule === this.teacherForm.matricule);
-    const saved = { ...this.teacherForm, name: this.teacherForm.name.trim(), status: this.teacherForm.status || 'Actif' };
-    if (existing) Object.assign(existing, saved);
-    else this.teacherRows.push({ ...saved, matricule: saved.matricule || `ENS-${String(this.teacherRows.length + 1).padStart(3, '0')}` });
-    this.teacherDataSource.data = [...this.teacherRows];
-    this.selectedTeacherRecord.set(existing ?? this.teacherRows[this.teacherRows.length - 1]);
-    this.teacherRecordTab.set('identity');
-    this.teacherEditorOpen.set(false);
-    this.setView('teacher-detail');
+    if (!this.teacherForm.name?.trim() || !this.teacherForm.subject?.trim() || !this.teacherForm.campusIds?.length || !this.teacherForm.establishmentIds?.length) return;
+    this.enregistrerMembreEquipe(this.teacherForm, true);
   }
 
   viewTeacher(record: InstituteDirectoryRow): void {
@@ -927,11 +1064,11 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   private emptyStaffForm(): InstituteDirectoryRow {
-    return { matricule: '', name: '', email: '', phone: '', function: '', campus: '', status: 'Actif' };
+    return { matricule: '', name: '', email: '', phone: '', function: '', campus: '', status: 'Actif', campusIds: [], establishmentIds: [] };
   }
 
   private emptyTeacherForm(): InstituteDirectoryRow {
-    return { matricule: '', name: '', email: '', phone: '', establishment: '', subject: '', campus: '', status: 'Actif' };
+    return { matricule: '', name: '', email: '', phone: '', establishment: '', subject: '', campus: '', status: 'Actif', campusIds: [], establishmentIds: [] };
   }
 
   directoryTitle(): string {
@@ -984,6 +1121,7 @@ export class InstituteConsoleComponent implements OnInit {
       'role-detail': 'Détail du rôle',
       assets: 'Patrimoine',
       subscription: 'Souscription',
+      'subscription-invoices': 'Factures',
       settings: 'Paramètres',
     };
     return labels[this.activeView()];
@@ -992,6 +1130,7 @@ export class InstituteConsoleComponent implements OnInit {
   ouvrirFonctionnalites(type: SubscriptionType): void {
     if (!type.enabled) return;
     this.selectedSubscriptionType.set(type);
+    this.rafraichirTableFonctionnalites();
   }
 
   ouvrirPremierTypeActif(): void {
@@ -1002,6 +1141,8 @@ export class InstituteConsoleComponent implements OnInit {
   basculerFonctionnalite(fonctionnaliteId: string): void {
     const type = this.selectedSubscriptionType();
     if (!type) return;
+    this.subscriptionError.set(null);
+    this.subscriptionSuccess.set(null);
     this.subscriptionTypes.update((types) => types.map((item) => item.typeId !== type.typeId ? item : {
       ...item,
       functionalities: item.functionalities.map((fonctionnalite) => fonctionnalite.id === fonctionnaliteId
@@ -1009,6 +1150,99 @@ export class InstituteConsoleComponent implements OnInit {
         : fonctionnalite),
     }));
     this.selectedSubscriptionType.set(this.subscriptionTypes().find((item) => item.typeId === type.typeId) ?? null);
+    this.rafraichirTableFonctionnalites();
+    this.selectedPackageVersionId.set(null);
+    this.subscriptionMode.set('custom');
+  }
+
+  selectionnerToutesFonctionnalites(type: SubscriptionType, selectionnee: boolean): void {
+    this.subscriptionError.set(null);
+    this.subscriptionSuccess.set(null);
+    this.subscriptionTypes.update((types) => types.map((item) => item.typeId !== type.typeId ? item : {
+      ...item,
+      functionalities: item.functionalities.map((fonctionnalite) => ({ ...fonctionnalite, selectionnee })),
+    }));
+    this.selectedSubscriptionType.set(
+      this.subscriptionTypes().find((item) => item.typeId === type.typeId) ?? null,
+    );
+    this.rafraichirTableFonctionnalites();
+    this.selectedPackageVersionId.set(null);
+    this.subscriptionMode.set('custom');
+  }
+
+  fonctionnalitesSelectionneesDuType(type: SubscriptionType): FonctionnaliteSouscription[] {
+    return type.functionalities.filter((fonctionnalite) => fonctionnalite.selectionnee);
+  }
+
+  choisirPackage(packageSouscription: PackageSouscription): void {
+    this.subscriptionError.set(null);
+    this.subscriptionSuccess.set(null);
+    const fonctionnalites = new Set(packageSouscription.fonctionnalites_types_ids);
+    this.subscriptionTypes.update((types) => types.map((type) => ({
+      ...type,
+      functionalities: type.functionalities.map((fonctionnalite) => ({
+        ...fonctionnalite,
+        selectionnee: fonctionnalites.has(fonctionnalite.id),
+      })),
+    })));
+    this.selectedPackageVersionId.set(packageSouscription.version_id);
+    this.subscriptionMode.set('package');
+    this.subscriptionDurationDays.set(packageSouscription.duree_jours);
+    this.selectedSubscriptionType.set(this.subscriptionTypes().find((type) => packageSouscription.type_etablissement_ids.includes(type.typeId)) ?? null);
+    this.rafraichirTableFonctionnalites();
+  }
+
+  afficherPackages(): void {
+    this.subscriptionError.set(null);
+    this.subscriptionSuccess.set(null);
+    this.subscriptionMode.set('package');
+  }
+
+  choisirOffreSurMesure(): void {
+    this.subscriptionError.set(null);
+    this.subscriptionSuccess.set(null);
+    this.subscriptionMode.set('custom');
+    this.selectedPackageVersionId.set(null);
+    this.selectedSubscriptionType.set(
+      this.subscriptionTypes().find((type) => type.enabled && type.functionalities.length > 0) ?? null,
+    );
+    this.rafraichirTableFonctionnalites();
+  }
+
+  synchroniserSelectionFonctionnalites(selection: FonctionnaliteSouscription[]): void {
+    const type = this.selectedSubscriptionType();
+    if (!type) return;
+
+    const fonctionnalitesSelectionnees = new Set(selection.map((fonctionnalite) => fonctionnalite.id));
+    this.subscriptionError.set(null);
+    this.subscriptionSuccess.set(null);
+    this.subscriptionTypes.update((types) => types.map((item) => item.typeId !== type.typeId ? item : {
+      ...item,
+      functionalities: item.functionalities.map((fonctionnalite) => ({
+        ...fonctionnalite,
+        selectionnee: fonctionnalitesSelectionnees.has(fonctionnalite.id),
+      })),
+    }));
+    this.selectedSubscriptionType.set(this.subscriptionTypes().find((item) => item.typeId === type.typeId) ?? null);
+    this.selectedPackageVersionId.set(null);
+    this.subscriptionMode.set('custom');
+    this.rafraichirTableFonctionnalites();
+  }
+
+  private rafraichirTableFonctionnalites(): void {
+    this.subscriptionFeatureDataSource.data = this.selectedSubscriptionType()?.functionalities ?? [];
+  }
+
+  fonctionnalitesDuPackage(packageSouscription: PackageSouscription): string[] {
+    const fonctionnalitesIds = new Set(packageSouscription.fonctionnalites_types_ids);
+    return [...new Set(this.subscriptionTypes()
+      .flatMap((type) => type.functionalities)
+      .filter((feature) => fonctionnalitesIds.has(feature.id))
+      .map((feature) => feature.libelle))];
+  }
+
+  nombreFonctionnalitesSelectionnees(type: SubscriptionType): number {
+    return type.functionalities.filter((feature) => feature.selectionnee).length;
   }
 
   enregistrerSouscription(): void {
@@ -1016,6 +1250,11 @@ export class InstituteConsoleComponent implements OnInit {
     this.subscriptionSaving.set(true);
     this.subscriptionError.set(null);
     this.subscriptionSuccess.set(null);
+    if (this.subscriptionMode() === 'package' && !this.selectedPackageVersionId()) {
+      this.subscriptionError.set('Choisissez un package avant de valider votre souscription.');
+      this.subscriptionSaving.set(false);
+      return;
+    }
     const selection = this.subscriptionTypes()
       .flatMap((type) => type.functionalities)
       .filter((fonctionnalite) => fonctionnalite.selectionnee)
@@ -1027,22 +1266,26 @@ export class InstituteConsoleComponent implements OnInit {
       return;
     }
 
-    this.api.enregistrerSouscriptionInstitut(selection).subscribe({
-      next: () => this.api.validerSouscriptionInstitut().subscribe({
-        next: (souscription) => {
+    const versionForfaitId = this.subscriptionMode() === 'package' ? this.selectedPackageVersionId() : null;
+    this.api.enregistrerSouscriptionInstitut(selection, this.subscriptionDurationDays(), versionForfaitId).subscribe({
+      next: (souscription) => {
           const types = souscription.types.map((item) => this.presenterSouscription(item));
           this.subscriptionTypes.set(types);
+          this.subscriptionPackages.set(souscription.packages ?? []);
+          this.subscriptionStatus.set(souscription.statut);
+          this.subscriptionDaysRemaining.set(souscription.jours_restants ?? null);
+          this.selectedPackageVersionId.set(souscription.version_forfait_id ?? null);
+          this.subscriptionMode.set(souscription.version_forfait_id ? 'package' : 'custom');
           const selected = this.selectedSubscriptionType();
-          this.selectedSubscriptionType.set(types.find((item) => item.typeId === selected?.typeId) ?? types.find((item) => item.enabled) ?? null);
+          this.selectedSubscriptionType.set(
+            types.find((item) => item.typeId === selected?.typeId && item.enabled && item.functionalities.length > 0)
+              ?? types.find((item) => item.enabled && item.functionalities.length > 0)
+              ?? null,
+          );
           this.workspace.configureSubscriptionAccess(souscription.validee, souscription.fonctionnalites_actives);
-          this.subscriptionSuccess.set('Votre souscription est validée. Les espaces et menus autorisés sont maintenant accessibles.');
+          this.subscriptionSuccess.set('Votre souscription est active. La facture sera générée à son échéance ou si vous l’interrompez.');
           this.subscriptionSaving.set(false);
-        },
-        error: (response: unknown) => {
-          this.subscriptionError.set(this.subscriptionErrorMessage(response, 'La validation de votre souscription a échoué.'));
-          this.subscriptionSaving.set(false);
-        },
-      }),
+      },
       error: (response: unknown) => {
         this.subscriptionError.set(this.subscriptionErrorMessage(response, 'La sauvegarde de votre souscription a échoué.'));
         this.subscriptionSaving.set(false);
@@ -1050,8 +1293,39 @@ export class InstituteConsoleComponent implements OnInit {
     });
   }
 
+  interrompreSouscription(): void {
+    if (this.subscriptionSaving() || this.subscriptionStatus() !== 'actif') return;
+    this.subscriptionInterruptModalOpen.set(true);
+  }
+
+  confirmerInterruptionSouscription(): void {
+    if (this.subscriptionSaving() || this.subscriptionStatus() !== 'actif') return;
+    this.subscriptionSaving.set(true);
+    this.subscriptionError.set(null);
+    this.api.interrompreSouscriptionInstitut().subscribe({
+      next: (souscription) => {
+        this.subscriptionInterruptModalOpen.set(false);
+        this.subscriptionStatus.set(souscription.statut);
+        this.subscriptionDaysRemaining.set(null);
+        this.workspace.configureSubscriptionAccess(false, []);
+        this.subscriptionSuccess.set((souscription as SouscriptionInstitut & { message?: string }).message ?? 'Souscription interrompue.');
+        this.subscriptionSaving.set(false);
+        this.chargerSouscription();
+      },
+      error: (response: unknown) => {
+        this.subscriptionError.set(this.subscriptionErrorMessage(response, 'La souscription n’a pas pu être interrompue.'));
+        this.subscriptionSaving.set(false);
+      },
+    });
+  }
+
   hasActiveFeature(code: string): boolean {
     return this.workspace.hasFeature(code);
+  }
+
+  subscriptionApproachingExpiration(): boolean {
+    const jours = this.subscriptionDaysRemaining();
+    return this.subscriptionStatus() === 'actif' && jours !== null && jours <= 5;
   }
 
   private subscriptionErrorMessage(response: unknown, fallback: string): string {

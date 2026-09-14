@@ -3,6 +3,7 @@ import {
   LanguageService,
   PlatformLocale,
 } from '@core/service/language.service';
+import { CentralApiService } from '../central-api.service';
 import { translatePlatformText } from '../../core/i18n/platform-translations';
 
 export type PrimaryView =
@@ -75,9 +76,39 @@ const ESTABLISHMENT_BASE_PATHS: Record<EstablishmentWorkspaceType, string> = {
   lycee: '/institut/etablissements/lycee',
 };
 
+const FONCTIONNALITE_PAR_VUE: Partial<Record<PrimaryView, string>> = {
+  registrations: 'gestion_eleves',
+  students: 'gestion_eleves',
+  guardians: 'gestion_eleves',
+  'student-detail': 'gestion_eleves',
+  'guardian-detail': 'gestion_eleves',
+  enrollments: 'gestion_inscriptions_reinscriptions',
+  classes: 'gestion_classes',
+  series: 'gestion_classes',
+  staff: 'gestion_personnels',
+  'staff-detail': 'gestion_personnels',
+  'staff-attendance': 'gestion_personnels',
+  teachers: 'gestion_enseignants',
+  'teacher-detail': 'gestion_enseignants',
+  subjects: 'gestion_matieres',
+  'class-subjects': 'gestion_matieres',
+  curriculum: 'suivi_programme_cahier_texte',
+  'timetable-builder': 'gestion_emplois_temps',
+  timetable: 'gestion_emplois_temps',
+  attendance: 'gestion_seances',
+  assessments: 'gestion_evaluations',
+  reports: 'gestion_bulletins_notes',
+  fees: 'gestion_finances',
+  payments: 'gestion_finances',
+  'expense-settings': 'gestion_finances',
+  expenses: 'gestion_finances',
+  finance: 'gestion_finances',
+};
+
 @Injectable({ providedIn: 'root' })
 export class PrimaryWorkspaceService {
   private readonly language = inject(LanguageService);
+  private readonly api = inject(CentralApiService);
 
   readonly activeView = signal<PrimaryView>('dashboard');
   readonly selectedCampusId = signal('keur-massar');
@@ -94,6 +125,13 @@ export class PrimaryWorkspaceService {
   readonly sessionListRequest = signal(0);
   readonly classListRequest = signal(0);
   readonly assessmentListRequest = signal(0);
+  private readonly configurationStates = signal<Record<EstablishmentWorkspaceType, { checked: boolean; ready: boolean }>>({
+    primary: { checked: false, ready: false },
+    college: { checked: false, ready: false },
+    lycee: { checked: false, ready: false },
+  });
+  readonly configurationChecked = computed(() => this.configurationStates()[this.establishmentType()].checked);
+  readonly configurationReady = computed(() => this.configurationStates()[this.establishmentType()].ready);
 
   /**
    * Applique le contexte métier d'un établissement à tous les composants
@@ -143,25 +181,46 @@ export class PrimaryWorkspaceService {
     return `${ESTABLISHMENT_BASE_PATHS[this.establishmentType()]}${view === 'dashboard' ? '/tableau-de-bord' : `/${PRIMARY_VIEW_PATHS[view]}`}`;
   }
 
+  setConfigurationState(type: EstablishmentWorkspaceType, checked: boolean, ready: boolean): void {
+    this.configurationStates.update((states) => ({
+      ...states,
+      [type]: { checked, ready },
+    }));
+  }
+
+  canAccessView(view: PrimaryView): boolean {
+    // À l’ouverture d’un espace, la configuration arrive de façon asynchrone.
+    // Il ne faut donc pas remplacer l’URL demandée par Paramètres avant que le
+    // backend ait confirmé si l’année, les niveaux et les périodes existent.
+    if (view === 'settings') return true;
+    if (!this.configurationChecked()) return true;
+    if (view === 'dashboard') return this.configurationReady();
+    const fonctionnalite = FONCTIONNALITE_PAR_VUE[view];
+    return this.configurationReady()
+      && this.api.souscriptionValidee()
+      && Boolean(fonctionnalite && this.api.fonctionnalitesActives().includes(fonctionnalite));
+  }
+
   selectView(view: PrimaryView): void {
     // Le layout, le header et la sidebar peuvent observer le même événement de
     // navigation. Une vue déjà active ne doit pas relancer ses effets métier :
     // cela provoquait des remises à zéro et des appels redondants à chaque
     // aller-retour entre l'espace institut et un établissement.
-    if (this.activeView() === view) {
+    const accessibleView: PrimaryView = this.canAccessView(view) ? view : 'settings';
+    if (this.activeView() === accessibleView) {
       return;
     }
 
-    if (view === 'attendance') {
+    if (accessibleView === 'attendance') {
       this.sessionListRequest.update((request) => request + 1);
     }
-    if (view === 'classes') {
+    if (accessibleView === 'classes') {
       this.classListRequest.update((request) => request + 1);
     }
-    if (view === 'assessments') {
+    if (accessibleView === 'assessments') {
       this.assessmentListRequest.update((request) => request + 1);
     }
-    this.activeView.set(view);
+    this.activeView.set(accessibleView);
   }
 
   translate(value: string): string {

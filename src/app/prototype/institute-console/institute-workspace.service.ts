@@ -17,6 +17,7 @@ export type InstituteView =
   | 'role-detail'
   | 'assets'
   | 'subscription'
+  | 'subscription-invoices'
   | 'settings';
 
 /**
@@ -39,6 +40,7 @@ const INSTITUTE_VIEW_PATHS: Record<InstituteView, string> = {
   'role-detail': 'roles-permissions',
   assets: 'etablissements',
   subscription: 'souscription',
+  'subscription-invoices': 'factures',
   settings: 'parametres',
 };
 
@@ -76,7 +78,7 @@ export class InstituteWorkspaceService {
   }
 
   canAccessView(view?: string): boolean {
-    if (!view || view === 'subscription') return true;
+    if (!view || view === 'subscription' || view === 'subscription-invoices') return true;
     return this.subscriptionValidated();
   }
 
@@ -85,8 +87,7 @@ export class InstituteWorkspaceService {
     return this.subscriptionValidated();
   }
 
-  hasFeature(_code: string): boolean {
-    // Accès temporairement ouvert après validation, le temps de finaliser le catalogue métier.
-    return this.subscriptionValidated();
+  hasFeature(code: string): boolean {
+    return this.subscriptionValidated() && this.activeFeatures().includes(code);
   }
 }

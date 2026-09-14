@@ -7,6 +7,39 @@ body:has(.primary-shell) {
 }
 
 .primary-shell {
+  .configuration-lock-banner {
+    min-height: 78px;
+    margin-bottom: 18px;
+    padding: 15px 18px;
+    border: 1px solid #f0cf8b;
+    border-radius: 11px;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 13px;
+    background: #fffaf0;
+    box-shadow: 0 5px 16px rgba(130, 93, 29, .07);
+  }
+
+  .configuration-lock-banner > span {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: #fff0c9;
+    color: #a96d13;
+  }
+
+  .configuration-lock-banner i { font-family: 'Material Icons'; font-style: normal; }
+  .configuration-lock-banner > span i { font-size: 22px; }
+  .configuration-lock-banner > div small,
+  .configuration-lock-banner > div strong { display: block; }
+  .configuration-lock-banner > div small { color: #a56c17; font-size: 12px; font-weight: 850; text-transform: uppercase; letter-spacing: .04em; }
+  .configuration-lock-banner > div strong { margin-top: 4px; color: #5e513d; font-size: 14px; line-height: 1.45; }
+  .configuration-lock-banner > button { min-height: 39px; padding: 0 13px; border: 1px solid #e5c47f; border-radius: 8px; display: inline-flex; align-items: center; gap: 7px; background: #fff; color: #926015; font: inherit; font-size: 13px; font-weight: 750; }
+  .configuration-lock-banner > button i { font-size: 18px; }
+
   .class-rows > button {
     grid-template-columns: 38px 1fr 20px;
   }
@@ -259,6 +292,22 @@ body:has(.primary-shell) {
       font-size: 12px;
     }
   }
+}
+
+body.dark .primary-shell .configuration-lock-banner {
+  border-color: #665735;
+  background: #332f25;
+  box-shadow: none;
+}
+
+body.dark .primary-shell .configuration-lock-banner > span { background: #554622; color: #f2c466; }
+body.dark .primary-shell .configuration-lock-banner > div small { color: #f2c466; }
+body.dark .primary-shell .configuration-lock-banner > div strong { color: var(--primary-dark-text); }
+body.dark .primary-shell .configuration-lock-banner > button { border-color: #665735; background: #282c35; color: #f2c466; }
+
+@media (max-width: 700px) {
+  .primary-shell .configuration-lock-banner { grid-template-columns: 42px 1fr; }
+  .primary-shell .configuration-lock-banner > button { grid-column: 2; justify-self: start; }
 }
 
 body.dark {

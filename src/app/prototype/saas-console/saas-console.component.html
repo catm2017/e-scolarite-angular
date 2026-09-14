@@ -1,181 +1,169 @@
-<div class="prototype-shell">
-  <aside class="shell-sidebar">
-    <a class="shell-brand" routerLink="/"><span>E</span><b>E‑Scolarité</b></a>
-    <div class="workspace-label">ADMINISTRATION SAAS</div>
-    <nav>
-      <button [class.active]="activeView() === 'dashboard'" (click)="activeView.set('dashboard')"><i>space_dashboard</i>Vue d’ensemble</button>
-      <button [class.active]="activeView() === 'schools'" (click)="activeView.set('schools')"><i>apartment</i>Établissements <em>38</em></button>
-      <button [class.active]="activeView() === 'academic-years'" (click)="activeView.set('academic-years')"><i>date_range</i>Années scolaires</button>
-      <button [class.active]="activeView() === 'adhesions'" (click)="activeView.set('adhesions')"><i>how_to_reg</i>Adhésions <em>{{ demandes().length }}</em></button>
-      <button [class.active]="activeView() === 'pricing'" (click)="activeView.set('pricing')"><i>sell</i>Tarification</button>
-      <button><i>receipt_long</i>Facturation</button>
-      <button><i>extension</i>Fonctionnalités</button>
-    </nav>
-    <div class="workspace-label">OPÉRATIONS</div>
-    <nav>
-      <button><i>support_agent</i>Support</button>
-      <button><i>bar_chart</i>Utilisation</button>
-      <button><i>settings</i>Paramètres</button>
-    </nav>
-  </aside>
-
-  <div class="shell-main">
-    <header class="shell-header">
-      <div class="context"><small>Console propriétaire</small><strong>Daara Tech</strong></div>
-      <div class="shell-search"><i>search</i>Rechercher un établissement… <kbd>⌘ K</kbd></div>
-      <app-platform-language-switcher />
-      <button class="icon-button"><i>notifications_none</i><span></span></button>
-      <button class="user-chip" type="button" (click)="deconnexion()"><b>{{ user()?.prenom?.slice(0, 1) }}{{ user()?.nom?.slice(0, 1) }}</b><span>{{ user()?.prenom }} {{ user()?.nom }}<small>Se déconnecter</small></span></button>
-    </header>
-
-    <main class="shell-content">
-      @if (activeView() === 'dashboard') {
-        <div class="page-title">
-          <div><small>PLATEFORME E‑SCOLARITÉ</small><h1>Vue d’ensemble</h1><p>Suivez la croissance, les souscriptions et la santé de votre SaaS.</p></div>
-          <button class="primary-action" (click)="activeView.set('schools')"><i>add</i>Nouvel établissement</button>
-        </div>
-        <section class="metric-grid">
-          <article><span class="metric-icon green"><i>apartment</i></span><div><small>Instituts actifs</small><strong>{{ metrics().instituts_actifs }}</strong><em>Base centrale</em></div><b>Voir</b></article>
-          <article><span class="metric-icon violet"><i>payments</i></span><div><small>Revenu encaissé</small><strong>{{ metrics().revenu_mensuel | number }} F</strong><em>Factures réglées</em></div><b>Voir</b></article>
-          <article><span class="metric-icon orange"><i>hourglass_top</i></span><div><small>Essais en cours</small><strong>{{ metrics().essais_en_cours }}</strong><em>À suivre</em></div><b class="neutral">Voir</b></article>
-          <article><span class="metric-icon blue"><i>groups</i></span><div><small>Apprenants gérés</small><strong>18 420</strong><em>Tous établissements</em></div><b>+16%</b></article>
-        </section>
-        <section class="content-grid">
-          <article class="panel revenue-panel">
-            <header><div><h2>Revenu récurrent</h2><p>Évolution des 8 derniers mois</p></div><select><option>Cette année</option></select></header>
-            <div class="revenue-summary"><strong>1 184 500 F</strong><span>↗ 8,4% depuis juin</span></div>
-            <div class="line-chart">
-              <div class="chart-labels"><span>1,2M</span><span>900K</span><span>600K</span><span>300K</span></div>
-              <div class="chart-lines"><i></i><i></i><i></i><i></i><svg viewBox="0 0 600 150" preserveAspectRatio="none"><path d="M0 132 C60 120,80 115,120 119 S190 96,230 100 S300 75,350 82 S420 48,470 56 S550 18,600 24"/><path class="fill" d="M0 132 C60 120,80 115,120 119 S190 96,230 100 S300 75,350 82 S420 48,470 56 S550 18,600 24 L600 150 L0 150Z"/></svg></div>
-              <div class="months"><span>JAN</span><span>FÉV</span><span>MAR</span><span>AVR</span><span>MAI</span><span>JUN</span><span>JUL</span><span>AOÛ</span></div>
-            </div>
-          </article>
-          <article class="panel action-panel">
-            <header><div><h2>Actions prioritaires</h2><p>À traiter cette semaine</p></div><span class="count">6</span></header>
-            <div class="action-item"><i class="danger">priority_high</i><div><b>{{ metrics().adhesions_en_attente }} demande(s) d’adhésion</b><small>À étudier et provisionner</small></div><button (click)="activeView.set('adhesions')">Traiter</button></div>
-            <div class="action-item"><i class="warning">receipt_long</i><div><b>2 factures en retard</b><small>69 000 F à recouvrer</small></div><button>Relancer</button></div>
-            <div class="action-item"><i class="info">support_agent</i><div><b>1 demande de support</b><small>Priorité haute · il y a 24 min</small></div><button>Ouvrir</button></div>
-          </article>
-        </section>
-        <section class="panel schools-panel">
-          <header><div><h2>Établissements récents</h2><p>Dernières souscriptions et activités</p></div><button class="link-button" (click)="activeView.set('schools')">Voir tous →</button></header>
-          <div class="school-table">
-            <div class="table-head"><span>ÉTABLISSEMENT</span><span>OFFRE</span><span>APPRENANTS</span><span>MONTANT / MOIS</span><span>STATUT</span><span></span></div>
-            @for (school of schools; track school.name) {
-              <div class="table-row">
-                <span class="school-name"><i [style.background]="school.color">{{ school.initials }}</i><b>{{ school.name }}<small>{{ school.city }}</small></b></span>
-                <span>{{ school.plan }}</span><span>{{ school.students }}</span><strong>{{ school.amount | number }} F</strong>
-                <span><em class="status" [class.trial]="school.status === 'Essai'" [class.late]="school.status === 'À relancer'">{{ school.status }}</em></span><button>more_horiz</button>
-              </div>
-            }
-          </div>
-        </section>
-      }
-
-      @if (activeView() === 'pricing') {
-        <div class="page-title">
-          <div><small>CATALOGUE COMMERCIAL</small><h1>Tarification modulaire</h1><p>Définissez un prix clair pour chaque capacité activable.</p></div>
-          <button class="primary-action"><i>add</i>Nouvelle fonctionnalité</button>
-        </div>
-        <div class="pricing-callout"><span>lightbulb</span><div><strong>Une tarification juste et prévisible</strong><p>Chaque fonctionnalité est tarifée séparément, par type d’établissement. Le site web complet est lui aussi une fonctionnalité.</p></div><button>Configurer les essais</button></div>
-        <nav class="catalogue-type-tabs" aria-label="Filtrer les fonctionnalités par type d’établissement">
-          @for (type of catalogueTypes(); track type.id) {
-            <button type="button" [class.active]="catalogueTypeActif() === type.code" (click)="catalogueTypeActif.set(type.code)">{{ type.libelle }}</button>
-          }
-        </nav>
-        <section class="panel module-panel">
-          <header><div><h2>Fonctionnalités commercialisées</h2><p>{{ fonctionnalitesFiltrees().length }} fonctionnalité(s) pour ce type d’établissement</p></div><div class="table-filter">search&nbsp;&nbsp; Rechercher</div></header>
-          <div class="module-grid">
-            @for (module of fonctionnalitesFiltrees(); track module.id) {
-              <article>
-                <div class="module-top"><span>{{ module.fonctionnalite.slice(0,1) }}</span><em [class.off]="!module.actif">{{ module.actif ? 'Commercialisée' : 'Désactivée' }}</em></div>
-                <small>{{ module.type_etablissement }}</small><h3>{{ module.fonctionnalite }}</h3>
-                <label class="module-price"><input type="number" min="0" [(ngModel)]="module.prix_mensuel" /><span>F CFA / mois</span></label>
-                <footer><label class="catalogue-switch"><input type="checkbox" [(ngModel)]="module.actif" /><span>Disponible</span></label><button [disabled]="tarificationEnCours() === module.id" (click)="enregistrerTarification(module)">{{ tarificationEnCours() === module.id ? 'Enregistrement…' : 'Enregistrer' }}</button></footer>
-              </article>
-            } @empty {
-              <div class="empty-catalogue"><i>inventory_2</i><strong>Aucune fonctionnalité développée</strong><p>Ce type d’établissement reste visible dans le catalogue. Ses fonctionnalités seront ajoutées au fur et à mesure du développement métier.</p></div>
-            }
-          </div>
-        </section>
-      }
-
-      @if (activeView() === 'academic-years') {
-        <div class="page-title">
-          <div><small>RÉFÉRENTIEL CENTRAL</small><h1>Années scolaires</h1><p>Créez les années disponibles pour tous les instituts. Chaque établissement définira ensuite ses propres dates.</p></div>
-          <button class="primary-action" type="button" (click)="nouvelleAnneeScolaire()"><i>add</i>Nouvelle année</button>
-        </div>
-        @if (erreur()) { <p class="request-error">{{ erreur() }}</p> }
-        <section class="academic-years-explainer"><i>account_tree</i><div><strong>Un référentiel, des calendriers indépendants</strong><p>Le back-office central publie le libellé de l’année. Les instituts conservent la maîtrise des dates de début et de fin pour chacun de leurs établissements.</p></div></section>
-        @if (anneeScolaireEnEdition(); as annee) {
-          <section class="panel academic-year-editor">
-            <header><div><h2>{{ annee.id ? 'Modifier l’année scolaire' : 'Créer une année scolaire' }}</h2><p>Le libellé sera proposé dans les paramètres des établissements.</p></div><button type="button" (click)="annulerEditionAnneeScolaire()" aria-label="Fermer"><i>close</i></button></header>
-            <div class="academic-year-form"><label><span>Libellé <b>*</b></span><input [(ngModel)]="annee.libelle" placeholder="Ex. 2027–2028" /></label><label><span>Statut</span><select [(ngModel)]="annee.statut"><option value="ouverte">Ouverte</option><option value="archivee">Archivée</option></select></label><label class="academic-year-current"><input type="checkbox" [(ngModel)]="annee.est_courante" [disabled]="annee.statut === 'archivee'" /><span>Année scolaire courante</span></label></div>
-            <footer><span>Une année archivée reste visible dans les historiques mais ne peut plus être configurée par les établissements.</span><div><button type="button" (click)="annulerEditionAnneeScolaire()">Annuler</button><button type="button" class="primary-action" [disabled]="enregistrementAnneeScolaire()" (click)="enregistrerAnneeScolaire()"><i>save</i>{{ enregistrementAnneeScolaire() ? 'Enregistrement…' : 'Enregistrer' }}</button></div></footer>
-          </section>
-        }
-        <section class="panel academic-years-panel">
-          <header><div><h2>Années publiées</h2><p>{{ anneesScolaires().length }} année(s) disponibles dans la plateforme</p></div></header>
-          <div class="academic-years-head"><span>ANNÉE SCOLAIRE</span><span>STATUT</span><span>RÉFÉRENCE</span><span></span></div>
-          @for (annee of anneesScolaires(); track annee.id) {
-            <article class="academic-year-row"><div><i>calendar_month</i><strong>{{ annee.libelle }}</strong></div><em [class.archived]="annee.statut === 'archivee'">{{ annee.statut === 'ouverte' ? 'Ouverte' : 'Archivée' }}</em><span>{{ annee.est_courante ? 'Année courante' : 'Historique / à venir' }}</span><button type="button" (click)="modifierAnneeScolaire(annee)"><i>edit</i>Modifier</button></article>
-          } @empty { <p class="empty-state">Aucune année scolaire n’est encore publiée.</p> }
-        </section>
-      }
-
-      @if (activeView() === 'schools') {
-        <div class="page-title">
-          <div><small>PORTEFEUILLE CLIENTS</small><h1>Établissements</h1><p>Gérez les souscriptions et accédez aux espaces clients.</p></div>
-          <button class="primary-action"><i>add</i>Nouvel établissement</button>
-        </div>
-        <section class="panel school-list-panel">
-          <header><div class="segmented"><button class="active">Tous <b>38</b></button><button>Actifs <b>29</b></button><button>En essai <b>7</b></button><button>À relancer <b>2</b></button></div><div class="table-filter">search&nbsp;&nbsp; Rechercher</div></header>
-          @for (school of schools; track school.name) {
-            <article class="client-card">
-              <span class="client-logo" [style.background]="school.color">{{ school.initials }}</span>
-              <div><h3>{{ school.name }}</h3><p>{{ school.city }} · {{ school.students }} apprenants</p></div>
-              <div><small>SOUSCRIPTION</small><strong>{{ school.plan }}</strong></div>
-              <div><small>MENSUALITÉ</small><strong>{{ school.amount | number }} F</strong></div>
-              <em class="status" [class.trial]="school.status === 'Essai'" [class.late]="school.status === 'À relancer'">{{ school.status }}</em>
-              <a routerLink="/institut">Ouvrir l’espace <span>→</span></a>
-            </article>
-          }
-        </section>
-      }
-
-      @if (activeView() === 'adhesions') {
-        <div class="page-title">
-          <div><small>DEMANDES PUBLIQUES</small><h1>Adhésions</h1><p>Étudiez une demande puis créez l’institut, sa base isolée et son administrateur.</p></div>
-          <button class="primary-action" (click)="chargerDonnees()"><i>refresh</i>Actualiser</button>
-        </div>
-        @if (erreur()) { <p class="request-error">{{ erreur() }}</p> }
-        <section class="panel requests-panel">
-          @if (demandes().length === 0) { <p class="empty-state">Aucune demande d’adhésion pour le moment.</p> }
-          @for (demande of demandes(); track demande.id) {
-            <article class="request-row">
-              <span class="client-logo">{{ demande.nom_institut.slice(0, 1) }}</span>
-              <div><h3>{{ demande.nom_institut }}</h3><p>{{ demande.ville || 'Ville non précisée' }} · {{ demande.effectif_estime || '—' }} apprenants estimés</p></div>
-              <div><small>RESPONSABLE</small><strong>{{ demande.prenom_responsable }} {{ demande.nom_responsable }}</strong><p>{{ demande.email_responsable }}</p></div>
-              <div><small>ÉTABLISSEMENTS</small><strong>{{ demande.types_etablissements?.join(', ') || 'À préciser' }}</strong></div>
-              <em class="status" [class.trial]="demande.statut === 'soumise'">{{ demande.statut }}</em>
-              <button class="approve" [disabled]="demande.statut !== 'soumise' || traitementId() === demande.id" (click)="approuver(demande)">{{ traitementId() === demande.id ? 'Provisionnement…' : 'Approuver' }}</button>
-            </article>
-          }
-        </section>
-      }
-    </main>
-    <footer class="shell-footer">
-      <div>
-        <span class="footer-mark">E</span>
-        <p><strong>E‑Scolarité</strong><small>Une solution Daara Tech</small></p>
+<section class="content saas-workspace">
+  <div class="content-block">
+    <div class="saas-breadcrumb" aria-label="Fil d’Ariane">
+      <a routerLink="/saas/tableau-de-bord" aria-label="Accueil"><mat-icon>home</mat-icon></a>
+      <mat-icon>chevron_right</mat-icon>
+      <span>{{ pageTitle() }}</span>
+    </div>
+    <header class="saas-page-heading">
+      <div class="saas-page-heading-copy">
+        <span>ADMINISTRATION SAAS</span>
+        <h1>{{ pageTitle() }}</h1>
+        <p>Administration de la plateforme E-Scolarité</p>
       </div>
-      <nav aria-label="Liens du pied de page">
-        <a href="#">Centre d’aide</a>
-        <a href="#">Confidentialité</a>
-        <a href="#">Conditions d’utilisation</a>
+      <button mat-stroked-button type="button" (click)="chargerDonnees()">
+        <mat-icon>refresh</mat-icon><span>Actualiser</span>
+      </button>
+    </header>
+    @if (erreur()) { <div class="saas-message" role="alert"><mat-icon>error_outline</mat-icon>{{ erreur() }}</div> }
+
+    @if (activeView() === 'dashboard') {
+      <div class="saas-stat-grid">
+        <article class="card saas-stat"><mat-icon>apartment</mat-icon><div><span>Instituts actifs</span><strong>{{ metrics().instituts_actifs }}</strong></div></article>
+        <article class="card saas-stat"><mat-icon>how_to_reg</mat-icon><div><span>Adhésions en attente</span><strong>{{ metrics().adhesions_en_attente }}</strong></div></article>
+        <article class="card saas-stat"><mat-icon>hourglass_top</mat-icon><div><span>Essais en cours</span><strong>{{ metrics().essais_en_cours }}</strong></div></article>
+        <article class="card saas-stat"><mat-icon>payments</mat-icon><div><span>Revenu mensuel · F CFA</span><strong>{{ metrics().revenu_mensuel | number }}</strong></div></article>
+      </div>
+      <div class="saas-shortcuts">
+        <button class="card" (click)="setView('adhesions')"><mat-icon>domain_add</mat-icon><h2>Accompagner les nouveaux instituts</h2><p>Consultez les demandes et préparez leurs espaces.</p><span>Voir les adhésions <mat-icon>arrow_forward</mat-icon></span></button>
+        <button class="card" (click)="setView('pricing')"><mat-icon>tune</mat-icon><h2>Construire vos offres</h2><p>Gérez les tarifs des fonctionnalités et vos packages.</p><span>Gérer la tarification <mat-icon>arrow_forward</mat-icon></span></button>
+      </div>
+    }
+
+    @if (activeView() === 'subscription-invoices') {
+      <div class="card saas-filter-bar"><div><h2>Factures de souscription</h2><p>Confirmez le règlement d’une facture terminée ; l’institut pourra alors souscrire une nouvelle offre.</p></div></div>
+      <app-master-table title="Factures à contrôler" [dataSource]="facturesSouscriptionsSource" [columnDefinitions]="facturesSouscriptionsColumns" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showStatusToggle]="true" [showContextMenu]="false" [showBulkDelete]="false" (statusToggle)="reglerFactureSouscription($event)" (refresh)="chargerDonnees()" />
+    }
+
+    @if (activeView() === 'subscription-history') {
+      <div class="card saas-filter-bar"><div><h2>Historique des abonnements</h2><p>Retrouvez les offres souscrites, leurs périodes, montants et états de paiement.</p></div></div>
+      <app-master-table title="Tous les abonnements" [dataSource]="abonnementsSource" [columnDefinitions]="abonnementsColumns" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showContextMenu]="false" [showBulkDelete]="false" (refresh)="chargerDonnees()" />
+    }
+
+    @if (activeView() === 'pricing') {
+      <nav class="saas-tabs" aria-label="Catalogue commercial">
+        <button mat-flat-button [color]="pricingTab() === 'features' ? 'primary' : undefined" (click)="pricingTab.set('features')"><mat-icon>widgets</mat-icon>Fonctionnalités</button>
+        <button mat-flat-button [color]="pricingTab() === 'packages' ? 'primary' : undefined" (click)="pricingTab.set('packages')"><mat-icon>inventory_2</mat-icon>Packages</button>
       </nav>
-      <span class="service-status"><i></i>Tous les services sont opérationnels</span>
-      <small>© 2026 Daara Tech</small>
-    </footer>
+      @if (pricingTab() === 'features') {
+        <div class="card saas-filter-bar">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Type d’établissement</mat-label><mat-select [ngModel]="catalogueTypeActif()" (ngModelChange)="catalogueTypeActif.set($event)">@for (type of catalogueTypes(); track type.id) {<mat-option [value]="type.code">{{ type.libelle }}</mat-option>}</mat-select></mat-form-field>
+          <p>Un tarif par fonctionnalité, adapté à chaque type d’établissement. Tous les montants sont en F CFA.</p>
+        </div>
+        @if (tarifEnEdition(); as tarif) {
+          <form class="card saas-editor" (ngSubmit)="enregistrerTarification(tarif)">
+            <h2>{{ tarif.fonctionnalite }}</h2><p>{{ tarif.type_etablissement }}</p>
+            <div class="saas-form-grid">
+              <mat-form-field appearance="outline"><mat-label>Prix par jour</mat-label><input matInput type="number" min="0" required name="jour" [(ngModel)]="tarif.prix_unitaire_jour" /><span matTextSuffix>F CFA</span></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Prix par élève</mat-label><input matInput type="number" min="0" required name="eleve" [(ngModel)]="tarif.prix_unitaire_eleve" /><span matTextSuffix>F CFA</span></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Prix par enseignant / personnel</mat-label><input matInput type="number" min="0" required name="personnel" [(ngModel)]="tarif.prix_unitaire_personnel" /><span matTextSuffix>F CFA</span></mat-form-field>
+            </div>
+            <mat-checkbox name="actif" [(ngModel)]="tarif.actif">Fonctionnalité commercialisée</mat-checkbox>
+            <div class="saas-form-actions"><button mat-stroked-button type="button" (click)="tarifEnEdition.set(null)">Annuler</button><button mat-flat-button color="primary" type="submit" [disabled]="!!tarificationEnCours()"><mat-icon>save</mat-icon>{{ tarificationEnCours() ? 'Enregistrement…' : 'Enregistrer' }}</button></div>
+          </form>
+        }
+        <app-master-table title="Tarifs des fonctionnalités" [dataSource]="tarifsSource" [columnDefinitions]="tarifsColumns" [showCheckbox]="false" [showAdd]="false" [showDelete]="false" [showContextMenu]="false" [showBulkDelete]="false" (edit)="modifierTarif($event)" (refresh)="chargerDonnees()" />
+      } @else {
+        <div class="card saas-filter-bar"><div><h2>Des offres pour un ou plusieurs types d’établissement</h2><p>Choisissez les fonctionnalités incluses, la durée d’accès et le prix par élève et collaborateur.</p></div><button mat-flat-button color="primary" (click)="nouveauPackage()"><mat-icon>add</mat-icon>Nouveau package</button></div>
+        @if (packageEnEdition(); as package) {
+          <form class="card saas-editor" (ngSubmit)="enregistrerPackage()">
+            <h2>{{ package.id ? 'Modifier le package' : 'Nouveau package' }}</h2>
+            <div class="saas-form-grid">
+              <mat-form-field appearance="outline"><mat-label>Code</mat-label><input matInput name="code" required [(ngModel)]="package.code" /></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Nom du package</mat-label><input matInput name="nom" required [(ngModel)]="package.libelle" /></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Durée d’accès (jours)</mat-label><input matInput name="duree" type="number" min="1" required [(ngModel)]="package.duree_jours" /></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Prix par élève</mat-label><input matInput name="prixEleve" type="number" min="0" required [(ngModel)]="package.prix_unitaire_eleve" /><span matTextSuffix>F CFA</span></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Prix par enseignant / personnel</mat-label><input matInput name="prixPersonnel" type="number" min="0" required [(ngModel)]="package.prix_unitaire_personnel" /><span matTextSuffix>F CFA</span></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Description</mat-label><input matInput name="description" [(ngModel)]="package.description" /></mat-form-field>
+            </div>
+            <fieldset class="saas-choices"><legend>Types d’établissement</legend><div>@for (type of catalogueTypes(); track type.id) {<mat-checkbox [checked]="package.type_etablissement_ids.includes(type.id)" (change)="basculerTypePackage(type.id)">{{ type.libelle }}</mat-checkbox>}</div></fieldset>
+            <fieldset class="saas-choices saas-feature-choices">
+              <legend>Fonctionnalités incluses</legend>
+              <p class="saas-choice-help">Les fonctionnalités sont affichées selon les types d’établissement cochés. Une fonctionnalité commune est incluse dans chacun des types où elle est disponible.</p>
+              <div class="saas-feature-groups">
+                @for (group of fonctionnalitesPackageParType(); track group.type.id) {
+                  <section class="saas-feature-group">
+                    <header>
+                      <span><mat-icon>account_balance</mat-icon></span>
+                      <div><h3>{{ group.type.libelle }}</h3><p>{{ group.fonctionnalites.length }} fonctionnalité(s) disponible(s)</p></div>
+                    </header>
+                    <div>
+                      @for (feature of group.fonctionnalites; track feature.id) {
+                        <mat-checkbox
+                          [checked]="fonctionnalitePackageSelectionnee(feature.code)"
+                          [disabled]="!feature.actif"
+                          (change)="basculerFonctionnalitePackage(feature.id)">
+                          <span>{{ feature.fonctionnalite }}</span>
+                          @if (!feature.actif) {<small>Non commercialisée</small>}
+                        </mat-checkbox>
+                      } @empty {
+                        <p class="saas-empty-features">Aucune fonctionnalité développée pour ce type d’établissement.</p>
+                      }
+                    </div>
+                  </section>
+                } @empty {
+                  <p class="saas-empty-features">Sélectionnez au moins un type d’établissement pour afficher ses fonctionnalités.</p>
+                }
+              </div>
+            </fieldset>
+            <mat-checkbox name="actif" [(ngModel)]="package.actif">Package commercialisé</mat-checkbox>
+            <div class="saas-form-actions"><button mat-stroked-button type="button" (click)="packageEnEdition.set(null)">Annuler</button><button mat-flat-button color="primary" type="submit" [disabled]="packageEnregistrement()"><mat-icon>save</mat-icon>{{ packageEnregistrement() ? 'Enregistrement…' : 'Enregistrer le package' }}</button></div>
+          </form>
+        }
+        <app-master-table title="Packages" [dataSource]="packagesSource" [columnDefinitions]="packagesColumns" [showCheckbox]="false" [showDelete]="false" [showContextMenu]="false" [showBulkDelete]="false" (add)="nouveauPackage()" (edit)="modifierPackage($event)" (refresh)="chargerDonnees()" />
+      }
+    }
+
+    @if (activeView() === 'academic-years') {
+      @if (anneeScolaireEnEdition(); as annee) {
+        <form class="card saas-editor" (ngSubmit)="enregistrerAnneeScolaire()">
+          <h2>{{ annee.id ? 'Modifier l’année scolaire' : 'Nouvelle année scolaire' }}</h2>
+          <div class="saas-form-grid">
+            <mat-form-field appearance="outline"><mat-label>Année scolaire</mat-label><input matInput name="annee" required [(ngModel)]="annee.libelle" placeholder="2026–2027" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Statut</mat-label><mat-select name="statut" [(ngModel)]="annee.statut"><mat-option value="ouverte">Ouverte</mat-option><mat-option value="archivee">Archivée</mat-option></mat-select></mat-form-field>
+            <mat-checkbox name="courante" [(ngModel)]="annee.est_courante" [disabled]="annee.statut === 'archivee'">Année courante</mat-checkbox>
+          </div>
+          <p>Chaque établissement définit ses propres dates de début et de fin.</p>
+          <div class="saas-form-actions"><button mat-stroked-button type="button" (click)="annulerEditionAnneeScolaire()">Annuler</button><button mat-flat-button color="primary" type="submit" [disabled]="enregistrementAnneeScolaire()"><mat-icon>save</mat-icon>Enregistrer</button></div>
+        </form>
+      }
+      <app-master-table title="Années scolaires publiées" [dataSource]="anneesSource" [columnDefinitions]="anneesColumns" [showCheckbox]="false" [showDelete]="false" [showContextMenu]="false" [showBulkDelete]="false" (add)="nouvelleAnneeScolaire()" (edit)="modifierAnneeScolaire($event)" (refresh)="chargerDonnees()" />
+    }
+
+    @if (activeView() === 'adhesions') {
+      @if (demandeEnDetail(); as demande) {
+        <article class="card saas-editor">
+          <h2>{{ demande.nom_institut }}</h2>
+          <dl class="saas-detail-grid"><div><dt>Responsable</dt><dd>{{ demande.prenom_responsable }} {{ demande.nom_responsable }}</dd></div><div><dt>E-mail</dt><dd>{{ demande.email_responsable }}</dd></div><div><dt>Types d’établissement</dt><dd>{{ demande.types_etablissements?.join(', ') }}</dd></div><div><dt>Statut</dt><dd>{{ demande.statut }}</dd></div></dl>
+          <div class="saas-form-actions"><button mat-stroked-button (click)="demandeEnDetail.set(null)">Fermer</button>@if (demande.statut === 'soumise') {<button mat-flat-button color="primary" [disabled]="!!traitementId()" (click)="approuver(demande)"><mat-icon>check</mat-icon>{{ traitementId() ? 'Provisionnement…' : 'Approuver la demande' }}</button>}</div>
+        </article>
+      }
+      <app-master-table title="Demandes reçues" [dataSource]="demandesSource" [columnDefinitions]="demandesColumns" [showCheckbox]="false" [showAdd]="false" [showDelete]="false" [showEdit]="false" [showDetails]="true" [showContextMenu]="false" [showBulkDelete]="false" (details)="demandeEnDetail.set($event)" (rowClick)="demandeEnDetail.set($event)" (refresh)="chargerDonnees()" />
+    }
+
+    @if (activeView() === 'schools') {
+      @if (institutEnDetail(); as detail) {
+        <article class="card saas-editor">
+          <h2>{{ detail.institut.nom }}</h2><p>Situation commerciale et historique des abonnements de l’institut.</p>
+          @if (detail.abonnement_actuel; as abonnement) {
+            <div class="saas-detail-grid"><div><dt>Offre actuelle</dt><dd>{{ abonnement.offre }}</dd></div><div><dt>État</dt><dd>{{ abonnement.etat_abonnement }}</dd></div><div><dt>Paiement</dt><dd>{{ abonnement.etat_paiement }}</dd></div><div><dt>Période</dt><dd>{{ abonnement.date_debut | date }} · {{ abonnement.date_fin | date }}</dd></div></div>
+            <app-master-table title="Historique de cet institut" [dataSource]="detailAbonnementsSource" [columnDefinitions]="abonnementsColumns" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showContextMenu]="false" [showBulkDelete]="false" />
+          } @else { <p>Aucun abonnement n’a encore été enregistré pour cet institut.</p> }
+          <div class="saas-form-actions"><button mat-stroked-button type="button" (click)="institutEnDetail.set(null)">Fermer</button></div>
+        </article>
+      }
+      <div class="card saas-filter-bar"><div><h2>Établissements</h2><p>Suivez l’abonnement actuellement utilisé par chaque institut.</p></div></div>
+      <app-master-table title="Instituts" [dataSource]="etablissementsSource" [columnDefinitions]="etablissementsColumns" [showCheckbox]="false" [showAdd]="false" [showDelete]="false" [showEdit]="false" [showDetails]="true" [showContextMenu]="false" [showBulkDelete]="false" (details)="ouvrirDetailInstitut($event)" (rowClick)="ouvrirDetailInstitut($event)" (refresh)="chargerDonnees()" />
+    }
   </div>
-</div>
+  @if (factureARegler(); as facture) {
+    <div class="saas-confirm-backdrop" (click)="factureARegler.set(null)">
+      <section class="saas-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-payment-title" (click)="$event.stopPropagation()">
+        <mat-icon>payments</mat-icon><h2 id="confirm-payment-title">Confirmer le règlement ?</h2>
+        <p>Confirmez-vous que la facture <strong>{{ facture.numero }}</strong> de {{ facture.montant_ttc | number }} F CFA a bien été réglée ? Cette action autorisera une nouvelle souscription pour l’institut.</p>
+        <div><button mat-stroked-button type="button" (click)="factureARegler.set(null)" [disabled]="reglementFactureEnCours()">Annuler</button><button mat-flat-button color="primary" type="button" (click)="confirmerReglementFacture()" [disabled]="reglementFactureEnCours()"><mat-icon>{{ reglementFactureEnCours() ? 'progress_activity' : 'check_circle' }}</mat-icon>{{ reglementFactureEnCours() ? 'Confirmation…' : 'Confirmer le règlement' }}</button></div>
+      </section>
+    </div>
+  }
+  <footer class="saas-footer"><span>E-Scolarité · Administration de la plateforme</span><span>© 2026 Daara Tech</span></footer>
+</section>

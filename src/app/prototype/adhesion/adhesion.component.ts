@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ReactiveFormsModule, Validators, NonNullableFormBuilder } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CentralApiService } from '../central-api.service';
+import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
 
 @Component({
   selector: 'app-adhesion',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PlatformLanguageSwitcherComponent],
   templateUrl: './adhesion.component.html',
   styleUrl: './adhesion.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

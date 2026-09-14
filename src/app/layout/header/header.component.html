@@ -17,7 +17,7 @@
           </button>
         </li>
         <!-- Spotlight Standalone Search Bar Component -->
-        @if (!isEstablishmentWorkspace && !isInstituteWorkspace) {
+        @if (!isEstablishmentWorkspace && !isInstituteWorkspace && !isSaasWorkspace) {
         <li class="ms-4 search-bar-list-item">
           <app-search-bar></app-search-bar>
         </li>
@@ -84,6 +84,14 @@
               }
             </select>
           </label>
+        </div>
+      </div>
+      }
+      @if (isSaasWorkspace) {
+      <div class="workspace-nav-controls institute-nav-controls">
+        <div class="workspace-campus-switcher institute-context-switcher">
+          <i class="material-icons-outlined">admin_panel_settings</i>
+          <span><small>E-Scolarité</small><strong>Administration de la plateforme</strong></span>
         </div>
       </div>
       }

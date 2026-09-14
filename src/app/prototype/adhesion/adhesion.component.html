@@ -1,14 +1,14 @@
 <main class="adhesion-page">
   <div class="adhesion-topbar">
     <a routerLink="/" class="adhesion-brand"><span>E</span><b>E‑Scolarité</b></a>
-    <p>Vous avez déjà un espace ? <a routerLink="/connexion">Connexion</a></p>
+    <nav><a routerLink="/">Accueil</a><span>Vous avez déjà un espace ?</span><a class="adhesion-login" routerLink="/connexion">Connexion</a><app-platform-language-switcher /></nav>
   </div>
 
   <div class="adhesion-shell">
     <aside class="onboarding-panel">
       <div class="panel-badge"><i>school</i> POUR LES ÉTABLISSEMENTS</div>
-      <h1>Votre école mérite un espace à son image.</h1>
-      <p>Partagez les informations essentielles. Nous créons ensuite un environnement sécurisé, adapté à votre institut.</p>
+      <h1>Votre institut mérite un espace à son image.</h1>
+      <p>Présentez-nous votre organisation. Nous préparons ensuite un environnement sécurisé, adapté à vos établissements et campus.</p>
 
       <div class="benefits">
         <div><i>database</i><span><b>Une base isolée</b><small>Les données de votre institut restent séparées.</small></span></div>
@@ -27,28 +27,57 @@
       <div class="form-section">
         <h3><i>apartment</i> Informations de l’institut</h3>
         <div class="form-grid two-columns">
-          <label>Nom de l’institut <em>*</em><input formControlName="nom_institut" placeholder="Ex. Institut Les Pédagogues" /></label>
-          <label>Ville<input formControlName="ville" placeholder="Ex. Dakar" /></label>
+          <label class="field-control">
+            <span class="field-caption">Nom de l’institut <em class="required-marker">*</em></span>
+            <span class="field-input"><i aria-hidden="true">account_balance</i><input formControlName="nom_institut" placeholder="Ex. Institut Les Pédagogues" /></span>
+          </label>
+          <label class="field-control">
+            <span class="field-caption">Ville</span>
+            <span class="field-input"><i aria-hidden="true">location_city</i><input formControlName="ville" placeholder="Ex. Dakar" /></span>
+          </label>
         </div>
-        <label>Adresse<input formControlName="adresse" placeholder="Quartier, rue ou repère" /></label>
-        <div class="field-label">Types d’établissement concernés</div>
-        <div class="types">@for (type of types; track type) { <button type="button" [class.active]="typesSelectionnes().includes(type)" (click)="basculerType(type)">{{ type }}</button> }</div>
+        <label class="field-control full-width">
+          <span class="field-caption">Adresse</span>
+          <span class="field-input"><i aria-hidden="true">location_on</i><input formControlName="adresse" placeholder="Quartier, rue ou repère" /></span>
+        </label>
+        <div class="types-group">
+          <div class="field-caption"><i aria-hidden="true">school</i> Types d’établissement concernés</div>
+          <div class="types">@for (type of types; track type) { <button type="button" [class.active]="typesSelectionnes().includes(type)" (click)="basculerType(type)"><i aria-hidden="true">{{ typesSelectionnes().includes(type) ? 'check_circle' : 'add_circle_outline' }}</i>{{ type }}</button> }</div>
+        </div>
       </div>
 
       <div class="form-section">
         <h3><i>person</i> Responsable du projet</h3>
         <div class="form-grid two-columns">
-          <label>Prénom <em>*</em><input formControlName="prenom_responsable" /></label>
-          <label>Nom <em>*</em><input formControlName="nom_responsable" /></label>
-          <label>E-mail <em>*</em><input type="email" formControlName="email_responsable" placeholder="nom@ecole.sn" /></label>
-          <label>Téléphone <em>*</em><input formControlName="telephone_responsable" placeholder="77 000 00 00" /></label>
+          <label class="field-control">
+            <span class="field-caption">Prénom <em class="required-marker">*</em></span>
+            <span class="field-input"><i aria-hidden="true">person</i><input formControlName="prenom_responsable" /></span>
+          </label>
+          <label class="field-control">
+            <span class="field-caption">Nom <em class="required-marker">*</em></span>
+            <span class="field-input"><i aria-hidden="true">badge</i><input formControlName="nom_responsable" /></span>
+          </label>
+          <label class="field-control">
+            <span class="field-caption">E-mail <em class="required-marker">*</em></span>
+            <span class="field-input"><i aria-hidden="true">mail</i><input type="email" formControlName="email_responsable" placeholder="nom@ecole.sn" /></span>
+          </label>
+          <label class="field-control">
+            <span class="field-caption">Téléphone <em class="required-marker">*</em></span>
+            <span class="field-input"><i aria-hidden="true">phone</i><input formControlName="telephone_responsable" placeholder="77 000 00 00" /></span>
+          </label>
         </div>
       </div>
 
       <div class="form-section compact-section">
         <div class="form-grid two-columns">
-          <label>Effectif estimé<input type="number" min="1" formControlName="effectif_estime" placeholder="Ex. 350" /></label>
-          <label>Un besoin particulier ?<textarea rows="2" formControlName="message" placeholder="Ex. plusieurs campus, primaire et collège…"></textarea></label>
+          <label class="field-control">
+            <span class="field-caption">Effectif estimé</span>
+            <span class="field-input"><i aria-hidden="true">groups</i><input type="number" min="1" formControlName="effectif_estime" placeholder="Ex. 350" /></span>
+          </label>
+          <label class="field-control">
+            <span class="field-caption">Un besoin particulier ?</span>
+            <span class="field-input textarea-input"><i aria-hidden="true">chat_bubble_outline</i><textarea rows="2" formControlName="message" placeholder="Ex. plusieurs campus, primaire et collège…"></textarea></span>
+          </label>
         </div>
       </div>
 

@@ -84,6 +84,7 @@ export class HeaderComponent
   isFullScreen = false;
   isEstablishmentWorkspace = false;
   isInstituteWorkspace = false;
+  isSaasWorkspace = false;
   workspaceUserName = '';
   workspaceInstituteName = '';
 
@@ -166,6 +167,7 @@ export class HeaderComponent
 
   private syncWorkspaceContext(userRole: Role): void {
     const path = this.router.url.split('?')[0].split('#')[0];
+    this.isSaasWorkspace = path === '/saas' || path.startsWith('/saas/');
     this.isEstablishmentWorkspace = path.startsWith('/institut/etablissements/');
     this.isInstituteWorkspace = path.startsWith('/institut')
       && !this.isEstablishmentWorkspace
@@ -175,7 +177,9 @@ export class HeaderComponent
     // métier lors de chaque NavigationEnd.
     this.actualiserProfilEspace();
 
-    if (this.isEstablishmentWorkspace || this.isInstituteWorkspace) {
+    if (this.isSaasWorkspace) {
+      this.homePage = '/saas';
+    } else if (this.isEstablishmentWorkspace || this.isInstituteWorkspace) {
       this.homePage = '/institut';
     } else if (userRole === Role.Admin) {
       this.homePage = 'admin/dashboard/main';
@@ -193,7 +197,7 @@ export class HeaderComponent
     const institut = this.centralApi.institutActuel();
     this.workspaceUserName = user ? `${user.prenom} ${user.nom}`.trim() : '';
     this.workspaceInstituteName = institut?.nom ?? '';
-    if (this.workspaceUserName && (this.isInstituteWorkspace || this.isEstablishmentWorkspace)) {
+    if (this.workspaceUserName && (this.isInstituteWorkspace || this.isEstablishmentWorkspace || this.isSaasWorkspace)) {
       this.userImg = './assets/images/user/admin.jpg';
     }
   }
@@ -276,6 +280,14 @@ export class HeaderComponent
   }
 
   logout() {
+    if (this.isSaasWorkspace || this.isInstituteWorkspace || this.isEstablishmentWorkspace) {
+      const finish = () => {
+        this.centralApi.effacerSession();
+        void this.router.navigateByUrl('/connexion');
+      };
+      this.subs.sink = this.centralApi.deconnexion().subscribe({ next: finish, error: finish });
+      return;
+    }
     this.subs.sink = this.authService.logout().subscribe((res) => {
       if (!res.success) {
         this.router.navigate(['/authentication/signin']);

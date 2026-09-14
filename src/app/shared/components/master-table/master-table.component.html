@@ -63,9 +63,25 @@
           }
 
           @for (column of columnDefinitions(); track column) {
-          <!-- Skip rendering if column.type is "check" or "actionBtn" -->
-          @if (column.type === 'check' || column.type === 'actionBtn') {
-          <!-- Skip this column -->
+          @if (column.def === 'select' && showCheckbox()) {
+          <!-- La colonne de sélection est rendue une seule fois ci-dessus. -->
+          } @else if (column.type === 'check') {
+          <ng-container [matColumnDef]="column.def">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>
+              <span class="truncate-text">{{ column.label }}</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
+              <span class="mobile-label">{{ column.label }}:</span>
+              <span class="table-boolean-status" [class.is-active]="row[column.def]">
+                <mat-icon class="material-icons-outlined">
+                  {{ row[column.def] ? 'check_circle' : 'cancel' }}
+                </mat-icon>
+                {{ row[column.def] ? 'Oui' : 'Non' }}
+              </span>
+            </mat-cell>
+          </ng-container>
+          } @else if (column.type === 'actionBtn') {
+          <!-- La colonne d’actions commune est déclarée après les colonnes dynamiques. -->
           } @else {
           @if (column.type === 'nameWithImage') {
           <ng-container [matColumnDef]="column.def">

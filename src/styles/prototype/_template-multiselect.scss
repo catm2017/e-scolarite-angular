@@ -1,0 +1,104 @@
+/* Sélecteur multiple réutilisable, inspiré des champs Select2 du template. */
+.template-select2-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 1px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.template-select2 {
+  position: relative;
+  width: 100%;
+  font-family: Inter, Poppins, Arial, sans-serif;
+}
+
+.template-select2__trigger {
+  width: 100%;
+  min-height: 46px;
+  padding: 6px 10px 6px 12px;
+  border: 1px solid #d7e3ec;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  background: #fff;
+  color: #365269;
+  box-shadow: 0 1px 2px rgba(44, 86, 116, .02);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.template-select2[aria-expanded='true'] .template-select2__trigger,
+.template-select2__trigger:hover {
+  border-color: #72ace8;
+  background: #fbfdff;
+  box-shadow: 0 0 0 3px rgba(47, 128, 237, .10);
+}
+
+.template-select2__value {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  color: #345269;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.template-select2__placeholder { color: #8498a9; font-weight: 600; }
+.template-select2__chip { max-width: 185px; padding: 4px 7px; border-radius: 12px; overflow: hidden; background: #eaf5fd; color: #276fae; font-size: 10px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.template-select2__arrow,
+.template-select2__search i,
+.template-select2__check i { font-family: 'Material Icons'; font-style: normal; font-size: 19px; line-height: 1; }
+.template-select2__arrow { color: #6d879a; }
+
+.template-select2__panel {
+  position: absolute;
+  z-index: 1100;
+  top: calc(100% + 7px);
+  right: 0;
+  left: 0;
+  padding: 8px;
+  border: 1px solid #cbdfea;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 30px rgba(35, 75, 106, .18);
+}
+
+.template-select2__search { height: 37px; padding: 0 9px; border: 1px solid #dce7ee; border-radius: 8px; display: flex; align-items: center; gap: 6px; background: #f8fbfd; }
+.template-select2__search i { color: #6f8da4; font-size: 18px; }
+.template-select2__search input { width: 100%; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: #345269; font: 12px Inter, Poppins, Arial, sans-serif; }
+.template-select2__options { max-height: 215px; margin-top: 6px; overflow: auto; }
+.template-select2__option { width: 100%; min-height: 38px; padding: 7px 8px; border: 0; border-radius: 8px; display: flex; align-items: center; gap: 9px; background: transparent; color: #3c5970; cursor: pointer; font: 12px Inter, Poppins, Arial, sans-serif; font-weight: 650; text-align: left; }
+.template-select2__option:hover { background: #f0f8fe; }
+.template-select2__option.is-selected { background: #eaf5fd; color: #1f6fab; }
+.template-select2__option.is-disabled { color: #a5b4be; cursor: not-allowed; }
+.template-select2__check { width: 18px; height: 18px; flex: 0 0 18px; border: 1px solid #b9cfdd; border-radius: 5px; display: grid; place-items: center; background: #fff; color: #fff; }
+.template-select2__option.is-selected .template-select2__check { border-color: #2f80ed; background: #2f80ed; }
+.template-select2__check i { font-size: 14px; }
+.template-select2__empty { margin: 4px; padding: 13px; color: #7d95a7; font-size: 11px; text-align: center; }
+
+body.dark .template-select2__trigger,
+.dark .template-select2__trigger,
+body.dark .template-select2__panel,
+.dark .template-select2__panel { border-color: #47566b; background: #202c3a; color: #e3edf5; }
+body.dark .template-select2__value,
+.dark .template-select2__value { color: #e3edf5; }
+body.dark .template-select2__search,
+.dark .template-select2__search { border-color: #47566b; background: #263443; }
+body.dark .template-select2__search input,
+.dark .template-select2__search input { color: #e3edf5; }
+body.dark .template-select2__option,
+.dark .template-select2__option { color: #d4e0e9; }
+body.dark .template-select2__option:hover,
+.dark .template-select2__option:hover { background: #2b4256; }

@@ -25,7 +25,7 @@ export class AdhesionComponent {
     adresse: [''],
     prenom_responsable: ['', Validators.required],
     nom_responsable: ['', Validators.required],
-    email_responsable: ['', [Validators.required, Validators.email]],
+    identifiant_responsable: ['', Validators.required],
     telephone_responsable: ['', Validators.required],
     effectif_estime: [null as number | null],
     message: [''],

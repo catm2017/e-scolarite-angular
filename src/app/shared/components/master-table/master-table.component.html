@@ -55,7 +55,7 @@
               </mat-checkbox>
             </mat-header-cell>
             <mat-cell *matCellDef="let row">
-              <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? toggleSelection(row) : null"
+              <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? toggleSelection(row) : null" [disabled]="isRowSelectionDisabled()(row)"
                 [checked]="selection.isSelected(row)" [ngClass]="'tbl-checkbox'" color="primary">
               </mat-checkbox>
             </mat-cell>

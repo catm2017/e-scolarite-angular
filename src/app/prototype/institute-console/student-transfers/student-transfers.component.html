@@ -1,0 +1,114 @@
+<div class="page-title">
+  <div>
+    <small>MOBILITÉ DES APPRENANTS</small>
+    <h1>Transferts d’élèves</h1>
+    <p>Déplacez un dossier vers un autre campus ou type d’établissement, sans recréer l’élève ni son tuteur.</p>
+  </div>
+  <button type="button" (click)="load()" [disabled]="loading()">
+    <i>{{ loading() ? 'progress_activity' : 'refresh' }}</i>{{ loading() ? 'Actualisation…' : 'Actualiser' }}
+  </button>
+</div>
+
+<section class="transfer-principle panel">
+  <span><i>swap_horiz</i></span>
+  <div>
+    <strong>Le dossier et le tuteur restent identiques.</strong>
+    <p>L’inscription active de départ est interrompue. Dans la destination, l’élève apparaît immédiatement dans <b>Classe non définie</b>, prêt à être affecté.</p>
+  </div>
+</section>
+
+<section class="transfer-workspace panel">
+  <header>
+    <div>
+      <span>ÉTAPE 1 · DESTINATION</span>
+      <h2>Préparer le transfert</h2>
+      <p>Les établissements dont l’année scolaire n’est pas encore configurée ne peuvent pas recevoir d’élève.</p>
+    </div>
+    <em>{{ selectedStudentIds().length }} élève(s) sélectionné(s)</em>
+  </header>
+
+  <div class="transfer-selectors">
+    <label>
+      <span>Année scolaire <b>*</b></span>
+      <select [ngModel]="selectedYearId()" (ngModelChange)="changeYear($event)" [disabled]="loading()">
+        @for (year of years(); track year.id) {
+          <option [value]="year.id">{{ year.libelle }}{{ year.est_courante ? ' · En cours' : '' }}</option>
+        }
+      </select>
+    </label>
+    <i class="transfer-arrow">arrow_forward</i>
+    <label>
+      <span>Type d’établissement / espace <b>*</b></span>
+      <select [ngModel]="selectedDestinationId()" (ngModelChange)="changeDestination($event)" [disabled]="loading() || !eligibleDestinations().length">
+        @if (!eligibleDestinations().length) { <option value="">Aucune destination configurée</option> }
+        @for (destination of destinations(); track destination.id) {
+          <option [value]="destination.id" [disabled]="!destination.annee_configuree">{{ destination.type }} · {{ destination.nom }}{{ destination.annee_configuree ? '' : ' · Année à configurer' }}</option>
+        }
+      </select>
+    </label>
+    <i class="transfer-arrow">arrow_forward</i>
+    <label>
+      <span>Campus de destination <b>*</b></span>
+      <select [ngModel]="selectedCampusId()" (ngModelChange)="changeCampus($event)" [disabled]="loading() || !destinationCampuses().length">
+        @for (campus of destinationCampuses(); track campus.id) { <option [value]="campus.id">{{ campus.nom }}</option> }
+      </select>
+    </label>
+  </div>
+
+  <label class="transfer-reason">
+    <span>Motif du transfert <small>Facultatif</small></span>
+    <textarea [(ngModel)]="motif" maxlength="1000" placeholder="Ex. Déménagement de la famille vers le campus de Diamniadio."></textarea>
+  </label>
+
+  <div class="transfer-list-head">
+    <div>
+      <span>ÉTAPE 2 · ÉLÈVES</span>
+      <h3>Sélectionnez les dossiers à déplacer</h3>
+      <p>Le tuteur et les documents restent rattachés au même dossier élève.</p>
+    </div>
+    <strong>{{ rows().length }} dossier(s) disponible(s)</strong>
+  </div>
+
+  <app-master-table
+    title="Dossiers élèves de l’institut"
+    [columnDefinitions]="columns"
+    [dataSource]="dataSource"
+    [isLoading]="loading()"
+    [selectedRows]="selectedRows()"
+    exportFileName="eleves_transferables"
+    [showAdd]="false"
+    [showDelete]="false"
+    [showEdit]="false"
+    [showDetails]="false"
+    [showBulkDelete]="false"
+    [showCheckbox]="true"
+    [showContextMenu]="false"
+    [enableRowClick]="false"
+    (refresh)="load()"
+    (selectionChange)="changeSelection($event)">
+  </app-master-table>
+
+  <footer>
+    <p><i>info</i>Après validation, les élèves seront visibles dans <strong>{{ targetLabel() }}</strong>, onglet <strong>Classe non définie</strong>.</p>
+    <button type="button" class="primary-action" [disabled]="!canTransfer()" (click)="requestTransfer()">
+      <i>swap_horiz</i>Transférer les élèves sélectionnés
+    </button>
+  </footer>
+</section>
+
+@if (confirmOpen()) {
+  <div class="transfer-confirmation-backdrop" role="presentation">
+    <section class="transfer-confirmation" role="dialog" aria-modal="true" aria-labelledby="transfer-confirmation-title">
+      <span><i>swap_horiz</i></span>
+      <div>
+        <small>CONFIRMATION DU TRANSFERT</small>
+        <h2 id="transfer-confirmation-title">Transférer {{ selectedStudentIds().length }} élève(s) ?</h2>
+        <p>Leurs inscriptions de départ seront interrompues. Les dossiers et les tuteurs seront déplacés vers <strong>{{ targetLabel() }}</strong>, sans classe affectée.</p>
+      </div>
+      <footer>
+        <button type="button" (click)="confirmOpen.set(false)" [disabled]="saving()">Annuler</button>
+        <button type="button" class="primary-action" (click)="confirmTransfer()" [disabled]="saving()"><i>{{ saving() ? 'progress_activity' : 'check_circle' }}</i>{{ saving() ? 'Transfert…' : 'Confirmer le transfert' }}</button>
+      </footer>
+    </section>
+  </div>
+}

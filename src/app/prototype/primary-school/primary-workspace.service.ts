@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import {
   LanguageService,
   PlatformLocale,
@@ -77,6 +77,7 @@ const ESTABLISHMENT_BASE_PATHS: Record<EstablishmentWorkspaceType, string> = {
 };
 
 const FONCTIONNALITE_PAR_VUE: Partial<Record<PrimaryView, string>> = {
+  settings: 'gestion_parametres',
   registrations: 'gestion_eleves',
   students: 'gestion_eleves',
   guardians: 'gestion_eleves',
@@ -111,7 +112,12 @@ export class PrimaryWorkspaceService {
   private readonly api = inject(CentralApiService);
 
   readonly activeView = signal<PrimaryView>('dashboard');
-  readonly selectedCampusId = signal('keur-massar');
+  readonly selectedCampusId = signal(this.campusInitial());
+  private readonly campusSessionEffect = effect(() => {
+    const campusId = this.selectedCampusId();
+    if (!campusId) return;
+    try { localStorage.setItem('e-scolarite:campus-actif', campusId); } catch { /* stockage indisponible */ }
+  });
   readonly establishmentType = signal<EstablishmentWorkspaceType>('primary');
   readonly academicYears = signal(['2025–2026', '2026–2027', '2027–2028']);
   readonly selectedAcademicYear = signal('2026–2027');
@@ -132,6 +138,10 @@ export class PrimaryWorkspaceService {
   });
   readonly configurationChecked = computed(() => this.configurationStates()[this.establishmentType()].checked);
   readonly configurationReady = computed(() => this.configurationStates()[this.establishmentType()].ready);
+
+  private campusInitial(): string {
+    try { return localStorage.getItem('e-scolarite:campus-actif') ?? 'keur-massar'; } catch { return 'keur-massar'; }
+  }
 
   /**
    * Applique le contexte métier d'un établissement à tous les composants
@@ -155,6 +165,12 @@ export class PrimaryWorkspaceService {
   /** Synchronise le contexte depuis la route et retourne le cycle détecté. */
   synchronizeFromUrl(url: string): EstablishmentWorkspaceType | null {
     const path = url.split('?')[0].split('#')[0];
+    const query = url.includes('?') ? url.slice(url.indexOf('?') + 1).split('#')[0] : '';
+    const campusId = new URLSearchParams(query).get('campus');
+    if (campusId) {
+      this.selectedCampusId.set(campusId);
+      try { localStorage.setItem('e-scolarite:campus-actif', campusId); } catch { /* stockage indisponible */ }
+    }
     let type: EstablishmentWorkspaceType | null = null;
 
     if (path.startsWith('/institut/etablissements/primaire')) {
@@ -192,13 +208,21 @@ export class PrimaryWorkspaceService {
     // À l’ouverture d’un espace, la configuration arrive de façon asynchrone.
     // Il ne faut donc pas remplacer l’URL demandée par Paramètres avant que le
     // backend ait confirmé si l’année, les niveaux et les périodes existent.
-    if (view === 'settings') return true;
+    const fonctionnalite = FONCTIONNALITE_PAR_VUE[view];
+    const espacePermission = this.establishmentType() === 'primary' ? 'primaire' : this.establishmentType();
+    // L’administrateur de l’institut peut toujours piloter les espaces
+    // primaire, collège et lycée. Son accès ne dépend pas d’un droit métier
+    // individuel ou d’un état local temporairement non rafraîchi.
+    if (this.api.accesUtilisateur()?.administrateur) return true;
+    if (view === 'settings') {
+      return Boolean(fonctionnalite && this.api.permissionUtilisateurAutorisee(fonctionnalite, espacePermission));
+    }
     if (!this.configurationChecked()) return true;
     if (view === 'dashboard') return this.configurationReady();
-    const fonctionnalite = FONCTIONNALITE_PAR_VUE[view];
     return this.configurationReady()
       && this.api.souscriptionValidee()
-      && Boolean(fonctionnalite && this.api.fonctionnalitesActives().includes(fonctionnalite));
+      && Boolean(fonctionnalite && this.api.fonctionnalitesActives().includes(fonctionnalite))
+      && Boolean(fonctionnalite && this.api.permissionUtilisateurAutorisee(fonctionnalite, espacePermission));
   }
 
   selectView(view: PrimaryView): void {

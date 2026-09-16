@@ -71,4 +71,5 @@ export class LandingComponent implements OnInit {
   featureLabel(code: string): string {
     return code.replace(/^gestion_/, '').replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
   }
+
 }

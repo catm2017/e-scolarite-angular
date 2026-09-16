@@ -100,8 +100,29 @@
 
   .directory-form-card {
     margin-top: 18px;
-    overflow: hidden;
+    /* Le panneau des sélecteurs peut dépasser la carte sans être découpé. */
+    overflow: visible;
+    border: 1px solid #dbe8f0;
+    box-shadow: 0 8px 24px rgba(42, 88, 121, .06);
   }
+
+  .directory-back-button {
+    margin: 16px 20px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 13px;
+    border: 1px solid #d7e5ee;
+    border-radius: 8px;
+    background: #fff;
+    color: #2f668b;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .directory-back-button:hover { background: #f2f8fc; }
+  .directory-back-button i { font-family: 'Material Icons'; font-style: normal; font-size: 18px; }
 
   .directory-form-card > header {
     padding: 18px 20px;
@@ -158,10 +179,27 @@
   }
 
   .directory-form-grid {
-    padding: 20px;
+    padding: 22px 20px 24px;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 15px;
+    gap: 16px;
+  }
+
+  .directory-form-grid > label {
+    min-width: 0;
+    padding: 11px 12px 12px;
+    border: 1px solid #edf2f6;
+    border-radius: 11px;
+    display: flex;
+    flex-direction: column;
+    background: #fbfdff;
+    transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  }
+
+  .directory-form-grid > label:focus-within {
+    border-color: #a6cdf2;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(47, 128, 237, .09);
   }
 
   .directory-form-grid label > span {
@@ -178,14 +216,37 @@
   .directory-form-grid input,
   .directory-form-grid select {
     width: 100%;
-    height: 41px;
+    height: 44px;
     padding: 0 12px;
-    border: 1px solid #d7e3ec;
-    border-radius: 8px;
+    border: 1px solid #d3e1ea;
+    border-radius: 9px;
     outline: 0;
     background: #fff;
     color: #365269;
-    font: 12px Inter, Arial, sans-serif;
+    font: 12px Inter, Poppins, Arial, sans-serif;
+  }
+
+  .directory-form-grid select:not([multiple]) {
+    appearance: none;
+    padding-right: 34px;
+    background-image: linear-gradient(45deg, transparent 50%, #66849a 50%), linear-gradient(135deg, #66849a 50%, transparent 50%);
+    background-position: calc(100% - 16px) 19px, calc(100% - 11px) 19px;
+    background-repeat: no-repeat;
+    background-size: 5px 5px, 5px 5px;
+  }
+
+  .directory-form-grid select[multiple] + .template-select2 { margin-top: 0; }
+
+  .directory-form-grid label:has(select[multiple]) {
+    border-color: #d5e8f8;
+    background: linear-gradient(135deg, #f5fbff 0%, #fbfdff 72%);
+  }
+
+  .directory-form-grid label > small {
+    margin-top: 6px;
+    color: #7890a2;
+    font-size: 10px;
+    line-height: 1.4;
   }
 
   .directory-form-grid textarea {
@@ -218,7 +279,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    background: #f8fbfd;
+    background: linear-gradient(90deg, #f7fbfe 0%, #f4f9fd 100%);
     color: #72889b;
     font-size: 11px;
   }
@@ -405,7 +466,7 @@
   .role-card footer button { padding: 0; border: 0; background: transparent; color: #2f80ed; font-size: 11px; font-weight: 800; }
   .role-card footer i { margin-left: 3px; font-size: 14px; vertical-align: middle; }
 
-  .permission-catalogue-card { overflow: hidden; }
+  .permission-catalogue-card { overflow: hidden; background: #fff; border: 1px solid #dbe8f0; border-radius: 10px; }
   .permission-catalogue-card > header { padding: 17px 20px; border-bottom: 1px solid #e4edf3; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
   .permission-catalogue-card h2 { margin: 0 0 4px; color: #2c4961; font-size: 16px; }
   .permission-catalogue-card header p { margin: 0; color: #758a9b; font-size: 12px; }
@@ -429,7 +490,8 @@
   .role-detail-summary p { margin: 0; color: #7b90a0; font-size: 10px; }
   .role-detail-summary strong { display: block; margin-top: 19px; color: #2f80ed; font-size: 25px; }
   .role-detail-summary small { color: #7b90a0; font-size: 10px; }
-  .role-permissions-editor { overflow: hidden; }
+  .role-permissions-editor { overflow: hidden; background: #fff; border: 1px solid #dbe8f0; border-radius: 10px; }
+  .role-permissions-editor > footer { padding: 14px 20px 20px; display: flex; justify-content: flex-end; }
   .role-permissions-editor > header { padding: 18px 20px; border-bottom: 1px solid #e4edf3; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
   .role-permissions-editor h2 { margin: 0 0 4px; color: #2d4a62; font-size: 16px; }
   .role-permissions-editor header p { margin: 0; color: #748a9b; font-size: 12px; }

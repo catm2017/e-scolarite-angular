@@ -112,6 +112,7 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   readonly pageSize = input<number>(10);
   readonly pageSizeOptions = input<number[]>([5, 10, 25, 100]);
   readonly selectedRows = input<any[]>([]);
+  readonly isRowSelectionDisabled = input<(row: any) => boolean>(() => false);
 
   // Outputs
   readonly add = output<void>();
@@ -250,20 +251,23 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   }
 
   isAllSelected() {
-    const rows = this.dataSource().filteredData;
+    const rows = this.dataSource().filteredData.filter((row) => !this.isRowSelectionDisabled()(row));
     return rows.length > 0 && rows.every((row) => this.selection.isSelected(row));
   }
 
   masterToggle() {
     if (this.isAllSelected()) {
-      this.dataSource().filteredData.forEach((row) => this.selection.deselect(row));
+      this.dataSource().filteredData
+        .filter((row) => !this.isRowSelectionDisabled()(row))
+        .forEach((row) => this.selection.deselect(row));
     } else {
-      this.dataSource().filteredData.forEach((row) => this.selection.select(row));
+      this.dataSource().filteredData.filter((row) => !this.isRowSelectionDisabled()(row)).forEach((row) => this.selection.select(row));
     }
     this.selectionChange.emit([...this.selection.selected]);
   }
 
   toggleSelection(row: any): void {
+    if (this.isRowSelectionDisabled()(row)) return;
     this.selection.toggle(row);
     this.selectionChange.emit([...this.selection.selected]);
   }

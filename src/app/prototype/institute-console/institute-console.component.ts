@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -10,8 +10,11 @@ import {
   InstituteView,
   InstituteWorkspaceService,
 } from './institute-workspace.service';
-import { CampusInstitut, CentralApiService, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, SalleInstitut, SouscriptionInstitut, TypeSouscription } from '../central-api.service';
+import { PrimaryWorkspaceService } from '../primary-school/primary-workspace.service';
+import { CampusInstitut, CentralApiService, CompteCandidatInstitut, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, PermissionInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
+import { TemplateMultiselectDirective } from '@shared/directives/template-multiselect.directive';
+import { StudentTransfersComponent } from './student-transfers/student-transfers.component';
 
 interface Establishment {
   id: string | null;
@@ -56,9 +59,25 @@ interface Campus {
 interface InstituteDirectoryRow {
   id?: string;
   matricule?: string;
+  identifier?: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   phone?: string;
+  address?: string;
+  gender?: 'F' | 'M';
+  birthDate?: string;
+  birthPlace?: string;
+  hireDate?: string;
+  contractType?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  diploma?: string;
+  experience?: number | null;
+  salaryMode?: 'Mensuel' | 'Horaire';
+  salary?: number | null;
+  hourlyRate?: number | null;
   type?: string;
   role?: string;
   function?: string;
@@ -69,6 +88,11 @@ interface InstituteDirectoryRow {
   status: string;
   campusIds?: string[];
   establishmentIds?: string[];
+}
+
+interface CompteCandidatRow extends InstituteDirectoryRow {
+  candidateType: CompteCandidatInstitut['type'];
+  eligible: boolean;
 }
 
 interface InstituteSpaceRow {
@@ -115,6 +139,7 @@ interface ActivityEntry {
 }
 
 interface PermissionDefinition {
+  id?: string;
   code: string;
   label: string;
   module: string;
@@ -123,6 +148,7 @@ interface PermissionDefinition {
 
 interface InstituteRole {
   id: string;
+  code?: string;
   label: string;
   description: string;
   users: number;
@@ -131,7 +157,7 @@ interface InstituteRole {
 
 @Component({
   selector: 'app-institute-console',
-  imports: [RouterLink, BreadcrumbComponent, FormsModule, MasterTableComponent, DecimalPipe],
+  imports: [RouterLink, BreadcrumbComponent, FormsModule, MasterTableComponent, DecimalPipe, TemplateMultiselectDirective, StudentTransfersComponent],
   templateUrl: './institute-console.component.html',
   styleUrl: './institute-console.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -140,10 +166,22 @@ export class InstituteConsoleComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly workspace = inject(InstituteWorkspaceService);
+  readonly primaryWorkspace = inject(PrimaryWorkspaceService);
   private readonly api = inject(CentralApiService);
   private readonly toast = inject(AppToastService);
   readonly activeView = this.workspace.activeView;
   readonly establishments = signal<Establishment[]>([]);
+  private readonly establishmentsCatalogue = signal<Establishment[]>([]);
+  private readonly establishmentsAccessEffect = effect(() => {
+    const catalogue = this.establishmentsCatalogue();
+    const acces = this.api.accesUtilisateur();
+    if (!catalogue.length) return;
+    if (!acces || acces.administrateur || acces.acces_tous_etablissements) {
+      this.establishments.set(catalogue);
+      return;
+    }
+    this.establishments.set(catalogue.filter((item) => item.workspaceId && acces.etablissement_ids.includes(item.workspaceId)));
+  });
   readonly instituteName = signal('Institut');
   readonly connectedUserName = signal('');
   readonly subscriptionLoading = signal(false);
@@ -203,6 +241,14 @@ export class InstituteConsoleComponent implements OnInit {
     { matricule: 'ENS-006', name: 'Coumba Ba', email: 'coumba.ba@joyau.sn', phone: '78 603 15 41', subject: 'Droit des affaires', establishment: 'Université', campus: 'Dakar Plateau', status: 'Actif' },
   ];
   readonly userDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.userRows);
+  readonly usersLoading = signal(false);
+  readonly accountCandidateRows = signal<CompteCandidatRow[]>([]);
+  readonly accountCandidateDataSource = new MatTableDataSource<CompteCandidatRow>([]);
+  readonly accountCandidateCategory = signal<'all' | 'teachers' | 'staff' | 'guardians' | 'learners'>('all');
+  readonly selectedAccountCandidates = signal<CompteCandidatRow[]>([]);
+  readonly userCreationOpen = signal(false);
+  readonly userCandidatesLoading = signal(false);
+  readonly userCreationSaving = signal(false);
   readonly staffDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.staffRows);
   readonly teacherDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.teacherRows);
   readonly membresEquipe = signal<MembreEquipeInstitut[]>([]);
@@ -236,33 +282,31 @@ export class InstituteConsoleComponent implements OnInit {
   readonly userRecordTab = signal<UserRecordTab>('roles');
   readonly userRole = signal('Gestionnaire d’établissement');
   readonly userPermissions = signal<string[]>(['Consulter les dossiers', 'Gérer les inscriptions']);
-  readonly userCampusAccess = signal<string[]>(['Campus Keur Massar']);
-  readonly userEstablishmentAccess = signal<string[]>(['École primaire']);
+  readonly userCampusAccessIds = signal<string[]>([]);
+  readonly userEstablishmentAccessIds = signal<string[]>([]);
   readonly passwordResetSent = signal(false);
   readonly userAssignedRoles = signal<string[]>([]);
   readonly userRoleAssignmentDraft = signal('');
   readonly userDirectPermissions = signal<string[]>([]);
+  readonly selectedUserRolePermissionsId = signal<string | null>(null);
+  readonly userDirectPermissionDataSource = new MatTableDataSource<PermissionDefinition>([]);
+  readonly userRolePermissionsDataSource = new MatTableDataSource<PermissionDefinition>([]);
+  readonly userScopeSaving = signal(false);
+  readonly userSecuritySaving = signal(false);
+  readonly activationResendSaving = signal(false);
   readonly roleManagementTab = signal<'roles' | 'permissions'>('roles');
+  readonly roleFormOpen = signal(false);
+  readonly roleSaving = signal(false);
+  roleForm = { code: '', libelle: '', description: '' };
   readonly selectedRole = signal<InstituteRole | null>(null);
   readonly permissionSyncMessage = signal('Catalogue synchronisé le 28 août 2026 · 10:45');
-  readonly permissionCatalogue = signal<PermissionDefinition[]>([
-    { code: 'students.view', label: 'Consulter les dossiers élèves', module: 'Scolarité', description: 'Voir les dossiers et informations de scolarité.' },
-    { code: 'students.manage', label: 'Gérer les inscriptions', module: 'Scolarité', description: 'Créer, inscrire et transférer les élèves.' },
-    { code: 'finance.view', label: 'Consulter les finances', module: 'Finances', description: 'Voir encaissements, dépenses et journal financier.' },
-    { code: 'finance.manage', label: 'Gérer les finances', module: 'Finances', description: 'Enregistrer et valider les opérations financières.' },
-    { code: 'timetable.manage', label: 'Gérer les emplois du temps', module: 'Pédagogie', description: 'Créer et modifier les emplois du temps.' },
-    { code: 'attendance.manage', label: 'Saisir les présences', module: 'Pédagogie', description: 'Renseigner les séances et les absences.' },
-    { code: 'assessments.manage', label: 'Saisir les évaluations', module: 'Pédagogie', description: 'Créer les évaluations et renseigner les notes.' },
-    { code: 'users.manage', label: 'Gérer les utilisateurs', module: 'Administration', description: 'Créer les comptes et définir les accès.' },
-    { code: 'reports.export', label: 'Exporter les données', module: 'Administration', description: 'Exporter les listes et les rapports.' },
-  ]);
-  readonly instituteRoles = signal<InstituteRole[]>([
-    { id: 'institute-admin', label: 'Administrateur d’institut', description: 'Administration globale de l’institut, de ses campus et de ses établissements.', users: 2, permissions: ['students.view', 'students.manage', 'finance.view', 'finance.manage', 'timetable.manage', 'attendance.manage', 'assessments.manage', 'users.manage', 'reports.export'] },
-    { id: 'establishment-manager', label: 'Gestionnaire d’établissement', description: 'Pilotage d’un établissement et de son équipe dans son périmètre.', users: 6, permissions: ['students.view', 'students.manage', 'finance.view', 'timetable.manage', 'attendance.manage', 'assessments.manage', 'reports.export'] },
-    { id: 'teacher', label: 'Enseignant', description: 'Accès aux classes, séances, évaluations et emploi du temps affectés.', users: 224, permissions: ['students.view', 'timetable.manage', 'attendance.manage', 'assessments.manage'] },
-    { id: 'tutor', label: 'Tuteur', description: 'Consultation des informations, paiements et résultats des enfants liés.', users: 1180, permissions: ['students.view', 'finance.view'] },
-    { id: 'learner', label: 'Élève', description: 'Accès en consultation à son espace apprenant.', users: 3410, permissions: ['students.view'] },
-  ]);
+  readonly permissionSpace = signal('all');
+  readonly rolePermissionSpace = signal('all');
+  readonly permissionCatalogue = signal<PermissionDefinition[]>([]);
+  readonly permissionDataSource = new MatTableDataSource<PermissionDefinition>(this.permissionCatalogue());
+  readonly rolePermissionDataSource = new MatTableDataSource<PermissionDefinition>(this.permissionCatalogue());
+  readonly permissionSpaces = computed(() => ['all', ...Array.from(new Set(this.permissionCatalogue().map((permission) => permission.module).filter(Boolean))).sort((a, b) => a.localeCompare(b))]);
+  readonly instituteRoles = signal<InstituteRole[]>([]);
   readonly traceConfigurationTab = signal<'journal' | 'settings'>('journal');
   readonly traceSettings = signal<TraceSetting[]>([
     { type: 'Administrateurs', description: 'Direction, responsables de campus et gestionnaires.', actions: true, authentications: true, updatedAt: '28 août 2026 · 09:30' },
@@ -304,14 +348,35 @@ export class InstituteConsoleComponent implements OnInit {
   );
 
   readonly userColumns: ColumnDefinition[] = [
-    { def: 'select', label: 'Sélection', type: 'check', visible: true },
     { def: 'matricule', label: 'Référence', type: 'text', visible: true },
+    { def: 'identifier', label: 'Identifiant', type: 'text', visible: true },
     { def: 'name', label: 'Utilisateur', type: 'nameWithImage', visible: true },
     { def: 'type', label: 'Type', type: 'text', visible: true },
     { def: 'role', label: 'Rôle', type: 'text', visible: true },
     { def: 'scope', label: 'Périmètre', type: 'text', visible: true },
-    { def: 'status', label: 'Statut', type: 'status', visible: true, statusBadgeMap: { Actif: 'badge badge-solid-green', 'Invitation envoyée': 'badge badge-solid-blue', Suspendu: 'badge badge-solid-red' } },
+    { def: 'status', label: 'Statut', type: 'status', visible: true, statusBadgeMap: { Actif: 'badge badge-solid-green', 'Invitation envoyée': 'badge badge-solid-blue', 'Désactivé': 'badge badge-solid-red' } },
     { def: 'actions', label: 'Actions', type: 'actionBtn', visible: true },
+  ];
+  readonly permissionColumns: ColumnDefinition[] = [
+    { def: 'label', label: 'Permission', type: 'text', visible: true, sortable: true },
+    { def: 'module', label: 'Espace', type: 'text', visible: true, sortable: true },
+    { def: 'description', label: 'Description', type: 'text', visible: true },
+  ];
+  readonly rolePermissionColumns: ColumnDefinition[] = [
+    { def: 'select', label: 'Sélection', type: 'check', visible: true },
+    ...this.permissionColumns,
+  ];
+  readonly userDirectPermissionColumns: ColumnDefinition[] = [
+    { def: 'select', label: 'Sélection', type: 'check', visible: true },
+    ...this.permissionColumns,
+  ];
+  readonly accountCandidateColumns: ColumnDefinition[] = [
+    { def: 'select', label: 'Sélection', type: 'check', visible: true },
+    { def: 'matricule', label: 'Référence', type: 'text', visible: true },
+    { def: 'name', label: 'Profil', type: 'nameWithImage', visible: true },
+    { def: 'type', label: 'Type', type: 'text', visible: true },
+    { def: 'phone', label: 'Téléphone / identifiant', type: 'phone', visible: true },
+    { def: 'status', label: 'Éligibilité', type: 'status', visible: true, statusBadgeMap: { 'Prêt à créer': 'badge badge-solid-green', 'Téléphone à renseigner': 'badge badge-solid-orange' } },
   ];
   readonly staffColumns: ColumnDefinition[] = [
     { def: 'select', label: 'Sélection', type: 'check', visible: true },
@@ -424,7 +489,7 @@ export class InstituteConsoleComponent implements OnInit {
     }
 
     this.workspace.synchronizeFromUrl(this.router.url);
-    if (!this.workspace.subscriptionValidated() && this.activeView() !== 'subscription') {
+    if (!this.workspace.subscriptionValidated() && !['overview', 'establishments', 'campuses', 'subscription', 'subscription-invoices'].includes(this.activeView())) {
       void this.router.navigateByUrl(this.workspace.cheminVue('subscription'), { replaceUrl: true });
       return;
     }
@@ -439,9 +504,11 @@ export class InstituteConsoleComponent implements OnInit {
         this.instituteName.set(espace.institut.nom);
         this.connectedUserName.set(`${espace.user.prenom} ${espace.user.nom}`.trim());
         this.campuses.set(espace.campus.map((campus) => this.presenterCampus(campus)));
-        this.establishments.set(espace.etablissements.map((item) => this.presenterEtablissement(item)));
+        this.establishmentsCatalogue.set(espace.etablissements.map((item) => this.presenterEtablissement(item)));
         this.chargerSalles();
         this.chargerEquipe();
+        this.chargerUtilisateurs();
+        this.chargerRolesPermissions();
         this.chargerSouscription();
       },
       error: (erreur: HttpErrorResponse) => {
@@ -474,20 +541,159 @@ export class InstituteConsoleComponent implements OnInit {
     });
   }
 
+  private chargerUtilisateurs(): void {
+    this.usersLoading.set(true);
+    this.api.utilisateursInstitut().subscribe({
+      next: ({ data }) => {
+        this.userRows.splice(0, this.userRows.length, ...data.map((item) => this.presenterUtilisateur(item)));
+        this.selectUserCategory(this.userCategory());
+        this.usersLoading.set(false);
+      },
+      error: () => {
+        this.usersLoading.set(false);
+        // Les données de démonstration restent visibles si le répertoire est temporairement indisponible.
+      },
+    });
+  }
+
+  private presenterUtilisateur(item: UtilisateurInstitutApi): InstituteDirectoryRow {
+    const statut: Record<string, string> = {
+      actif: 'Actif',
+      en_attente_activation: 'Invitation envoyée',
+      suspendu: 'Désactivé',
+    };
+    return {
+      id: item.id,
+      matricule: item.matricule ?? undefined,
+      identifier: item.identifiant ?? undefined,
+      name: `${item.prenom ?? ''} ${item.nom ?? ''}`.trim(),
+      firstName: item.prenom,
+      lastName: item.nom,
+      email: item.email ?? undefined,
+      phone: item.telephone ?? undefined,
+      type: item.type,
+      role: item.role,
+      scope: item.scope,
+      status: statut[item.statut] ?? item.statut,
+    };
+  }
+
+  private chargerRolesPermissions(): void {
+    this.api.rolesPermissionsInstitut().subscribe({
+      next: ({ roles, permissions }) => {
+        this.permissionCatalogue.set(permissions.map((permission: PermissionInstitutApi) => ({
+          id: permission.id, code: permission.code, label: permission.libelle, module: permission.module, description: permission.description,
+        })));
+        this.instituteRoles.set(roles.map((role: RoleInstitutApi) => ({
+          id: role.id, code: role.code, label: role.libelle, description: role.description, users: role.users, permissions: role.permissions,
+        })));
+        this.selectPermissionSpace(this.permissionSpace());
+        this.selectRolePermissionSpace(this.rolePermissionSpace());
+        this.actualiserTablesPermissionsUtilisateur();
+      },
+      error: () => { /* conserver le catalogue embarqué si le service est indisponible */ },
+    });
+  }
+
+  private permissionsDeEspace(espace: string): PermissionDefinition[] {
+    return espace === 'all'
+      ? this.permissionCatalogue()
+      : this.permissionCatalogue().filter((permission) => permission.module === espace);
+  }
+
+  selectPermissionSpace(espace: string): void {
+    this.permissionSpace.set(espace);
+    this.permissionDataSource.data = this.permissionsDeEspace(espace);
+  }
+
+  selectRolePermissionSpace(espace: string): void {
+    this.rolePermissionSpace.set(espace);
+    this.rolePermissionDataSource.data = this.permissionsDeEspace(espace);
+  }
+
+  permissionSpaceCount(espace: string): number {
+    return espace === 'all' ? this.permissionCatalogue().length : this.permissionCatalogue().filter((permission) => permission.module === espace).length;
+  }
+
+  selectedRolePermissions(): PermissionDefinition[] {
+    const role = this.selectedRole();
+    return role ? this.permissionCatalogue().filter((permission) => role.permissions.includes(permission.code)) : [];
+  }
+
+  selectedRolePermissionsForCurrentSpace(): PermissionDefinition[] {
+    const permissions = this.selectedRolePermissions();
+    return this.rolePermissionSpace() === 'all'
+      ? permissions
+      : permissions.filter((permission) => permission.module === this.rolePermissionSpace());
+  }
+
+  setRolePermissionSelection(selection: PermissionDefinition[]): void {
+    const role = this.selectedRole();
+    if (!role) return;
+    const visibles = this.permissionsDeEspace(this.rolePermissionSpace()).map((permission) => permission.code);
+    const permissions = [
+      ...role.permissions.filter((code) => !visibles.includes(code)),
+      ...selection.map((permission) => permission.code),
+    ];
+    const next = { ...role, permissions: [...new Set(permissions)] };
+    this.instituteRoles.update((roles) => roles.map((item) => item.id === role.id ? next : item));
+    this.selectedRole.set(next);
+  }
+
+  enregistrerPermissionsRole(): void {
+    const role = this.selectedRole();
+    if (!role) return;
+    this.api.enregistrerPermissionsRoleInstitut(role.id, role.permissions).subscribe({
+      next: (result) => this.toast.success(result.message),
+      error: () => this.toast.error('Les permissions du rôle n’ont pas pu être enregistrées.'),
+    });
+  }
+
+  ouvrirFormulaireRole(): void {
+    this.roleForm = { code: '', libelle: '', description: '' };
+    this.roleFormOpen.set(true);
+  }
+
+  fermerFormulaireRole(): void { this.roleFormOpen.set(false); }
+
+  creerRole(): void {
+    if (!this.roleForm.code.trim() || !this.roleForm.libelle.trim() || this.roleSaving()) return;
+    this.roleSaving.set(true);
+    this.api.creerRoleInstitut({ code: this.roleForm.code.trim().toLowerCase(), libelle: this.roleForm.libelle.trim(), description: this.roleForm.description.trim() || undefined }).subscribe({
+      next: (result) => { this.roleSaving.set(false); this.roleFormOpen.set(false); this.chargerRolesPermissions(); this.toast.success(result.message); },
+      error: (error) => { this.roleSaving.set(false); this.toast.error(error?.error?.message ?? 'Le rôle n’a pas pu être créé.'); },
+    });
+  }
+
   private presenterMembreEquipe(membre: MembreEquipeInstitut): InstituteDirectoryRow {
     const rattachements = membre.rattachements ?? [];
     return {
       id: membre.id,
       matricule: membre.matricule,
       name: `${membre.prenom} ${membre.nom}`.trim(),
+      firstName: membre.prenom,
+      lastName: membre.nom,
       email: membre.email ?? undefined,
       phone: membre.telephone ?? undefined,
+      address: membre.adresse ?? undefined,
+      gender: membre.sexe ?? undefined,
+      birthDate: membre.date_naissance ?? undefined,
+      birthPlace: membre.lieu_naissance ?? undefined,
+      hireDate: membre.date_embauche ?? undefined,
+      contractType: membre.type_contrat ?? undefined,
+      emergencyContact: membre.contact_urgence_nom ?? undefined,
+      emergencyPhone: membre.contact_urgence_telephone ?? undefined,
       function: membre.fonction ?? undefined,
       subject: membre.specialite ?? membre.fonction ?? undefined,
+      diploma: membre.diplome ?? undefined,
+      experience: membre.experience_annees ?? null,
+      salaryMode: membre.type_remuneration === 'horaire' ? 'Horaire' : 'Mensuel',
+      salary: membre.montant_mensuel ?? null,
+      hourlyRate: membre.montant_heure ?? null,
       establishment: [...new Set(rattachements.map((rattachement) => rattachement.type))].join(' · '),
       campus: [...new Set(rattachements.map((rattachement) => rattachement.campus))].join(' · '),
       scope: rattachements.map((rattachement) => `${rattachement.type} · ${rattachement.campus}`).join(' | '),
-      status: membre.statut === 'actif' ? 'Actif' : membre.statut,
+      status: membre.statut === 'actif' ? 'Actif' : membre.statut === 'conge' ? 'En congé' : membre.statut === 'suspendu' ? 'Suspendu' : membre.statut,
       campusIds: rattachements.map((rattachement) => rattachement.campus_id),
       establishmentIds: rattachements.map((rattachement) => rattachement.etablissement_id),
     };
@@ -683,7 +889,8 @@ export class InstituteConsoleComponent implements OnInit {
     const path = paths[type];
 
     if (path) {
-      void this.router.navigateByUrl(path);
+      const campusId = this.primaryWorkspace.selectedCampusId();
+      void this.router.navigateByUrl(campusId ? `${path}?campus=${encodeURIComponent(campusId)}` : path);
       return;
     }
 
@@ -760,28 +967,100 @@ export class InstituteConsoleComponent implements OnInit {
       : this.userRows;
   }
 
+  openUserAccountCreation(): void {
+    this.userCreationOpen.set(true);
+    this.selectedAccountCandidates.set([]);
+    this.loadAccountCandidates();
+  }
+
+  closeUserAccountCreation(): void {
+    this.userCreationOpen.set(false);
+    this.selectedAccountCandidates.set([]);
+  }
+
+  private loadAccountCandidates(): void {
+    this.userCandidatesLoading.set(true);
+    this.api.candidatsComptesInstitut().subscribe({
+      next: ({ data }) => {
+        this.accountCandidateRows.set(data.map((candidate) => this.presenterCompteCandidat(candidate)));
+        this.selectAccountCandidateCategory(this.accountCandidateCategory());
+        this.userCandidatesLoading.set(false);
+      },
+      error: () => { this.userCandidatesLoading.set(false); this.toast.error('Les profils sans compte ne sont pas disponibles pour le moment.'); },
+    });
+  }
+
+  selectAccountCandidateCategory(category: 'all' | 'teachers' | 'staff' | 'guardians' | 'learners'): void {
+    this.accountCandidateCategory.set(category);
+    const type = category === 'teachers' ? 'enseignant' : category === 'staff' ? 'personnel' : category === 'guardians' ? 'tuteur' : category === 'learners' ? 'eleve' : null;
+    this.accountCandidateDataSource.data = type
+      ? this.accountCandidateRows().filter((candidate) => candidate.candidateType === type)
+      : this.accountCandidateRows();
+  }
+
+  accountCandidateCount(category: 'all' | 'teachers' | 'staff' | 'guardians' | 'learners'): number {
+    const type = category === 'teachers' ? 'enseignant' : category === 'staff' ? 'personnel' : category === 'guardians' ? 'tuteur' : category === 'learners' ? 'eleve' : null;
+    return type ? this.accountCandidateRows().filter((candidate) => candidate.candidateType === type).length : this.accountCandidateRows().length;
+  }
+
+  setSelectedAccountCandidates(rows: CompteCandidatRow[]): void {
+    this.selectedAccountCandidates.set(rows.filter((row) => row.eligible));
+  }
+
+  createSelectedAccounts(): void {
+    const rows = this.selectedAccountCandidates();
+    if (!rows.length || this.userCreationSaving()) return;
+    this.userCreationSaving.set(true);
+    this.api.creerComptesInstitut(rows.map((row) => ({ id: row.id!, type: row.candidateType }))).subscribe({
+      next: (result) => {
+        this.userCreationSaving.set(false);
+        this.closeUserAccountCreation();
+        this.chargerUtilisateurs();
+        this.toast.success(result.message);
+        if (result.erreurs.length) this.toast.error(result.erreurs[0].message);
+      },
+      error: (error) => { this.userCreationSaving.set(false); this.toast.error(error?.error?.message ?? 'Les comptes n’ont pas pu être créés.'); },
+    });
+  }
+
+  private presenterCompteCandidat(candidate: CompteCandidatInstitut): CompteCandidatRow {
+    const labels: Record<CompteCandidatInstitut['type'], string> = { personnel: 'Personnel', enseignant: 'Enseignant', tuteur: 'Tuteur', eleve: 'Élève' };
+    return {
+      id: candidate.id, matricule: candidate.matricule, name: `${candidate.prenom} ${candidate.nom}`.trim(),
+      firstName: candidate.prenom, lastName: candidate.nom, email: candidate.email ?? undefined,
+      phone: candidate.telephone ?? undefined, type: labels[candidate.type], candidateType: candidate.type,
+      eligible: candidate.eligible, status: candidate.eligible ? 'Prêt à créer' : 'Téléphone à renseigner',
+    };
+  }
+
   viewUser(record: InstituteDirectoryRow): void {
     this.selectedUserRecord.set(record);
     this.userRecordTab.set('roles');
     this.passwordResetSent.set(false);
     this.userRole.set(record.role || 'Gestionnaire d’établissement');
-    const defaultRole = record.type === 'Enseignant' ? 'teacher' : record.type === 'Tuteur' ? 'tutor' : record.type === 'Élève' ? 'learner' : 'establishment-manager';
-    this.userAssignedRoles.set([defaultRole]);
     this.userRoleAssignmentDraft.set('');
     this.userDirectPermissions.set([]);
-    this.userCampusAccess.set(record.scope?.includes('Dakar Plateau') ? ['Campus Dakar Plateau'] : record.scope?.includes('Rufisque') ? ['Campus Rufisque'] : ['Campus Keur Massar']);
-    this.userEstablishmentAccess.set(record.type === 'Tuteur' ? ['Lycée'] : record.type === 'Élève' ? ['École primaire'] : record.scope?.includes('Collège') ? ['Collège'] : record.scope?.includes('Lycée') ? ['Lycée'] : ['École primaire']);
+    this.userAssignedRoles.set([]);
+    this.userCampusAccessIds.set([]);
+    this.userEstablishmentAccessIds.set([]);
+    this.selectedUserRolePermissionsId.set(null);
+    this.actualiserTablesPermissionsUtilisateur();
     this.setView('user-detail');
+    if (!record.id) return;
+    this.api.accesUtilisateurInstitut(record.id).subscribe({
+      next: ({ data }) => {
+        this.userAssignedRoles.set(data.role_ids);
+        this.userDirectPermissions.set(data.permission_codes);
+        this.userCampusAccessIds.set(data.campus_ids);
+        this.userEstablishmentAccessIds.set(data.etablissement_ids);
+        this.actualiserTablesPermissionsUtilisateur();
+      },
+      error: (error) => this.toast.error(error?.error?.message ?? 'Les autorisations de cet utilisateur n’ont pas pu être chargées.'),
+    });
   }
 
   setUserRecordTab(tab: UserRecordTab): void {
     this.userRecordTab.set(tab);
-  }
-
-  toggleUserPermission(permission: string): void {
-    this.userDirectPermissions.update((permissions) => permissions.includes(permission)
-      ? permissions.filter((item) => item !== permission)
-      : [...permissions, permission]);
   }
 
   assignRoleToUser(): void {
@@ -789,10 +1068,49 @@ export class InstituteConsoleComponent implements OnInit {
     if (!roleId) return;
     this.userAssignedRoles.update((roles) => roles.includes(roleId) ? roles : [...roles, roleId]);
     this.userRoleAssignmentDraft.set('');
+    this.actualiserTablesPermissionsUtilisateur();
+    this.enregistrerAccesUtilisateur();
   }
 
   removeRoleFromUser(roleId: string): void {
     this.userAssignedRoles.update((roles) => roles.filter((item) => item !== roleId));
+    if (this.selectedUserRolePermissionsId() === roleId) this.selectedUserRolePermissionsId.set(null);
+    this.actualiserTablesPermissionsUtilisateur();
+    this.enregistrerAccesUtilisateur();
+  }
+
+  private enregistrerAccesUtilisateur(): void {
+    const user = this.selectedUserRecord();
+    if (!user?.id) return;
+    this.api.enregistrerAccesUtilisateurInstitut(user.id, this.userAssignedRoles(), this.userDirectPermissions()).subscribe({
+      next: () => this.toast.success('Les accès de l’utilisateur ont été enregistrés.'),
+      error: () => this.toast.error('Les accès de l’utilisateur n’ont pas pu être enregistrés.'),
+    });
+  }
+
+  private actualiserTablesPermissionsUtilisateur(): void {
+    this.userDirectPermissionDataSource.data = this.permissionCatalogue();
+    const roleId = this.selectedUserRolePermissionsId();
+    this.userRolePermissionsDataSource.data = roleId ? this.permissionsForRole(roleId) : [];
+  }
+
+  afficherPermissionsRoleUtilisateur(roleId: string): void {
+    this.selectedUserRolePermissionsId.set(roleId);
+    this.actualiserTablesPermissionsUtilisateur();
+  }
+
+  readonly permissionHeriteeParRole = (permission: PermissionDefinition): boolean =>
+    this.userAssignedRoles().some((roleId) => this.permissionsForRole(roleId).some((item) => item.code === permission.code));
+
+  selectedUserDirectPermissions(): PermissionDefinition[] {
+    return this.permissionCatalogue().filter((permission) => this.userDirectPermissions().includes(permission.code));
+  }
+
+  setUserDirectPermissionSelection(selection: PermissionDefinition[]): void {
+    this.userDirectPermissions.set(selection
+      .filter((permission) => !this.permissionHeriteeParRole(permission))
+      .map((permission) => permission.code));
+    this.enregistrerAccesUtilisateur();
   }
 
   roleById(roleId: string): InstituteRole | undefined {
@@ -806,6 +1124,7 @@ export class InstituteConsoleComponent implements OnInit {
 
   openRoleDetail(role: InstituteRole): void {
     this.selectedRole.set(role);
+    this.selectRolePermissionSpace('all');
     this.setView('role-detail');
   }
 
@@ -821,30 +1140,59 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   synchronizePermissions(): void {
-    this.permissionSyncMessage.set('Catalogue synchronisé le 28 août 2026 · maintenant');
+    this.chargerRolesPermissions();
+    this.permissionSyncMessage.set('Catalogue synchronisé maintenant');
   }
 
-  toggleUserCampus(campus: string): void {
-    this.userCampusAccess.update((campuses) => campuses.includes(campus)
-      ? campuses.filter((item) => item !== campus)
-      : [...campuses, campus]);
+  toggleUserCampus(campusId: string): void {
+    this.userCampusAccessIds.update((campuses) => campuses.includes(campusId)
+      ? campuses.filter((item) => item !== campusId)
+      : [...campuses, campusId]);
   }
 
-  toggleUserEstablishment(establishment: string): void {
-    this.userEstablishmentAccess.update((establishments) => establishments.includes(establishment)
-      ? establishments.filter((item) => item !== establishment)
-      : [...establishments, establishment]);
+  toggleUserEstablishment(establishmentId: string): void {
+    this.userEstablishmentAccessIds.update((establishments) => establishments.includes(establishmentId)
+      ? establishments.filter((item) => item !== establishmentId)
+      : [...establishments, establishmentId]);
   }
 
-  setUserAccountStatus(status: 'Actif' | 'Désactivé'): void {
+  enregistrerPerimetreUtilisateur(): void {
     const user = this.selectedUserRecord();
-    if (!user) return;
-    user.status = status;
-    this.userDataSource.data = [...this.userDataSource.data];
+    if (!user?.id || this.userScopeSaving()) return;
+    this.userScopeSaving.set(true);
+    this.api.enregistrerPerimetreUtilisateurInstitut(user.id, this.userAssignedRoles(), this.userDirectPermissions(), this.userCampusAccessIds(), this.userEstablishmentAccessIds()).subscribe({
+      next: (result) => { this.userScopeSaving.set(false); this.toast.success(result.message); },
+      error: (error) => { this.userScopeSaving.set(false); this.toast.error(error?.error?.message ?? 'Le périmètre d’accès n’a pas pu être enregistré.'); },
+    });
   }
 
-  sendPasswordReset(): void {
-    this.passwordResetSent.set(true);
+  changerStatutUtilisateur(statut: 'actif' | 'suspendu'): void {
+    const user = this.selectedUserRecord();
+    if (!user?.id || this.userSecuritySaving()) return;
+    this.userSecuritySaving.set(true);
+    this.api.changerStatutUtilisateurInstitut(user.id, statut).subscribe({
+      next: (result) => {
+        this.userSecuritySaving.set(false);
+        const status = statut === 'actif' ? 'Actif' : 'Désactivé';
+        const misAJour = { ...user, status };
+        this.selectedUserRecord.set(misAJour);
+        const index = this.userRows.findIndex((row) => row.id === user.id);
+        if (index >= 0) this.userRows.splice(index, 1, misAJour);
+        this.selectUserCategory(this.userCategory());
+        this.toast.success(result.message);
+      },
+      error: (error) => { this.userSecuritySaving.set(false); this.toast.error(error?.error?.message ?? 'L’état du compte n’a pas pu être modifié.'); },
+    });
+  }
+
+  renvoyerActivationUtilisateur(): void {
+    const user = this.selectedUserRecord();
+    if (!user?.id || this.activationResendSaving() || user.status !== 'Invitation envoyée') return;
+    this.activationResendSaving.set(true);
+    this.api.renvoyerActivationUtilisateurInstitut(user.id).subscribe({
+      next: (result) => { this.activationResendSaving.set(false); this.toast.success(result.message); },
+      error: (error) => { this.activationResendSaving.set(false); this.toast.error(error?.error?.message ?? 'Le code d’activation n’a pas pu être envoyé.'); },
+    });
   }
 
   updateTraceSetting(type: string, field: 'actions' | 'authentications', value: boolean): void {
@@ -1000,16 +1348,24 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   saveStaff(): void {
-    if (!this.staffForm.name?.trim() || !this.staffForm.function?.trim() || !this.staffForm.campusIds?.length || !this.staffForm.establishmentIds?.length) return;
+    if (!this.staffForm.firstName?.trim() || !this.staffForm.lastName?.trim() || !this.staffForm.function?.trim() || !this.staffForm.campusIds?.length || !this.staffForm.establishmentIds?.length) return;
     this.enregistrerMembreEquipe(this.staffForm, false);
   }
 
   private enregistrerMembreEquipe(form: InstituteDirectoryRow, estEnseignant: boolean): void {
-    const morceaux = form.name.trim().split(/\s+/);
-    const prenom = morceaux.shift() ?? '';
-    const nom = morceaux.join(' ') || prenom;
+    const prenom = form.firstName?.trim() || form.name.trim().split(/\s+/).shift() || '';
+    const nom = form.lastName?.trim() || form.name.trim().split(/\s+/).slice(1).join(' ') || prenom;
     const rattachements = (form.establishmentIds ?? []).flatMap((etablissement_id) => (form.campusIds ?? []).map((campus_id) => ({ etablissement_id, campus_id })));
-    this.api.enregistrerMembreEquipe({ id: form.id, est_enseignant: estEnseignant, matricule: form.matricule, prenom, nom, telephone: form.phone, email: form.email, fonction: form.function, specialite: form.subject, rattachements }).subscribe({
+    this.api.enregistrerMembreEquipe({
+      id: form.id, est_enseignant: estEnseignant, matricule: form.matricule, prenom, nom,
+      sexe: form.gender, date_naissance: form.birthDate, lieu_naissance: form.birthPlace,
+      telephone: form.phone, email: form.email, adresse: form.address, fonction: form.function,
+      date_embauche: form.hireDate, type_contrat: form.contractType, statut: this.statutApi(form.status),
+      contact_urgence_nom: form.emergencyContact, contact_urgence_telephone: form.emergencyPhone,
+      specialite: form.subject, diplome: form.diploma, experience_annees: form.experience,
+      type_remuneration: form.salaryMode === 'Horaire' ? 'horaire' : 'mensuelle', salaire_mensuel: form.salary,
+      montant_heure: form.hourlyRate, rattachements,
+    }).subscribe({
       next: () => { this.staffEditorOpen.set(false); this.teacherEditorOpen.set(false); this.chargerEquipe(); this.toast.success('Dossier enregistré.'); },
       error: (error) => this.toast.error(error?.error?.message ?? 'Le dossier n’a pas pu être enregistré.'),
     });
@@ -1029,6 +1385,10 @@ export class InstituteConsoleComponent implements OnInit {
     if (this.selectedStaffRecord() === record) this.selectedStaffRecord.set(null);
   }
 
+  saveStaffAssignments(record: InstituteDirectoryRow): void {
+    this.saveAssignments(record);
+  }
+
   startTeacherForm(record?: InstituteDirectoryRow): void {
     this.teacherForm = record ? { ...record, campusIds: record.campusIds ?? [], establishmentIds: record.establishmentIds ?? [] } : this.emptyTeacherForm();
     this.selectedTeacherRecord.set(null);
@@ -1037,7 +1397,7 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   saveTeacher(): void {
-    if (!this.teacherForm.name?.trim() || !this.teacherForm.subject?.trim() || !this.teacherForm.campusIds?.length || !this.teacherForm.establishmentIds?.length) return;
+    if (!this.teacherForm.firstName?.trim() || !this.teacherForm.lastName?.trim() || !this.teacherForm.subject?.trim() || !this.teacherForm.campusIds?.length || !this.teacherForm.establishmentIds?.length) return;
     this.enregistrerMembreEquipe(this.teacherForm, true);
   }
 
@@ -1055,6 +1415,20 @@ export class InstituteConsoleComponent implements OnInit {
     if (this.selectedTeacherRecord() === record) this.selectedTeacherRecord.set(null);
   }
 
+  saveTeacherAssignments(record: InstituteDirectoryRow): void {
+    this.saveAssignments(record);
+  }
+
+  private saveAssignments(record: InstituteDirectoryRow): void {
+    if (!record.id || !record.campusIds?.length || !record.establishmentIds?.length) return;
+    const rattachements = record.establishmentIds.flatMap((etablissement_id) =>
+      (record.campusIds ?? []).map((campus_id) => ({ etablissement_id, campus_id })));
+    this.api.enregistrerRattachementsEquipe(record.id, rattachements).subscribe({
+      next: () => { this.chargerEquipe(); this.toast.success('Les rattachements ont été enregistrés.'); },
+      error: (error) => this.toast.error(error?.error?.message ?? 'Les rattachements n’ont pas pu être enregistrés.'),
+    });
+  }
+
   setStaffRecordTab(tab: StaffRecordTab): void {
     this.staffRecordTab.set(tab);
   }
@@ -1064,11 +1438,15 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   private emptyStaffForm(): InstituteDirectoryRow {
-    return { matricule: '', name: '', email: '', phone: '', function: '', campus: '', status: 'Actif', campusIds: [], establishmentIds: [] };
+    return { matricule: '', name: '', firstName: '', lastName: '', email: '', phone: '', function: '', campus: '', status: 'Actif', salaryMode: 'Mensuel', campusIds: [], establishmentIds: [] };
   }
 
   private emptyTeacherForm(): InstituteDirectoryRow {
-    return { matricule: '', name: '', email: '', phone: '', establishment: '', subject: '', campus: '', status: 'Actif', campusIds: [], establishmentIds: [] };
+    return { matricule: '', name: '', firstName: '', lastName: '', email: '', phone: '', establishment: '', subject: '', campus: '', status: 'Actif', salaryMode: 'Mensuel', campusIds: [], establishmentIds: [] };
+  }
+
+  private statutApi(statut: string): 'actif' | 'conge' | 'suspendu' {
+    return statut === 'En congé' ? 'conge' : statut === 'Suspendu' ? 'suspendu' : 'actif';
   }
 
   directoryTitle(): string {
@@ -1091,17 +1469,23 @@ export class InstituteConsoleComponent implements OnInit {
     switch (this.activeView()) {
       case 'staff': return 'Ajouter un personnel';
       case 'teachers': return 'Ajouter un enseignant';
-      default: return 'Ajouter un utilisateur';
+      default: return 'Nouvel utilisateur';
     }
   }
 
   openDirectoryForm(): void {
+    if (this.activeView() === 'users') this.openUserAccountCreation();
     if (this.activeView() === 'staff') this.startStaffForm();
     if (this.activeView() === 'teachers') this.startTeacherForm();
   }
 
   refreshDirectory(): void {
-    this.selectUserCategory(this.userCategory());
+    this.chargerUtilisateurs();
+  }
+
+  userCategoryCount(category: 'all' | 'teachers' | 'staff' | 'guardians' | 'learners'): number {
+    const type = category === 'teachers' ? 'Enseignant' : category === 'staff' ? 'Personnel' : category === 'guardians' ? 'Tuteur' : category === 'learners' ? 'Élève' : null;
+    return type ? this.userRows.filter((user) => user.type === type).length : this.userRows.length;
   }
 
   breadcrumbActive(): string {
@@ -1109,6 +1493,7 @@ export class InstituteConsoleComponent implements OnInit {
       overview: 'Tableau de bord',
       establishments: 'Établissements',
       campuses: 'Campus',
+      'student-transfers': 'Transferts d’élèves',
       users: 'Utilisateurs & accès',
       'user-detail': 'Dossier utilisateur',
       staff: 'Personnel institut',

@@ -11,6 +11,7 @@ const CLES_SESSION_API = [
   'escolarite_souscription_validee',
   'escolarite_fonctionnalites_actives',
   'escolarite_session_expire_at',
+  'e-scolarite:campus-actif',
 ] as const;
 
 /** Nettoyage synchrone utilisable par l'intercepteur sans dépendance HttpClient circulaire. */
@@ -31,6 +32,48 @@ export interface InstitutConnexion {
   id: string;
   nom: string;
   slug: string;
+}
+
+export interface InstitutActivationCompte {
+  id: string;
+  institut: string;
+  responsable?: string;
+  identifiant?: string;
+  telephone?: string;
+  expire_at?: string;
+}
+
+export interface CompteCandidatInstitut {
+  id: string;
+  matricule: string;
+  prenom: string;
+  nom: string;
+  telephone: string | null;
+  email: string | null;
+  type: 'personnel' | 'enseignant' | 'tuteur' | 'eleve';
+  eligible: boolean;
+}
+
+export interface UtilisateurInstitutApi {
+  id: string; matricule: string | null; prenom: string; nom: string; identifiant: string | null;
+  email: string | null; telephone: string | null; type: string; role: string; scope: string; statut: string;
+}
+
+export interface RoleInstitutApi {
+  id: string;
+  code: string;
+  libelle: string;
+  description: string;
+  users: number;
+  permissions: string[];
+}
+
+export interface PermissionInstitutApi {
+  id: string;
+  code: string;
+  libelle: string;
+  module: string;
+  description: string;
 }
 
 export interface FonctionnaliteSouscription {
@@ -66,6 +109,17 @@ export interface EspaceInstitut {
   campus: CampusInstitut[];
 }
 
+export interface AccesUtilisateurInstitut {
+  role_ids: string[];
+  permission_codes: string[];
+  permission_codes_effectives?: string[];
+  campus_ids: string[];
+  etablissement_ids: string[];
+  acces_tous_campus?: boolean;
+  acces_tous_etablissements?: boolean;
+  administrateur?: boolean;
+}
+
 export interface CampusInstitut {
   id: string;
   code: string;
@@ -75,6 +129,36 @@ export interface CampusInstitut {
   statut: 'actif' | 'inactif';
   etablissements_count: number;
   salles_count: number;
+}
+
+export interface EleveTransferableInstitut {
+  id: string;
+  matricule: string;
+  prenom: string;
+  nom: string;
+  etablissement_id: string;
+  campus_id: string;
+  etablissement: string;
+  type_etablissement: string;
+  campus: string;
+  classe: string;
+  tuteur: string;
+  telephone_tuteur: string | null;
+}
+
+export interface DestinationTransfertEleve {
+  id: string;
+  nom: string;
+  type: string;
+  code: string | null;
+  annee_configuree: boolean;
+  campus: Array<{ id: string; nom: string }>;
+}
+
+export interface TransfertsElevesInstitut {
+  annees: AnneeScolaireCentrale[];
+  destinations: DestinationTransfertEleve[];
+  data: EleveTransferableInstitut[];
 }
 
 export interface SalleInstitut {
@@ -97,9 +181,22 @@ export interface MembreEquipeInstitut {
   nom: string;
   telephone: string | null;
   email: string | null;
+  adresse: string | null;
+  sexe: 'F' | 'M' | null;
+  date_naissance: string | null;
+  lieu_naissance: string | null;
+  date_embauche: string | null;
+  type_contrat: string | null;
+  contact_urgence_nom: string | null;
+  contact_urgence_telephone: string | null;
   fonction: string | null;
   statut: string;
   specialite: string | null;
+  diplome: string | null;
+  experience_annees: number | null;
+  type_remuneration: 'mensuelle' | 'horaire' | null;
+  montant_mensuel: number | null;
+  montant_heure: number | null;
   est_enseignant: boolean;
   rattachements: Array<{ etablissement_id: string; campus_id: string; type: string; type_code: string; campus: string }>;
 }
@@ -157,6 +254,7 @@ export interface InstitutSaas {
   etat_abonnement: string;
   prenom_responsable: string | null;
   nom_responsable: string | null;
+  identifiant_responsable?: string | null;
   email_responsable: string | null;
   telephone_responsable: string | null;
 }
@@ -249,7 +347,8 @@ export interface DemandeAdhesion {
   ville?: string;
   prenom_responsable: string;
   nom_responsable: string;
-  email_responsable: string;
+  identifiant_responsable: string;
+  email_responsable: string | null;
   telephone_responsable: string;
   types_etablissements?: string[];
   effectif_estime?: number;
@@ -588,10 +687,12 @@ export class CentralApiService {
   private readonly campusInstitutState = signal<CampusInstitut[]>([]);
   private readonly etablissementsInstitutState = signal<Array<Omit<TypeSouscription, 'fonctionnalites'>>>([]);
   private readonly espaceInstitutChargeState = signal(false);
+  private readonly accesUtilisateurState = signal<AccesUtilisateurInstitut | null>(null);
   private readonly cacheRequetes = new Map<string, { expireAt: number; valeur: Observable<unknown> }>();
   readonly campusInstitut = this.campusInstitutState.asReadonly();
   readonly etablissementsInstitut = this.etablissementsInstitutState.asReadonly();
   readonly espaceInstitutCharge = this.espaceInstitutChargeState.asReadonly();
+  readonly accesUtilisateur = this.accesUtilisateurState.asReadonly();
   private expirationTimer: number | null = null;
 
   constructor() {
@@ -599,10 +700,10 @@ export class CentralApiService {
     this.planifierExpirationSession();
   }
 
-  connexion(email: string, password: string, institutId?: string) {
+  connexion(identifiant: string, password: string, institutId?: string) {
     return this.http
       .post<{ token: string; expire_at: string; user: CentralUser; espace: 'centrale' | 'institut'; institut?: InstitutConnexion; souscription_validee?: boolean; fonctionnalites_actives?: string[] }>(`${this.baseUrl}/connexion`, {
-        email,
+        email: identifiant,
         password,
         institut_id: institutId || null,
         nom_appareil: navigator.userAgent.slice(0, 120),
@@ -617,6 +718,7 @@ export class CentralApiService {
         result.fonctionnalites_actives,
         result.expire_at,
       );
+        if (result.institut) this.chargerAccesUtilisateurInstitut();
       }));
   }
 
@@ -629,6 +731,62 @@ export class CentralApiService {
 
   envoyerAdhesion(donnees: Record<string, unknown>) {
     return this.http.post<{ message: string; demande_id: string }>(`${this.baseUrl}/adhesions`, donnees);
+  }
+
+  institutsActivationCompte() {
+    return this.http.get<{ data: InstitutActivationCompte[] }>(`${this.baseUrl}/activation-compte/instituts`);
+  }
+
+  validerCodeActivation(institutId: string, code: string, motDePasse: string, confirmation: string) {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/activation-compte/valider-code`, {
+      institut_id: institutId,
+      code,
+      mot_de_passe: motDePasse,
+      mot_de_passe_confirmation: confirmation,
+    });
+  }
+
+  etablissementsActivationCompte() {
+    return this.http.get<{ data: Array<{ id: string; nom: string; slug: string }> }>(`${this.baseUrl}/activation-compte/etablissements`);
+  }
+
+  verifierCodeActivationCompte(institutId: string, telephone: string, code: string) {
+    return this.http.post<{ message: string; jeton_activation: string }>(`${this.baseUrl}/activation-compte/verifier-code`, {
+      institut_id: institutId, telephone, code,
+    });
+  }
+
+  definirMotDePasseActivation(jeton: string, motDePasse: string, confirmation: string) {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/activation-compte/definir-mot-de-passe`, {
+      jeton_activation: jeton, mot_de_passe: motDePasse, mot_de_passe_confirmation: confirmation,
+    });
+  }
+
+  activationsComptesSaas() {
+    return this.lireAvecCache('centrale:activations-comptes', () => this.http.get<{ data: InstitutActivationCompte[] }>(
+      `${this.baseUrl}/centrale/activations-comptes`, { headers: this.enteteAutorisation() },
+    ));
+  }
+
+  envoyerCodeActivationSaas(institutId: string) {
+    this.invaliderCache('centrale:activations-comptes');
+    return this.http.post<{ message: string; expire_at: string }>(
+      `${this.baseUrl}/centrale/activations-comptes/${institutId}/envoyer-code`,
+      {},
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
+  envoyerMessageWhatsAppTest(telephone: string, message: string) {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/whatsapp/test`, { telephone, message });
+  }
+
+  envoyerMessageSmsInfobipTest(telephone: string, message: string) {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/sms-infobip/test`, { telephone, message });
+  }
+
+  envoyerMessageSmsOrangeTest(telephone: string, message: string) {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/sms-orange/test`, { telephone, message });
   }
 
   tableauBord() {
@@ -744,7 +902,7 @@ export class CentralApiService {
   espaceInstitut() {
     return this.lireAvecCache('institut:espace', () => this.http.get<EspaceInstitut>(`${this.baseUrl}/institut/espace`, { headers: this.enteteAutorisation() })).pipe(
       tap((espace) => {
-        this.campusInstitutState.set(espace.campus ?? []);
+        this.campusInstitutState.set(this.mettreCampusSelectionneEnPremier(espace.campus ?? []));
         this.etablissementsInstitutState.set(espace.etablissements ?? []);
         this.espaceInstitutChargeState.set(true);
       }),
@@ -754,13 +912,114 @@ export class CentralApiService {
   listerCampusInstitut() {
     return this.lireAvecCache('institut:campus', () => this.http.get<{ data: CampusInstitut[] }>(`${this.baseUrl}/institut/campus`, {
       headers: this.enteteAutorisation(),
-    })).pipe(tap((resultat) => this.campusInstitutState.set(resultat.data)));
+    })).pipe(tap((resultat) => this.campusInstitutState.set(this.mettreCampusSelectionneEnPremier(resultat.data))));
+  }
+
+  private mettreCampusSelectionneEnPremier(campus: CampusInstitut[]): CampusInstitut[] {
+    let selectionne = '';
+    try { selectionne = localStorage.getItem('e-scolarite:campus-actif') ?? ''; } catch { /* stockage indisponible */ }
+    if (!selectionne) return campus;
+    const index = campus.findIndex((item) => item.id === selectionne);
+    return index > 0 ? [campus[index], ...campus.slice(0, index), ...campus.slice(index + 1)] : campus;
   }
 
   equipeInstitut() {
     return this.lireAvecCache('institut:equipe', () => this.http.get<{ data: MembreEquipeInstitut[] }>(`${this.baseUrl}/institut/equipe`, {
       headers: this.enteteAutorisation(),
     }));
+  }
+
+  candidatsComptesInstitut() {
+    return this.http.get<{ data: CompteCandidatInstitut[] }>(`${this.baseUrl}/institut/utilisateurs/candidats`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  utilisateursInstitut() {
+    return this.http.get<{ data: UtilisateurInstitutApi[] }>(`${this.baseUrl}/institut/utilisateurs`, { headers: this.enteteAutorisation() });
+  }
+
+  rolesPermissionsInstitut() {
+    return this.http.get<{ roles: RoleInstitutApi[]; permissions: PermissionInstitutApi[] }>(`${this.baseUrl}/institut/roles-permissions`, { headers: this.enteteAutorisation() });
+  }
+
+  creerRoleInstitut(payload: { code: string; libelle: string; description?: string }) {
+    return this.http.post<{ message: string; id: string }>(`${this.baseUrl}/institut/roles`, payload, { headers: this.enteteAutorisation() });
+  }
+
+  enregistrerPermissionsRoleInstitut(roleId: string, permissionCodes: string[]) {
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/roles/${roleId}/permissions`, { permission_codes: permissionCodes }, { headers: this.enteteAutorisation() });
+  }
+
+  enregistrerAccesUtilisateurInstitut(userId: string, roleIds: string[], permissionCodes: string[]) {
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/utilisateurs/${userId}/acces`, { role_ids: roleIds, permission_codes: permissionCodes }, { headers: this.enteteAutorisation() }).pipe(
+      tap(() => { if (userId === this.utilisateur()?.id) this.chargerAccesUtilisateurInstitut(); }),
+    );
+  }
+
+  accesUtilisateurInstitut(userId: string) {
+    return this.http.get<{ data: AccesUtilisateurInstitut }>(`${this.baseUrl}/institut/utilisateurs/${userId}/acces`, { headers: this.enteteAutorisation() });
+  }
+
+  chargerAccesUtilisateurInstitut() {
+    const user = this.utilisateur();
+    if (!user?.id) return;
+    this.accesUtilisateurInstitut(user.id).subscribe({
+      next: ({ data }) => this.accesUtilisateurState.set(data),
+      error: () => this.accesUtilisateurState.set(null),
+    });
+  }
+
+  permissionUtilisateurAutorisee(fonctionnalite: string, espace?: string): boolean {
+    const acces = this.accesUtilisateurState();
+    if (!acces) return true;
+    if (acces.administrateur) return true;
+    const permissions = acces.permission_codes_effectives ?? acces.permission_codes;
+    if (permissions.includes(fonctionnalite)) return true;
+    return espace ? permissions.includes(`${fonctionnalite}__${espace}`) : false;
+  }
+
+  enregistrerPerimetreUtilisateurInstitut(userId: string, roleIds: string[], permissionCodes: string[], campusIds: string[], etablissementIds: string[]) {
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/utilisateurs/${userId}/acces`, { role_ids: roleIds, permission_codes: permissionCodes, campus_ids: campusIds, etablissement_ids: etablissementIds }, { headers: this.enteteAutorisation() }).pipe(
+      tap(() => { if (userId === this.utilisateur()?.id) this.chargerAccesUtilisateurInstitut(); }),
+    );
+  }
+
+  changerStatutUtilisateurInstitut(userId: string, statut: 'actif' | 'suspendu') {
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/utilisateurs/${userId}/statut`, { statut }, { headers: this.enteteAutorisation() });
+  }
+
+  renvoyerActivationUtilisateurInstitut(userId: string) {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/institut/utilisateurs/${userId}/renvoyer-activation`, {}, { headers: this.enteteAutorisation() });
+  }
+
+  creerComptesInstitut(candidats: Array<{ id: string; type: CompteCandidatInstitut['type'] }>) {
+    return this.http.post<{ message: string; data: Array<{ id: string; profil_id: string; type: string; telephone: string; identifiant: string }>; erreurs: Array<{ id: string; type: string; message: string }> }>(
+      `${this.baseUrl}/institut/utilisateurs/creer-comptes`, { candidats }, { headers: this.enteteAutorisation() },
+    );
+  }
+
+  transfertsElevesInstitut(anneeScolaireCentraleId?: string) {
+    return this.lireAvecCache(
+      `institut:transferts-eleves:${anneeScolaireCentraleId ?? 'courante'}`,
+      () => this.http.get<TransfertsElevesInstitut>(`${this.baseUrl}/institut/transferts-eleves`, {
+        headers: this.enteteAutorisation(),
+        params: anneeScolaireCentraleId ? { annee_scolaire_centrale_id: anneeScolaireCentraleId } : {},
+      }),
+    );
+  }
+
+  enregistrerTransfertsElevesInstitut(payload: {
+    annee_scolaire_centrale_id: string;
+    etablissement_cible_id: string;
+    campus_cible_id: string;
+    eleve_ids: string[];
+    motif?: string | null;
+  }) {
+    this.invaliderCache('institut:');
+    return this.http.post<{ message: string; traites: number }>(`${this.baseUrl}/institut/transferts-eleves`, payload, {
+      headers: this.enteteAutorisation(),
+    });
   }
 
   enregistrerMembreEquipe(donnees: Record<string, unknown>) {
@@ -1395,6 +1654,7 @@ export class CentralApiService {
     }
     this.campusInstitutState.set([]);
     this.etablissementsInstitutState.set([]);
+    this.accesUtilisateurState.set(null);
     this.espaceInstitutChargeState.set(false);
     this.invaliderCache();
   }

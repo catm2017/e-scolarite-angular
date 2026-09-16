@@ -25,26 +25,13 @@
       </ul>
       @if (isEstablishmentWorkspace) {
       <div class="workspace-nav-controls">
-        <label class="workspace-campus-switcher">
+        <div class="workspace-campus-switcher">
           <i class="material-icons-outlined">location_city</i>
           <span>
             <small>Campus actif</small>
-            <select
-              aria-label="Campus actif"
-              [value]="primaryWorkspace.selectedCampusId()"
-              [disabled]="backendLoading.isLoading() && centralApi.campusInstitut().length === 0"
-              (change)="changeCampus($event)">
-              @if (backendLoading.isLoading() && centralApi.campusInstitut().length === 0) {
-                <option value="" disabled>Chargement des campus…</option>
-              }
-              @for (campus of centralApi.campusInstitut(); track campus.id) {
-                <option [value]="campus.id">{{ campus.nom }}</option>
-              } @empty {
-                <option value="" disabled>Aucun campus</option>
-              }
-            </select>
+            <strong>{{ selectedCampusName() || 'Campus non défini' }}</strong>
           </span>
-        </label>
+        </div>
 
         <div class="workspace-period-controls" aria-label="Contexte scolaire actif">
           <label class="workspace-context-select establishment-type-select">
@@ -97,13 +84,13 @@
       }
       @if (isInstituteWorkspace) {
       <div class="workspace-nav-controls institute-nav-controls">
-        <div class="workspace-campus-switcher institute-context-switcher">
+        <label class="workspace-campus-switcher institute-context-switcher">
           <i class="material-icons-outlined">corporate_fare</i>
-          <span><small>Institut client</small><strong>{{ workspaceInstituteName || 'Institut' }}</strong></span>
-        </div>
+          <span><small>{{ workspaceInstituteName || 'Institut client' }}</small><select aria-label="Campus actif" [value]="primaryWorkspace.selectedCampusId()" [disabled]="backendLoading.isLoading() && centralApi.campusInstitut().length === 0" (change)="changeCampus($event)">@if (backendLoading.isLoading() && centralApi.campusInstitut().length === 0) {<option value="" disabled>Chargement des campus…</option>} @for (campus of centralApi.campusInstitut(); track campus.id) {<option [value]="campus.id">{{ campus.nom }}</option>} @empty {<option value="" disabled>Aucun campus</option>}</select></span>
+        </label>
         <div class="workspace-context-select institute-summary">
-          <small>Périmètre actif</small>
-          <strong>Vue consolidée · {{ centralApi.campusInstitut().length }} campus</strong>
+          <small>Campus sélectionné</small>
+          <strong>{{ selectedCampusName() || 'Aucun campus' }}</strong>
         </div>
         <div class="workspace-context-select institute-summary">
           <small>Année scolaire</small>

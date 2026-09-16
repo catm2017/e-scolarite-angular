@@ -297,9 +297,16 @@ export class HeaderComponent
   }
 
   changeCampus(event: Event): void {
-    this.primaryWorkspace.selectedCampusId.set(
-      (event.target as HTMLSelectElement).value,
-    );
+    const campusId = (event.target as HTMLSelectElement).value;
+    if (campusId) {
+      this.primaryWorkspace.selectedCampusId.set(campusId);
+      try { localStorage.setItem('e-scolarite:campus-actif', campusId); } catch { /* stockage indisponible */ }
+    }
+  }
+
+  selectedCampusName(): string {
+    const selected = this.primaryWorkspace.selectedCampusId();
+    return this.centralApi.campusInstitut().find((campus) => campus.id === selected)?.nom ?? '';
   }
 
   changeEstablishmentType(event: Event): void {

@@ -2357,6 +2357,8 @@ body:has(.primary-shell) {
   .empty-class-subjects p { max-width: 430px; margin: 6px 0 0; font-size: 13px; font-weight: 500; }
   .empty-curriculum button { min-height: 38px; margin-top: 13px; padding: 0 11px; border: 0; border-radius: 7px; background: #6777ef; color: #fff; font-size: 11px; font-weight: 800; }
   .empty-curriculum button i { margin-right: 4px; font-family: 'Material Icons'; font-size: 15px; font-style: normal; vertical-align: middle; }
+  .empty-class-subjects > button { min-height: 40px; margin-top: 14px; padding: 0 15px; border: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; background: #2f80ed; color: #fff; font-size: 12px; font-weight: 800; line-height: 1; }
+  .empty-class-subjects > button i { font-family: 'Material Icons'; font-size: 18px; font-style: normal; line-height: 1; }
 }
 
 body.dark .primary-shell {
@@ -2491,6 +2493,7 @@ body.dark .primary-shell {
     background: #252d43;
     color: #aeb8ff;
   }
+  .empty-class-subjects > button { background: #5d70ed; color: #fff; }
 }
 
 .primary-shell {

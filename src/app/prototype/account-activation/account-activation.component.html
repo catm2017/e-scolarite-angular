@@ -1,0 +1,34 @@
+<main class="activation-page">
+  <header class="activation-nav">
+    <a routerLink="/" class="activation-brand"><span>E</span>E-Scolarité</a>
+    <nav aria-label="Navigation"><a routerLink="/">Accueil</a><a routerLink="/adhesion">Adhésion</a><app-platform-language-switcher /></nav>
+  </header>
+
+  <div class="activation-main">
+    <section class="activation-card">
+      <div class="activation-symbol"><i class="material-icons-outlined">verified_user</i></div>
+      <h1>Activez votre compte</h1>
+      <p class="activation-intro">Choisissez votre établissement, vérifiez votre numéro et votre code, puis définissez votre mot de passe.</p>
+      @if (!instituts().length && !erreur()) {<p class="activation-feedback success"><i class="material-icons-outlined">info</i>Aucun établissement n’est disponible actuellement.</p>}
+      @if (etape() === 'verification') {<form [formGroup]="verification" (ngSubmit)="verifierCode()">
+        <label for="activation-institut">Établissement <em>*</em></label>
+        <div class="activation-field"><i class="material-icons-outlined">apartment</i><select id="activation-institut" formControlName="institut_id"><option value="">Sélectionnez votre établissement</option>@for (institut of instituts(); track institut.id) {<option [value]="institut.id">{{ institut.nom }}</option>}</select></div>
+        <label for="activation-phone">Numéro de téléphone <em>*</em></label>
+        <div class="activation-field"><i class="material-icons-outlined">phone</i><input id="activation-phone" type="tel" formControlName="telephone" autocomplete="tel" placeholder="+221 77 000 00 00" /></div>
+        <label for="activation-code">Code de vérification <em>*</em></label>
+        <div class="activation-field"><i class="material-icons-outlined">password</i><input id="activation-code" type="text" inputmode="numeric" maxlength="6" formControlName="code" autocomplete="one-time-code" placeholder="2026" /></div>
+        @if (erreur()) {<p class="activation-feedback error"><i class="material-icons-outlined">error_outline</i>{{ erreur() }}</p>}
+        <button type="submit" class="activation-submit" [disabled]="chargement() || !instituts().length">{{ chargement() ? 'Vérification…' : 'Vérifier le code' }}<i class="material-icons-outlined" [class.spinning]="chargement()">{{ chargement() ? 'progress_activity' : 'arrow_forward' }}</i></button>
+      </form>} @else {<form [formGroup]="motDePasse" (ngSubmit)="enregistrerMotDePasse()">
+        <label for="activation-password">Nouveau mot de passe <em>*</em></label>
+        <div class="activation-field"><i class="material-icons-outlined">lock</i><input id="activation-password" type="password" formControlName="mot_de_passe" autocomplete="new-password" placeholder="Au moins 4 caractères" /></div>
+        <label for="activation-confirmation">Confirmer le mot de passe <em>*</em></label>
+        <div class="activation-field"><i class="material-icons-outlined">lock_reset</i><input id="activation-confirmation" type="password" formControlName="confirmation" autocomplete="new-password" placeholder="Répétez le mot de passe" /></div>
+        @if (erreur()) {<p class="activation-feedback error"><i class="material-icons-outlined">error_outline</i>{{ erreur() }}</p>}
+        <button type="submit" class="activation-submit" [disabled]="chargement()">{{ chargement() ? 'Activation en cours…' : 'Activer mon compte' }}<i class="material-icons-outlined" [class.spinning]="chargement()">{{ chargement() ? 'progress_activity' : 'check' }}</i></button>
+      </form>}
+      <p class="activation-login">Votre compte est déjà actif ? <a routerLink="/connexion">Se connecter</a></p>
+    </section>
+  </div>
+  <footer class="activation-footer">© 2026 E-Scolarité · Une solution Daara Tech</footer>
+</main>

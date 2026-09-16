@@ -30,6 +30,24 @@
       </div>
     }
 
+    @if (activeView() === 'account-activations') {
+      <section class="card saas-editor">
+        <h2>Envoyer un code d’activation</h2>
+        <p>Choisissez un institut dont le compte administrateur est encore en attente. Le code est transmis uniquement par WhatsApp et expire après 10 minutes.</p>
+        @if (activationsComptes().length) {
+          <div class="saas-form-grid">
+            <mat-form-field appearance="outline"><mat-label>Établissement</mat-label><mat-select [ngModel]="institutActivationId()" (ngModelChange)="institutActivationId.set($event)">@for (activation of activationsComptes(); track activation.id) {<mat-option [value]="activation.id">{{ activation.institut }} · {{ activation.responsable }}</mat-option>}</mat-select></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Lien d’activation à communiquer</mat-label><input matInput [value]="lienActivationPourInstitut()" readonly /></mat-form-field>
+          </div>
+          <p class="saas-choice-help">Le modèle WhatsApp d’authentification ne peut pas contenir ce lien. Copiez-le ou ouvrez-le pour le communiquer au responsable par le canal de votre choix.</p>
+          @if (activationFeedback()) {<p class="saas-message success"><mat-icon>check_circle</mat-icon>{{ activationFeedback() }}</p>}
+          <div class="saas-form-actions"><a mat-stroked-button [href]="lienActivationPourInstitut()" target="_blank" rel="noopener"><mat-icon>open_in_new</mat-icon>Ouvrir la page</a><button mat-flat-button color="primary" type="button" [disabled]="activationEnCours()" (click)="envoyerCodeActivation()"><mat-icon>{{ activationEnCours() ? 'progress_activity' : 'send' }}</mat-icon>{{ activationEnCours() ? 'Envoi en cours…' : 'Envoyer le code WhatsApp' }}</button></div>
+        } @else {
+          <p class="saas-empty-features">Aucun compte n’est en attente d’activation.</p>
+        }
+      </section>
+    }
+
     @if (activeView() === 'subscription-invoices') {
       <div class="card saas-filter-bar"><div><h2>Factures de souscription</h2><p>Confirmez le règlement d’une facture terminée ; l’institut pourra alors souscrire une nouvelle offre.</p></div></div>
       <app-master-table title="Factures à contrôler" [dataSource]="facturesSouscriptionsSource" [columnDefinitions]="facturesSouscriptionsColumns" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showStatusToggle]="true" [showContextMenu]="false" [showBulkDelete]="false" (statusToggle)="reglerFactureSouscription($event)" (refresh)="chargerDonnees()" />
@@ -134,7 +152,7 @@
       @if (demandeEnDetail(); as demande) {
         <article class="card saas-editor">
           <h2>{{ demande.nom_institut }}</h2>
-          <dl class="saas-detail-grid"><div><dt>Prénom</dt><dd>{{ demande.prenom_responsable }}</dd></div><div><dt>Nom</dt><dd>{{ demande.nom_responsable }}</dd></div><div><dt>E-mail</dt><dd>{{ demande.email_responsable }}</dd></div><div><dt>Téléphone</dt><dd>{{ demande.telephone_responsable }}</dd></div><div><dt>Types d’établissement</dt><dd>{{ demande.types_etablissements?.join(', ') }}</dd></div><div><dt>Statut</dt><dd>{{ demande.statut }}</dd></div></dl>
+          <dl class="saas-detail-grid"><div><dt>Prénom</dt><dd>{{ demande.prenom_responsable }}</dd></div><div><dt>Nom</dt><dd>{{ demande.nom_responsable }}</dd></div><div><dt>E-mail / identifiant</dt><dd>{{ demande.identifiant_responsable }}</dd></div><div><dt>Téléphone</dt><dd>{{ demande.telephone_responsable }}</dd></div><div><dt>Types d’établissement</dt><dd>{{ demande.types_etablissements?.join(', ') }}</dd></div><div><dt>Statut</dt><dd>{{ demande.statut }}</dd></div></dl>
           <div class="saas-form-actions"><button mat-stroked-button (click)="demandeEnDetail.set(null)">Fermer</button>@if (demande.statut === 'soumise') {<button mat-flat-button color="primary" [disabled]="!!traitementId()" (click)="approuver(demande)"><mat-icon>check</mat-icon>{{ traitementId() ? 'Provisionnement…' : 'Approuver la demande' }}</button>}</div>
         </article>
       }

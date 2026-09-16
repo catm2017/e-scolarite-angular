@@ -39,6 +39,16 @@
     flex: 1;
   }
 
+  strong {
+    display: block;
+    overflow: hidden;
+    color: #343849;
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   small {
     display: block;
     margin-bottom: -2px;
@@ -162,7 +172,8 @@
   }
 
   .institute-context-switcher strong,
-  .institute-summary strong { color: #d4dae5; }
+  .institute-summary strong,
+  .workspace-campus-switcher strong { color: #d4dae5; }
 }
 
 @media (max-width: 1300px) {

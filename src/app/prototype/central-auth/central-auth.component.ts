@@ -24,7 +24,7 @@ export class CentralAuthComponent implements OnInit {
   readonly institutChoisi = signal('');
   readonly connexion = this.formulaire.group({
     institut_id: [''],
-    email: ['', [Validators.required, Validators.email]],
+    identifiant: ['', Validators.required],
     password: ['', [Validators.required]],
   });
 
@@ -32,8 +32,17 @@ export class CentralAuthComponent implements OnInit {
     if (this.route.snapshot.queryParamMap.get('session') === 'expiree') {
       this.erreur.set('Votre session a expiré. Veuillez vous reconnecter pour continuer.');
     }
+    const identifiant = this.route.snapshot.queryParamMap.get('identifiant') ?? this.route.snapshot.queryParamMap.get('email');
+    const institutId = this.route.snapshot.queryParamMap.get('institut_id');
+    if (identifiant) this.connexion.controls.identifiant.setValue(identifiant);
+
     this.api.institutsConnexion().subscribe({
-      next: ({ data }) => this.instituts.set(data),
+      next: ({ data }) => {
+        this.instituts.set(data);
+        if (institutId && data.some((institut) => institut.id === institutId)) {
+          this.choisirInstitut(institutId);
+        }
+      },
       error: () => this.erreur.set('La liste des établissements est momentanément indisponible.'),
     });
   }
@@ -51,8 +60,8 @@ export class CentralAuthComponent implements OnInit {
 
     this.erreur.set(null);
     this.chargement.set(true);
-    const { email, password, institut_id } = this.connexion.getRawValue();
-    this.api.connexion(email, password, institut_id || undefined).subscribe({
+    const { identifiant, password, institut_id } = this.connexion.getRawValue();
+    this.api.connexion(identifiant, password, institut_id || undefined).subscribe({
       next: (result) => this.router.navigateByUrl(
         result.espace === 'centrale'
           ? '/saas'
@@ -61,7 +70,7 @@ export class CentralAuthComponent implements OnInit {
             : '/institut',
       ),
       error: () => {
-        this.erreur.set('Les informations de connexion sont incorrectes. Vérifiez votre adresse e-mail, votre mot de passe et, si nécessaire, l’établissement sélectionné, puis réessayez.');
+        this.erreur.set('Les informations de connexion sont incorrectes. Vérifiez votre e-mail ou identifiant, votre mot de passe et, si nécessaire, l’établissement sélectionné, puis réessayez.');
         this.chargement.set(false);
       },
       complete: () => this.chargement.set(false),

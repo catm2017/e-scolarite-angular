@@ -20,6 +20,7 @@ import {
   PackageTarification,
   PackageTarificationPayload,
   InstitutSaas,
+  InstitutActivationCompte,
   TarificationFonctionnalite,
   TypeEtablissementCatalogue,
 } from '../central-api.service';
@@ -35,7 +36,7 @@ export class SaasConsoleComponent implements OnInit {
   private readonly api = inject(CentralApiService);
   private readonly router = inject(Router);
 
-  readonly activeView = signal<'dashboard' | 'pricing' | 'schools' | 'adhesions' | 'academic-years' | 'subscription-invoices' | 'subscription-history'>('dashboard');
+  readonly activeView = signal<'dashboard' | 'pricing' | 'schools' | 'adhesions' | 'account-activations' | 'academic-years' | 'subscription-invoices' | 'subscription-history'>('dashboard');
   readonly demandes = signal<DemandeAdhesion[]>([]);
   readonly traitementId = signal<string | null>(null);
   readonly erreur = signal<string | null>(null);
@@ -53,6 +54,11 @@ export class SaasConsoleComponent implements OnInit {
   readonly anneesScolaires = signal<AnneeScolaireCentrale[]>([]);
   readonly anneeScolaireEnEdition = signal<AnneeScolaireCentrale | null>(null);
   readonly enregistrementAnneeScolaire = signal(false);
+  readonly activationsComptes = signal<InstitutActivationCompte[]>([]);
+  readonly institutActivationId = signal('');
+  readonly activationEnCours = signal(false);
+  readonly activationFeedback = signal<string | null>(null);
+  readonly lienActivation = `${window.location.origin}/#/activation-compte`;
 
   /* Legacy demonstration data removed from the visible dashboard. */
   readonly modules = [
@@ -92,7 +98,7 @@ export class SaasConsoleComponent implements OnInit {
   readonly reglementFactureEnCours = signal(false);
   readonly pageTitle = computed(() => ({
     dashboard: 'Vue d’ensemble', pricing: 'Tarification et packages', schools: 'Établissements',
-    adhesions: 'Demandes d’adhésion', 'academic-years': 'Années scolaires', 'subscription-invoices': 'Factures de souscription', 'subscription-history': 'Historique des abonnements',
+    adhesions: 'Demandes d’adhésion', 'account-activations': 'Activations de comptes', 'academic-years': 'Années scolaires', 'subscription-invoices': 'Factures de souscription', 'subscription-history': 'Historique des abonnements',
   })[this.activeView()]);
   private columns(items: [string, string, ColumnDefinition['type']][]): ColumnDefinition[] {
     return items.map(([def, label, type]) => ({ def, label, type, visible: true, sortable: type !== 'actionBtn' }));
@@ -114,7 +120,7 @@ export class SaasConsoleComponent implements OnInit {
   readonly demandesColumns = this.columns([
     ['nom_institut', 'Institut', 'text'], ['ville', 'Ville', 'text'],
     ['prenom_responsable', 'Prénom', 'text'], ['nom_responsable', 'Nom', 'text'],
-    ['email_responsable', 'Adresse e-mail', 'email'], ['telephone_responsable', 'Téléphone', 'phone'], ['statut', 'Statut', 'text'],
+    ['identifiant_responsable', 'E-mail / identifiant', 'text'], ['telephone_responsable', 'Téléphone', 'phone'], ['statut', 'Statut', 'text'],
     ['actions', 'Consulter', 'actionBtn'],
   ]);
   readonly etablissementsColumns: ColumnDefinition[] = [
@@ -165,14 +171,14 @@ export class SaasConsoleComponent implements OnInit {
 
   setView(view: string): void {
     const paths: Record<string, string> = { dashboard: 'tableau-de-bord', pricing: 'tarification',
-      schools: 'etablissements', adhesions: 'adhesions', 'academic-years': 'annees-scolaires', 'subscription-invoices': 'factures-souscriptions', 'subscription-history': 'abonnements' };
+      schools: 'etablissements', adhesions: 'adhesions', 'account-activations': 'activations-comptes', 'academic-years': 'annees-scolaires', 'subscription-invoices': 'factures-souscriptions', 'subscription-history': 'abonnements' };
     void this.router.navigate(['/saas', paths[view] ?? 'tableau-de-bord']);
   }
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const views = { 'tableau-de-bord': 'dashboard', tarification: 'pricing', etablissements: 'schools',
-        adhesions: 'adhesions', 'annees-scolaires': 'academic-years', 'factures-souscriptions': 'subscription-invoices', abonnements: 'subscription-history' } as const;
+        adhesions: 'adhesions', 'activations-comptes': 'account-activations', 'annees-scolaires': 'academic-years', 'factures-souscriptions': 'subscription-invoices', abonnements: 'subscription-history' } as const;
       this.activeView.set(views[params.get('vue') as keyof typeof views] ?? 'dashboard');
     });
 
@@ -189,6 +195,13 @@ export class SaasConsoleComponent implements OnInit {
     this.api.tableauBord().subscribe({ next: (metrics) => this.metrics.set(metrics), error: (error) => this.gererSessionExpiree(error) });
     this.api.demandesAdhesion().subscribe({ next: ({ data }) => this.demandes.set(data), error: (error) => this.gererSessionExpiree(error) });
     this.api.institutsSaas().subscribe({ next: ({ data }) => this.etablissements.set(data), error: (error) => this.gererSessionExpiree(error) });
+    this.api.activationsComptesSaas().subscribe({
+      next: ({ data }) => {
+        this.activationsComptes.set(data);
+        if (!data.some((item) => item.id === this.institutActivationId())) this.institutActivationId.set(data[0]?.id ?? '');
+      },
+      error: (error) => this.gererSessionExpiree(error),
+    });
     this.api.abonnementsSaas().subscribe({ next: ({ data }) => this.abonnements.set(data), error: (error) => this.gererSessionExpiree(error) });
     this.api.catalogueFonctionnalites().subscribe({
       next: ({ types, data }) => {
@@ -253,6 +266,27 @@ export class SaasConsoleComponent implements OnInit {
       error: (response) => this.erreur.set(response.error?.message ?? 'L’approbation a échoué.'),
       complete: () => this.traitementId.set(null),
     });
+  }
+
+  envoyerCodeActivation(): void {
+    const institutId = this.institutActivationId();
+    if (!institutId || this.activationEnCours()) return;
+    this.erreur.set(null);
+    this.activationFeedback.set(null);
+    this.activationEnCours.set(true);
+    this.api.envoyerCodeActivationSaas(institutId).subscribe({
+      next: ({ message }) => {
+        this.activationFeedback.set(message);
+        this.chargerDonnees();
+      },
+      error: (response) => this.erreur.set(response.error?.message ?? 'Le code d’activation n’a pas pu être envoyé.'),
+      complete: () => this.activationEnCours.set(false),
+    });
+  }
+
+  lienActivationPourInstitut(): string {
+    const institutId = this.institutActivationId();
+    return institutId ? `${this.lienActivation}?institut_id=${encodeURIComponent(institutId)}` : this.lienActivation;
   }
 
   deconnexion(): void {

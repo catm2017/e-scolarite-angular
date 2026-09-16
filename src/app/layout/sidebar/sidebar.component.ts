@@ -60,6 +60,7 @@ const INSTITUTE_ROUTES: RouteInfo[] = [
   { path: '', title: 'Vue d’ensemble', iconType: 'material-icons-outlined', icon: 'space_dashboard', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'overview' },
   { path: '', title: 'Établissements', iconType: 'material-icons-outlined', icon: 'account_balance', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'establishments' },
   { path: '', title: 'Campus', iconType: 'material-icons-outlined', icon: 'location_city', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'campuses' },
+  { path: '', title: 'Transferts d’élèves', iconType: 'material-icons-outlined', icon: 'swap_horiz', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'student-transfers' },
   { path: '', title: 'Utilisateurs & accès', iconType: 'material-icons-outlined', icon: 'manage_accounts', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'users' },
   { path: '', title: 'Rôles & permissions', iconType: 'material-icons-outlined', icon: 'admin_panel_settings', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'roles' },
   { path: '', title: 'ÉQUIPE & RESSOURCES', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
@@ -105,6 +106,7 @@ export class SidebarComponent
   private readonly campusBadgeEffect = effect(() => {
     this.centralApi.campusInstitut();
     this.centralApi.etablissementsInstitut();
+    this.centralApi.accesUtilisateur();
     if (this.isInstituteWorkspace) {
       this.configureWorkspaceNavigation();
       this.cdr.markForCheck();
@@ -128,6 +130,7 @@ export class SidebarComponent
     { path: '/saas/tableau-de-bord', title: 'Vue d’ensemble', icon: 'space_dashboard' },
     { path: '/saas/etablissements', title: 'Établissements', icon: 'apartment' },
     { path: '/saas/adhesions', title: 'Adhésions', icon: 'how_to_reg' },
+    { path: '/saas/activations-comptes', title: 'Activations de comptes', icon: 'verified_user' },
     { path: '/saas/tarification', title: 'Tarification et packages', icon: 'sell' },
     { path: '/saas/factures-souscriptions', title: 'Factures de souscription', icon: 'receipt_long' },
     { path: '/saas/abonnements', title: 'Abonnements', icon: 'subscriptions' },
@@ -247,6 +250,10 @@ export class SidebarComponent
 
   isInstituteItemAccessible(item: RouteInfo): boolean {
     if (item.groupTitle) return true;
+    if (item.title === 'Site web') {
+      return this.instituteWorkspace.hasFeature('gestion_site_web')
+        && this.centralApi.permissionUtilisateurAutorisee('gestion_site_web', 'institut');
+    }
     if (item.workspaceView) return this.instituteWorkspace.canAccessView(item.workspaceView);
     return this.instituteWorkspace.canAccessPath(item.path);
   }

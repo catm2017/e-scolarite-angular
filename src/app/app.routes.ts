@@ -113,6 +113,13 @@ export const APP_ROUTE: Route[] = [
       ),
   },
   {
+    path: 'activation-compte',
+    loadComponent: () =>
+      import('./prototype/account-activation/account-activation.component').then(
+        (component) => component.AccountActivationComponent,
+      ),
+  },
+  {
     path: 'adhesion',
     loadComponent: () =>
       import('./prototype/adhesion/adhesion.component').then(

@@ -752,6 +752,15 @@ export class PrimarySchoolComponent {
   readonly selectedCampusId = this.workspace.selectedCampusId;
   readonly isHighSchool = computed(() => this.workspace.establishmentType() === 'lycee');
   readonly isCollege = computed(() => this.workspace.establishmentType() !== 'primary');
+  /** Nom réel de l'établissement sélectionné, avec un libellé générique en secours. */
+  readonly establishmentDisplayName = computed(() => {
+    const code = this.codeTypeEtablissementApi();
+    const configured = this.centralApi.etablissementsInstitut().find((item) =>
+      item.code === code || item.type === code,
+    )?.nom?.trim();
+    if (configured) return configured;
+    return this.isHighSchool() ? 'Lycée' : this.isCollege() ? 'Collège' : 'École primaire';
+  });
   readonly establishmentHomeLink = computed(() =>
     this.isHighSchool()
       ? '/institut/etablissements/lycee'

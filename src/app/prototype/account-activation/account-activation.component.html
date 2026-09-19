@@ -1,18 +1,32 @@
-<main class="activation-page">
+<main class="activation-page" [class.context-loading]="!contextePret()" [style.--activation-color]="siteDuDomaine()?.contenu?.primaryColor || '#218bd2'">
   <header class="activation-nav">
-    <a routerLink="/" class="activation-brand"><span>E</span>E-Scolarité</a>
-    <nav aria-label="Navigation"><a routerLink="/">Accueil</a><a routerLink="/adhesion">Adhésion</a><app-platform-language-switcher /></nav>
+    <a routerLink="/" class="activation-brand">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> } @else { <span>{{ siteDuDomaine()?.nom?.charAt(0) || 'E' }}</span> }{{ siteDuDomaine()?.nom || 'E-Scolarité' }}</a>
+    <nav aria-label="Navigation">
+      @if (siteDuDomaine(); as site) {
+        @for (item of site.contenu.menuItems; track item.id) {
+          @if (item.visible) {
+            @if (item.linkType === 'internal') { <a routerLink="/" [queryParams]="{ page: item.pageId }">{{ item.label }}</a> }
+            @else { <a [href]="item.url" [attr.target]="item.openInNewTab ? '_blank' : null">{{ item.label }}</a> }
+          }
+        }
+      } @else { <a routerLink="/">Accueil</a><a routerLink="/adhesion">Adhésion</a> }
+      <app-platform-language-switcher />
+    </nav>
   </header>
 
   <div class="activation-main">
     <section class="activation-card">
-      <div class="activation-symbol"><i class="material-icons-outlined">verified_user</i></div>
-      <h1>Activez votre compte</h1>
+      <div class="activation-symbol">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> } @else { <i class="material-icons-outlined">verified_user</i> }</div>
+      <h1>Activez votre compte{{ siteDuDomaine() ? ' · ' + siteDuDomaine()?.nom : '' }}</h1>
       <p class="activation-intro">Choisissez votre établissement, vérifiez votre numéro et votre code, puis définissez votre mot de passe.</p>
       @if (!instituts().length && !erreur()) {<p class="activation-feedback success"><i class="material-icons-outlined">info</i>Aucun établissement n’est disponible actuellement.</p>}
       @if (etape() === 'verification') {<form [formGroup]="verification" (ngSubmit)="verifierCode()">
-        <label for="activation-institut">Établissement <em>*</em></label>
-        <div class="activation-field"><i class="material-icons-outlined">apartment</i><select id="activation-institut" formControlName="institut_id"><option value="">Sélectionnez votre établissement</option>@for (institut of instituts(); track institut.id) {<option [value]="institut.id">{{ institut.nom }}</option>}</select></div>
+        @if (siteDuDomaine(); as site) {
+          <label>Établissement</label><div class="activation-institute"><i class="material-icons-outlined">apartment</i><strong>{{ site.nom }}</strong></div>
+        } @else {
+          <label for="activation-institut">Établissement <em>*</em></label>
+          <div class="activation-field"><i class="material-icons-outlined">apartment</i><select id="activation-institut" formControlName="institut_id"><option value="">Sélectionnez votre établissement</option>@for (institut of instituts(); track institut.id) {<option [value]="institut.id">{{ institut.nom }}</option>}</select></div>
+        }
         <label for="activation-phone">Numéro de téléphone <em>*</em></label>
         <div class="activation-field"><i class="material-icons-outlined">phone</i><input id="activation-phone" type="tel" formControlName="telephone" autocomplete="tel" placeholder="+221 77 000 00 00" /></div>
         <label for="activation-code">Code de vérification <em>*</em></label>
@@ -30,5 +44,5 @@
       <p class="activation-login">Votre compte est déjà actif ? <a routerLink="/connexion">Se connecter</a></p>
     </section>
   </div>
-  <footer class="activation-footer">© 2026 E-Scolarité · Une solution Daara Tech</footer>
+  <footer class="activation-footer">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> }© 2026 {{ siteDuDomaine()?.nom || 'E-Scolarité' }} · Propulsé par E‑Scolarité</footer>
 </main>

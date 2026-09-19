@@ -24,6 +24,7 @@ export class CentralAuthComponent implements OnInit {
   readonly institutChoisi = signal('');
   readonly institutDuDomaine = signal<InstitutConnexion | null>(null);
   readonly siteDuDomaine = signal<SitePublicInstitut | null>(null);
+  readonly contextePret = signal(false);
   readonly connexion = this.formulaire.group({
     institut_id: [''],
     identifiant: ['', Validators.required],
@@ -57,8 +58,12 @@ export class CentralAuthComponent implements OnInit {
           const institut = { id: data.institut_id, nom: data.nom, slug: data.slug, logo_url: data.logo_url };
           this.institutDuDomaine.set(institut);
           this.choisirInstitut(institut.id);
+          this.contextePret.set(true);
         },
+        error: () => this.contextePret.set(true),
       });
+    } else {
+      this.contextePret.set(true);
     }
   }
 

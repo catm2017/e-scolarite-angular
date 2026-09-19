@@ -13,13 +13,20 @@ import { CentralApiService, SitePublicInstitut } from '../central-api.service';
 export class ForgotPasswordComponent implements OnInit {
   private readonly api = inject(CentralApiService);
   readonly site = signal<SitePublicInstitut | null>(null);
+  readonly contextePret = signal(false);
   readonly demandeEnvoyee = signal(false);
   identifiant = '';
 
   ngOnInit(): void {
     const domaine = window.location.hostname.toLowerCase();
-    if (['localhost', '127.0.0.1', 'e-scolarite.local', 'escolarite.daaratech.sn'].includes(domaine)) return;
-    this.api.sitePublic(domaine).subscribe({ next: ({ data }) => this.site.set(data) });
+    if (['localhost', '127.0.0.1', 'e-scolarite.local', 'escolarite.daaratech.sn'].includes(domaine)) {
+      this.contextePret.set(true);
+      return;
+    }
+    this.api.sitePublic(domaine).subscribe({
+      next: ({ data }) => { this.site.set(data); this.contextePret.set(true); },
+      error: () => this.contextePret.set(true),
+    });
   }
 
   demanderAssistance(): void {

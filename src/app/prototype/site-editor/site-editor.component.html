@@ -240,7 +240,7 @@
           }
 
           <footer>
-            <div class="footer-brand"><b>J</b><div><strong>{{ draft().schoolName }}</strong><p>{{ draft().description }}</p></div></div>
+            <div class="footer-brand">@if (draft().logoUrl) { <img [src]="draft().logoUrl" alt="Logo de l’institut" /> } @else { <b>{{ draft().schoolName.charAt(0) }}</b> }<div><strong>{{ draft().schoolName }}</strong><p>{{ draft().description }}</p></div></div>
             <div><strong>Navigation</strong>@for (item of visibleMenu(); track item.id) { <a href="#" (click)="previewMenuItem(item, $event)">{{ item.label }}</a> }</div>
             <div><strong>Contact</strong><span>{{ draft().address }}</span><span>{{ draft().phone }}</span><span>{{ draft().email }}</span></div>
             <small>Site propulsé par E‑Scolarité</small>

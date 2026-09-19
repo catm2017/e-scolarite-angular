@@ -1,4 +1,4 @@
-<main class="signin-page" [style.--signin-color]="siteDuDomaine()?.contenu?.primaryColor || '#218bd2'">
+<main class="signin-page" [class.context-loading]="!contextePret()" [style.--signin-color]="siteDuDomaine()?.contenu?.primaryColor || '#218bd2'">
   <header class="signin-nav">
     <a routerLink="/" class="signin-brand">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> } @else { <span>{{ siteDuDomaine()?.nom?.charAt(0) || 'E' }}</span> }{{ siteDuDomaine()?.nom || 'E-Scolarité' }}</a>
     <nav aria-label="Navigation">

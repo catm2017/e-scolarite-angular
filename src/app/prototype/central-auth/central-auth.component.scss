@@ -49,3 +49,6 @@
     h1 { font-size: 22px; }
   }
 }
+.signin-page.context-loading { position: relative; }
+.signin-page.context-loading::after { content: 'Chargement…'; position: fixed; inset: 0; display: grid; place-items: center; color: #5f7690; background: #f8fafc; font-size: 14px; }
+.signin-page.context-loading > * { visibility: hidden; }

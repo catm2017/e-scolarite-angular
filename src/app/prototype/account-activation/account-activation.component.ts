@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { CentralApiService } from '../central-api.service';
+import { CentralApiService, SitePublicInstitut } from '../central-api.service';
 import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
 
 @Component({
@@ -21,6 +21,8 @@ export class AccountActivationComponent implements OnInit {
   readonly erreur = signal<string | null>(null);
   readonly etape = signal<'verification' | 'mot-de-passe'>('verification');
   readonly jetonActivation = signal<string | null>(null);
+  readonly siteDuDomaine = signal<SitePublicInstitut | null>(null);
+  readonly contextePret = signal(false);
   readonly instituts = signal<Array<{ id: string; nom: string; slug: string }>>([]);
   readonly verification = this.formulaire.group({
     institut_id: ['', Validators.required],
@@ -40,6 +42,21 @@ export class AccountActivationComponent implements OnInit {
       next: ({ data }) => this.instituts.set(data),
       error: () => this.erreur.set('La liste des établissements est momentanément indisponible.'),
     });
+
+    const domaine = window.location.hostname.toLowerCase();
+    const domainesPlateforme = ['localhost', '127.0.0.1', 'e-scolarite.local', 'escolarite.daaratech.sn'];
+    if (!domainesPlateforme.includes(domaine)) {
+      this.api.sitePublic(domaine).subscribe({
+        next: ({ data }) => {
+          this.siteDuDomaine.set(data);
+          this.verification.controls.institut_id.setValue(data.institut_id);
+          this.contextePret.set(true);
+        },
+        error: () => this.contextePret.set(true),
+      });
+    } else {
+      this.contextePret.set(true);
+    }
   }
 
   verifierCode(): void {

@@ -59,6 +59,15 @@ button { cursor: pointer; font: inherit; }
   border-radius: 11px;
   font: italic 700 23px Georgia, serif;
 }
+.brand img {
+  width: 48px;
+  height: 48px;
+  display: block;
+  object-fit: contain;
+  border-radius: 11px;
+  background: #fff;
+  border: 1px solid #e4edf3;
+}
 .brand small { display: block; margin-top: 3px; color: #768a9b; font: 600 8px Inter, sans-serif; letter-spacing: 1px; }
 .nav-links { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 22px; min-width: 0; position: relative; }
 .nav-menu { display: flex; align-items: center; justify-content: center; gap: 25px; position: absolute; left: calc(50% - 200px); transform: translateX(-50%); }

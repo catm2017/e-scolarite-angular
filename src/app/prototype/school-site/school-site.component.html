@@ -1,11 +1,10 @@
 <div class="school-public" [style.--school-color]="draft().primaryColor">
-  <div class="demo-bar"><span>Site vitrine généré depuis E‑Scolarité</span><a routerLink="/institut/site-web">Modifier le site</a></div>
   <div class="contact-bar">
     <div><span><i>phone</i>{{ draft().phone }}</span><span><i>mail</i>{{ draft().email }}</span><span><i>schedule</i>08h00 – 17h00, du lundi au vendredi</span></div>
     <div><a href="#" aria-label="Facebook">public</a><a href="#" aria-label="Instagram">photo_camera</a><a href="#" aria-label="LinkedIn">work</a></div>
   </div>
   <nav>
-    <div class="brand"><b>J</b><span>{{ draft().schoolName }}<small>Excellence · Savoir · Valeurs</small></span></div>
+    <div class="brand">@if (draft().logoUrl) { <img [src]="draft().logoUrl" alt="Logo de {{ draft().schoolName }}" /> } @else { <b>{{ draft().schoolName.charAt(0) }}</b> }<span>{{ draft().schoolName }}<small>Excellence · Savoir · Valeurs</small></span></div>
     <button type="button" class="mobile-toggle" (click)="mobileMenuOpen.set(!mobileMenuOpen())">{{ mobileMenuOpen() ? 'close' : 'menu' }}</button>
     <div class="nav-links" [class.open]="mobileMenuOpen()">
       <div class="nav-menu">
@@ -19,7 +18,7 @@
           >{{ item.label }}@if (item.linkType === 'external') { <i>open_in_new</i> }</a>
         }
       </div>
-      <div class="nav-actions"><app-platform-language-switcher /><div class="access-links"><a routerLink="/demo/joyau-du-savoir/connexion" class="login-link"><i>login</i>Connexion</a></div></div>
+      <div class="nav-actions"><app-platform-language-switcher /><div class="access-links"><a routerLink="/connexion" class="login-link"><i>login</i>Connexion</a></div></div>
     </div>
   </nav>
 
@@ -29,7 +28,7 @@
         @switch (section.type) {
           @case ('hero') {
             <section class="hero">
-              <div class="hero-copy"><small>{{ section.eyebrow }}</small><h1>{{ section.title }}</h1><h2>{{ draft().tagline }}</h2><p>{{ section.content }}</p><div><button type="button" routerLink="/demo/joyau-du-savoir/connexion">Connexion</button><a href="#decouvrir">Découvrir l’établissement <span>arrow_forward</span></a></div></div>
+              <div class="hero-copy"><small>{{ section.eyebrow }}</small><h1>{{ section.title }}</h1><h2>{{ draft().tagline }}</h2><p>{{ section.content }}</p><div><button type="button" routerLink="/connexion">Connexion</button><a href="#decouvrir">Découvrir l’établissement <span>arrow_forward</span></a></div></div>
               <aside><span>school</span><strong>Votre établissement en image</strong><p>Cette photographie sera administrable depuis le back-office.</p><em>Depuis 2008</em></aside>
             </section>
           }
@@ -68,10 +67,10 @@
   </main>
 
   <footer>
-    <div class="footer-intro"><div class="brand"><b>J</b><span>{{ draft().schoolName }}</span></div><p>{{ draft().description }}</p><div class="socials"><a href="#">public</a><a href="#">photo_camera</a><a href="#">work</a></div></div>
+    <div class="footer-intro"><div class="brand">@if (draft().logoUrl) { <img [src]="draft().logoUrl" alt="Logo de {{ draft().schoolName }}" /> } @else { <b>{{ draft().schoolName.charAt(0) }}</b> }<span>{{ draft().schoolName }}</span></div><p>{{ draft().description }}</p><div class="socials"><a href="#">public</a><a href="#">photo_camera</a><a href="#">work</a></div></div>
     <div><h3>Liens utiles</h3>@for (item of visibleMenu(); track item.id) { <a [href]="item.linkType === 'external' ? item.url : '#'" (click)="openMenuItem(item, $event)">{{ item.label }}</a> }</div>
     <div><h3>Admissions</h3><a href="#" (click)="selectedPageId.set('admission'); $event.preventDefault()">Procédure d’admission</a><a href="#" (click)="selectedPageId.set('admission'); $event.preventDefault()">Déposer une demande d’admission</a><a href="#" (click)="selectedPageId.set('schools'); $event.preventDefault()">Nos établissements</a></div>
-    <div><h3>Votre espace</h3><a routerLink="/demo/joyau-du-savoir/connexion">Connexion</a><span>Vos identifiants sont créés et transmis par l’établissement.</span></div>
+    <div><h3>Votre espace</h3><a routerLink="/connexion">Connexion</a><span>Vos identifiants sont créés et transmis par l’établissement.</span></div>
     <div><h3>Contact</h3><span><i>location_on</i>{{ draft().address }}</span><span><i>phone</i>{{ draft().phone }}</span><span><i>mail</i>{{ draft().email }}</span></div>
     <small>© 2026 {{ draft().schoolName }}. Tous droits réservés. · Site propulsé par E‑Scolarité</small>
   </footer>

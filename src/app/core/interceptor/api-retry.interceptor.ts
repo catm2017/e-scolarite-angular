@@ -6,7 +6,7 @@ import {
   HttpRequest,
 } from '@angular/common/http';
 import { Observable, retry, throwError, timer } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { estUrlApi } from '../config/api-url';
 
 /**
  * Rend les lectures de l'API plus tolérantes aux démarrages lents de PHP-FPM,
@@ -19,7 +19,7 @@ export const apiRetryInterceptor: HttpInterceptorFn = (
   request: HttpRequest<unknown>,
   next: HttpHandlerFn,
 ): Observable<HttpEvent<unknown>> => {
-  const isApiRead = request.url.startsWith(environment.apiUrl)
+  const isApiRead = estUrlApi(request.url)
     && (request.method === 'GET' || request.method === 'HEAD');
 
   if (!isApiRead) {

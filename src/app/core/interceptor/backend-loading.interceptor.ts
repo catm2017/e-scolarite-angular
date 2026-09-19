@@ -1,7 +1,7 @@
 import { HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { finalize, Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { estUrlApi } from '../config/api-url';
 import { BackendLoadingService } from '../service/backend-loading.service';
 
 /** Affiche un état d'attente pour chaque appel effectué vers l'API Laravel. */
@@ -11,7 +11,7 @@ export const backendLoadingInterceptor: HttpInterceptorFn = (
 ): Observable<HttpEvent<unknown>> => {
   // Les fichiers du thème, les traductions et les services IA ne doivent pas
   // produire un faux chargement métier.
-  if (!request.url.startsWith(environment.apiUrl)) {
+  if (!estUrlApi(request.url)) {
     return next(request);
   }
 

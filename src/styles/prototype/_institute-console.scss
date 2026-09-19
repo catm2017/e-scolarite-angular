@@ -1234,6 +1234,38 @@
   .subscription-loading > span { width: 35px; height: 35px; margin: 0 auto 13px; border: 3px solid #d7e8f4; border-top-color: #2f80ed; border-radius: 50%; display: block; animation: subscription-spin .8s linear infinite; }
   .subscription-loading strong { display: block; color: #38566d; font-size: 14px; }
   .subscription-loading p { margin: 4px 0 0; color: #8193a2; font-size: 11px; }
+  .institute-settings-form { display: grid; gap: 18px; }
+  .institute-settings-card { overflow: hidden; }
+  .institute-settings-card > header { padding: 19px 22px; border-bottom: 1px solid #e2ebf1; background: #f9fcfe; }
+  .institute-settings-card > header > div { display: flex; align-items: flex-start; gap: 13px; }
+  .institute-settings-card > header > div > span { width: 39px; height: 39px; border-radius: 10px; display: grid; place-items: center; flex: 0 0 auto; background: #eaf5fc; color: #2c8dc9; }
+  .institute-settings-card > header i,.institute-logo-preview i,.matricule-format-help i,.logo-upload-button i { font-family: 'Material Icons'; font-style: normal; }
+  .institute-settings-card h2 { margin: 0 0 4px; color: #304e65; font-size: 18px; }
+  .institute-settings-card header p { margin: 0; color: #72889a; font-size: 13px; line-height: 1.5; }
+  .institute-settings-body { padding: 23px; }
+  .institute-logo-editor { margin-bottom: 23px; padding-bottom: 22px; border-bottom: 1px solid #e7eef3; display: flex; align-items: center; gap: 16px; }
+  .institute-logo-preview { width: 72px; height: 72px; border: 1px solid #d6e5ef; border-radius: 14px; display: grid; place-items: center; overflow: hidden; background: #f3f9fc; color: #388fc3; }
+  .institute-logo-preview img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+  .institute-logo-preview i { font-size: 34px; }
+  .institute-logo-editor strong { color: #38566d; font-size: 14px; }
+  .institute-logo-editor p { margin: 4px 0 10px; color: #8494a3; font-size: 12px; }
+  .logo-upload-button { min-height: 34px; padding: 0 11px; border: 1px solid #bedbeb; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; background: #fff; color: #287aa9; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .logo-upload-button input { display: none; }
+  .logo-upload-button i { font-size: 16px; }
+  .institute-settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px; }
+  .institute-settings-grid label { display: grid; gap: 7px; color: #536f84; font-size: 13px; font-weight: 650; }
+  .institute-settings-grid label > span b,.institute-settings-actions b { color: #e05050; }
+  .institute-settings-grid input { min-width: 0; height: 42px; padding: 0 12px; border: 1px solid #d7e4ec; border-radius: 8px; outline: none; background: #fff; color: #345269; font: inherit; font-size: 14px; }
+  .institute-settings-grid input:focus { border-color: #54a4d5; box-shadow: 0 0 0 3px #54a4d51c; }
+  .institute-settings-grid small { color: #8596a4; font-size: 11px; font-weight: 400; line-height: 1.4; }
+  .matricule-format-help { margin: 20px 0 0; padding: 12px 13px; border-radius: 8px; display: flex; align-items: flex-start; gap: 7px; background: #eff8fd; color: #58758a; font-size: 12px; line-height: 1.55; }
+  .matricule-format-help i { color: #318bc0; font-size: 17px; }
+  .matricule-format-help b,.matricule-format-help strong { color: #356882; }
+  .institute-settings-actions { padding: 3px 2px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #738899; font-size: 12px; }
+  .institute-settings-actions button { min-width: 210px; }
+  .institute-settings-actions i,.institute-settings-loading i { font-family: 'Material Icons'; font-style: normal; }
+  .institute-settings-loading { min-height: 180px; display: grid; place-content: center; justify-items: center; gap: 9px; color: #668195; font-size: 14px; }
+  .institute-settings-loading i { color: #2f80ed; font-size: 30px; animation: subscription-spin .8s linear infinite; }
   @keyframes subscription-spin { to { transform: rotate(360deg); } }
 
   @media (max-width: 1100px) {
@@ -1246,6 +1278,9 @@
     .subscription-package-grid { grid-template-columns: 1fr; }
     .custom-subscription-toolbar label { width: 100%; flex-basis: auto; }
     .subscription-features-table { padding: 11px; }
+    .institute-settings-grid { grid-template-columns: 1fr; }
+    .institute-settings-actions { align-items: stretch; flex-direction: column; }
+    .institute-settings-actions button { width: 100%; }
     .custom-feature-panel > header,.type-subscription-tools { align-items: flex-start; flex-direction: column; }
     .type-effectif { text-align: left; }
   }

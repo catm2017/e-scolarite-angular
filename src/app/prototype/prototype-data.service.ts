@@ -43,6 +43,7 @@ export interface WebsiteMenuItem {
 
 export interface WebsiteDraft {
   schoolName: string;
+  logoUrl?: string | null;
   tagline: string;
   description: string;
   phone: string;
@@ -59,6 +60,7 @@ export interface WebsiteDraft {
 export class PrototypeDataService {
   readonly website = signal<WebsiteDraft>({
     schoolName: 'Institut Le Joyau du Savoir',
+    logoUrl: null,
     tagline: 'Grandir, apprendre et réussir ensemble.',
     description:
       'Un établissement exigeant et bienveillant, engagé pour la réussite académique et l’épanouissement de chaque apprenant.',
@@ -147,5 +149,9 @@ export class PrototypeDataService {
 
   updateWebsite(patch: Partial<WebsiteDraft>): void {
     this.website.update((draft) => ({ ...draft, ...patch }));
+  }
+
+  remplacerWebsite(draft: WebsiteDraft): void {
+    this.website.set(draft);
   }
 }

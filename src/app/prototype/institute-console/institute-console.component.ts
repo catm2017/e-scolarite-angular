@@ -11,7 +11,7 @@ import {
   InstituteWorkspaceService,
 } from './institute-workspace.service';
 import { PrimaryWorkspaceService } from '../primary-school/primary-workspace.service';
-import { CampusInstitut, CentralApiService, CompteCandidatInstitut, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, PermissionInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
+import { CampusInstitut, CentralApiService, CompteCandidatInstitut, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
 import { TemplateMultiselectDirective } from '@shared/directives/template-multiselect.directive';
 import { StudentTransfersComponent } from './student-transfers/student-transfers.component';
@@ -195,6 +195,16 @@ export class InstituteConsoleComponent implements OnInit {
   readonly subscriptionError = signal<string | null>(null);
   readonly subscriptionSuccess = signal<string | null>(null);
   readonly backendRefreshing = signal(false);
+  readonly instituteSettingsLoading = signal(false);
+  readonly instituteSettingsSaving = signal(false);
+  readonly instituteLogoPreview = signal<string | null>(null);
+  private instituteLogoFile: File | null = null;
+  instituteSettingsForm: ParametresInstitut = {
+    nom: '', logo_url: null, domaine: null,
+    format_matricule_eleve: 'ELE-{ANNEE}-{SEQUENCE}',
+    format_matricule_enseignant: 'ENS-{ANNEE}-{SEQUENCE}',
+    format_matricule_personnel: 'PER-{ANNEE}-{SEQUENCE}',
+  };
   readonly selectedSubscriptionType = signal<SubscriptionType | null>(null);
   readonly activeEstablishmentsCount = computed(() => this.establishments().filter((item) => item.active).length);
   readonly activeEstablishments = computed(() => this.establishments().filter((item) => item.active));
@@ -510,6 +520,7 @@ export class InstituteConsoleComponent implements OnInit {
         this.chargerUtilisateurs();
         this.chargerRolesPermissions();
         this.chargerSouscription();
+        this.chargerParametresInstitut();
       },
       error: (erreur: HttpErrorResponse) => {
         if (erreur.status === 401 || erreur.status === 419) {
@@ -764,6 +775,56 @@ export class InstituteConsoleComponent implements OnInit {
     this.subscriptionError.set(null);
     this.subscriptionSuccess.set(null);
     this.chargerEspace();
+  }
+
+  private chargerParametresInstitut(): void {
+    this.instituteSettingsLoading.set(true);
+    this.api.parametresInstitut().subscribe({
+      next: ({ data }) => {
+        this.instituteSettingsForm = { ...data };
+        this.instituteLogoPreview.set(data.logo_url);
+        this.instituteLogoFile = null;
+        this.instituteSettingsLoading.set(false);
+      },
+      error: () => {
+        this.instituteSettingsLoading.set(false);
+      },
+    });
+  }
+
+  choisirLogoInstitut(event: Event): void {
+    const fichier = (event.target as HTMLInputElement).files?.[0] ?? null;
+    if (!fichier) return;
+    this.instituteLogoFile = fichier;
+    const lecteur = new FileReader();
+    lecteur.onload = () => this.instituteLogoPreview.set(typeof lecteur.result === 'string' ? lecteur.result : null);
+    lecteur.readAsDataURL(fichier);
+  }
+
+  enregistrerParametresInstitut(): void {
+    if (this.instituteSettingsSaving() || !this.instituteSettingsForm.nom.trim()) return;
+    const donnees = new FormData();
+    donnees.append('nom', this.instituteSettingsForm.nom.trim());
+    donnees.append('domaine', this.instituteSettingsForm.domaine?.trim() ?? '');
+    donnees.append('format_matricule_eleve', this.instituteSettingsForm.format_matricule_eleve.trim());
+    donnees.append('format_matricule_enseignant', this.instituteSettingsForm.format_matricule_enseignant.trim());
+    donnees.append('format_matricule_personnel', this.instituteSettingsForm.format_matricule_personnel.trim());
+    if (this.instituteLogoFile) donnees.append('logo', this.instituteLogoFile);
+    this.instituteSettingsSaving.set(true);
+    this.api.enregistrerParametresInstitut(donnees).subscribe({
+      next: ({ message, data }) => {
+        this.instituteSettingsSaving.set(false);
+        this.instituteSettingsForm = { ...data };
+        this.instituteLogoPreview.set(data.logo_url);
+        this.instituteLogoFile = null;
+        this.instituteName.set(data.nom);
+        this.toast.success(message);
+      },
+      error: (error) => {
+        this.instituteSettingsSaving.set(false);
+        this.toast.error(error?.error?.message ?? 'Les paramètres de l’institut n’ont pas pu être enregistrés.');
+      },
+    });
   }
 
   chargerSalles(): void {

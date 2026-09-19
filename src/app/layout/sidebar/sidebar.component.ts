@@ -128,7 +128,7 @@ export class SidebarComponent
   isSaasWorkspace = false;
   readonly saasNavigation = [
     { path: '/saas/tableau-de-bord', title: 'Vue d’ensemble', icon: 'space_dashboard' },
-    { path: '/saas/etablissements', title: 'Établissements', icon: 'apartment' },
+    { path: '/saas/etablissements', title: 'Instituts', icon: 'apartment' },
     { path: '/saas/adhesions', title: 'Adhésions', icon: 'how_to_reg' },
     { path: '/saas/activations-comptes', title: 'Activations de comptes', icon: 'verified_user' },
     { path: '/saas/tarification', title: 'Tarification et packages', icon: 'sell' },

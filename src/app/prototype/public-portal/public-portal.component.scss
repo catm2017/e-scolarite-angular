@@ -1,0 +1,8 @@
+.domain-loading, .domain-empty { min-height: 100vh; display: grid; place-content: center; text-align: center; padding: 2rem; color: #17365f; background: #eaf1ff; }
+.domain-loading { gap: .8rem; font-weight: 700; }
+.domain-loading i { animation: spin 1s linear infinite; font-size: 2rem; }
+.domain-empty { background: #f8fbff; }
+.domain-empty i { color: #2f80ed; font-size: 3.25rem; margin-bottom: .75rem; }
+.domain-empty h1 { margin: 0; font-size: clamp(1.4rem, 3vw, 2rem); }
+.domain-empty p { color: #5e718e; max-width: 35rem; }
+@keyframes spin { to { transform: rotate(360deg); } }

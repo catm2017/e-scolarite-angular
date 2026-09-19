@@ -36,7 +36,7 @@
         <p>Choisissez un institut dont le compte administrateur est encore en attente. Le code est transmis uniquement par WhatsApp et expire après 10 minutes.</p>
         @if (activationsComptes().length) {
           <div class="saas-form-grid">
-            <mat-form-field appearance="outline"><mat-label>Établissement</mat-label><mat-select [ngModel]="institutActivationId()" (ngModelChange)="institutActivationId.set($event)">@for (activation of activationsComptes(); track activation.id) {<mat-option [value]="activation.id">{{ activation.institut }} · {{ activation.responsable }}</mat-option>}</mat-select></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Institut</mat-label><mat-select [ngModel]="institutActivationId()" (ngModelChange)="institutActivationId.set($event)">@for (activation of activationsComptes(); track activation.id) {<mat-option [value]="activation.id">{{ activation.institut }} · {{ activation.responsable }}</mat-option>}</mat-select></mat-form-field>
             <mat-form-field appearance="outline"><mat-label>Lien d’activation à communiquer</mat-label><input matInput [value]="lienActivationPourInstitut()" readonly /></mat-form-field>
           </div>
           <p class="saas-choice-help">Le modèle WhatsApp d’authentification ne peut pas contenir ce lien. Copiez-le ou ouvrez-le pour le communiquer au responsable par le canal de votre choix.</p>
@@ -141,7 +141,7 @@
             <mat-form-field appearance="outline"><mat-label>Statut</mat-label><mat-select name="statut" [(ngModel)]="annee.statut"><mat-option value="ouverte">Ouverte</mat-option><mat-option value="archivee">Archivée</mat-option></mat-select></mat-form-field>
             <mat-checkbox name="courante" [(ngModel)]="annee.est_courante" [disabled]="annee.statut === 'archivee'">Année courante</mat-checkbox>
           </div>
-          <p>Chaque établissement définit ses propres dates de début et de fin.</p>
+          <p>Chaque institut définit ses propres dates de début et de fin.</p>
           <div class="saas-form-actions"><button mat-stroked-button type="button" (click)="annulerEditionAnneeScolaire()">Annuler</button><button mat-flat-button color="primary" type="submit" [disabled]="enregistrementAnneeScolaire()"><mat-icon>save</mat-icon>Enregistrer</button></div>
         </form>
       }
@@ -171,7 +171,7 @@
           <div class="saas-form-actions"><button mat-stroked-button type="button" (click)="institutEnDetail.set(null)">Fermer</button></div>
         </article>
       }
-      <div class="card saas-filter-bar"><div><h2>Établissements</h2><p>Suivez l’abonnement actuellement utilisé par chaque institut.</p></div></div>
+      <div class="card saas-filter-bar"><div><h2>Instituts</h2><p>Suivez l’abonnement actuellement utilisé par chaque institut.</p></div></div>
       <app-master-table title="Instituts" [dataSource]="etablissementsSource" [columnDefinitions]="etablissementsColumns" [showCheckbox]="false" [showAdd]="false" [showDelete]="false" [showEdit]="false" [showDetails]="true" [showContextMenu]="false" [showBulkDelete]="false" (details)="ouvrirDetailInstitut($event)" (rowClick)="ouvrirDetailInstitut($event)" (refresh)="chargerDonnees()" />
     }
   </div>

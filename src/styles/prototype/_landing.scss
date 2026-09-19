@@ -86,6 +86,7 @@
   .landing-partner-track { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
   .landing-partner-track article { flex: 0 0 265px; display: flex; align-items: center; gap: 14px; background: white; padding: 20px; border: 1px solid #e7edf3; border-radius: 10px; scroll-snap-align: start; }
   .landing-partner-track article > span { display: grid; place-items: center; width: 44px; height: 44px; background: #f1f6fb; color: #81a6bd; border-radius: 50%; flex-shrink: 0; }
+  .landing-partner-track article > span img { width: 100%; height: 100%; padding: 4px; object-fit: contain; border-radius: inherit; background: #fff; }
   .landing-partner-track strong { font-size: 14px; font-weight: 500; }
   .landing-about { display: grid; grid-template-columns: 1fr 1fr; gap: 75px; align-items: center; }
   .landing-about ul { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 13px; }
@@ -125,21 +126,6 @@
   .landing-contact > div { max-width: 580px; }
   .landing-contact p { font-size: 15px; max-width: 500px; }
   .landing-contact > a { flex-shrink: 0; }
-  .whatsapp-test { display: grid; grid-template-columns: minmax(0, .8fr) minmax(360px, 1fr); align-items: start; gap: 54px; border-top: 1px solid #cbd5f6; }
-  .whatsapp-test > div > h2 { margin-bottom: 12px; }
-  .whatsapp-test > div > p { max-width: 410px; font-size: 15px; }
-  .whatsapp-test form { padding: 28px; border: 1px solid #c9dff0; background: rgba(255, 255, 255, .78); border-radius: 15px; display: grid; gap: 16px; box-shadow: 0 16px 35px #426d9c0c; }
-  .whatsapp-test label { display: grid; gap: 7px; color: #526b81; font-size: 13px; font-weight: 600; }
-  .whatsapp-test label > div { display: flex; align-items: flex-start; gap: 10px; min-height: 48px; padding: 11px 13px; border: 1px solid #d8e5ef; border-radius: 8px; background: #fff; }
-  .whatsapp-test label > div:focus-within { border-color: #4ca9df; box-shadow: 0 0 0 3px #53aade1c; }
-  .whatsapp-test label i { margin-top: 2px; color: #36a873; font-size: 20px; }
-  .whatsapp-test input, .whatsapp-test textarea { flex: 1; min-width: 0; border: 0; outline: 0; resize: vertical; background: transparent; color: #304a60; font: inherit; font-size: 14px; line-height: 1.45; }
-  .whatsapp-test textarea { min-height: 50px; }
-  .whatsapp-test .landing-button { width: 100%; border: 0; cursor: pointer; }
-  .whatsapp-test .landing-button:disabled { cursor: wait; opacity: .72; transform: none; }
-  .whatsapp-test-feedback { display: flex; align-items: center; gap: 8px; padding: 10px 12px; margin: 0; border-radius: 7px; background: #e9f8f0; color: #267a59 !important; font-size: 13px !important; }
-  .whatsapp-test-feedback.error { background: #fff1f1; color: #be5454 !important; }
-  .whatsapp-test-feedback i { font-size: 18px; }
   .landing-footer { border-top: 1px solid #cbd5f6; padding: 35px max(30px, calc((100vw - 1140px) / 2)); display: flex; align-items: center; gap: 30px; justify-content: space-between; flex-wrap: wrap; background: rgba(255, 255, 255, .34); }
   .landing-footer p { font-size: 13px; margin-top: 8px; }
   .landing-footer nav { display: flex; flex-wrap: wrap; gap: 22px; }
@@ -151,7 +137,6 @@
     .landing-nav nav a { font-size: 13px; }
     .landing-hero { gap: 30px; padding: 45px 30px 65px; }
     .landing-custom-package, .landing-contact { flex-wrap: wrap; }
-    .whatsapp-test { grid-template-columns: 1fr; gap: 28px; }
     .landing-about { gap: 40px; }
     .landing-contact { margin-inline: 30px; }
   }
@@ -188,7 +173,6 @@
     .landing-cycle-strip > div { gap: 12px; }
     .landing-cycle-strip b { font-size: 12px; }
     .landing-contact { margin: 0 20px 50px; padding: 30px 24px; }
-    .whatsapp-test form { padding: 21px; }
     .landing-custom-package { padding: 25px; }
     .landing-custom-package .landing-button { width: 100%; }
   }

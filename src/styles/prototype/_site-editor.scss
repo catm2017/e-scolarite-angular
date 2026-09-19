@@ -69,6 +69,14 @@
   border-radius: 10px;
   font: italic 700 20px Georgia, serif;
 }
+.editor-title img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  border: 1px solid #dce8f0;
+  border-radius: 10px;
+  background: #fff;
+}
 
 .editor-title strong,
 .editor-title small {
@@ -543,6 +551,15 @@
   background: var(--school-color);
   border-radius: 8px;
   font: italic 700 17px Georgia, serif;
+}
+.preview-brand img {
+  width: 32px;
+  height: 32px;
+  display: block;
+  object-fit: contain;
+  border: 1px solid #dce8f0;
+  border-radius: 8px;
+  background: #fff;
 }
 .preview-brand small { display: block; margin-top: 2px; color: #82909b; font: 500 5px Inter, sans-serif; letter-spacing: .6px; }
 .preview-menu { display: flex; align-items: center; gap: 19px; }

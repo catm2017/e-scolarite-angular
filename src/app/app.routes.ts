@@ -90,8 +90,8 @@ export const APP_ROUTE: Route[] = [
   {
     path: '',
     loadComponent: () =>
-      import('./prototype/landing/landing.component').then(
-        (component) => component.LandingComponent,
+      import('./prototype/public-portal/public-portal.component').then(
+        (component) => component.PublicPortalComponent,
       ),
   },
   {
@@ -118,6 +118,10 @@ export const APP_ROUTE: Route[] = [
       import('./prototype/account-activation/account-activation.component').then(
         (component) => component.AccountActivationComponent,
       ),
+  },
+  {
+    path: 'mot-de-passe-oublie',
+    loadComponent: () => import('./prototype/forgot-password/forgot-password.component').then((component) => component.ForgotPasswordComponent),
   },
   {
     path: 'adhesion',

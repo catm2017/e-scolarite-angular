@@ -1,12 +1,12 @@
 <div class="editor">
   <header class="editor-header">
     <a routerLink="/institut" class="back-link"><span>arrow_back</span>Retour au back-office</a>
-    <div class="editor-title"><i>J</i><strong>Éditeur du site<small>Institut Le Joyau du Savoir</small></strong></div>
+    <div class="editor-title">@if (draft().logoUrl) { <img [src]="draft().logoUrl" alt="Logo de l’institut" /> } @else { <i>{{ draft().schoolName.charAt(0) }}</i> }<strong>Éditeur du site<small>{{ draft().schoolName }}</small></strong></div>
     <div class="editor-actions">
       <app-platform-language-switcher />
-      <span class="saved"><span>cloud_done</span> Modifications enregistrées</span>
-      <a routerLink="/demo/joyau-du-savoir">Aperçu public</a>
-      <button type="button">Publier</button>
+      <span class="saved"><span>cloud_done</span> {{ message() || (chargement() ? 'Chargement…' : 'Modifications locales') }}</span>
+      <button type="button" class="editor-save" (click)="enregistrer()" [disabled]="enregistrement()">Enregistrer</button>
+      <button type="button" (click)="enregistrer(true)" [disabled]="enregistrement()">{{ enregistrement() ? 'Publication…' : 'Publier' }}</button>
     </div>
   </header>
 
@@ -100,9 +100,9 @@
         }
         <section class="creation-card">
           <small>NOUVELLE PAGE</small>
-          <label>Nom de la page<input [(ngModel)]="newPageTitle" placeholder="Ex. Vie scolaire" /></label>
-          <label>Courte description<textarea rows="2" [(ngModel)]="newPageDescription" placeholder="Objet de cette page"></textarea></label>
-          <button type="button" (click)="addPage()" [disabled]="!newPageTitle.trim()"><span>add</span>Créer la page</button>
+          <label>Nom de la page<input [ngModel]="newPageTitle()" (ngModelChange)="newPageTitle.set($event)" placeholder="Ex. Vie scolaire" /></label>
+          <label>Courte description<textarea rows="2" [ngModel]="newPageDescription()" (ngModelChange)="newPageDescription.set($event)" placeholder="Objet de cette page"></textarea></label>
+          <button type="button" (click)="addPage()" [disabled]="!newPageTitle().trim()"><span>add</span>Créer la page</button>
         </section>
       }
 
@@ -131,7 +131,7 @@
         </section>
         <section class="creation-card">
           <small>AJOUTER UN LIEN</small>
-          <label>Libellé<input [(ngModel)]="newMenuLabel" placeholder="Ex. Vie scolaire" /></label>
+          <label>Libellé<input [ngModel]="newMenuLabel()" (ngModelChange)="newMenuLabel.set($event)" placeholder="Ex. Vie scolaire" /></label>
           <div class="segmented">
             <button type="button" [class.active]="newMenuType === 'internal'" (click)="newMenuType = 'internal'"><span>link</span>Page du site</button>
             <button type="button" [class.active]="newMenuType === 'external'" (click)="newMenuType = 'external'"><span>open_in_new</span>Lien externe</button>
@@ -148,7 +148,7 @@
             <label>Adresse complète<input [(ngModel)]="newMenuUrl" placeholder="https://exemple.sn" /></label>
             <label class="check-row"><input type="checkbox" [(ngModel)]="newMenuOpenInNewTab" /><span>Ouvrir dans un nouvel onglet</span></label>
           }
-          <button type="button" (click)="addMenuItem()" [disabled]="!newMenuLabel.trim()"><span>add_link</span>Ajouter au menu</button>
+          <button type="button" (click)="addMenuItem()" [disabled]="!newMenuLabel().trim()"><span>add_link</span>Ajouter au menu</button>
         </section>
       }
 
@@ -191,7 +191,7 @@
         <div class="site-preview" [style.--school-color]="draft().primaryColor">
           <div class="site-contactbar"><span>phone&nbsp; {{ draft().phone }}</span><span>mail&nbsp; {{ draft().email }}</span><span>schedule&nbsp; Lun–Ven · 08h–17h</span></div>
           <nav>
-            <div class="preview-brand"><b>J</b><span>{{ draft().schoolName }}<small>Excellence · Savoir · Valeurs</small></span></div>
+            <div class="preview-brand">@if (draft().logoUrl) { <img [src]="draft().logoUrl" alt="Logo de l’institut" /> } @else { <b>{{ draft().schoolName.charAt(0) }}</b> }<span>{{ draft().schoolName }}<small>Excellence · Savoir · Valeurs</small></span></div>
             <div class="preview-menu">
               @for (item of visibleMenu(); track item.id) {
                 <a [href]="item.linkType === 'external' ? item.url : '#'" [class.active]="item.pageId === selectedPageId()" (click)="previewMenuItem(item, $event)">{{ item.label }}</a>

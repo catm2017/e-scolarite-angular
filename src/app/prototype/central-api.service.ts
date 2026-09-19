@@ -2,7 +2,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, defer, Observable, shareReplay, tap, throwError } from 'rxjs';
-import { environment } from '../../environments/environment';
+import type { WebsiteDraft } from './prototype-data.service';
+import { urlApiActive } from '../core/config/api-url';
 
 const CLES_SESSION_API = [
   'escolarite_centrale_token',
@@ -32,6 +33,25 @@ export interface InstitutConnexion {
   id: string;
   nom: string;
   slug: string;
+  logo_url?: string | null;
+}
+
+export interface SitePublicInstitut {
+  institut_id: string;
+  nom: string;
+  slug: string;
+  logo_url: string | null;
+  statut: 'brouillon' | 'publie';
+  contenu: WebsiteDraft;
+}
+
+export interface ParametresInstitut {
+  nom: string;
+  logo_url: string | null;
+  domaine: string | null;
+  format_matricule_eleve: string;
+  format_matricule_enseignant: string;
+  format_matricule_personnel: string;
 }
 
 export interface InstitutActivationCompte {
@@ -683,7 +703,7 @@ export class CentralApiService {
   private readonly souscriptionValideeKey = 'escolarite_souscription_validee';
   private readonly fonctionnalitesActivesKey = 'escolarite_fonctionnalites_actives';
   private readonly expirationKey = 'escolarite_session_expire_at';
-  private readonly baseUrl = environment.apiUrl;
+  private readonly baseUrl = urlApiActive();
   private readonly campusInstitutState = signal<CampusInstitut[]>([]);
   private readonly etablissementsInstitutState = signal<Array<Omit<TypeSouscription, 'fonctionnalites'>>>([]);
   private readonly espaceInstitutChargeState = signal(false);
@@ -700,12 +720,13 @@ export class CentralApiService {
     this.planifierExpirationSession();
   }
 
-  connexion(identifiant: string, password: string, institutId?: string) {
+  connexion(identifiant: string, password: string, institutId?: string, domaine?: string) {
     return this.http
       .post<{ token: string; expire_at: string; user: CentralUser; espace: 'centrale' | 'institut'; institut?: InstitutConnexion; souscription_validee?: boolean; fonctionnalites_actives?: string[] }>(`${this.baseUrl}/connexion`, {
         email: identifiant,
         password,
         institut_id: institutId || null,
+        domaine: domaine || null,
         nom_appareil: navigator.userAgent.slice(0, 120),
       })
       .pipe(tap((result) => {
@@ -727,6 +748,38 @@ export class CentralApiService {
       this.http.get<{ data: InstitutConnexion[] }>(`${this.baseUrl}/instituts-connexion`),
       5 * 60_000,
     );
+  }
+
+  sitePublic(domaine = window.location.hostname) {
+    return this.http.get<{ data: SitePublicInstitut }>(`${this.baseUrl}/public/site`, {
+      params: { domaine },
+    });
+  }
+
+  siteWebInstitut() {
+    return this.http.get<{ data: SitePublicInstitut }>(`${this.baseUrl}/institut/site-web`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  enregistrerSiteWebInstitut(contenu: WebsiteDraft, publier?: boolean) {
+    const donnees: { contenu: WebsiteDraft; publier?: boolean } = { contenu };
+    if (publier !== undefined) donnees.publier = publier;
+    return this.http.put<{ message: string; data: SitePublicInstitut }>(`${this.baseUrl}/institut/site-web`, donnees, { headers: this.enteteAutorisation() });
+  }
+
+  parametresInstitut() {
+    return this.lireAvecCache('institut:parametres', () => this.http.get<{ data: ParametresInstitut }>(`${this.baseUrl}/institut/parametres`, {
+      headers: this.enteteAutorisation(),
+    }));
+  }
+
+  enregistrerParametresInstitut(donnees: FormData) {
+    this.invaliderCache('institut:');
+    this.invaliderCache('public:instituts-connexion');
+    return this.http.post<{ message: string; data: ParametresInstitut }>(`${this.baseUrl}/institut/parametres`, donnees, {
+      headers: this.enteteAutorisation(),
+    });
   }
 
   envoyerAdhesion(donnees: Record<string, unknown>) {
@@ -777,9 +830,6 @@ export class CentralApiService {
     );
   }
 
-  envoyerMessageWhatsAppTest(telephone: string, message: string) {
-    return this.http.post<{ message: string }>(`${this.baseUrl}/whatsapp/test`, { telephone, message });
-  }
 
   envoyerMessageSmsInfobipTest(telephone: string, message: string) {
     return this.http.post<{ message: string }>(`${this.baseUrl}/sms-infobip/test`, { telephone, message });

@@ -1,0 +1,14 @@
+@switch (etat()) {
+  @case ('plateforme') { <app-landing /> }
+  @case ('institut') { <app-school-site /> }
+  @case ('inconnu') {
+    <main class="domain-empty">
+      <i class="material-icons-outlined">language</i>
+      <h1>Ce domaine n’est pas encore configuré</h1>
+      <p>Le site de cet institut sera disponible dès que sa configuration sera finalisée.</p>
+    </main>
+  }
+  @default {
+    <main class="domain-loading"><i class="material-icons-outlined">progress_activity</i><span>Chargement du site…</span></main>
+  }
+}

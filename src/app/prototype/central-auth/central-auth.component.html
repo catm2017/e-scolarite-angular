@@ -1,16 +1,35 @@
-<main class="signin-page">
+<main class="signin-page" [style.--signin-color]="siteDuDomaine()?.contenu?.primaryColor || '#218bd2'">
   <header class="signin-nav">
-    <a routerLink="/" class="signin-brand"><span>E</span>E-Scolarité</a>
-    <nav aria-label="Navigation"><a routerLink="/">Accueil</a><a routerLink="/adhesion">Adhésion</a><app-platform-language-switcher /></nav>
+    <a routerLink="/" class="signin-brand">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> } @else { <span>{{ siteDuDomaine()?.nom?.charAt(0) || 'E' }}</span> }{{ siteDuDomaine()?.nom || 'E-Scolarité' }}</a>
+    <nav aria-label="Navigation">
+      @if (siteDuDomaine(); as site) {
+        @for (item of site.contenu.menuItems; track item.id) {
+          @if (item.visible) {
+            @if (item.linkType === 'internal') {
+              <a routerLink="/" [queryParams]="{ page: item.pageId }">{{ item.label }}</a>
+            } @else {
+              <a [href]="item.url" [attr.target]="item.openInNewTab ? '_blank' : null" [attr.rel]="item.openInNewTab ? 'noopener noreferrer' : null">{{ item.label }}</a>
+            }
+          }
+        }
+      } @else {
+        <a routerLink="/">Accueil</a><a routerLink="/adhesion">Adhésion</a>
+      }
+    </nav>
+    <div class="signin-nav-actions"><app-platform-language-switcher /></div>
   </header>
   <div class="signin-main">
     <section class="signin-card">
-      <div class="signin-symbol"><i class="material-icons-outlined">school</i></div>
-      <h1>Bienvenue sur E-Scolarité</h1>
+      <div class="signin-symbol">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> } @else { <i class="material-icons-outlined">school</i> }</div>
+      <h1>Bienvenue{{ siteDuDomaine() ? ' à ' + siteDuDomaine()?.nom : ' sur E-Scolarité' }}</h1>
       <p class="signin-intro">Connectez-vous pour retrouver votre espace de travail.</p>
       <form [formGroup]="connexion" (ngSubmit)="soumettre()">
-        <label for="institut">Établissement <small>Facultatif</small></label>
-        <div class="signin-field"><i class="material-icons-outlined">apartment</i><select id="institut" formControlName="institut_id" (change)="choisirInstitut($any($event.target).value)"><option value=""></option>@for (institut of instituts(); track institut.id) {<option [value]="institut.id">{{ institut.nom }}</option>}</select></div>
+        @if (institutDuDomaine(); as institut) {
+          <div class="signin-institute"><i class="material-icons-outlined">apartment</i><span>Connexion à <strong>{{ institut.nom }}</strong></span></div>
+        } @else {
+          <label for="institut">Établissement <small>Facultatif</small></label>
+          <div class="signin-field"><i class="material-icons-outlined">apartment</i><select id="institut" formControlName="institut_id" (change)="choisirInstitut($any($event.target).value)"><option value=""></option>@for (institut of instituts(); track institut.id) {<option [value]="institut.id">{{ institut.nom }}</option>}</select></div>
+        }
         <label for="identifiant">E-mail ou identifiant</label>
         <div class="signin-field"><i class="material-icons-outlined">alternate_email</i><input id="identifiant" type="text" formControlName="identifiant" autocomplete="username" placeholder="votre.adresse@exemple.sn ou direction_ecole" /></div>
         <label for="password">Mot de passe</label>
@@ -18,9 +37,9 @@
         @if (erreur()) {<p class="signin-error" role="alert"><i class="material-icons-outlined">error_outline</i>{{ erreur() }}</p>}
         <button type="submit" class="signin-submit" [disabled]="chargement()">{{ chargement() ? 'Connexion en cours…' : 'Se connecter' }}<i class="material-icons-outlined" [class.spinning]="chargement()">{{ chargement() ? 'progress_activity' : 'arrow_forward' }}</i></button>
       </form>
-      <p class="signin-help">Première connexion ? <a routerLink="/activation-compte">Activez votre compte par WhatsApp.</a><br />Un problème de connexion ? Contactez l’administrateur de votre établissement.</p>
+      <p class="signin-help">Première connexion ? <a routerLink="/activation-compte">Activez votre compte.</a><br /><a routerLink="/mot-de-passe-oublie">Mot de passe oublié ?</a></p>
     </section>
-    <p class="signin-join">Votre institut n’a pas encore son espace ?<a routerLink="/adhesion">Demander une adhésion <span>→</span></a></p>
+    @if (!siteDuDomaine()) { <p class="signin-join">Votre institut n’a pas encore son espace ?<a routerLink="/adhesion">Demander une adhésion <span>→</span></a></p> }
   </div>
-  <footer class="signin-footer">© 2026 E-Scolarité · Une solution Daara Tech</footer>
+  <footer class="signin-footer">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> }<span>© 2026 {{ siteDuDomaine()?.nom || 'E-Scolarité' }} · Propulsé par E‑Scolarité</span></footer>
 </main>

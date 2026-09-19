@@ -47,7 +47,7 @@
       <div class="landing-feature-grid">@for (feature of features; track feature.title) {<article><span class="feature-icon"><i class="material-icons-outlined">{{ feature.icon }}</i></span><h3>{{ feature.title }}</h3><p>{{ feature.text }}</p></article>}</div>
     </section>
     @if (partners().length) {
-      <section class="landing-partners"><div><span class="landing-eyebrow">NOS ADHÉRENTS</span><h2>Chaque institut a sa place.</h2></div><div class="landing-partner-track">@for (partner of partners(); track partner.id) {<article><span><i class="material-icons-outlined">school</i></span><strong>{{ partner.nom }}</strong></article>}</div></section>
+      <section class="landing-partners"><div><span class="landing-eyebrow">NOS ADHÉRENTS</span><h2>Chaque institut a sa place.</h2></div><div class="landing-partner-track">@for (partner of partners(); track partner.id) {<article><span>@if (partner.logo_url) {<img [src]="partner.logo_url" [alt]="'Logo ' + partner.nom" />} @else {<i class="material-icons-outlined">school</i>}</span><strong>{{ partner.nom }}</strong></article>}</div></section>
     }
     <section class="landing-about landing-section" id="a-propos">
       <div class="about-diagram"><span class="diagram-caption">UNE DIRECTION COMMUNE</span><div class="diagram-institute"><i class="material-icons-outlined">account_balance</i><strong>Votre institut</strong><span>Une vision d’ensemble</span></div><div class="diagram-branches"><span>Campus</span><span>Établissements</span><span>Équipes</span></div><p>Des espaces spécialisés, reliés au même institut.</p></div>

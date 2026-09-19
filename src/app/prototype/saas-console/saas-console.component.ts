@@ -97,7 +97,7 @@ export class SaasConsoleComponent implements OnInit {
   readonly factureARegler = signal<FactureSouscriptionSaas | null>(null);
   readonly reglementFactureEnCours = signal(false);
   readonly pageTitle = computed(() => ({
-    dashboard: 'Vue d’ensemble', pricing: 'Tarification et packages', schools: 'Établissements',
+    dashboard: 'Vue d’ensemble', pricing: 'Tarification et packages', schools: 'Instituts',
     adhesions: 'Demandes d’adhésion', 'account-activations': 'Activations de comptes', 'academic-years': 'Années scolaires', 'subscription-invoices': 'Factures de souscription', 'subscription-history': 'Historique des abonnements',
   })[this.activeView()]);
   private columns(items: [string, string, ColumnDefinition['type']][]): ColumnDefinition[] {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -11,6 +11,7 @@ import {
   WebsiteSectionType,
 } from '../prototype-data.service';
 import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
+import { CentralApiService } from '../central-api.service';
 
 type EditorTab = 'content' | 'pages' | 'navigation' | 'design';
 
@@ -21,16 +22,20 @@ type EditorTab = 'content' | 'pages' | 'navigation' | 'design';
   styleUrl: './site-editor.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SiteEditorComponent {
+export class SiteEditorComponent implements OnInit {
   readonly data = inject(PrototypeDataService);
+  private readonly api = inject(CentralApiService);
   readonly draft = this.data.website;
   readonly activeTab = signal<EditorTab>('content');
   readonly selectedPageId = signal('home');
   readonly previewDevice = signal<'desktop' | 'tablet' | 'mobile'>('desktop');
+  readonly chargement = signal(true);
+  readonly enregistrement = signal(false);
+  readonly message = signal('');
 
-  newPageTitle = '';
-  newPageDescription = '';
-  newMenuLabel = '';
+  readonly newPageTitle = signal('');
+  readonly newPageDescription = signal('');
+  readonly newMenuLabel = signal('');
   newMenuType: 'internal' | 'external' = 'internal';
   newMenuPageId = 'home';
   newMenuUrl = 'https://';
@@ -56,6 +61,28 @@ export class SiteEditorComponent {
     { value: 'cta', label: 'Appel à l’action', icon: 'campaign' },
   ];
 
+  ngOnInit(): void {
+    this.api.siteWebInstitut().subscribe({
+      next: ({ data }) => this.data.remplacerWebsite(data.contenu),
+      error: () => this.message.set('Le site n’a pas pu être chargé. La proposition affichée reste modifiable.'),
+      complete: () => this.chargement.set(false),
+    });
+  }
+
+  enregistrer(publier?: boolean): void {
+    if (this.enregistrement()) return;
+    this.enregistrement.set(true);
+    this.message.set('');
+    this.api.enregistrerSiteWebInstitut(this.draft(), publier).subscribe({
+      next: ({ data, message }) => {
+        this.data.remplacerWebsite(data.contenu);
+        this.message.set(message);
+      },
+      error: () => this.message.set('L’enregistrement du site n’a pas abouti. Réessayez dans quelques instants.'),
+      complete: () => this.enregistrement.set(false),
+    });
+  }
+
   update<K extends keyof WebsiteDraft>(key: K, value: WebsiteDraft[K]): void {
     this.data.updateWebsite({ [key]: value } as Pick<WebsiteDraft, K>);
   }
@@ -69,7 +96,7 @@ export class SiteEditorComponent {
   }
 
   addPage(): void {
-    const title = this.newPageTitle.trim();
+    const title = this.newPageTitle().trim();
     if (!title) return;
     const baseSlug = this.slugify(title) || 'page';
     const existingSlugs = new Set(this.draft().pages.map((page) => page.slug));
@@ -80,7 +107,7 @@ export class SiteEditorComponent {
       id: `page-${Date.now()}`,
       title,
       slug,
-      description: this.newPageDescription.trim() || `Contenu de la page ${title}.`,
+      description: this.newPageDescription().trim() || `Contenu de la page ${title}.`,
       status: 'draft',
       isHome: false,
       sections: [
@@ -89,15 +116,16 @@ export class SiteEditorComponent {
           type: 'hero',
           eyebrow: 'DÉCOUVRIR',
           title,
-          content: this.newPageDescription.trim() || `Présentez ici la page ${title}.`,
+          content: this.newPageDescription().trim() || `Présentez ici la page ${title}.`,
           visible: true,
         },
       ],
     };
     this.update('pages', [...this.draft().pages, page]);
-    this.newPageTitle = '';
-    this.newPageDescription = '';
+    this.newPageTitle.set('');
+    this.newPageDescription.set('');
     this.selectedPageId.set(page.id);
+    this.message.set('Page ajoutée. Cliquez sur Enregistrer pour la conserver.');
   }
 
   updatePage(pageId: string, patch: Partial<WebsitePage>): void {
@@ -118,7 +146,7 @@ export class SiteEditorComponent {
   }
 
   addMenuItem(): void {
-    const label = this.newMenuLabel.trim();
+    const label = this.newMenuLabel().trim();
     if (!label) return;
     const menuItem: WebsiteMenuItem = {
       id: `menu-${Date.now()}`,
@@ -130,8 +158,9 @@ export class SiteEditorComponent {
       visible: true,
     };
     this.update('menuItems', [...this.draft().menuItems, menuItem]);
-    this.newMenuLabel = '';
+    this.newMenuLabel.set('');
     this.newMenuUrl = 'https://';
+    this.message.set('Lien ajouté au menu. Cliquez sur Enregistrer pour le conserver.');
   }
 
   updateMenuItem(itemId: string, patch: Partial<WebsiteMenuItem>): void {

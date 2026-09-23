@@ -17,7 +17,7 @@
           </button>
         </li>
         <!-- Spotlight Standalone Search Bar Component -->
-        @if (!isEstablishmentWorkspace && !isInstituteWorkspace && !isSaasWorkspace) {
+        @if (!isEstablishmentWorkspace && !isInstituteWorkspace && !isSaasWorkspace && !isTeacherWorkspace) {
         <li class="ms-4 search-bar-list-item">
           <app-search-bar></app-search-bar>
         </li>
@@ -40,6 +40,8 @@
               aria-label="Type d’établissement"
               [value]="primaryWorkspace.establishmentType()"
               disabled>
+              <option value="daara">Daara</option>
+              <option value="prescolaire">Préscolaire</option>
               <option value="primary">École primaire</option>
               <option value="college">Collège</option>
               <option value="lycee">Lycée</option>
@@ -60,6 +62,7 @@
               }
             </select>
           </label>
+          @if (primaryWorkspace.establishmentType() !== 'daara') {
           <label class="workspace-context-select active-period-select">
             <small>Période active</small>
             <select
@@ -71,6 +74,7 @@
               }
             </select>
           </label>
+          }
         </div>
       </div>
       }
@@ -79,6 +83,14 @@
         <div class="workspace-campus-switcher institute-context-switcher">
           <i class="material-icons-outlined">admin_panel_settings</i>
           <span><small>E-Scolarité</small><strong>Administration de la plateforme</strong></span>
+        </div>
+      </div>
+      }
+      @if (isTeacherWorkspace) {
+      <div class="workspace-nav-controls institute-nav-controls">
+        <div class="workspace-campus-switcher institute-context-switcher">
+          <i class="material-icons-outlined">co_present</i>
+          <span><small>{{ teacherContextName() }}</small><strong>{{ teacherCampusName() }}</strong></span>
         </div>
       </div>
       }

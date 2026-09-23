@@ -11,7 +11,7 @@ import {
   InstituteWorkspaceService,
 } from './institute-workspace.service';
 import { PrimaryWorkspaceService } from '../primary-school/primary-workspace.service';
-import { CampusInstitut, CentralApiService, CompteCandidatInstitut, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
+import { CampusInstitut, CentralApiService, CompteCandidatInstitut, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TableauBordInstitutApi, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
 import { TemplateMultiselectDirective } from '@shared/directives/template-multiselect.directive';
 import { StudentTransfersComponent } from './student-transfers/student-transfers.component';
@@ -19,6 +19,7 @@ import { StudentTransfersComponent } from './student-transfers/student-transfers
 interface Establishment {
   id: string | null;
   workspaceId?: string | null;
+  code: string;
   type: string;
   name: string;
   icon: string;
@@ -188,12 +189,19 @@ export class InstituteConsoleComponent implements OnInit {
   readonly subscriptionDurationDays = signal(30);
   readonly subscriptionSaving = signal(false);
   readonly subscriptionInterruptModalOpen = signal(false);
+
+  definirDureeOffreSurMesure(value: number | string): void {
+    const duree = Number(value);
+    this.subscriptionDurationDays.set(Number.isFinite(duree) ? Math.min(90, Math.max(1, duree)) : 1);
+  }
   readonly subscriptionStatus = signal<string | null>(null);
   readonly subscriptionDaysRemaining = signal<number | null>(null);
   readonly subscriptionInvoices = signal<FactureSouscriptionInstitut[]>([]);
   readonly subscriptionInvoicesSource = new MatTableDataSource<FactureSouscriptionInstitut & { etat_paiement: string }>();
   readonly subscriptionError = signal<string | null>(null);
   readonly subscriptionSuccess = signal<string | null>(null);
+  readonly dashboardLoading = signal(false);
+  readonly dashboard = signal<TableauBordInstitutApi | null>(null);
   readonly backendRefreshing = signal(false);
   readonly instituteSettingsLoading = signal(false);
   readonly instituteSettingsSaving = signal(false);
@@ -303,7 +311,6 @@ export class InstituteConsoleComponent implements OnInit {
   readonly userRolePermissionsDataSource = new MatTableDataSource<PermissionDefinition>([]);
   readonly userScopeSaving = signal(false);
   readonly userSecuritySaving = signal(false);
-  readonly activationResendSaving = signal(false);
   readonly roleManagementTab = signal<'roles' | 'permissions'>('roles');
   readonly roleFormOpen = signal(false);
   readonly roleSaving = signal(false);
@@ -385,8 +392,9 @@ export class InstituteConsoleComponent implements OnInit {
     { def: 'matricule', label: 'Référence', type: 'text', visible: true },
     { def: 'name', label: 'Profil', type: 'nameWithImage', visible: true },
     { def: 'type', label: 'Type', type: 'text', visible: true },
-    { def: 'phone', label: 'Téléphone / identifiant', type: 'phone', visible: true },
-    { def: 'status', label: 'Éligibilité', type: 'status', visible: true, statusBadgeMap: { 'Prêt à créer': 'badge badge-solid-green', 'Téléphone à renseigner': 'badge badge-solid-orange' } },
+    { def: 'email', label: 'Identifiant e-mail', type: 'text', visible: true },
+    { def: 'phone', label: 'Téléphone / mot de passe', type: 'phone', visible: true },
+    { def: 'status', label: 'Éligibilité', type: 'status', visible: true, statusBadgeMap: { 'Prêt à créer': 'badge badge-solid-green', 'E-mail ou téléphone à renseigner': 'badge badge-solid-orange' } },
   ];
   readonly staffColumns: ColumnDefinition[] = [
     { def: 'select', label: 'Sélection', type: 'check', visible: true },
@@ -515,6 +523,7 @@ export class InstituteConsoleComponent implements OnInit {
         this.connectedUserName.set(`${espace.user.prenom} ${espace.user.nom}`.trim());
         this.campuses.set(espace.campus.map((campus) => this.presenterCampus(campus)));
         this.establishmentsCatalogue.set(espace.etablissements.map((item) => this.presenterEtablissement(item)));
+        this.chargerTableauBord();
         this.chargerSalles();
         this.chargerEquipe();
         this.chargerUtilisateurs();
@@ -532,6 +541,22 @@ export class InstituteConsoleComponent implements OnInit {
         this.subscriptionLoading.set(false);
         this.backendRefreshing.set(false);
       },
+    });
+  }
+
+  private chargerTableauBord(forceRefresh = false): void {
+    this.dashboardLoading.set(true);
+    this.api.tableauBordInstitut(forceRefresh).subscribe({
+      next: ({ data }) => {
+        this.dashboard.set(data);
+        const effectifs = data.effectifs_etablissements ?? {};
+        this.establishmentsCatalogue.update((items) => items.map((item) => ({
+          ...item,
+          learners: item.workspaceId ? String(effectifs[item.workspaceId] ?? 0) : '0',
+        })));
+        this.dashboardLoading.set(false);
+      },
+      error: () => this.dashboardLoading.set(false),
     });
   }
 
@@ -719,13 +744,9 @@ export class InstituteConsoleComponent implements OnInit {
         this.subscriptionStatus.set(souscription.statut);
         this.subscriptionDaysRemaining.set(souscription.jours_restants ?? null);
         this.selectedPackageVersionId.set(souscription.version_forfait_id ?? null);
-        this.subscriptionMode.set(souscription.version_forfait_id
-          ? 'package'
-          : souscription.abonnement_id
-            ? 'custom'
-            : souscription.packages?.length
-              ? 'package'
-              : 'custom');
+        this.subscriptionMode.set(
+          souscription.statut === 'actif' && !souscription.version_forfait_id ? 'custom' : 'package',
+        );
         if (souscription.duree_jours) this.subscriptionDurationDays.set(souscription.duree_jours);
         this.selectedSubscriptionType.set(
           types.find((item) => item.enabled && item.functionalities.length > 0) ?? null,
@@ -849,6 +870,7 @@ export class InstituteConsoleComponent implements OnInit {
     return {
       id: item.id,
       workspaceId: item.etablissement_id,
+      code: item.code,
       type: item.type,
       name: item.nom,
       icon: presentation.icon,
@@ -894,11 +916,10 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   canOpenEstablishment(item: Establishment): boolean {
-    const typeSouscription = this.subscriptionTypes().find((type) => type.type === item.type);
-    return item.active
-      && this.campusCount() > 0
-      && this.workspace.subscriptionValidated()
-      && Boolean(typeSouscription?.functionalities.some((fonctionnalite) => fonctionnalite.selectionnee));
+    // La carte doit toujours répondre au clic dès que l'établissement et un
+    // campus sont disponibles. Le garde de route redirige ensuite clairement
+    // vers Souscription lorsqu'un accès n'est pas encore actif.
+    return item.active;
   }
 
   establishmentActionLabel(item: Establishment): string {
@@ -927,6 +948,7 @@ export class InstituteConsoleComponent implements OnInit {
 
   private presentationType(code: string): { icon: string; color: string; levels: string } {
     const presentations: Record<string, { icon: string; color: string; levels: string }> = {
+      daara: { icon: 'menu_book', color: '#287f6b', levels: 'Mémorisation du Coran' },
       prescolaire: { icon: 'toys', color: '#e28b4f', levels: 'Petite · Moyenne · Grande section' },
       primaire: { icon: 'school', color: '#36a37c', levels: 'CI à CM2' },
       college: { icon: 'menu_book', color: '#7b61c9', levels: '6e à 3e' },
@@ -939,15 +961,15 @@ export class InstituteConsoleComponent implements OnInit {
 
   openEstablishmentSpace(type: string): void {
     const establishment = this.establishments().find((item) => item.type === type);
-    const typeSouscription = this.subscriptionTypes().find((item) => item.type === type);
-    if (!establishment || !this.canOpenEstablishment(establishment)
-      || !typeSouscription?.functionalities.some((item) => item.selectionnee)) return;
+    if (!establishment || !this.canOpenEstablishment(establishment)) return;
     const paths: Record<string, string> = {
-      'École primaire': '/institut/etablissements/primaire/tableau-de-bord',
-      Collège: '/institut/etablissements/college/tableau-de-bord',
-      Lycée: '/institut/etablissements/lycee/tableau-de-bord',
+      daara: '/institut/etablissements/daara/tableau-de-bord',
+      prescolaire: '/institut/etablissements/prescolaire/tableau-de-bord',
+      primaire: '/institut/etablissements/primaire/tableau-de-bord',
+      college: '/institut/etablissements/college/tableau-de-bord',
+      lycee: '/institut/etablissements/lycee/tableau-de-bord',
     };
-    const path = paths[type];
+    const path = paths[establishment.code];
 
     if (path) {
       const campusId = this.primaryWorkspace.selectedCampusId();
@@ -1090,7 +1112,7 @@ export class InstituteConsoleComponent implements OnInit {
       id: candidate.id, matricule: candidate.matricule, name: `${candidate.prenom} ${candidate.nom}`.trim(),
       firstName: candidate.prenom, lastName: candidate.nom, email: candidate.email ?? undefined,
       phone: candidate.telephone ?? undefined, type: labels[candidate.type], candidateType: candidate.type,
-      eligible: candidate.eligible, status: candidate.eligible ? 'Prêt à créer' : 'Téléphone à renseigner',
+      eligible: candidate.eligible, status: candidate.eligible ? 'Prêt à créer' : 'E-mail ou téléphone à renseigner',
     };
   }
 
@@ -1243,16 +1265,6 @@ export class InstituteConsoleComponent implements OnInit {
         this.toast.success(result.message);
       },
       error: (error) => { this.userSecuritySaving.set(false); this.toast.error(error?.error?.message ?? 'L’état du compte n’a pas pu être modifié.'); },
-    });
-  }
-
-  renvoyerActivationUtilisateur(): void {
-    const user = this.selectedUserRecord();
-    if (!user?.id || this.activationResendSaving() || user.status !== 'Invitation envoyée') return;
-    this.activationResendSaving.set(true);
-    this.api.renvoyerActivationUtilisateurInstitut(user.id).subscribe({
-      next: (result) => { this.activationResendSaving.set(false); this.toast.success(result.message); },
-      error: (error) => { this.activationResendSaving.set(false); this.toast.error(error?.error?.message ?? 'Le code d’activation n’a pas pu être envoyé.'); },
     });
   }
 

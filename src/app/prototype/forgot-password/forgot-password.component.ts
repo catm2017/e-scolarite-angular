@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CentralApiService, SitePublicInstitut } from '../central-api.service';
+import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
 
 @Component({
   selector: 'app-forgot-password',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, PlatformLanguageSwitcherComponent],
   templateUrl: './forgot-password.component.html',
   styleUrl: './forgot-password.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

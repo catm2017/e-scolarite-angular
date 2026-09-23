@@ -85,6 +85,8 @@ export class CentralAuthComponent implements OnInit {
       next: (result) => this.router.navigateByUrl(
         result.espace === 'centrale'
           ? '/saas'
+          : result.user.type === 'enseignant'
+            ? '/enseignant'
           : !result.souscription_validee
             ? '/institut?vue=souscription'
             : '/institut',

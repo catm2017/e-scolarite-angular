@@ -1,7 +1,8 @@
 import { Direction, BidiModule } from '@angular/cdk/bidi';
-import { AfterViewInit, Component, Renderer2, DOCUMENT, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { AfterViewInit, Component, Renderer2, DOCUMENT, inject, ChangeDetectionStrategy, ChangeDetectorRef, effect } from '@angular/core';
 import { DirectionService, InConfiguration, RightSidebarService } from '@core';
 import { ConfigService } from '@config';
+import { LanguageService } from '@core/service/language.service';
 
 import { RouterOutlet } from '@angular/router';
 import { RightSidebarComponent } from '../../right-sidebar/right-sidebar.component';
@@ -34,11 +35,20 @@ export class MainLayoutComponent
   private document = inject<Document>(DOCUMENT);
   private renderer = inject(Renderer2);
   private localStorageService = inject(LocalStorageService);
+  private languageService = inject(LanguageService);
 
   direction!: Direction;
   public config!: InConfiguration;
   constructor() {
     super();
+    effect(() => {
+      const rtl = this.languageService.locale() === 'ar';
+      this.direction = rtl ? 'rtl' : 'ltr';
+      this.document.documentElement.dir = this.direction;
+      this.renderer[rtl ? 'addClass' : 'removeClass'](this.document.body, 'rtl');
+      this.localStorageService.set('isRtl', rtl ? 'true' : 'false');
+      this.cdr.markForCheck();
+    });
     this.config = this.configService.configData;
     this.subs.sink = this.directoryService.currentData.subscribe(
       (currentData) => {

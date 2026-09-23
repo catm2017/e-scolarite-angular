@@ -1,7 +1,7 @@
-<main class="signin-page" [class.context-loading]="!contextePret()" [style.--signin-color]="siteDuDomaine()?.contenu?.primaryColor || '#218bd2'">
-  <header class="signin-nav">
-    <a routerLink="/" class="signin-brand">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> } @else { <span>{{ siteDuDomaine()?.nom?.charAt(0) || 'E' }}</span> }{{ siteDuDomaine()?.nom || 'E-Scolarité' }}</a>
-    <nav aria-label="Navigation">
+<main class="signin-page" [class.context-loading]="!contextePret()" [style.--signin-color]="siteDuDomaine()?.contenu?.primaryColor || '#0757c7'">
+  <header class="signin-nav public-nav">
+    <a routerLink="/" class="signin-brand public-brand">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> } @else { <span class="public-brand-mark"><i class="material-icons-outlined" aria-hidden="true">school</i></span> }<span>{{ siteDuDomaine()?.nom || 'E-Scolarité' }}@if (!siteDuDomaine()) { <small>L'école, simplement.</small> }</span></a>
+    <nav aria-label="Navigation principale" class="public-nav-links">
       @if (siteDuDomaine(); as site) {
         @for (item of site.contenu.menuItems; track item.id) {
           @if (item.visible) {
@@ -13,10 +13,10 @@
           }
         }
       } @else {
-        <a routerLink="/">Accueil</a><a routerLink="/adhesion">Adhésion</a>
+        <a routerLink="/">Accueil</a><a routerLink="/" fragment="fonctionnalites">Fonctionnalités</a><a routerLink="/" fragment="apropos">À propos</a><a routerLink="/" fragment="tarifications">Tarification</a><a routerLink="/" fragment="contact">Contact</a>
       }
     </nav>
-    <div class="signin-nav-actions"><app-platform-language-switcher /></div>
+    <div class="signin-nav-actions public-nav-actions"><app-platform-language-switcher /><a routerLink="/adhesion" class="public-outline-link">Adhésion</a></div>
   </header>
   <div class="signin-main">
     <section class="signin-card">
@@ -37,7 +37,7 @@
         @if (erreur()) {<p class="signin-error" role="alert"><i class="material-icons-outlined">error_outline</i>{{ erreur() }}</p>}
         <button type="submit" class="signin-submit" [disabled]="chargement()">{{ chargement() ? 'Connexion en cours…' : 'Se connecter' }}<i class="material-icons-outlined" [class.spinning]="chargement()">{{ chargement() ? 'progress_activity' : 'arrow_forward' }}</i></button>
       </form>
-      <p class="signin-help">Première connexion ? <a routerLink="/activation-compte">Activez votre compte.</a><br /><a routerLink="/mot-de-passe-oublie">Mot de passe oublié ?</a></p>
+      <p class="signin-help"><a routerLink="/mot-de-passe-oublie">Mot de passe oublié ?</a></p>
     </section>
     @if (!siteDuDomaine()) { <p class="signin-join">Votre institut n’a pas encore son espace ?<a routerLink="/adhesion">Demander une adhésion <span>→</span></a></p> }
   </div>

@@ -64,6 +64,52 @@
   }
 }
 
+.attendance-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.attendance-choice {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #d9e1eb;
+  border-radius: 7px;
+  background: #fff;
+  color: #718096;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .15s ease;
+
+  &.present.active { border-color: #39a879; background: #e7f8ef; color: #168155; }
+  &.absent.active { border-color: #e26868; background: #fff0f0; color: #c03939; }
+  &.late.active { border-color: #d99839; background: #fff6e5; color: #a96810; }
+  &:hover { transform: translateY(-1px); }
+}
+
+.attendance-note {
+  width: min(180px, 20vw);
+  min-width: 90px;
+  margin-left: 8px;
+  padding: 5px 8px;
+  border: 1px solid #dfe7f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #445268;
+  font-size: 11px;
+}
+.evaluation-score { width: 66px !important; min-width: 66px; }
+.evaluation-scale { margin-left: 4px; color: #72889b; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.evaluation-file-control { display: inline-flex; max-width: 180px; align-items: center; gap: 5px; padding: 6px 8px; border: 1px solid #d8e5ef; border-radius: 6px; color: #287bd6; background: #f8fbff; cursor: pointer; font-size: 11px; font-weight: 750; }
+.evaluation-file-control i { font-size: 16px; }
+.evaluation-file-control span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.evaluation-file-control input { display: none; }
+.evaluation-download-control { display: inline-flex; max-width: 180px; align-items: center; gap: 5px; padding: 6px 8px; border: 1px solid #cfe1f2; border-radius: 6px; color: #1768b8; background: #edf7ff; cursor: pointer; font: inherit; font-size: 11px; font-weight: 750; }
+.evaluation-download-control i { font-size: 16px; }.evaluation-download-control span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.evaluation-no-file { color: #94a4b1; font-size: 11px; }
+
 :host-context(.dark) .table-boolean-status {
   background: #343b49;
   color: #aeb8c8;

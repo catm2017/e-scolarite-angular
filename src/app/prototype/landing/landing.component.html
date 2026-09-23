@@ -1,75 +1,104 @@
 <div class="public-landing" id="accueil">
-  <header class="landing-nav">
-    <a class="landing-brand" routerLink="/"><span>E</span>E-Scolarité</a>
-    <nav aria-label="Navigation principale">
-      <a href="#accueil" (click)="scrollTo($event, 'accueil')">Accueil</a>
-      <a href="#fonctionnalites" (click)="scrollTo($event, 'fonctionnalites')">Fonctionnalités</a>
-      <a href="#a-propos" (click)="scrollTo($event, 'a-propos')">À propos</a>
-      <a href="#tarifications" (click)="scrollTo($event, 'tarifications')">Tarifications</a>
-      <a href="#contact" (click)="scrollTo($event, 'contact')">Contact</a>
-    </nav>
-    <div class="landing-actions"><app-platform-language-switcher /><a routerLink="/connexion" class="landing-login">Connexion</a><a routerLink="/adhesion" class="landing-button">Adhésion <i class="material-icons-outlined">arrow_forward</i></a></div>
+  <header class="landing-nav" (keydown.escape)="mobileMenuOpen.set(false)">
+    <div class="landing-nav-inner">
+      <a class="landing-brand" routerLink="/" aria-label="E-Scolarité — Accueil"><span class="brand-mark"><i class="material-icons-outlined" aria-hidden="true">school</i></span><span>E-Scolarité<small>L’école, simplement.</small></span></a>
+      <nav id="landing-menu" aria-label="Navigation principale" [class.is-open]="mobileMenuOpen()">
+        <a href="#accueil" (click)="scrollTo($event, 'accueil')">Accueil</a>
+        <a href="#fonctionnalites" (click)="scrollTo($event, 'fonctionnalites')">Fonctionnalités</a>
+        <a href="#a-propos" (click)="scrollTo($event, 'a-propos')">À propos de nous</a>
+        <a href="#tarifications" (click)="scrollTo($event, 'tarifications')">Tarification</a>
+        <a href="#contact" (click)="scrollTo($event, 'contact')">Contact</a>
+      </nav>
+      <div class="landing-actions">
+        <app-platform-language-switcher />
+        <a routerLink="/connexion" class="landing-button landing-button-outline">Connexion</a>
+        <a routerLink="/adhesion" class="landing-button">Adhésion</a>
+        <button type="button" class="landing-menu-toggle" aria-controls="landing-menu" [attr.aria-expanded]="mobileMenuOpen()" [attr.aria-label]="mobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'" (click)="mobileMenuOpen.set(!mobileMenuOpen())"><i class="material-icons-outlined" aria-hidden="true">{{ mobileMenuOpen() ? 'close' : 'menu' }}</i></button>
+      </div>
+    </div>
   </header>
+
   <main>
-    <section class="landing-hero">
-      <div class="landing-hero-copy">
-        <span class="landing-eyebrow"><span></span> L’école avance. Sa gestion aussi.</span>
-        <h1>Moins de gestion.<br>Plus de place pour <em>l’éducation.</em></h1>
-        <p>Élèves, pédagogie, finances et équipes : tout votre institut réuni dans un espace simple, pensé pour le quotidien des écoles sénégalaises.</p>
-        <div class="landing-hero-actions"><a routerLink="/adhesion" class="landing-button">Créer l’espace de mon institut <i class="material-icons-outlined">arrow_forward</i></a><a href="#demo" (click)="scrollTo($event, 'demo')" class="landing-demo-link"><i class="material-icons-outlined">play_circle</i>Découvrir la plateforme</a></div>
-        <div class="landing-reassurance"><span><i class="material-icons-outlined">check_circle</i>Offre à votre mesure</span><span><i class="material-icons-outlined">check_circle</i>Multi-campus</span></div>
-      </div>
-      <div class="landing-preview" id="demo">
-        <div class="preview-window">
-          <div class="preview-top"><b><span>E</span>E-Scolarité</b><span class="preview-badge">Aperçu de la plateforme</span></div>
-          <div class="preview-layout">
-            <aside><i class="material-icons-outlined" [class.selected]="activeDemoSlide() === 0">dashboard</i><i class="material-icons-outlined" [class.selected]="activeDemoSlide() === 1">menu_book</i><i class="material-icons-outlined" [class.selected]="activeDemoSlide() === 2">payments</i><i class="material-icons-outlined">groups</i><i class="material-icons-outlined">settings</i></aside>
-            <div class="preview-content">
-              <small>VOTRE ESPACE DE TRAVAIL</small><h2>{{ demoSlides[activeDemoSlide()].title }}</h2><p>{{ demoSlides[activeDemoSlide()].text }}</p>
-              @if (activeDemoSlide() === 0) {
-                <div class="preview-cycle-grid"><div><i class="material-icons-outlined">school</i><strong>École primaire</strong><span>Un espace dédié</span></div><div><i class="material-icons-outlined">auto_stories</i><strong>Collège & lycée</strong><span>Des métiers adaptés</span></div></div>
-                <div class="preview-row"><span class="preview-dot"></span><div><strong>Vos campus, une même direction</strong><small>Retrouvez les données de chaque structure</small></div><i class="material-icons-outlined">arrow_forward</i></div>
-              } @else if (activeDemoSlide() === 1) {
-                <div class="preview-list">@for (item of ['Programmes et leçons', 'Emplois du temps', 'Séances et cahier de texte']; track item) {<div class="preview-row"><i class="material-icons-outlined">task_alt</i><div><strong>{{ item }}</strong><small>Une continuité sur toute l’année scolaire</small></div></div>}</div>
-              } @else {
-                <div class="preview-cycle-grid"><div><i class="material-icons-outlined">south_west</i><strong>Encaissements</strong><span>Inscription & mensualités</span></div><div><i class="material-icons-outlined">north_east</i><strong>Dépenses</strong><span>Salaires & opérations</span></div></div>
-                <div class="preview-row"><i class="material-icons-outlined">account_balance_wallet</i><div><strong>Un suivi financier centralisé</strong><small>Recherchez, filtrez et consultez les opérations</small></div></div>
-              }
-            </div>
-          </div>
+    <section class="landing-hero" aria-labelledby="hero-title">
+      <div class="landing-container hero-grid">
+        <div class="hero-copy">
+          <p class="landing-eyebrow">E-Scolarité · Système de gestion d’écoles</p>
+          <h1 id="hero-title">L'innovation dans <em>l'efficacité</em></h1>
+          <p class="hero-description">Découvrez l’avenir de l’éducation avec E-Scolarité. Gérez efficacement les présences, les devoirs, les examens et bien plus encore. Simplifiez l’administration, renforcez l’engagement et faites évoluer votre école vers l’excellence.</p>
+          <div class="hero-actions"><a routerLink="/adhesion" class="landing-button">Enregistrez votre école <i class="material-icons-outlined" aria-hidden="true">arrow_forward</i></a><a href="#fonctionnalites" class="landing-text-link" (click)="scrollTo($event, 'fonctionnalites')">Découvrir la plateforme <i class="material-icons-outlined" aria-hidden="true">south</i></a></div>
+          <div class="hero-reassurance"><span><i class="material-icons-outlined" aria-hidden="true">check_circle</i>Adaptée à votre école</span><span><i class="material-icons-outlined" aria-hidden="true">check_circle</i>Une gestion simplifiée</span></div>
         </div>
-        <div class="preview-controls">@for (slide of demoSlides; track slide.title; let index = $index) {<button type="button" [class.active]="activeDemoSlide() === index" (click)="activeDemoSlide.set(index)" [attr.aria-label]="slide.title" [attr.aria-pressed]="activeDemoSlide() === index">{{ index + 1 | number: '2.0' }}</button>}<span>Explorez votre futur espace</span></div>
+        <div class="hero-visual">
+          <img class="hero-main-image" [src]="assetPath + 'world_edaara.png'" alt="L’éducation connectée : un apprenant, un livre et un globe" width="485" height="495" fetchpriority="high">
+          <div class="hero-note"><span class="hero-note-icon"><i class="material-icons-outlined" aria-hidden="true">auto_awesome</i></span><p>Une expérience éducative enrichie.<strong>Des outils qui font grandir votre école.</strong></p></div>
+          <div class="hero-rating"><img [src]="assetPath + 'user.png'" alt="" width="46" height="56"><span>Élèves, équipes, familles<strong>Tous connectés.</strong></span></div>
+        </div>
       </div>
     </section>
-    <div class="landing-cycle-strip"><span>Une organisation, plusieurs enseignements</span><div><b>Primaire</b><span>•</span><b>Collège</b><span>•</span><b>Lycée</b><span>•</span><b>Une plateforme qui évolue avec vous</b></div></div>
-    <section class="landing-section" id="fonctionnalites">
-      <div class="landing-section-heading"><span class="landing-eyebrow">LE QUOTIDIEN, SIMPLIFIÉ</span><h2>Les bons outils.<br>Au même endroit.</h2><p>Activez les fonctionnalités utiles à votre institut et gardez une vue claire sur chaque activité.</p></div>
-      <div class="landing-feature-grid">@for (feature of features; track feature.title) {<article><span class="feature-icon"><i class="material-icons-outlined">{{ feature.icon }}</i></span><h3>{{ feature.title }}</h3><p>{{ feature.text }}</p></article>}</div>
-    </section>
-    @if (partners().length) {
-      <section class="landing-partners"><div><span class="landing-eyebrow">NOS ADHÉRENTS</span><h2>Chaque institut a sa place.</h2></div><div class="landing-partner-track">@for (partner of partners(); track partner.id) {<article><span>@if (partner.logo_url) {<img [src]="partner.logo_url" [alt]="'Logo ' + partner.nom" />} @else {<i class="material-icons-outlined">school</i>}</span><strong>{{ partner.nom }}</strong></article>}</div></section>
-    }
-    <section class="landing-about landing-section" id="a-propos">
-      <div class="about-diagram"><span class="diagram-caption">UNE DIRECTION COMMUNE</span><div class="diagram-institute"><i class="material-icons-outlined">account_balance</i><strong>Votre institut</strong><span>Une vision d’ensemble</span></div><div class="diagram-branches"><span>Campus</span><span>Établissements</span><span>Équipes</span></div><p>Des espaces spécialisés, reliés au même institut.</p></div>
-      <div><span class="landing-eyebrow">À PROPOS D’E-SCOLARITÉ</span><h2>Le fonctionnement de votre école, notre point de départ.</h2><p>Développée par Daara Tech, E-Scolarité rapproche la gestion numérique des pratiques réelles des établissements au Sénégal.</p><ul><li><i class="material-icons-outlined">check_circle</i>Des espaces adaptés aux différents cycles.</li><li><i class="material-icons-outlined">check_circle</i>Une base de données isolée pour chaque institut.</li><li><i class="material-icons-outlined">check_circle</i>Des accès selon les rôles et les campus autorisés.</li></ul><a class="landing-text-link" routerLink="/adhesion">Faisons connaissance <i class="material-icons-outlined">arrow_forward</i></a></div>
-    </section>
-    <section class="landing-pricing landing-section" id="tarifications">
-      <div class="landing-section-heading"><span class="landing-eyebrow">UNE OFFRE QUI VOUS RESSEMBLE</span><h2>Vos besoins décident.<br>Pas un package imposé.</h2><p>Choisissez une offre prête à l’emploi ou composez votre souscription par fonctionnalité, effectif et durée.</p></div>
-      <div class="landing-package-grid">
-        @for (package of packages(); track package.id) {
-          <article class="landing-package"><span class="package-duration">{{ package.duree_jours }} jours d’accès</span><h3>{{ package.libelle }}</h3><p class="package-target">{{ package.types_etablissements.join(' · ') }}</p><p>{{ package.description }}</p>
-            <div class="package-amount"><strong>{{ package.prix_unitaire_eleve | number }} <small>F CFA</small></strong><span>par élève pour la durée du package</span></div>
-            <p class="package-personnel"><b>{{ package.prix_unitaire_personnel | number }} F CFA</b> par enseignant / personnel</p>
-            <ul>@for (feature of package.fonctionnalites_codes; track feature) {<li><i class="material-icons-outlined">check</i>{{ featureLabel(feature) }}</li>}</ul>
-            <a routerLink="/adhesion" class="landing-button">Demander cette offre <i class="material-icons-outlined">arrow_forward</i></a>
-          </article>
-        } @empty {
-          <article class="landing-custom-package"><span class="feature-icon"><i class="material-icons-outlined">tune</i></span><div><h3>Construisons votre offre ensemble</h3><p>Sélectionnez vos types d’établissement, les fonctionnalités souhaitées et votre durée d’accès.</p></div><a routerLink="/adhesion" class="landing-button">Demander une adhésion <i class="material-icons-outlined">arrow_forward</i></a></article>
+
+    <section class="landing-section landing-container" id="fonctionnalites" aria-labelledby="features-title">
+      <div class="landing-section-heading"><span class="landing-eyebrow">UNE PLATEFORME, TOUTES VOS ÉQUIPES</span><h2 id="features-title">Découvrez nos meilleures fonctionnalités</h2><span class="section-ornament" aria-hidden="true"></span><p>Les bons outils pour vous concentrer sur l’essentiel : l’éducation.</p></div>
+      <div class="landing-feature-grid" id="landing-feature-list">
+        @for (feature of visibleFeatures(); track feature.code) {
+          <article class="landing-feature"><img [src]="assetPath + 'features/' + feature.image" alt="" width="46" height="46" loading="lazy"><div><h3>{{ feature.title }}</h3><p>{{ feature.text }}</p></div></article>
         }
       </div>
-      @if (packages().length) {<p class="landing-custom-note">Besoin d’une offre différente ? <a routerLink="/adhesion">Composez votre souscription sur mesure →</a></p>}
+      <div class="section-action"><button type="button" class="landing-button" aria-controls="landing-feature-list" [attr.aria-expanded]="allFeaturesVisible()" (click)="allFeaturesVisible.set(!allFeaturesVisible())">{{ allFeaturesVisible() ? 'Voir moins de fonctionnalités' : 'Voir plus de fonctionnalités' }}<i class="material-icons-outlined" aria-hidden="true">{{ allFeaturesVisible() ? 'expand_less' : 'expand_more' }}</i></button></div>
     </section>
-    <section class="landing-contact" id="contact"><div><span class="landing-eyebrow">ET SI ON SIMPLIFIAIT VOTRE QUOTIDIEN ?</span><h2>Votre prochain chapitre<br>commence ici.</h2><p>Présentez-nous votre institut et vos besoins. Nous préparerons avec vous un espace adapté à vos équipes.</p></div><a routerLink="/adhesion" class="landing-button">Parlons de votre établissement <i class="material-icons-outlined">arrow_forward</i></a></section>
+
+    @if (partners().length) {
+      <section class="landing-partners" aria-labelledby="partners-title">
+        <div class="landing-container partners-heading"><div><span class="landing-eyebrow">ILS NOUS FONT CONFIANCE</span><h2 id="partners-title">Des écoles qui avancent avec nous</h2></div>@if (partners().length > 1) {<button type="button" class="carousel-control" (click)="partnersPaused.set(!partnersPaused())" [attr.aria-label]="partnersPaused() ? 'Reprendre le défilement des écoles' : 'Mettre le défilement des écoles en pause'" [attr.aria-pressed]="partnersPaused()"><i class="material-icons-outlined" aria-hidden="true">{{ partnersPaused() ? 'play_arrow' : 'pause' }}</i></button>}</div>
+        <div class="partners-viewport landing-container" role="region" aria-label="Écoles adhérentes" tabindex="0">
+          <div class="partners-track" [class.is-paused]="partnersPaused()" [class.is-static]="partners().length === 1" [style.--partner-duration]="(partners().length * 6 + 12) + 's'">
+            @for (copy of (partners().length > 1 ? [0, 1] : [0]); track copy) {
+              <div class="partners-group" [attr.aria-hidden]="copy === 1 ? 'true' : null">
+                @for (partner of partners(); track partner.id) {
+                  <article class="partner-card"><span class="partner-logo"><i class="material-icons-outlined" aria-hidden="true">school</i>@if (partner.logo_url) {<img [src]="partner.logo_url" [alt]="'Logo ' + partner.nom" loading="lazy" (error)="hideBrokenLogo($event)">}</span><h3>{{ partner.nom }}</h3><span>Institut partenaire</span></article>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+
+    <section class="landing-about landing-section landing-container" id="a-propos" aria-labelledby="about-title">
+      <div class="about-copy"><span class="landing-eyebrow">UN STYLE MODERNE ET UNIQUE</span><h2 id="about-title">Pourquoi est-ce le meilleur ?</h2><p>E-Scolarité poursuit l’ambition d’EDAARA : allier technologie, fonctionnalités intuitives et solutions adaptées à la réalité des écoles. Facilitez la communication, optimisez les tâches administratives et améliorez l’expérience éducative de chacun.</p><ul><li><i class="material-icons-outlined" aria-hidden="true">check_circle</i>Tarifs abordables</li><li><i class="material-icons-outlined" aria-hidden="true">check_circle</i>Panneau d’administration facile à gérer</li><li><i class="material-icons-outlined" aria-hidden="true">check_circle</i>Des accès adaptés à chaque profil</li></ul><a class="landing-text-link" routerLink="/adhesion">Faisons grandir votre institut <i class="material-icons-outlined" aria-hidden="true">arrow_forward</i></a></div>
+      <div class="about-visual"><img [src]="assetPath + 'group_students.jpeg'" alt="Des élèves réunis autour de leurs apprentissages" loading="lazy" width="640" height="450"><div class="about-caption"><i class="material-icons-outlined" aria-hidden="true">favorite_border</i><span>Pensée pour les écoles.<strong>Conçue pour leur quotidien.</strong></span></div></div>
+    </section>
+
+    <section class="landing-pricing landing-section" id="tarifications" aria-labelledby="pricing-title">
+      <div class="landing-container">
+        <div class="landing-section-heading"><span class="landing-eyebrow">VOTRE ÉCOLE, VOTRE FORMULE</span><h2 id="pricing-title">Formules tarifaires flexibles</h2><span class="section-ornament" aria-hidden="true"></span><p>Choisissez les fonctionnalités qui vous ressemblent, pour la durée qui vous convient.</p></div>
+        @if (packagesLoading()) {
+          <div class="pricing-state" role="status"><i class="material-icons-outlined loading-icon" aria-hidden="true">progress_activity</i>Chargement des offres…</div>
+        } @else if (packagesError()) {
+          <div class="pricing-state"><p>Les offres sont momentanément indisponibles.</p><button class="landing-button landing-button-outline" type="button" (click)="loadPackages()">Réessayer</button></div>
+        } @else if (packages().length) {
+          <div class="landing-package-track" #pricingTrack (scroll)="updatePricingPosition()" [class.single-offer]="packages().length === 1" role="region" aria-label="Formules tarifaires" tabindex="0">
+            @for (package of packages(); track package.id) {
+              <article class="landing-package">
+                <div class="package-top"><span class="package-scope"><i class="material-icons-outlined" aria-hidden="true">{{ package.types_etablissements.length > 1 ? 'domain' : 'school' }}</i>{{ package.types_etablissements.length > 1 ? 'Multi-établissements' : 'Un espace dédié' }}</span><h3>{{ package.libelle }}</h3><p class="package-target">{{ package.types_etablissements.join(' · ') }}</p>@if (package.description) {<p class="package-description">{{ package.description }}</p>}<div class="package-prices"><p><span>Frais par élève</span><strong>{{ package.prix_unitaire_eleve | number:'1.0-2' }} <small>{{ currencyLabel(package.devise) }}</small></strong></p><p><span>Frais par enseignant / personnel</span><strong>{{ package.prix_unitaire_personnel | number:'1.0-2' }} <small>{{ currencyLabel(package.devise) }}</small></strong></p></div><p class="package-duration"><i class="material-icons-outlined" aria-hidden="true">calendar_month</i><strong>{{ package.duree_jours }}</strong><span>jours d’accès</span></p><small class="package-price-note">Prix par personne pour toute la durée de l’offre.</small></div>
+                <ul class="package-features" tabindex="0" [attr.aria-label]="'Fonctionnalités de ' + package.libelle">@for (feature of packageFeatures(); track feature) {<li [class.not-included]="!package.fonctionnalites_codes.includes(feature)"><i class="material-icons-outlined" aria-hidden="true">{{ package.fonctionnalites_codes.includes(feature) ? 'task_alt' : 'highlight_off' }}</i><span>{{ featureLabel(feature) }}</span><span class="visually-hidden">{{ package.fonctionnalites_codes.includes(feature) ? 'Inclus' : 'Non inclus' }}</span></li>}</ul>
+                <a routerLink="/adhesion" class="pricing-button">Commencer<i class="material-icons-outlined" aria-hidden="true">arrow_forward</i></a>
+              </article>
+            }
+          </div>
+          @if (packages().length > 1) {<div class="pricing-controls"><button class="carousel-control" type="button" aria-label="Offre précédente" (click)="movePricing(-1)"><i class="material-icons-outlined" aria-hidden="true">west</i></button><div class="pricing-dots">@for (package of packages(); track package.id; let index = $index) {<button type="button" [class.active]="activePackage() === index" [attr.aria-label]="package.libelle" [attr.aria-pressed]="activePackage() === index" (click)="selectPackage(index)"></button>}</div><button class="carousel-control" type="button" aria-label="Offre suivante" (click)="movePricing(1)"><i class="material-icons-outlined" aria-hidden="true">east</i></button></div>}
+        } @else {
+          <div class="pricing-state"><p>Une formule adaptée à votre institut ? Parlons-en ensemble.</p><a href="#contact" class="landing-button" (click)="scrollTo($event, 'contact')">Contactez-nous</a></div>
+        }
+      </div>
+    </section>
+
+    <section class="landing-custom-package landing-container"><div><span class="landing-eyebrow">UNE OFFRE QUI VOUS RESSEMBLE</span><h2>Formule personnalisée</h2><p>Personnalisez votre expérience grâce à nos offres sur mesure. Choisissez vos fonctionnalités, vos types d’établissement et votre durée d’accès.</p></div><a routerLink="/adhesion" class="landing-button">Composer mon offre <i class="material-icons-outlined" aria-hidden="true">arrow_forward</i></a></section>
+
+    <section class="landing-contact landing-section landing-container" id="contact" aria-labelledby="contact-title">
+      <div class="contact-copy"><span class="landing-eyebrow">ÉCHANGEONS SUR VOTRE PROJET</span><h2 id="contact-title">Prenons contact</h2><p>Une question ou envie de dire bonjour ? Nous serions ravis de vous lire.</p><a routerLink="/adhesion" class="landing-button">Enregistrez votre école<i class="material-icons-outlined" aria-hidden="true">arrow_forward</i></a></div>
+      <div class="contact-details"><a href="tel:+221770461100"><span class="contact-icon"><i class="material-icons-outlined" aria-hidden="true">call</i></span><span><small>Téléphone</small><strong>+221 77 046 11 00</strong></span><i class="material-icons-outlined contact-arrow" aria-hidden="true">north_east</i></a><a href="mailto:edaaratech@gmail.com"><span class="contact-icon"><i class="material-icons-outlined" aria-hidden="true">mail_outline</i></span><span><small>E-mail</small><strong>edaaratech@gmail.com</strong></span><i class="material-icons-outlined contact-arrow" aria-hidden="true">north_east</i></a><div><span class="contact-icon"><i class="material-icons-outlined" aria-hidden="true">location_on</i></span><span><small>Localisation</small><strong>Keur Massar, cité Sotrac<br>Dakar – Sénégal</strong></span></div></div>
+    </section>
   </main>
-  <footer class="landing-footer"><div><a routerLink="/" class="landing-brand"><span>E</span>E-Scolarité</a><p>La gestion scolaire, simplement.</p></div><nav aria-label="Liens utiles"><a href="#fonctionnalites" (click)="scrollTo($event, 'fonctionnalites')">Fonctionnalités</a><a href="#tarifications" (click)="scrollTo($event, 'tarifications')">Tarifications</a><a routerLink="/connexion">Connexion</a><a routerLink="/adhesion">Adhésion</a></nav><small>© 2026 Daara Tech</small></footer>
+
+  <footer class="landing-footer"><div class="landing-container footer-main"><div><a routerLink="/" class="landing-brand"><span class="brand-mark"><i class="material-icons-outlined" aria-hidden="true">school</i></span><span>E-Scolarité<small>L’école, simplement.</small></span></a><p>L’innovation au service de votre école.</p></div><nav aria-label="Liens utiles"><a href="#accueil" (click)="scrollTo($event, 'accueil')">Accueil</a><a href="#fonctionnalites" (click)="scrollTo($event, 'fonctionnalites')">Fonctionnalités</a><a href="#tarifications" (click)="scrollTo($event, 'tarifications')">Tarification</a><a href="#contact" (click)="scrollTo($event, 'contact')">Contact</a></nav><div class="footer-access"><a routerLink="/connexion">Connexion<i class="material-icons-outlined" aria-hidden="true">login</i></a><a routerLink="/adhesion">Rejoindre E-Scolarité<i class="material-icons-outlined" aria-hidden="true">arrow_forward</i></a></div></div><div class="landing-container footer-bottom"><small>© {{ currentYear }} E-Scolarité · Daara Tech</small><span>L'innovation dans l'efficacité</span></div></footer>
 </div>

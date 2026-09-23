@@ -59,6 +59,24 @@ const PAGES_PRIMAIRE: Route[] = [
   },
 ];
 
+const PAGES_PRESCOLAIRE: Route[] = [
+  { path: '', pathMatch: 'full', redirectTo: 'tableau-de-bord' },
+  {
+    path: ':vue',
+    loadComponent: () => import('./prototype/preschool/preschool.component')
+      .then((component) => component.PreschoolComponent),
+  },
+];
+
+const PAGES_DAARA: Route[] = [
+  { path: '', pathMatch: 'full', redirectTo: 'tableau-de-bord' },
+  {
+    path: ':vue',
+    loadComponent: () => import('./prototype/daara/daara.component')
+      .then((component) => component.DaaraComponent),
+  },
+];
+
 const PAGES_COLLEGE: Route[] = [
   { path: '', pathMatch: 'full', redirectTo: 'tableau-de-bord' },
   {
@@ -139,6 +157,15 @@ export const APP_ROUTE: Route[] = [
       ),
   },
   {
+    path: 'enseignant',
+    loadComponent: () => import('./prototype/layouts/teacher-layout/teacher-layout.component')
+      .then((component) => component.TeacherLayoutComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'tableau-de-bord' },
+      { path: ':vue', loadComponent: () => import('./prototype/teacher-space/teacher-space.component').then((component) => component.TeacherSpaceComponent) },
+    ],
+  },
+  {
     path: 'institut',
     loadComponent: () =>
       import(
@@ -149,6 +176,18 @@ export const APP_ROUTE: Route[] = [
     // Cela évite de recréer la sidebar, le navtop et le panneau de thème à
     // chaque navigation, source de lenteurs et de rendus instables.
     children: [
+      {
+        path: 'etablissements/daara',
+        data: { establishmentType: 'daara' },
+        canActivate: [espaceEtablissementGuard],
+        children: PAGES_DAARA,
+      },
+      {
+        path: 'etablissements/prescolaire',
+        data: { establishmentType: 'prescolaire' },
+        canActivate: [espaceEtablissementGuard],
+        children: PAGES_PRESCOLAIRE,
+      },
       {
         path: 'etablissements/primaire',
         data: { establishmentType: 'primary' },

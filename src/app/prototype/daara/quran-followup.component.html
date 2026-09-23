@@ -1,0 +1,36 @@
+<section class="quran-followup">
+  <header class="quran-heading">
+    <div><small>PÉDAGOGIE · DAARA</small><h1>Suivi du Coran</h1><p>Choisissez une portion, puis consultez les apprenants qui l’ont déjà mémorisée ou doivent encore y parvenir.</p></div>
+    <span class="quran-source"><i>verified</i>Données coraniques : Quran Foundation</span>
+  </header>
+
+  <section class="quran-toolbar" aria-label="Filtrer la lecture">
+    <div class="quran-filter-tabs">
+      @for (mode of filterModes; track mode) { <button type="button" [class.active]="selectedMode() === mode" (click)="changeMode(mode)">{{ mode === 'sourate' ? 'Sourates' : mode === 'juz' ? 'Juz’' : mode === 'hizb' ? 'Hizbs' : 'Rubʿs' }}</button> }
+    </div>
+    <label><span>{{ selectedMode() === 'sourate' ? 'Sourate' : selectedMode() === 'juz' ? 'Juz’' : selectedMode() === 'hizb' ? 'Hizb' : 'Rubʿ' }}</span>
+      <select [value]="selectedNumber()" (change)="selectNumber($any($event.target).value)">
+        @if (selectedMode() === 'sourate') { @for (sourate of data()?.sourates ?? []; track sourate.id) { <option [value]="sourate.numero">{{ sourate.numero }} · {{ sourate.nom_latin || sourate.nom_arabe }}</option> } }
+        @if (selectedMode() === 'juz') { @for (item of data()?.juzs ?? []; track item) { <option [value]="item">Juz’ {{ item }}</option> } }
+        @if (selectedMode() === 'hizb') { @for (item of data()?.hizbs ?? []; track item) { <option [value]="item">Hizb {{ item }}</option> } }
+        @if (selectedMode() === 'rub') { @for (item of data()?.rubs ?? []; track item) { <option [value]="item">Rubʿ {{ item }}</option> } }
+      </select>
+    </label>
+  </section>
+
+  @if (loading()) { <div class="quran-loading"><i>sync</i><span>Chargement de la portion sélectionnée…</span></div> }
+  @if (!loading() && data(); as suivi) {
+    <section class="quran-workspace">
+      <article class="quran-reader" dir="rtl" lang="ar">
+        <header><span>{{ suivi.riwaya.libelle }}</span><strong>{{ selectedMode() === 'sourate' ? (suivi.versets[0]?.sourate_arabe ?? '') : 'القرآن الكريم' }}</strong></header>
+        <div class="ayahs">@for (verset of suivi.versets; track verset.id) { <button type="button" class="ayah" [class.selected]="suivi.selection.id === verset.id" (click)="selectVerse(verset.id)"><span>{{ verset.texte_arabe }}</span><em>{{ verset.numero_verset }}</em></button> }</div>
+      </article>
+      <aside class="quran-students" dir="ltr">
+        <header><div><small>PARTIE SÉLECTIONNÉE</small><h2>{{ suivi.versets[0]?.sourate_latin || ('Juz’ ' + selectedNumber()) }}</h2></div><span>{{ suivi.eleves_deja_memorises.length + suivi.eleves_a_apprendre.length }} apprenants</span></header>
+        <section class="student-list achieved"><h3><i>done_all</i>Ont déjà mémorisé cette partie <b>{{ suivi.eleves_deja_memorises.length }}</b></h3><div class="student-scroll">@for (student of suivi.eleves_deja_memorises; track student.id) {<button type="button" (click)="chooseStudent(student)" [class.selected]="selectedStudent()?.id === student.id"><span>{{ student.nom_complet }}</span><small>{{ progression(student) }}</small></button>} @empty {<p>Aucun apprenant à ce niveau pour le moment.</p>}</div></section>
+        <section class="student-list pending"><h3><i>schedule</i>Doivent encore y parvenir <b>{{ suivi.eleves_a_apprendre.length }}</b></h3><div class="student-scroll">@for (student of suivi.eleves_a_apprendre; track student.id) {<button type="button" (click)="chooseStudent(student)" [class.selected]="selectedStudent()?.id === student.id"><span>{{ student.nom_complet }}</span><small>{{ progression(student) }}</small></button>} @empty {<p>Tous les apprenants ont déjà atteint cette partie.</p>}</div></section>
+        @if (selectedStudent(); as student) { <footer><div><small>Apprenant sélectionné</small><strong>{{ student.nom_complet }}</strong></div><button type="button" (click)="enregistrerProgression()" [disabled]="saving()"><i>bookmark_added</i>{{ saving() ? 'Enregistrement…' : 'Valider cette progression' }}</button></footer> }
+      </aside>
+    </section>
+  }
+</section>

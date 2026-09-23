@@ -134,3 +134,33 @@ body.dark,
   }
 }
 
+// Détail pédagogique de l'espace enseignant.
+.teacher-content .class-subject-heading { margin-bottom: 16px; }
+.teacher-content .class-subject-heading header { margin: 0; }
+.teacher-content .class-subject-heading h2 { margin-top: 7px; font-size: 19px; }
+.teacher-content .class-subject-heading p { margin-top: 9px; color: #4786ce; font-size: 10px; font-weight: 850; letter-spacing: .9px; }
+.teacher-content .class-subject-heading span { display: block; margin-top: 6px; color: #75899b; font-size: 12px; }
+.teacher-content .back-link { min-height: auto !important; padding: 0 !important; border: 0 !important; color: #347dca !important; background: transparent !important; font-size: 12px !important; }
+.teacher-content .back-link i { font-family: 'Material Icons Outlined'; font-size: 16px; vertical-align: -3px; margin-right: 4px; }
+.teacher-content .annual-lessons { margin-top: 16px; }
+.teacher-content .annual-lessons-list { display: grid; gap: 9px; }
+.teacher-content .annual-lessons-list article { display: flex; align-items: flex-start; gap: 12px; padding: 13px; border: 1px solid #e8eef3; border-radius: 9px; background: #fbfdff; }
+.teacher-content .annual-lessons-list article > b { width: 27px; height: 27px; border-radius: 8px; display: grid; place-items: center; flex: 0 0 auto; color: #2678db; background: #e7f2ff; font-size: 12px; }
+.teacher-content .annual-lessons-list article > div { min-width: 0; flex: 1; }
+.teacher-content .annual-lessons-list strong, .teacher-content .annual-lessons-list span, .teacher-content .annual-lessons-list small { display: block; }
+.teacher-content .annual-lessons-list strong { color: #334f66; font-size: 13px; }
+.teacher-content .annual-lessons-list span { margin-top: 3px; color: #71879a; font-size: 11px; }
+.teacher-content .annual-lessons-list small { margin-top: 5px; color: #8a9ba9; font-size: 11px; line-height: 1.4; }
+.teacher-content .annual-lessons-list article > i { color: #82abd1; font-family: 'Material Icons Outlined'; font-size: 19px; }
+.teacher-content .lesson-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin: 0 0 16px; padding: 15px; border: 1px solid #d9e9f7; border-radius: 10px; background: #f8fbff; }
+.teacher-content .lesson-form .full, .teacher-content .lesson-form-actions { grid-column: 1 / -1; }
+.teacher-content .lesson-form label { display: block; margin-bottom: 6px; color: #506c82; font-size: 11px; font-weight: 800; }
+.teacher-content .lesson-form label b { color: #dc5363; }
+.teacher-content .lesson-form label small { margin-left: 4px; color: #94a4b2; font-weight: 600; }
+.teacher-content .lesson-form input, .teacher-content .lesson-form select, .teacher-content .lesson-form textarea { width: 100%; border: 1px solid #d9e4ec; border-radius: 7px; outline: 0; padding: 9px 10px; color: #3e586c; background: #fff; font: inherit; font-size: 12px; }
+.teacher-content .lesson-form input:focus, .teacher-content .lesson-form textarea:focus { border-color: #75b6ee; box-shadow: 0 0 0 3px #dcefff; }
+.teacher-content .lesson-form-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.teacher-content .lesson-form-actions button { min-height: 36px; padding: 0 13px; border: 1px solid #d9e4ec; border-radius: 7px; color: #526d83; background: #fff; font-size: 12px; font-weight: 750; }
+.teacher-content .lesson-form-actions button:disabled { opacity: .65; cursor: wait; }
+@media (max-width: 620px) { .teacher-content .lesson-form { grid-template-columns: 1fr; } }
+

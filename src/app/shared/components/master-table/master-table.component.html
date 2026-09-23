@@ -169,7 +169,73 @@
                 {{ row[column.def] }}</span></mat-cell>
           </ng-container>
           } @else {
-          @if (column.type === 'status') {
+          @if (column.type === 'attendance') {
+          <ng-container [matColumnDef]="column.def">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>
+              <span class="truncate-text">{{ column.label }}</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
+              <span class="mobile-label">{{ column.label }}:</span>
+              <span class="attendance-actions" role="group" [attr.aria-label]="column.label">
+                <button type="button" class="attendance-choice present" [class.active]="row[column.def] === 'P'" [disabled]="attendanceReadonly()" (click)="$event.stopPropagation(); attendanceChange.emit({ row: row, status: 'P' })" matTooltip="Présent">P</button>
+                <button type="button" class="attendance-choice absent" [class.active]="row[column.def] === 'A'" [disabled]="attendanceReadonly()" (click)="$event.stopPropagation(); attendanceChange.emit({ row: row, status: 'A' })" matTooltip="Absent">A</button>
+                <button type="button" class="attendance-choice late" [class.active]="row[column.def] === 'R'" [disabled]="attendanceReadonly()" (click)="$event.stopPropagation(); attendanceChange.emit({ row: row, status: 'R' })" matTooltip="Retard">R</button>
+              </span>
+              @if (row.attendanceNote !== undefined) {
+                <input class="attendance-note" [(ngModel)]="row.attendanceNote" [disabled]="attendanceReadonly()" (click)="$event.stopPropagation()" (ngModelChange)="attendanceNoteChange.emit({ row: row, note: $event })" placeholder="Observation" />
+              }
+            </mat-cell>
+          </ng-container>
+          } @else if (column.type === 'evaluationParticipation') {
+          <ng-container [matColumnDef]="column.def">
+            <mat-header-cell *matHeaderCellDef mat-sort-header><span class="truncate-text">{{ column.label }}</span></mat-header-cell>
+            <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
+              <span class="mobile-label">{{ column.label }}:</span>
+              <span class="attendance-actions" role="group" [attr.aria-label]="column.label">
+                <button type="button" class="attendance-choice present" [class.active]="row.participated" (click)="$event.stopPropagation(); evaluationParticipationChange.emit({ row: row, participated: true })" matTooltip="A participé">P</button>
+                <button type="button" class="attendance-choice absent" [class.active]="!row.participated" (click)="$event.stopPropagation(); evaluationParticipationChange.emit({ row: row, participated: false })" matTooltip="Absent">A</button>
+              </span>
+            </mat-cell>
+          </ng-container>
+          } @else if (column.type === 'evaluationScore') {
+          <ng-container [matColumnDef]="column.def">
+            <mat-header-cell *matHeaderCellDef mat-sort-header><span class="truncate-text">{{ column.label }}</span></mat-header-cell>
+            <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
+              <span class="mobile-label">{{ column.label }}:</span>
+              <input class="attendance-note evaluation-score" type="number" min="0" [max]="row.bareme" [disabled]="!row.participated" [ngModel]="row.score" (click)="$event.stopPropagation()" (ngModelChange)="evaluationScoreChange.emit({ row: row, score: $event === '' || $event === null ? null : +$event })" [attr.aria-label]="column.label" />
+              <small class="evaluation-scale">/ {{ row.bareme }}</small>
+            </mat-cell>
+          </ng-container>
+          } @else if (column.type === 'evaluationComment') {
+          <ng-container [matColumnDef]="column.def">
+            <mat-header-cell *matHeaderCellDef mat-sort-header><span class="truncate-text">{{ column.label }}</span></mat-header-cell>
+            <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
+              <span class="mobile-label">{{ column.label }}:</span>
+              <input class="attendance-note" [ngModel]="row.appreciation" (click)="$event.stopPropagation()" (ngModelChange)="evaluationCommentChange.emit({ row: row, comment: $event })" placeholder="Appréciation" />
+            </mat-cell>
+          </ng-container>
+          } @else if (column.type === 'evaluationFile') {
+          <ng-container [matColumnDef]="column.def">
+            <mat-header-cell *matHeaderCellDef mat-sort-header><span class="truncate-text">{{ column.label }}</span></mat-header-cell>
+            <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
+              <span class="mobile-label">{{ column.label }}:</span>
+              <label class="evaluation-file-control" (click)="$event.stopPropagation()">
+                <i class="material-icons">upload_file</i><span>{{ row.piece_jointe?.nom_original || 'Ajouter un PDF' }}</span>
+                <input type="file" accept="application/pdf,.pdf" (change)="onEvaluationFileChange($event, row)" />
+              </label>
+            </mat-cell>
+          </ng-container>
+          } @else if (column.type === 'evaluationDownload') {
+          <ng-container [matColumnDef]="column.def">
+            <mat-header-cell *matHeaderCellDef mat-sort-header><span class="truncate-text">{{ column.label }}</span></mat-header-cell>
+            <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
+              <span class="mobile-label">{{ column.label }}:</span>
+              @if (row.piece_jointe) {
+                <button type="button" class="evaluation-download-control" (click)="$event.stopPropagation(); evaluationDownload.emit(row)"><i class="material-icons">download</i><span>{{ row.piece_jointe.nom_original || 'Télécharger' }}</span></button>
+              } @else { <span class="evaluation-no-file">Aucune copie</span> }
+            </mat-cell>
+          </ng-container>
+          } @else if (column.type === 'status') {
           <ng-container [matColumnDef]="column.def">
             <mat-header-cell *matHeaderCellDef mat-sort-header>
               <span class="truncate-text">{{ column.label }}</span>
@@ -350,6 +416,12 @@
               <button mat-icon-button color="primary" (click)="$event.stopPropagation()" (click)="onDetails(row)"
                 class="tbl-action-btn" matTooltip="Voir le dossier">
                 <app-feather-icons [icon]="'info'" [class]="'tbl-fav-details'"></app-feather-icons>
+              </button>
+              }
+              @if (showView()) {
+              <button mat-icon-button color="primary" (click)="$event.stopPropagation()" (click)="onView(row)"
+                class="tbl-action-btn" matTooltip="Voir la classe et le programme" aria-label="Voir la classe et le programme">
+                <mat-icon class="material-icons-outlined">visibility</mat-icon>
               </button>
               }
               @if (showSchedule()) {

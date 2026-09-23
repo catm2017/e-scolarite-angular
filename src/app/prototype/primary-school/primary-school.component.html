@@ -47,15 +47,19 @@
 
       @if (activeView() === 'dashboard') {
         <div class="page-title">
-          <div><small>{{ isHighSchool() ? 'LYCÉE' : isCollege() ? 'COLLÈGE' : 'ÉCOLE PRIMAIRE' }} · {{ currentCampus().shortName.toUpperCase() }}</small><h1>{{ t('dashboard') }}</h1><p>Les informations essentielles du campus, sans détails inutiles.</p></div>
+          <div><small>{{ establishmentTypeLabel().toUpperCase() }} · {{ currentCampus().shortName.toUpperCase() }}</small><h1>{{ t('dashboard') }}</h1><p>Les informations essentielles du campus, sans détails inutiles.</p></div>
           <div class="title-actions"><button (click)="setView('payments')"><i>point_of_sale</i>Encaisser</button><button class="primary-action" (click)="startStudentRegistration()"><i>person_add</i>Nouveau dossier élève</button></div>
         </div>
 
         <section class="metric-grid primary-metrics">
-          <article><span class="metric-icon green"><i>groups</i></span><div><small>Élèves inscrits</small><strong>{{ currentCampus().learners }}</strong><em>{{ currentCampus().classes }} classes actives</em></div><b>+18</b></article>
-          <article><span class="metric-icon blue"><i>how_to_reg</i></span><div><small>Présence aujourd’hui</small><strong>{{ currentCampus().attendance }}</strong><em>9 absents · 6 retards</em></div><b class="neutral">Voir</b></article>
-          <article><span class="metric-icon violet"><i>payments</i></span><div><small>Encaissé ce mois</small><strong>{{ currentCampus().collected }}</strong><em>89% des mensualités</em></div><b>+7%</b></article>
-          <article><span class="metric-icon orange"><i>assignment_late</i></span><div><small>À traiter</small><strong>24</strong><em>Impayés, dossiers et notes</em></div><b class="alert">Voir</b></article>
+          <article><span class="metric-icon green"><i>groups</i></span><div><small>Élèves inscrits</small><strong>{{ dashboardData()?.effectif ?? 0 }}</strong><em>{{ dashboardData()?.classes ?? 0 }} classes actives</em></div><b [class.neutral]="dashboardLoading()">{{ dashboardLoading() ? 'Chargement…' : 'Données réelles' }}</b></article>
+          @if (!isPreschool() && !isDaara()) {
+            <article><span class="metric-icon blue"><i>how_to_reg</i></span><div><small>Présence aujourd’hui</small><strong>{{ dashboardData()?.presence?.taux === null || dashboardData()?.presence?.taux === undefined ? '—' : (dashboardData()?.presence?.taux + ' %') }}</strong><em>{{ dashboardData()?.presence?.absents ?? 0 }} absents · {{ dashboardData()?.presence?.retards ?? 0 }} retards</em></div><b class="neutral">{{ dashboardData()?.presence?.total ?? 0 }} appels</b></article>
+          } @else {
+            <article><span class="metric-icon blue"><i>folder_shared</i></span><div><small>Dossiers à affecter</small><strong>{{ dashboardData()?.sans_classe ?? 0 }}</strong><em>Élèves sans classe définie</em></div><b class="neutral">Voir</b></article>
+          }
+          <article><span class="metric-icon violet"><i>payments</i></span><div><small>Encaissé ce mois</small><strong>{{ formatExpenseAmount(dashboardData()?.encaisse_mois ?? 0) }}</strong><em>Encaissements confirmés</em></div><b class="neutral">Ce mois</b></article>
+          <article><span class="metric-icon orange"><i>assignment_late</i></span><div><small>À traiter</small><strong>{{ dashboardData()?.a_traiter ?? 0 }}</strong><em>{{ dashboardData()?.impayes ?? 0 }} impayés · {{ dashboardData()?.sans_classe ?? 0 }} dossiers sans classe</em></div><b class="alert">Voir</b></article>
         </section>
 
         <section class="primary-dashboard-grid">
@@ -71,17 +75,21 @@
           </article>
 
           <div class="primary-side-stack">
-            <article class="panel today-card">
-              <header><div><h2>Aujourd’hui</h2><p>Mardi 28 juillet</p></div><button class="link-button" (click)="setView('timetable')">Planning</button></header>
-              <div class="today-event"><b>08:00</b><span><strong>Mathématiques · {{ selectedClass().name }}</strong><small>M. Kane · Salle 11</small></span><em>En cours</em></div>
-              <div class="today-event"><b>10:15</b><span><strong>{{ isCollege() ? 'Français' : 'Lecture' }} · {{ campusClasses()[1]?.name || selectedClass().name }}</strong><small>Mme Sarr · Salle 05</small></span></div>
-              <div class="today-event"><b>15:00</b><span><strong>Réunion pédagogique</strong><small>Salle des maîtres</small></span></div>
-            </article>
+            @if (!isPreschool() && !isDaara()) {
+              <article class="panel today-card">
+                <header><div><h2>Prochaines séances</h2><p>Selon l’emploi du temps enregistré</p></div><button class="link-button" (click)="setView('timetable')">Planning</button></header>
+                @for (session of dashboardData()?.prochaines_seances ?? []; track session.id) {
+                  <div class="today-event"><b>{{ session.heure_debut }}</b><span><strong>{{ session.matiere }} · {{ session.classe }}</strong><small>{{ session.enseignant || 'Enseignant à préciser' }}{{ session.salle ? ' · ' + session.salle : '' }}</small></span><em>{{ session.statut === 'realisee' ? 'Effectuée' : 'Planifiée' }}</em></div>
+                } @empty {
+                  <div class="today-event"><span><strong>Aucune séance planifiée</strong><small>Configurez puis enregistrez l’emploi du temps de la classe.</small></span></div>
+                }
+              </article>
+            }
             <article class="panel attention-card">
               <header><div><h2>À compléter</h2><p>Actions qui bloquent le moins</p></div></header>
-              <button (click)="setView('assessments')"><i>edit_note</i><span><b>6 notes manquantes</b><small>Composition de mathématiques</small></span></button>
-              <button (click)="setView('payments')"><i>payments</i><span><b>18 mensualités en retard</b><small>Relance WhatsApp disponible</small></span></button>
-              <button (click)="startStudentRegistration()"><i>folder_off</i><span><b>3 dossiers incomplets</b><small>Pièces à ajouter</small></span></button>
+              @if (!isPreschool() && !isDaara()) {<button (click)="setView('attendance')"><i>fact_check</i><span><b>{{ dashboardData()?.seances_a_valider ?? 0 }} séance(s) à valider</b><small>Appels et cahiers de texte enregistrés</small></span></button>}
+              <button (click)="setView('payments')"><i>payments</i><span><b>{{ dashboardData()?.impayes ?? 0 }} échéance(s) impayée(s)</b><small>Consultez les encaissements à régulariser</small></span></button>
+              <button (click)="setView('enrollments')"><i>folder_off</i><span><b>{{ dashboardData()?.sans_classe ?? 0 }} dossier(s) sans classe</b><small>Inscrivez ou transférez les élèves concernés</small></span></button>
             </article>
           </div>
         </section>
@@ -147,19 +155,23 @@
                   <mat-label>Nationalité <span class="required-marker">*</span></mat-label>
                   <input matInput name="nationality" [(ngModel)]="studentForm.nationality" required />
                 </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Adresse e-mail de l’élève</mat-label>
+                  <input matInput type="email" name="studentEmail" [(ngModel)]="studentForm.studentEmail" placeholder="eleve@exemple.sn" />
+                </mat-form-field>
               </div>
             </section>
           </article>
 
           <article class="panel registration-form">
             <header>
-              <div><h2>Tuteur</h2><p>Rattachez un tuteur existant pour éviter les doublons, ou créez un nouveau dossier tuteur.</p></div>
+              <div><h2>Tuteur</h2><p>Rattachez un tuteur existant de l’institut pour éviter les doublons, ou créez un nouveau dossier tuteur.</p></div>
               <span>Étape 2</span>
             </header>
             <section class="student-form-section">
               <div class="guardian-mode-switch" role="group" aria-label="Mode de rattachement du tuteur">
                 <button type="button" [class.active]="studentForm.guardianMode === 'existing'" (click)="changeGuardianMode('existing')">
-                  <i>person_search</i><span><b>Tuteur déjà enregistré</b><small>Rechercher et rattacher le dossier existant</small></span>
+                  <i>person_search</i><span><b>Tuteur déjà enregistré</b><small>Rechercher dans tous les espaces de l’institut</small></span>
                 </button>
                 <button type="button" [class.active]="studentForm.guardianMode === 'new'" (click)="changeGuardianMode('new')">
                   <i>person_add</i><span><b>Nouveau tuteur</b><small>Créer une nouvelle fiche tuteur</small></span>
@@ -169,7 +181,7 @@
               @if (studentForm.guardianMode === 'existing') {
                 <div class="existing-guardian-section">
                   <mat-form-field appearance="outline" [hideRequiredMarker]="true">
-                    <mat-label>Rechercher un tuteur <span class="required-marker">*</span></mat-label>
+                    <mat-label>Rechercher un tuteur de l’institut <span class="required-marker">*</span></mat-label>
                     <mat-select name="guardianId" [(ngModel)]="studentForm.guardianId" (ngModelChange)="selectExistingGuardian($event)" required>
                       @for (guardian of campusGuardians(); track guardian.id) {
                         <mat-option [value]="guardian.id">{{ guardian.name }} · {{ guardian.phone }}</mat-option>
@@ -515,9 +527,9 @@
 
       @if (activeView() === 'guardian-detail') {
         @if (selectedGuardian(); as guardian) {
-          <div class="page-title record-page-title"><div><small>DOSSIER COMPLET DU TUTEUR</small><h1>{{ guardian.name }}</h1><p>Identité, apprenants rattachés dans l’établissement et compte famille.</p></div><div class="title-actions"><button type="button" (click)="setView('guardians')"><i>arrow_back</i>Retour aux tuteurs</button><button type="button" class="primary-action" (click)="setGuardianRecordTab('identity')"><i>edit</i>Modifier le dossier</button></div></div>
+          <div class="page-title record-page-title"><div><small>DOSSIER COMPLET DU TUTEUR</small><h1>{{ guardian.name }}</h1><p>Identité, apprenants rattachés dans l’institut et compte famille.</p></div><div class="title-actions"><button type="button" (click)="setView('guardians')"><i>arrow_back</i>Retour aux tuteurs</button><button type="button" class="primary-action" (click)="setGuardianRecordTab('identity')"><i>edit</i>Modifier le dossier</button></div></div>
           <section class="record-layout guardian-record-layout">
-            <aside class="record-profile-card panel"><div class="record-profile-cover"></div><div class="record-avatar">{{ guardian.name.slice(0, 1) }}</div><h2>{{ guardian.name }}</h2><p>{{ guardian.profession || 'Profession non renseignée' }}</p><span class="record-status"><i></i>{{ guardian.accountStatus }}</span><dl><div><dt>Téléphone</dt><dd>{{ guardian.phone }}</dd></div><div><dt>E-mail</dt><dd>{{ guardian.email || 'Non renseigné' }}</dd></div><div><dt>Apprenants</dt><dd>{{ selectedGuardianChildren().length }} dans cet établissement</dd></div><div><dt>Campus</dt><dd>{{ currentCampus().shortName }}</dd></div></dl><div class="record-contact"><i>location_on</i><span><small>Adresse</small><strong>{{ guardian.address || 'Non renseignée' }}</strong><b>{{ guardian.secondaryPhone || 'Pas de second numéro' }}</b></span></div></aside>
+            <aside class="record-profile-card panel"><div class="record-profile-cover"></div><div class="record-avatar">{{ guardian.name.slice(0, 1) }}</div><h2>{{ guardian.name }}</h2><p>{{ guardian.profession || 'Profession non renseignée' }}</p><span class="record-status"><i></i>{{ guardian.accountStatus }}</span><dl><div><dt>Téléphone</dt><dd>{{ guardian.phone }}</dd></div><div><dt>E-mail</dt><dd>{{ guardian.email || 'Non renseigné' }}</dd></div><div><dt>Apprenants</dt><dd>{{ guardian.childrenCount }} dans l’institut</dd></div><div><dt>Campus actif</dt><dd>{{ currentCampus().shortName }}</dd></div></dl><div class="record-contact"><i>location_on</i><span><small>Adresse</small><strong>{{ guardian.address || 'Non renseignée' }}</strong><b>{{ guardian.secondaryPhone || 'Pas de second numéro' }}</b></span></div></aside>
             <div class="record-main"><nav class="record-tabs panel" aria-label="Sections du dossier tuteur"><button [class.active]="guardianRecordTab() === 'identity'" (click)="setGuardianRecordTab('identity')"><i>person</i>Identité</button><button [class.active]="guardianRecordTab() === 'children'" (click)="setGuardianRecordTab('children')"><i>groups</i>Enfants</button><button [class.active]="guardianRecordTab() === 'access'" (click)="setGuardianRecordTab('access')"><i>lock_person</i>Compte</button></nav>
               @if (guardianRecordTab() === 'identity') {<form class="record-tab-form" #guardianIdentityForm="ngForm" (ngSubmit)="saveGuardianRecord()"><article class="panel record-section record-editor-card"><header><div><h2>Identité et coordonnées</h2><p>Une même fiche tuteur est partagée entre tous ses enfants rattachés.</p></div><i>family_restroom</i></header><div class="record-form-grid"><label><span>Prénom(s)</span><input name="guardianFirstName" [(ngModel)]="guardianForm.firstName" required /></label><label><span>Nom</span><input name="guardianLastName" [(ngModel)]="guardianForm.lastName" required /></label><label><span>Profession</span><input name="guardianProfession" [(ngModel)]="guardianForm.profession" /></label><label><span>Téléphone / WhatsApp</span><input name="guardianPhone" [(ngModel)]="guardianForm.phone" required /></label><label><span>Téléphone secondaire</span><input name="guardianSecondaryPhone" [(ngModel)]="guardianForm.secondaryPhone" /></label><label><span>Adresse e-mail</span><input type="email" name="guardianEmail" [(ngModel)]="guardianForm.email" /></label><label class="wide"><span>Adresse</span><input name="guardianAddress" [(ngModel)]="guardianForm.address" /></label></div></article><div class="record-form-actions"><span>Les coordonnées seront répercutées dans les dossiers des enfants liés.</span><button type="submit" [disabled]="guardianIdentityForm.invalid || dossierSaving()"><i>save</i>Mettre à jour le dossier</button></div></form>}
               @if (guardianRecordTab() === 'children') {<article class="panel record-section record-table-section"><header><div><h2>Enfants inscrits dans l’établissement</h2><p>Apprenants rattachés à ce dossier tuteur sur ce campus.</p></div><span class="record-count">{{ selectedGuardianChildren().length }} enfant(s)</span></header><div class="record-data-table guardian-children-table"><div class="head"><span>Apprenant</span><span>Matricule</span><span>Classe</span><span>Régime</span><span></span></div>@for (child of selectedGuardianChildren(); track child.id) {<div><strong>{{ child.name }}</strong><span>{{ child.matricule }}</span><span>{{ studentClassName(child) }}</span><span>{{ child.regime || 'Externe' }}</span><button type="button" (click)="viewStudent(child)"><i>folder_open</i>Voir le dossier</button></div>} @empty {<div class="record-empty"><i>groups</i><span>Aucun enfant rattaché à ce tuteur sur ce campus.</span></div>}</div></article>}
@@ -1295,19 +1307,16 @@
               }
 
               @if (teacherRecordTab() === 'teaching') {
-                <section class="record-metrics">
-                  <article><i class="blue">schedule</i><span><small>Heures ce mois</small><strong>82 h 30</strong><em>Objectif 88 h</em></span></article>
-                  <article><i class="green">event_available</i><span><small>Séances assurées</small><strong>54</strong><em>98 % réalisées</em></span></article>
-                  <article><i class="orange">event_busy</i><span><small>Absences</small><strong>1 jour</strong><em>Justifiée</em></span></article>
-                </section>
-                <div class="record-two-columns">
-                  <article class="panel record-section"><header><div><h2>Charge pédagogique</h2><p>Affectations issues des emplois du temps.</p></div><i>school</i></header><div class="teaching-load"><span><small>Classes concernées</small><strong>{{ selectedClass().name }} · {{ campusClasses()[1]?.name || selectedClass().name }}</strong></span><span><small>Matières</small><strong>Français · Mathématiques</strong></span><span><small>Volume hebdomadaire</small><strong>22 heures</strong></span></div></article>
-                  <article class="panel record-section"><header><div><h2>Progression pédagogique</h2><p>Suivi des séances et programmes.</p></div><i>trending_up</i></header><ul class="record-timeline"><li><i class="present-dot"></i><span><strong>8 séances cette semaine</strong><small>7 réalisées · 1 planifiée</small></span></li><li><i class="present-dot"></i><span><strong>Programme annuel</strong><small>78 % réalisé</small></span></li></ul></article>
-                </div>
-                <article class="panel record-section record-table-section">
-                  <header><div><h2>Heures effectuées</h2><p>Détail mensuel issu des séances validées.</p></div><button type="button">Exporter le relevé</button></header>
-                  <div class="record-data-table teacher-hours-table"><div class="head"><span>Mois</span><span>Heures prévues</span><span>Heures effectuées</span><span>Absences</span><span>Validation</span></div><div><strong>Janvier 2027</strong><span>88 h</span><b>82 h 30</b><span>5 h 30</span><em>Validé</em></div><div><strong>Décembre 2026</strong><span>66 h</span><b>66 h</b><span>0 h</span><em>Validé</em></div><div><strong>Novembre 2026</strong><span>88 h</span><b>86 h</b><span>2 h</span><em>Validé</em></div></div>
-                </article>
+                @if (teacherDossierLoading()) { <section class="panel subject-loading-state"><span></span><strong>Chargement des enseignements…</strong></section> }
+                @else if (teacherDossier(); as dossier) {
+                  <section class="record-metrics">
+                    <article><i class="blue">school</i><span><small>Affectations</small><strong>{{ dossier.affectations.length }}</strong><em>Classes et matières</em></span></article>
+                    <article><i class="green">event_available</i><span><small>Séances réalisées</small><strong>{{ seancesEnseignantRealisees() }}</strong><em>Depuis le planning</em></span></article>
+                    <article><i class="orange">event_note</i><span><small>À renseigner</small><strong>{{ seancesEnseignantARenseigner() }}</strong><em>Séances planifiées</em></span></article>
+                  </section>
+                  <article class="panel record-section record-table-section"><header><div><h2>Charge pédagogique</h2><p>Affectations réellement enregistrées pour ce campus.</p></div></header><div class="record-data-table"><div class="head"><span>Classe</span><span>Matière</span><span>Barème</span><span>Coefficient</span></div>@for (affectation of dossier.affectations; track affectation.id) {<div><strong>{{ affectation.classe }}</strong><span>{{ affectation.matiere }}</span><span>{{ affectation.bareme || '—' }}</span><b>{{ affectation.coefficient || '—' }}</b></div>} @empty {<div><span>Aucune affectation pédagogique active.</span></div>}</div></article>
+                  <article class="panel record-section record-table-section"><header><div><h2>Heures effectuées</h2><p>Détail mensuel calculé à partir des séances réalisées.</p></div></header><div class="record-data-table teacher-hours-table"><div class="head"><span>Mois</span><span>Séances réalisées</span><span>Heures effectuées</span><span>Validation</span></div>@for (ligne of dossier.heures_mensuelles; track ligne.mois) {<div><strong>{{ ligne.mois }}</strong><span>{{ ligne.seances }}</span><b>{{ ligne.heures }} h</b><em>Calculé</em></div>} @empty {<div><span>Aucune séance réalisée pour le moment.</span></div>}</div></article>
+                } @else { <section class="panel subject-loading-state"><strong>Le détail pédagogique sera disponible après le chargement du dossier.</strong></section> }
               }
 
               @if (teacherRecordTab() === 'timetable') {
@@ -1316,7 +1325,7 @@
                   <div class="teacher-timetable-scroll">
                     <div class="timetable-view-sheet teacher-record-timetable">
                       <div class="timetable-view-head"><span>HORAIRE</span>@for (day of timetableDays; track day.key) {<span>{{ day.label }}</span>}</div>
-                      @for (row of teacherTimetableRows; track row.id) {
+                      @for (row of teacherTimetableRows(); track row.id) {
                         <article class="timetable-view-row">
                           <b class="timetable-time-range"><span>{{ row.startTime }}</span><i>arrow_downward</i><span>{{ row.endTime }}</span></b>
                           @for (day of timetableDays; track day.key) {
@@ -1328,21 +1337,18 @@
                           }
                         </article>
                       }
+                      @empty { <div class="timetable-empty-state">Aucun créneau n’est enregistré pour cet enseignant dans ce campus.</div> }
                     </div>
                   </div>
                 </article>
               }
 
               @if (teacherRecordTab() === 'salaries') {
-                <section class="record-metrics">
-                  <article><i class="violet">account_balance_wallet</i><span><small>Dernier salaire</small><strong>{{ teacher.salary || 'À calculer' }} F</strong><em>Janvier 2027</em></span></article>
-                  <article><i class="green">add_card</i><span><small>Compléments</small><strong>15 000 F</strong><em>Heures complémentaires</em></span></article>
-                  <article><i class="blue">receipt_long</i><span><small>Net payé</small><strong>340 000 F</strong><em>Virement effectué</em></span></article>
-                </section>
-                <article class="panel record-section record-table-section">
-                  <header><div><h2>Historique des salaires</h2><p>Salaires fixes, heures complémentaires et retenues.</p></div><button type="button">Voir les bulletins</button></header>
-                  <div class="record-data-table"><div class="head"><span>Période</span><span>Salaire de base</span><span>Compléments</span><span>Net payé</span><span>Statut</span></div><div><strong>Janvier 2027</strong><span>{{ teacher.salary || '0' }} F</span><span>15 000 F</span><b>340 000 F</b><em>Payé</em></div><div><strong>Décembre 2026</strong><span>{{ teacher.salary || '0' }} F</span><span>10 000 F</span><b>335 000 F</b><em>Payé</em></div><div><strong>Novembre 2026</strong><span>{{ teacher.salary || '0' }} F</span><span>0 F</span><b>{{ teacher.salary || '0' }} F</b><em>Payé</em></div></div>
-                </article>
+                @if (teacherDossierLoading()) { <section class="panel subject-loading-state"><span></span><strong>Chargement des salaires…</strong></section> }
+                @else if (teacherDossier(); as dossier) {
+                  <section class="record-metrics"><article><i class="violet">account_balance_wallet</i><span><small>Dernière paie prévue</small><strong>{{ dossier.salaires[0]?.montant || 0 }} F</strong><em>{{ dossier.salaires[0]?.periode || 'Aucune période' }}</em></span></article><article><i class="green">payments</i><span><small>Dernier montant payé</small><strong>{{ dossier.salaires[0]?.montant_paye || 0 }} F</strong><em>{{ dossier.salaires[0]?.statut || 'Aucun paiement' }}</em></span></article><article><i class="blue">schedule</i><span><small>Dernières heures</small><strong>{{ dossier.salaires[0]?.nombre_heures || 0 }} h</strong><em>Selon la paie</em></span></article></section>
+                  <article class="panel record-section record-table-section"><header><div><h2>Historique des salaires</h2><p>Montants issus des périodes et paiements enregistrés.</p></div></header><div class="record-data-table"><div class="head"><span>Période</span><span>Heures</span><span>Montant prévu</span><span>Montant payé</span><span>Statut</span></div>@for (salaire of dossier.salaires; track salaire.id) {<div><strong>{{ salaire.periode }}</strong><span>{{ salaire.nombre_heures || '—' }}</span><span>{{ salaire.montant }} F</span><b>{{ salaire.montant_paye }} F</b><em>{{ salaire.statut }}</em></div>} @empty {<div><span>Aucune ligne de paie enregistrée pour cet enseignant.</span></div>}</div></article>
+                } @else { <section class="panel subject-loading-state"><strong>Le détail de rémunération sera disponible après le chargement du dossier.</strong></section> }
               }
 
               @if (teacherRecordTab() === 'access') {
@@ -1366,7 +1372,7 @@
       @if (activeView() === 'staff') {
         @if (!staffEditorOpen()) {
           <div class="page-title">
-            <div><small>ADMINISTRATION DE L’ÉTABLISSEMENT</small><h1>{{ t('staff') }}</h1><p>Gérez les personnels rattachés {{ isHighSchool() ? 'au lycée' : isCollege() ? 'au collège' : 'à l’école primaire' }} : administration, vie scolaire, entretien et services.</p></div>
+            <div><small>ADMINISTRATION DE L’ÉTABLISSEMENT</small><h1>{{ t('staff') }}</h1><p>Gérez les personnels rattachés à {{ establishmentTypeLabelLowercase() }} : administration, vie scolaire, entretien et services.</p></div>
             <div class="title-actions"><button type="button" (click)="openWorkforceImport('staff')"><i>group_add</i>Importer plusieurs personnels</button><button class="primary-action" type="button" (click)="startStaffRegistration()"><i>person_add</i>Nouveau personnel</button></div>
           </div>
           <app-master-table
@@ -1762,8 +1768,8 @@
                 <button type="button" aria-label="Fermer" (click)="closeSessionGenerator()"><i>close</i></button>
               </header>
               <div class="session-generator-grid">
-                <label><span>Date de début</span><input type="date" name="sessionStartDate" [(ngModel)]="sessionGenerationForm.startDate" required /></label>
-                <label><span>Date de fin</span><input type="date" name="sessionEndDate" [(ngModel)]="sessionGenerationForm.endDate" required /></label>
+                <label><span>Date de début</span><input type="date" name="sessionStartDate" [min]="todayIsoDate()" [(ngModel)]="sessionGenerationForm.startDate" required /></label>
+                <label><span>Date de fin</span><input type="date" name="sessionEndDate" [min]="todayIsoDate()" [(ngModel)]="sessionGenerationForm.endDate" required /></label>
                 <label><span>Classe concernée</span><select name="sessionClass" [ngModel]="selectedClassId()" (ngModelChange)="selectClass($event)">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
               </div>
               <div class="session-generation-options">
@@ -1781,14 +1787,14 @@
 
           <section class="session-kpis">
             <article><i class="blue">event_note</i><span><small>Séances de la classe</small><strong>{{ sessionStats().total }}</strong><em>Année {{ selectedAcademicYear() }}</em></span></article>
-            <article><i class="green">task_alt</i><span><small>Terminées</small><strong>{{ sessionStats().completed }}</strong><em>Appel et cahier renseignés</em></span></article>
+            <article><i class="green">task_alt</i><span><small>Validées</small><strong>{{ sessionStats().completed }}</strong><em>Appel et cahier renseignés</em></span></article>
             <article><i class="orange">edit_note</i><span><small>À compléter</small><strong>{{ sessionStats().pending }}</strong><em>Cahier de texte attendu</em></span></article>
             <article><i class="violet">calendar_clock</i><span><small>Planifiées</small><strong>{{ sessionStats().planned }}</strong><em>À venir</em></span></article>
           </section>
 
           <div class="session-toolbar">
             <label><span>Classe</span><select [ngModel]="selectedClassId()" (ngModelChange)="selectClass($event)">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
-            <label><span>Statut</span><select [ngModel]="sessionStatusFilter()" (ngModelChange)="setSessionStatusFilter($event)"><option value="Toutes">Toutes les séances</option><option value="Planifiée">Planifiées</option><option value="À compléter">À compléter</option><option value="Terminée">Terminées</option></select></label>
+            <label><span>Statut</span><select [ngModel]="sessionStatusFilter()" (ngModelChange)="setSessionStatusFilter($event)"><option value="Toutes">Toutes les séances</option><option value="Planifiée">Planifiées</option><option value="À compléter">À compléter</option><option value="Effectuée">Effectuées</option><option value="Validée">Validées</option><option value="Ratée">Ratées</option></select></label>
             <span><i>sync</i>Métadonnées synchronisées avec l’emploi du temps</span>
           </div>
 
@@ -1812,7 +1818,7 @@
         } @else if (selectedSession(); as session) {
           <div class="page-title session-detail-title">
             <div><small>FICHE DE SÉANCE</small><h1>{{ session.subject }} · {{ sessionClassName(session) }}</h1><p>{{ formatSessionDate(session.date) }} · {{ session.startTime }}–{{ session.endTime }}</p></div>
-            <div class="title-actions"><button type="button" (click)="backToSessionList()"><i>arrow_back</i>Retour aux séances</button><button class="primary-action" type="button" (click)="saveSession()"><i>done_all</i>Valider la séance</button></div>
+            <div class="title-actions"><button type="button" (click)="backToSessionList()"><i>arrow_back</i>Retour aux séances</button><button type="button" (click)="markSessionMissed()" [disabled]="sessionsLoading() || session.status === 'Validée'"><i>event_busy</i>Marquer comme ratée</button><button class="primary-action" type="button" (click)="validerSeance()" [disabled]="sessionsLoading() || session.status !== 'Effectuée'"><i>done_all</i>{{ session.status === 'Validée' ? 'Séance validée' : 'Valider la séance' }}</button></div>
           </div>
 
           <section class="session-metadata-grid">
@@ -1830,15 +1836,15 @@
               <div>
                 <label><span>Leçon du programme</span>
                   @if (curriculumLessonsForSession(session).length) {
-                    <select [(ngModel)]="sessionLessonDraft">
+                    <select [(ngModel)]="sessionLessonDraft" disabled>
                       <option value="">Sélectionner une leçon</option>
                       @for (lesson of curriculumLessonsForSession(session); track lesson.id) {<option [value]="lesson.title">{{ lesson.title }}</option>}
                     </select>
                   } @else {
-                    <input [(ngModel)]="sessionLessonDraft" placeholder="Ex. Comprendre un texte narratif" />
+                    <input [(ngModel)]="sessionLessonDraft" placeholder="Ex. Comprendre un texte narratif" disabled />
                   }
                 </label>
-                <label><span>Travail réalisé pendant la séance</span><textarea [(ngModel)]="sessionDescriptionDraft" rows="9" placeholder="Décrivez les notions abordées, les exercices réalisés, les difficultés observées et le travail à poursuivre."></textarea></label>
+                <label><span>Travail réalisé pendant la séance</span><textarea [(ngModel)]="sessionDescriptionDraft" rows="9" placeholder="Décrivez les notions abordées, les exercices réalisés, les difficultés observées et le travail à poursuivre." disabled></textarea></label>
                 <small><i>history</i>La validation de la séance met automatiquement à jour l’avancement de la leçon sélectionnée.</small>
               </div>
             </section>
@@ -1857,9 +1863,7 @@
 
             <section class="panel attendance-sheet session-attendance-sheet">
               <header><div><h2>Appel de la classe</h2><p>{{ visibleStudents().length }} élèves · {{ attendanceCount('P') }} {{ attendanceCount('P') === 1 ? 'présent' : 'présents' }} · {{ attendanceCount('A') }} {{ attendanceCount('A') === 1 ? 'absent' : 'absents' }} · {{ attendanceCount('R') }} {{ attendanceCount('R') === 1 ? 'retard' : 'retards' }}</p></div><div class="attendance-legend"><span class="present">P</span>Présent <span class="absent">A</span>Absent <span class="late">R</span>Retard</div></header>
-              @for (student of visibleStudents(); track student.id; let index = $index) {
-                <article><span>{{ index + 1 }}</span><strong>{{ student.name }}</strong><small>{{ student.matricule }}</small><div><button type="button" [class.active]="attendance()[student.id] === 'P'" class="present" (click)="markAttendance(student.id, 'P')">P</button><button type="button" [class.active]="attendance()[student.id] === 'A'" class="absent" (click)="markAttendance(student.id, 'A')">A</button><button type="button" [class.active]="attendance()[student.id] === 'R'" class="late" (click)="markAttendance(student.id, 'R')">R</button></div><input [(ngModel)]="attendanceNotes[student.id]" [name]="'attendance-note-' + student.id" placeholder="Observation facultative" /></article>
-              }
+              <app-master-table title="Liste des élèves" [columnDefinitions]="sessionAttendanceColumns" [dataSource]="sessionAttendanceDataSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="false" [showExport]="true" [attendanceReadonly]="true" />
             </section>
           </div>
         }
@@ -1867,29 +1871,12 @@
 
       @if (activeView() === 'assessments') {
         @if (!selectedAssessment()) {
-          <div class="page-title assessment-page-title"><div><small>ÉVALUATIONS DE LA CLASSE</small><h1>{{ t('assessments') }}</h1><p>{{ isCollege() ? 'Retrouvez les devoirs, contrôles et compositions par matière et par semestre.' : 'Retrouvez les épreuves classées par domaine, ressources et compétences.' }}</p></div><div class="title-actions"><button><i>tune</i>{{ isCollege() ? 'Configurer les évaluations' : 'Configurer le référentiel' }}</button><button class="primary-action" type="button" (click)="openAssessmentEditor()"><i>add</i>Nouvelle évaluation</button></div></div>
-
-          @if (assessmentEditorOpen()) {
-            <form class="panel session-generator" #assessmentEditorForm="ngForm" (ngSubmit)="createAssessment()">
-              <header><div><span><i>edit_note</i></span><div><h2>Nouvelle évaluation</h2><p>Le barème est repris automatiquement de la composante primaire sélectionnée.</p></div></div><button type="button" aria-label="Fermer" (click)="closeAssessmentEditor()"><i>close</i></button></header>
-              <div class="session-generator-grid">
-                <label><span>Titre</span><input name="assessmentTitle" [(ngModel)]="assessmentForm.title" required placeholder="Ex. Contrôle des ressources 1" /></label><label><span>Date</span><input type="date" name="assessmentDate" [(ngModel)]="assessmentForm.date" required /></label><label><span>Trimestre</span><select name="assessmentPeriod" [(ngModel)]="assessmentForm.period"><option>Trimestre 1</option><option>Trimestre 2</option><option>Trimestre 3</option></select></label><label><span>Type</span><select name="assessmentType" [(ngModel)]="assessmentForm.type"><option value="controle">Contrôle</option><option value="devoir">Devoir</option><option value="formative">Évaluation formative</option><option value="essai">Essai</option><option value="composition">Composition</option></select></label>
-                <label><span>Domaine</span><select name="assessmentDomain" [(ngModel)]="assessmentForm.domainId" (ngModelChange)="assessmentForm.componentId = assessmentEditorComponents()[0]?.id ?? ''">@for (domain of primaryEvaluationDomains; track domain.id) {<option [value]="domain.id">{{ domain.label }}</option>}</select></label><label><span>Composante / barème</span><select name="assessmentComponent" [(ngModel)]="assessmentForm.componentId">@for (component of assessmentEditorComponents(); track component.id) {<option [value]="component.id">{{ component.label }} · /{{ component.scale }}</option>}</select></label><label><span>Enseignant</span><select name="assessmentTeacher" [(ngModel)]="assessmentForm.teacherId"><option value="">Non précisé</option>@for (teacher of campusTeachers(); track teacher.id) {<option [value]="teacher.id">{{ teacher.name }}</option>}</select></label>
-              </div>
-              <footer><p><i>info</i>La liste des élèves de la classe sera préparée automatiquement.</p><div><button type="button" (click)="closeAssessmentEditor()">Annuler</button><button class="primary-action" type="submit" [disabled]="assessmentEditorForm.invalid || assessmentSaving()"><i>{{ assessmentSaving() ? 'progress_activity' : 'save' }}</i>{{ assessmentSaving() ? 'Création…' : 'Créer l’évaluation' }}</button></div></footer>
-            </form>
-          }
+          <div class="page-title assessment-page-title"><div><small>ÉVALUATIONS DE LA CLASSE</small><h1>{{ t('assessments') }}</h1><p>Les évaluations sont créées par les enseignants depuis leur espace. Consultez ici les évaluations réalisées dans chaque classe.</p></div></div>
 
           <div class="assessment-toolbar evaluation-filter-bar">
-            @if (isCollege()) {
-              <label><span>Semestre</span><select [(ngModel)]="selectedTrimester"><option>Semestre 1</option><option>Semestre 2</option></select></label>
-              <label><span>Classe</span><select [ngModel]="selectedClassId()" (ngModelChange)="selectCollegeGradeClass($event)">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
-              <label class="evaluation-domain-select"><span>Matière</span><select [(ngModel)]="selectedSubject">@for (subject of assignedCurriculumSubjects(); track subject.id) {<option [value]="subject.name">{{ subject.name }}</option>}</select></label>
-            } @else {
-              <label><span>Trimestre</span><select [(ngModel)]="selectedTrimester"><option>Trimestre 1</option><option>Trimestre 2</option><option>Trimestre 3</option></select></label>
-              <label><span>Classe</span><select [ngModel]="selectedClassId()" (ngModelChange)="selectClass($event)">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
-              <label class="evaluation-domain-select"><span>Domaine d’évaluation</span><select [(ngModel)]="selectedEvaluationDomainId">@for (domain of primaryEvaluationDomains; track domain.id) {<option [value]="domain.id">{{ domain.shortLabel }}</option>}</select></label>
-            }
+            <label><span>{{ isCollege() ? 'Semestre' : 'Trimestre' }}</span><select [(ngModel)]="selectedTrimester">@if (isCollege()) {<option>Semestre 1</option><option>Semestre 2</option>} @else {<option>Trimestre 1</option><option>Trimestre 2</option><option>Trimestre 3</option>}</select></label>
+            <label><span>Classe</span><select [ngModel]="selectedClassId()" (ngModelChange)="isCollege() ? selectCollegeGradeClass($event) : selectClass($event)">@for (classroom of campusClasses(); track classroom.id) {<option [value]="classroom.id">{{ classroom.name }}</option>}</select></label>
+            <label class="evaluation-domain-select"><span>Matière</span><select [ngModel]="selectedEvaluationSubject()" (ngModelChange)="selectedEvaluationSubject.set($event)"><option value="">Toutes les matières</option>@for (subject of assignedCurriculumSubjects(); track subject.id) {<option [value]="subject.name">{{ subject.name }}</option>}</select></label>
             <span><i>filter_alt</i>{{ filteredAssessments().length }} évaluation{{ filteredAssessments().length > 1 ? 's' : '' }} trouvée{{ filteredAssessments().length > 1 ? 's' : '' }}</span>
           </div>
 
@@ -1897,56 +1884,32 @@
             @for (assessment of filteredAssessments(); track assessment.id) {
               <article class="panel assessment-card" (click)="openAssessment(assessment)">
                 <header><span [class]="'assessment-kind ' + assessmentTypeClass(assessment.type)"><i>{{ assessment.type === 'Composition' ? 'workspace_premium' : assessment.type === 'Essai' ? 'history_edu' : assessment.type === 'Évaluation formative' ? 'monitoring' : 'edit_note' }}</i>{{ assessment.type }}</span><em [class]="'assessment-state ' + assessmentStatusClass(assessment.status)">{{ assessment.status }}</em></header>
-                <div class="assessment-card-body"><small>{{ formatSessionDate(assessment.date) }}</small><h2>{{ assessment.title }}</h2><p>@if (isCollege()) {<i>menu_book</i>{{ assessment.subject }} <span>·</span> <i>score</i>Note /{{ assessment.scale }} <span>·</span>} @else {<i>account_tree</i>{{ assessmentEvaluationDomain(assessment).shortLabel }} <span>·</span> <i>fact_check</i>{{ assessmentEvaluationComponent(assessment).shortLabel }} <span>·</span>} <i>school</i>{{ sessionClassName({ classId: assessment.classId }) }}</p></div>
+                <div class="assessment-card-body"><small>{{ formatSessionDate(assessment.date) }}</small><h2>{{ assessment.title }}</h2><p><i>menu_book</i>{{ assessment.subject }} <span>·</span> <i>score</i>Note /{{ assessment.scale }} <span>·</span> <i>school</i>{{ sessionClassName({ classId: assessment.classId }) }}</p></div>
                 <div class="assessment-card-metrics"><span><small>Participants</small><strong>{{ assessmentParticipantCount(assessment) }}/{{ assessment.results.length }}</strong></span><span><small>Moyenne</small><strong>{{ assessmentAverage(assessment) }}<em>/{{ assessment.scale }}</em></strong></span><span><small>Copies PDF</small><strong>{{ assessmentAttachmentCount(assessment) }}</strong></span></div>
-                <footer><span><i>co_present</i>{{ teacherName(assessment.teacherId) }}</span><button type="button" (click)="$event.stopPropagation(); openAssessment(assessment)">Voir les résultats<i>arrow_forward</i></button></footer>
+                <footer><span><i>co_present</i>{{ assessmentTeacherName(assessment) }}</span><button type="button" (click)="$event.stopPropagation(); openAssessment(assessment)">Voir les résultats<i>arrow_forward</i></button></footer>
               </article>
             } @empty {
-              <article class="panel empty-assessments"><i>assignment_late</i><h2>Aucune évaluation trouvée</h2><p>Modifiez {{ isCollege() ? 'le semestre, la classe ou la matière' : 'le trimestre, la classe ou le domaine' }} pour afficher d’autres évaluations.</p><button type="button" (click)="openAssessmentEditor()"><i>add</i>Créer une évaluation</button></article>
+              <article class="panel empty-assessments"><i>assignment_late</i><h2>Aucune évaluation trouvée</h2><p>Modifiez {{ isCollege() ? 'le semestre, la classe ou la matière' : 'le trimestre, la classe ou la matière' }} pour afficher d’autres évaluations.</p></article>
             }
           </section>
         } @else if (selectedAssessment(); as assessment) {
-          <div class="page-title assessment-detail-title"><div><small>FICHE D’ÉVALUATION</small><h1>{{ assessment.title }}</h1><p>{{ isCollege() ? assessment.subject : assessmentEvaluationDomain(assessment).shortLabel + ' · ' + assessmentEvaluationComponent(assessment).label }} · {{ sessionClassName({ classId: assessment.classId }) }} · {{ assessment.trimester }}</p></div><div class="title-actions"><button type="button" (click)="backToAssessmentList()"><i>arrow_back</i>Retour aux évaluations</button><button class="primary-action" type="button" (click)="saveAssessmentResults()"><i>save</i>Enregistrer les résultats</button></div></div>
+          <div class="page-title assessment-detail-title"><div><small>FICHE D’ÉVALUATION</small><h1>{{ assessment.title }}</h1><p>{{ assessment.subject }} · {{ sessionClassName({ classId: assessment.classId }) }} · {{ assessment.trimester }}</p></div><div class="title-actions"><button type="button" (click)="backToAssessmentList()"><i>arrow_back</i>Retour aux évaluations</button></div></div>
 
           <section class="assessment-detail-metadata">
-            @if (isCollege()) {
-              <article><i>menu_book</i><span><small>Matière</small><strong>{{ assessment.subject }}</strong></span></article>
-              <article><i>date_range</i><span><small>Semestre</small><strong>{{ assessment.trimester }}</strong></span></article>
-            } @else {
-              <article><i>account_tree</i><span><small>Domaine</small><strong>{{ assessmentEvaluationDomain(assessment).shortLabel }}</strong></span></article>
-              <article><i>fact_check</i><span><small>Composante évaluée</small><strong>{{ assessmentEvaluationComponent(assessment).label }}</strong></span></article>
-              <article><i>extension</i><span><small>Nature</small><strong>{{ assessmentEvaluationComponent(assessment).category }}</strong></span></article>
-            }
+            <article><i>menu_book</i><span><small>Matière</small><strong>{{ assessment.subject }}</strong></span></article>
+            <article><i>date_range</i><span><small>{{ isCollege() ? 'Semestre' : 'Trimestre' }}</small><strong>{{ assessment.trimester }}</strong></span></article>
             <article><i>score</i><span><small>Barème de l’épreuve</small><strong>/ {{ assessment.scale }} points</strong></span></article>
             <article><i>category</i><span><small>Type d’évaluation</small><strong>{{ assessment.type }}</strong></span></article>
             <article><i>event</i><span><small>Date</small><strong>{{ formatSessionDate(assessment.date) }}</strong></span></article>
-            <article><i>co_present</i><span><small>Enseignant</small><strong>{{ teacherName(assessment.teacherId) }}</strong></span></article>
+            <article><i>co_present</i><span><small>Enseignant</small><strong>{{ assessmentTeacherName(assessment) }}</strong></span></article>
             <article><i>groups</i><span><small>Participants</small><strong>{{ assessmentParticipantCount(assessment) }}/{{ assessment.results.length }}</strong></span></article>
             <article><i>functions</i><span><small>Moyenne</small><strong>{{ assessmentAverage(assessment) }} / {{ assessment.scale }}</strong></span></article>
           </section>
 
           <section class="panel assessment-results-panel">
             <header><div><h2>Résultats et appréciations</h2><p><span>Barème appliqué à cette épreuve :</span> /{{ assessment.scale }}. <span>Les appréciations et les travaux numérisés restent associés au résultat.</span></p></div><span><i>info</i>La note enregistrée alimente automatiquement {{ isCollege() ? 'la matière du bulletin semestriel' : 'le domaine du bulletin' }}.</span></header>
-            <div class="assessment-results-head"><span>N°</span><span>Élève</span><span>Participation</span><span>Note</span><span>Appréciation de l’enseignant</span><span>Pièces jointes</span></div>
-            @for (result of assessment.results; track result.studentId; let resultIndex = $index) {
-              @if (assessmentStudent(result.studentId); as student) {
-                <article class="assessment-result-row" [class.absent]="!result.participated">
-                  <span>{{ resultIndex + 1 }}</span>
-                  <div class="assessment-student"><b>{{ student.name.slice(0, 1) }}</b><span><strong>{{ student.name }}</strong><small>{{ student.matricule }}</small></span></div>
-                  <em [class.participated]="result.participated">{{ result.participated ? 'A participé' : 'Absent' }}</em>
-                  <label class="assessment-score-input"><input type="number" min="0" [max]="assessment.scale" [value]="result.score ?? ''" (input)="updateAssessmentScore(assessment.id, result.studentId, $any($event.target).value)" /><span>/{{ assessment.scale }}</span></label>
-                  <input class="assessment-appreciation-input" [value]="result.appreciation" (input)="updateAssessmentAppreciation(assessment.id, result.studentId, $any($event.target).value)" placeholder="Ajouter une appréciation" />
-                  <div class="assessment-attachments">
-                    @for (attachment of result.attachments; track attachment.id) {
-                      <button type="button" (click)="downloadAssessmentAttachment(assessment, result, attachment)" [title]="attachment.name"><i>picture_as_pdf</i><span><strong>Copie PDF</strong><small>{{ attachment.size }}</small></span><i>download</i></button>
-                    } @empty {
-                      <span>Aucune pièce</span>
-                    }
-                  </div>
-                </article>
-              }
-            }
-            <footer><span><i>cloud_done</i>Les modifications sont conservées dans le dossier pédagogique.</span><strong>Moyenne de la classe : {{ assessmentAverage(assessment) }} / {{ assessment.scale }}</strong></footer>
+            <app-master-table title="Liste des résultats" [columnDefinitions]="assessmentResultColumns" [dataSource]="assessmentResultsDataSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="false" [showExport]="true" (evaluationDownload)="telechargerCopieEvaluation(assessment, $event)" />
+            <footer><span><i>visibility</i>Les résultats sont renseignés depuis l’espace enseignant.</span><strong>Moyenne de la classe : {{ assessmentAverage(assessment) }} / {{ assessment.scale }}</strong></footer>
           </section>
         }
       }
@@ -2366,21 +2329,26 @@
         </app-master-table>
       }
 
+      @if (activeView() === 'quran-followup') {
+        @if (selectedCentralAcademicYearId()) { <app-quran-followup [campusId]="selectedCampusId()" [academicYearId]="selectedCentralAcademicYearId()" /> }
+        @else { <section class="panel empty-state"><i>menu_book</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et le niveau unique dans Paramètres avant d’ouvrir le suivi du Coran.</p></section> }
+      }
+
       @if (activeView() === 'settings') {
-        <div class="page-title"><div><small>CONFIGURATION {{ isHighSchool() ? 'DU LYCÉE' : isCollege() ? 'DU COLLÈGE' : 'DU PRIMAIRE' }}</small><h1>{{ t('settings') }}</h1><p>Définissez les niveaux, les dates de l’année sélectionnée et les {{ isCollege() ? 'semestres' : 'trimestres' }} du campus.</p></div><div class="title-actions"><button type="button" (click)="actualiserDonneesBackend()" [disabled]="backendRefreshing()"><i>{{ backendRefreshing() ? 'sync' : 'refresh' }}</i>{{ backendRefreshing() ? 'Réactualisation…' : 'Réactualiser les données' }}</button><button type="button" class="primary-action" (click)="saveSchoolSettings()" [disabled]="isSelectedSchoolYearArchived()"><i>save</i>Enregistrer</button></div></div>
+        <div class="page-title"><div><small>CONFIGURATION {{ establishmentTypeLabel().toUpperCase() }}</small><h1>{{ t('settings') }}</h1><p>{{ isDaara() ? 'Définissez le niveau unique et les dates de l’année scolaire du campus.' : 'Définissez les niveaux, les dates de l’année sélectionnée et les ' + (isCollege() ? 'semestres' : 'trimestres') + ' du campus.' }}</p></div><div class="title-actions"><button type="button" (click)="actualiserDonneesBackend()" [disabled]="backendRefreshing()"><i>{{ backendRefreshing() ? 'sync' : 'refresh' }}</i>{{ backendRefreshing() ? 'Réactualisation…' : 'Réactualiser les données' }}</button><button type="button" class="primary-action" (click)="saveSchoolSettings()" [disabled]="isSelectedSchoolYearArchived()"><i>save</i>Enregistrer</button></div></div>
         <section class="settings-editor-grid">
-          <article class="panel settings-editor levels-editor"><header><div><span><i>format_list_numbered</i></span><div><h2>Niveaux {{ isHighSchool() ? 'du lycée' : isCollege() ? 'du collège' : 'du primaire' }}</h2><p>Préremplis selon le cycle {{ isHighSchool() ? 'secondaire sénégalais' : isCollege() ? 'moyen sénégalais' : 'primaire sénégalais' }}. Vous pouvez les adapter.</p></div></div><button type="button" (click)="addPrimaryLevelSetting()"><i>add</i>Ajouter un niveau</button></header><div class="settings-level-head"><span>Code</span><span>Intitulé du niveau</span><span></span></div><div class="settings-level-list">@for (level of schoolLevelSettings; track level.id) {<div class="settings-level-row"><input [(ngModel)]="level.code" [name]="'levelCode' + level.id" [placeholder]="isHighSchool() ? 'Ex. 2nde' : isCollege() ? 'Ex. 6e' : 'Ex. CI'" /><input [(ngModel)]="level.label" [name]="'levelLabel' + level.id" [placeholder]="isHighSchool() ? 'Ex. Seconde' : isCollege() ? 'Ex. Sixième' : 'Ex. Cours d’initiation'" /><button type="button" (click)="removePrimaryLevelSetting(level.id)" [attr.aria-label]="'Retirer ' + (level.code || 'ce niveau')"><i>close</i></button></div>}</div><footer><i>info</i>Ces niveaux seront disponibles lors de la création et de la configuration des classes.</footer></article>
+          <article class="panel settings-editor levels-editor"><header><div><span><i>format_list_numbered</i></span><div><h2>Niveaux {{ establishmentTypeLabelLowercase() }}</h2><p>{{ isDaara() ? 'Le Daara utilise un niveau et une classe uniques, créés automatiquement pour chaque campus.' : 'Préremplis selon le cycle ' + (isPreschool() ? 'préscolaire' : isHighSchool() ? 'secondaire sénégalais' : isCollege() ? 'moyen sénégalais' : 'primaire sénégalais') + '. Vous pouvez les adapter.' }}</p></div></div>@if (!isDaara()) {<button type="button" (click)="addPrimaryLevelSetting()"><i>add</i>Ajouter un niveau</button>}</header><div class="settings-level-head"><span>Code</span><span>Intitulé du niveau</span><span></span></div><div class="settings-level-list">@for (level of schoolLevelSettings; track level.id) {<div class="settings-level-row"><input [(ngModel)]="level.code" [disabled]="isDaara()" [name]="'levelCode' + level.id" [placeholder]="isPreschool() ? 'Ex. PS' : isHighSchool() ? 'Ex. 2nde' : isCollege() ? 'Ex. 6e' : 'Ex. CI'" /><input [(ngModel)]="level.label" [disabled]="isDaara()" [name]="'levelLabel' + level.id" [placeholder]="isPreschool() ? 'Ex. Petite section' : isHighSchool() ? 'Ex. Seconde' : isCollege() ? 'Ex. Sixième' : 'Ex. Cours d’initiation'" />@if (!isDaara()) {<button type="button" (click)="removePrimaryLevelSetting(level.id)" [attr.aria-label]="'Retirer ' + (level.code || 'ce niveau')"><i>close</i></button>}</div>}</div><footer><i>info</i>{{ isDaara() ? 'Les apprenants sont inscrits automatiquement dans la classe unique « Daara ».' : 'Ces niveaux seront disponibles lors de la création et de la configuration des classes.' }}</footer></article>
 
           <article class="panel settings-editor school-year-editor"><header><div><span><i>date_range</i></span><div><h2>Année scolaire</h2><p>L’année est créée par la plateforme ; l’établissement définit uniquement ses dates de début et de fin.</p></div></div><em class="settings-editable-state" [class.settings-locked-state]="isSelectedSchoolYearArchived()"><i>{{ isSelectedSchoolYearArchived() ? 'lock' : 'edit' }}</i>{{ isSelectedSchoolYearArchived() ? 'Archivée' : 'Modifiable' }}</em></header><div class="settings-form-grid"><label><span>Année scolaire <b>*</b></span><select [ngModel]="schoolYearSettings.centralYearId" (ngModelChange)="selectSchoolYear($event)" name="schoolYearCentralId" [disabled]="schoolYearsLoading()"><option value="" disabled>{{ schoolYearsLoading() ? 'Chargement des années…' : 'Choisir une année' }}</option>@for (annee of anneesScolairesDisponibles(); track annee.id) {<option [value]="annee.id">{{ annee.libelle }}{{ annee.statut === 'archivee' ? ' · archivée' : '' }}</option>}</select></label><label><span>Date de début <b>*</b></span><input type="date" [(ngModel)]="schoolYearSettings.startDate" name="schoolYearStart" [disabled]="isSelectedSchoolYearArchived() || schoolSettingsLoading()" /></label><label><span>Date de fin <b>*</b></span><input type="date" [(ngModel)]="schoolYearSettings.endDate" name="schoolYearEnd" [disabled]="isSelectedSchoolYearArchived() || schoolSettingsLoading()" /></label></div><footer><i>{{ schoolSettingsLoading() ? 'sync' : 'calendar_month' }}</i>{{ schoolSettingsLoading() ? 'Chargement de la configuration de l’année…' : 'Les dates renseignées ici sont propres à cet établissement et pilotent ses classes, finances, évaluations et bulletins.' }}</footer></article>
 
-          <article class="panel settings-editor trimester-editor"><header><div><span><i>view_timeline</i></span><div><h2>{{ isCollege() ? 'Semestres' : 'Trimestres' }}</h2><p>Renseignez les périodes d’évaluation de l’année scolaire.</p></div></div></header><div class="settings-term-head"><span>{{ isCollege() ? 'Semestre' : 'Trimestre' }}</span><span>Début</span><span>Fin</span></div><div class="settings-term-list">@for (term of trimesterSettings; track term.id) {<div class="settings-term-row"><input [(ngModel)]="term.label" [name]="'termLabel' + term.id" [placeholder]="isCollege() ? 'Semestre' : 'Trimestre'" /><input type="date" [(ngModel)]="term.startDate" [name]="'termStart' + term.id" /><input type="date" [(ngModel)]="term.endDate" [name]="'termEnd' + term.id" /></div>}</div><footer><i>fact_check</i>Les dates des {{ isCollege() ? 'semestres' : 'trimestres' }} servent aux évaluations, bulletins et tableaux de bord.</footer></article>
+          @if (!isDaara()) {<article class="panel settings-editor trimester-editor"><header><div><span><i>view_timeline</i></span><div><h2>{{ isCollege() ? 'Semestres' : 'Trimestres' }}</h2><p>Renseignez les périodes d’évaluation de l’année scolaire.</p></div></div></header><div class="settings-term-head"><span>{{ isCollege() ? 'Semestre' : 'Trimestre' }}</span><span>Début</span><span>Fin</span></div><div class="settings-term-list">@for (term of trimesterSettings; track term.id) {<div class="settings-term-row"><input [(ngModel)]="term.label" [name]="'termLabel' + term.id" [placeholder]="isCollege() ? 'Semestre' : 'Trimestre'" /><input type="date" [(ngModel)]="term.startDate" [name]="'termStart' + term.id" /><input type="date" [(ngModel)]="term.endDate" [name]="'termEnd' + term.id" /></div>}</div><footer><i>fact_check</i>Les dates des {{ isCollege() ? 'semestres' : 'trimestres' }} servent aux évaluations, bulletins et tableaux de bord.</footer></article>}
         </section>
       }
     </main>
 
     <footer class="shell-footer">
-      <div><span class="footer-mark">E</span><p><strong>E‑Scolarité {{ isHighSchool() ? 'Lycée' : isCollege() ? 'Collège' : 'Primaire' }}</strong><small>{{ currentCampus().name }}</small></p></div>
-      <nav aria-label="Liens du pied de page"><a href="#">Aide métier</a><a href="#">Guide du {{ isHighSchool() ? 'lycée' : isCollege() ? 'collège' : 'primaire' }}</a><a href="#">Support</a></nav>
+      <div><span class="footer-mark">E</span><p><strong>E‑Scolarité {{ establishmentTypeLabel() }}</strong><small>{{ currentCampus().name }}</small></p></div>
+      <nav aria-label="Liens du pied de page"><a href="#">Aide métier</a><a href="#">Guide du {{ establishmentTypeLabelLowercase() }}</a><a href="#">Support</a></nav>
       <span class="service-status"><i></i>Données du campus synchronisées</span><small>© 2026 Daara Tech</small>
     </footer>
   </div>

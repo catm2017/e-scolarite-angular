@@ -1,0 +1,140 @@
+<section class="content teacher-shell">
+  <div class="content-block teacher-workspace">
+  <main class="teacher-content">
+    @if (chargement()) { <div class="teacher-loading"><i>progress_activity</i>Chargement de votre espace…</div> }
+    @else if (erreur()) { <div class="teacher-error"><i>error_outline</i><div><strong>Accès indisponible</strong><p>{{ erreur() }}</p><button type="button" (click)="charger()">Réessayer</button></div></div> }
+    @else if (espace(); as data) {
+      <div class="teacher-heading"><div><p>ESPACE ENSEIGNANT</p><h1>{{ titreVue() }}</h1></div><button type="button" class="refresh" (click)="charger()"><i>refresh</i>Actualiser</button></div>
+      @switch (vue()) {
+        @case ('espaces') {
+          <section class="teacher-panel workspace-choice-panel">
+            <header><div><h2>Choisissez votre espace de travail</h2><p>Les données affichées dépendront du campus et du type d’établissement sélectionnés.</p></div></header>
+            <div class="workspace-choice-grid">
+              @for (rattachement of data.rattachements; track rattachement.etablissement_id + rattachement.campus_id) {
+                <button type="button" class="workspace-choice-card" [class.active]="contexteActif()?.etablissement_id === rattachement.etablissement_id && contexteActif()?.campus_id === rattachement.campus_id" (click)="choisirEspace(rattachement)">
+                  <i>domain</i><span><small>{{ rattachement.type }}</small><strong>{{ rattachement.etablissement }}</strong><em><i>location_on</i>{{ rattachement.campus }}</em></span><b>arrow_forward</b>
+                </button>
+              }
+            </div>
+          </section>
+        }
+        @case ('tableau-de-bord') {
+          <section class="teacher-stats"><article><i class="blue">groups</i><div><strong>{{ data.affectations.length }}</strong><span>Affectation(s)</span></div></article><article><i class="orange">event_note</i><div><strong>{{ seancesARenseigner() }}</strong><span>Séance(s) à renseigner</span></div></article><article><i class="purple">assignment_turned_in</i><div><strong>{{ evaluationsACorriger() }}</strong><span>Évaluation(s) à corriger</span></div></article><article><i class="green">schedule</i><div><strong>{{ seancesAVenir().length }}</strong><span>Prochaine(s) séance(s)</span></div></article></section>
+          <section class="teacher-panel"><header><div><h2>À venir</h2><p>Vos prochaines séances prévues.</p></div><button type="button" (click)="ouvrir('seances')">Toutes les séances <i>arrow_forward</i></button></header><div class="upcoming-list">@for (seance of seancesAVenir(); track seance.id) { <article><span class="date-box"><b>{{ seance.date_seance | date:'dd' }}</b><small>{{ seance.date_seance | date:'MMM' }}</small></span><div><strong>{{ seance.matiere || 'Matière à préciser' }} · {{ seance.classe }}</strong><small>{{ formatHeure(seance.heure_debut) }} – {{ formatHeure(seance.heure_fin) }} · {{ seance.campus }}</small></div><button type="button" (click)="ouvrirSeance(seance.id)">Ouvrir</button></article> } @empty { <div class="teacher-empty">Aucune séance planifiée pour le moment.</div> }</div></section>
+        }
+        @case ('emploi-du-temps') {
+          <article class="teacher-panel teacher-timetable-card"><header><div><h2>Mon emploi du temps</h2><p>Planning annuel de {{ contexteActif()?.type || 'votre établissement' }} · {{ contexteActif()?.campus || 'campus' }}.</p></div></header><div class="teacher-timetable-scroll"><div class="teacher-timetable-sheet"><div class="teacher-timetable-head"><span>HORAIRE</span><span>LUNDI</span><span>MARDI</span><span>MERCREDI</span><span>JEUDI</span><span>VENDREDI</span><span>SAMEDI</span></div>@for (creneau of emploiTempsParCreneau(); track creneau.debut + creneau.fin) {<div class="teacher-timetable-row"><b>{{ formatHeure(creneau.debut) }}<i>arrow_downward</i>{{ formatHeure(creneau.fin) }}</b>@for (jour of creneau.jours; track jour) {@if (creneau.cellules.get(jour); as cours) {<div><strong>{{ cours.matiere || 'Cours' }}</strong><small>{{ cours.classe }}</small><em>{{ cours.salle || 'Salle non précisée' }}</em></div>} @else {<div class="empty">Créneau libre</div>}}</div>} @empty {<div class="teacher-empty">Aucun emploi du temps n’est encore publié pour cet espace.</div>}</div></div></article>
+        }
+        @case ('classes') {
+          <section class="teacher-panel teacher-assignments-panel">
+            <header><div><h2>Classes & matières</h2><p>Retrouvez vos classes, le programme annuel et les élèves associés à chaque enseignement.</p></div><i>auto_stories</i></header>
+            <div class="programme-grid teacher-affectation-grid">
+              @for (item of data.affectations; track item.id) {
+                <button type="button" class="teacher-affectation-card" (click)="ouvrirClasseMatiere(item)">
+                  <span class="teacher-affectation-card-head">
+                    <span class="teacher-affectation-icon"><i>menu_book</i></span>
+                    <span class="teacher-affectation-context"><small>{{ item.etablissement }}</small><em><i>location_on</i>{{ item.campus }}</em></span>
+                    <i class="teacher-affectation-arrow">arrow_forward</i>
+                  </span>
+                  <span class="teacher-affectation-body">
+                    <small>CLASSE</small>
+                    <h3>{{ item.classe }}</h3>
+                    <strong>{{ item.matiere }}</strong>
+                  </span>
+                  <span class="teacher-affectation-meta"><em><i>groups</i>{{ item.effectif }} élève(s)</em>@if (item.bareme) { <em><i>speed</i>Barème /{{ item.bareme }}</em> }</span>
+                  <span class="teacher-affectation-link"><span>Programme et liste des élèves</span><i>arrow_forward</i></span>
+                </button>
+              } @empty {
+                <div class="teacher-empty">Aucune classe ou matière ne vous est encore affectée.</div>
+              }
+            </div>
+          </section>
+        }
+        @case ('classe-matiere') {
+          @if (chargementClasseMatiere()) { <div class="teacher-loading"><i>progress_activity</i>Chargement de la classe et du programme…</div> }
+          @else if (erreurClasseMatiere()) { <div class="teacher-error"><i>error_outline</i><div><strong>Page indisponible</strong><p>{{ erreurClasseMatiere() }}</p><button type="button" (click)="retourAuxClasses()">Retour aux classes</button></div></div> }
+          @else if (classeMatiere(); as detail) {
+            <section class="teacher-panel class-subject-heading"><header><div><button type="button" class="back-link" (click)="retourAuxClasses()"><i>arrow_back</i>Mes classes & matières</button><p>CLASSE ET MATIÈRE</p><h2>{{ detail.classe_matiere.classe }} · {{ detail.classe_matiere.matiere }}</h2><span>{{ detail.eleves.length }} élève(s) inscrit(s) · Programme annuel</span></div></header></section>
+            <section class="teacher-panel annual-lessons"><header><div><h2>Leçons annuelles</h2><p>Programme de {{ detail.matiere }} pour la classe {{ detail.classe_matiere.classe }}.</p></div><button type="button" class="primary" (click)="ouvrirAjoutLecon()"><i>add</i>Ajouter une leçon</button></header>
+              @if (afficherAjoutLecon()) { <form class="lesson-form" (ngSubmit)="enregistrerLecon()"><div><label>Intitulé de la leçon <b>*</b></label><input [ngModel]="formulaireLecon().libelle" (ngModelChange)="modifierLecon('libelle', $event)" name="libelle" required></div><div><label>Période <small>Optionnelle</small></label><select [ngModel]="formulaireLecon().periode" (ngModelChange)="modifierLecon('periode', $event)" name="periode"><option value="">Toute l’année</option>@for (periode of periodesAcademiques(); track periode) { <option [value]="periode">{{ periode }}</option> }</select></div><div><label>Nombre de séances prévues <b>*</b></label><input type="number" min="1" [ngModel]="formulaireLecon().nombre_seances_estime" (ngModelChange)="modifierLecon('nombre_seances_estime', $event)" name="nombre_seances_estime" required></div><div class="full"><label>Objectifs <small>Optionnels</small></label><textarea [ngModel]="formulaireLecon().objectifs" (ngModelChange)="modifierLecon('objectifs', $event)" name="objectifs" rows="3" placeholder="Objectifs pédagogiques de la leçon"></textarea></div><div class="lesson-form-actions"><button type="button" (click)="annulerAjoutLecon()">Annuler</button><button type="submit" class="primary" [disabled]="enregistrementLecon()">{{ enregistrementLecon() ? 'Enregistrement…' : 'Enregistrer la leçon' }}</button></div></form> }
+              <div class="annual-lessons-list">@for (lecon of detail.lecons; track lecon.id) { <article><b>{{ lecon.ordre }}</b><div><strong>{{ lecon.libelle }}</strong><span>{{ lecon.periode || 'Toute l’année' }} · {{ lecon.nombre_seances_estime }} séance(s) prévue(s)</span>@if (lecon.objectifs) { <small>{{ lecon.objectifs }}</small> }</div><i>menu_book</i></article> } @empty { <div class="teacher-empty">Aucune leçon n’est encore prévue dans ce programme annuel.</div> }</div>
+            </section>
+            <app-master-table title="Élèves de la classe" [columnDefinitions]="elevesClasseColumns" [dataSource]="elevesClasseSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="false" [showExport]="true" />
+          }
+        }
+        @case ('seance-detail') {
+          @if (chargementSeance()) { <div class="teacher-loading"><i>progress_activity</i>Chargement du détail de la séance…</div> }
+          @else if (erreurSeance()) { <div class="teacher-error"><i>error_outline</i><div><strong>Page indisponible</strong><p>{{ erreurSeance() }}</p><button type="button" (click)="retourAuxSeances()">Retour aux séances</button></div></div> }
+          @else if (seanceDetail(); as detail) {
+            <section class="teacher-panel session-detail-heading"><header><div><button type="button" class="back-link" (click)="retourAuxSeances()"><i>arrow_back</i>Retour aux séances</button><p>FICHE DE SÉANCE</p><h2>{{ detail.seance.matiere || 'Cours' }} · {{ detail.seance.classe }}</h2><span>{{ detail.seance.date_seance | date:'dd MMM yyyy' }} · {{ formatHeure(detail.seance.heure_debut) }} – {{ formatHeure(detail.seance.heure_fin) }}</span></div><button type="button" class="primary" (click)="enregistrerDetailSeance()" [disabled]="enregistrementSeance()"><i>done_all</i>{{ enregistrementSeance() ? 'Enregistrement…' : 'Enregistrer la séance' }}</button></header></section>
+            <section class="teacher-panel teacher-session-editor"><header><div><h2>Cahier de texte</h2><p>Renseignez le contenu réalisé et le travail à poursuivre.</p></div><i>edit_note</i></header><label><span>Leçon du programme</span><select [ngModel]="cahierSeance().leconId" (ngModelChange)="modifierCahierSeance('leconId', $event)"><option value="">Aucune leçon sélectionnée</option>@for (lecon of detail.lecons; track lecon.id) { <option [value]="lecon.id">{{ lecon.libelle }}</option> }</select></label><label><span>Contenu de la séance</span><textarea rows="6" [ngModel]="cahierSeance().contenu" (ngModelChange)="modifierCahierSeance('contenu', $event)" placeholder="Décrivez les notions abordées, les exercices réalisés et les observations."></textarea></label><label><span>Travail à faire</span><textarea rows="3" [ngModel]="cahierSeance().travailMaison" (ngModelChange)="modifierCahierSeance('travailMaison', $event)" placeholder="Travail à poursuivre à la maison (facultatif)."></textarea></label></section>
+            <section class="teacher-panel teacher-session-attendance"><header><div><h2>Appel de la classe</h2><p>{{ detail.eleves.length }} élève(s) · utilisez P, A ou R pour l’appel.</p></div><i>fact_check</i></header><app-master-table title="Liste des élèves" [columnDefinitions]="sessionStudentColumns" [dataSource]="sessionStudentsSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="false" [showExport]="true" (attendanceChange)="modifierPresenceTable($event)" /></section>
+          }
+        }
+        @case ('seances') { <app-master-table title="Séances, appel et cahier de texte" [columnDefinitions]="seanceColumns" [dataSource]="seancesSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showView]="true" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="true" [showExport]="true" (refresh)="charger()" (view)="ouvrirSeance($event.id)" (rowClick)="ouvrirSeance($event.id)" /> }
+        @case ('evaluations') {
+          <section class="teacher-panel teacher-evaluations-heading">
+            <header><div><h2>Mes évaluations</h2><p>Créez une évaluation uniquement pour une classe et une matière qui vous sont affectées.</p></div><button type="button" class="primary" (click)="ouvrirCreationEvaluation()"><i>add</i>Nouvelle évaluation</button></header>
+            @if (afficherCreationEvaluation()) {
+              <form class="teacher-evaluation-form" (ngSubmit)="enregistrerEvaluation()">
+                <div class="teacher-evaluation-form-title"><span><i>edit_note</i></span><div><strong>Nouvelle évaluation</strong><small>L’enseignant, la classe et le campus sont déterminés à partir de votre affectation.</small></div></div>
+                <div class="teacher-evaluation-form-grid">
+                  <label><span>Titre <b>*</b></span><input name="evaluationTitre" [ngModel]="formulaireEvaluation().titre" (ngModelChange)="modifierFormulaireEvaluation('titre', $event)" required placeholder="Ex. Devoir n° 1" /></label>
+                  <label><span>Date <b>*</b></span><input type="date" name="evaluationDate" [ngModel]="formulaireEvaluation().date" (ngModelChange)="modifierFormulaireEvaluation('date', $event)" required /></label>
+                  <label><span>{{ libellePeriodeEvaluation() }} <b>*</b></span><select name="evaluationPeriode" [ngModel]="formulaireEvaluation().periode" (ngModelChange)="modifierFormulaireEvaluation('periode', $event)" required>@for (periode of periodesAcademiques(); track periode) { <option [value]="periode">{{ periode }}</option> }</select></label>
+                  <label><span>Type <b>*</b></span><select name="evaluationType" [ngModel]="formulaireEvaluation().type" (ngModelChange)="modifierFormulaireEvaluation('type', $event)"><option value="controle">Contrôle</option><option value="devoir">Devoir</option><option value="formative">Évaluation formative</option><option value="essai">Essai</option><option value="composition">Composition</option></select></label>
+                  <label class="wide"><span>Matière et classe <b>*</b></span><select name="evaluationMatiere" [ngModel]="formulaireEvaluation().classeMatiereId" (ngModelChange)="modifierFormulaireEvaluation('classeMatiereId', $event)" required>@for (affectation of data.affectations; track affectation.classe_matiere_id) { <option [value]="affectation.classe_matiere_id">{{ affectation.classe }} · {{ affectation.matiere }}</option> }</select></label>
+                  <label><span>Note maximale <b>*</b></span><div class="teacher-score-input"><input type="number" min="1" max="1000" name="evaluationBareme" [ngModel]="formulaireEvaluation().bareme" (ngModelChange)="modifierFormulaireEvaluation('bareme', $event)" required /><em>points</em></div></label>
+                </div>
+                @if (erreurEvaluation()) { <p class="teacher-form-error"><i>error_outline</i>{{ erreurEvaluation() }}</p> }
+                <footer><button type="button" (click)="fermerCreationEvaluation()">Annuler</button><button type="submit" class="primary" [disabled]="enregistrementEvaluation()"><i>{{ enregistrementEvaluation() ? 'progress_activity' : 'save' }}</i>{{ enregistrementEvaluation() ? 'Création…' : 'Créer l’évaluation' }}</button></footer>
+              </form>
+            }
+          </section>
+          <app-master-table title="Mes évaluations" [columnDefinitions]="evaluationColumns" [dataSource]="evaluationsSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showView]="true" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="true" [showExport]="true" (refresh)="charger()" (view)="ouvrirDetailEvaluation($event.id)" (rowClick)="ouvrirDetailEvaluation($event.id)" />
+        }
+        @case ('evaluation-detail') {
+          @if (chargementEvaluationDetail()) { <div class="teacher-loading"><i>progress_activity</i>Chargement du détail de l’évaluation…</div> }
+          @else if (erreurEvaluationDetail()) { <div class="teacher-error"><i>error_outline</i><div><strong>Page indisponible</strong><p>{{ erreurEvaluationDetail() }}</p><button type="button" (click)="retourAuxEvaluations()">Retour aux évaluations</button></div></div> }
+          @else if (evaluationDetail(); as detail) {
+            <section class="teacher-panel evaluation-detail-heading"><header><div><button type="button" class="back-link" (click)="retourAuxEvaluations()"><i>arrow_back</i>Retour aux évaluations</button><p>FICHE D’ÉVALUATION</p><h2>{{ detail.evaluation.titre }}</h2><span>{{ detail.evaluation.matiere || 'Matière' }} · {{ detail.evaluation.classe }} · {{ detail.evaluation.periode || 'Période non précisée' }}</span></div></header></section>
+            <section class="teacher-evaluation-detail-grid"><article class="teacher-panel"><i>event</i><small>Date</small><strong>{{ detail.evaluation.date_evaluation | date:'dd MMM yyyy' }}</strong></article><article class="teacher-panel"><i>category</i><small>Type</small><strong>{{ detail.evaluation.type }}</strong></article><article class="teacher-panel"><i>score</i><small>Note maximale</small><strong>/{{ detail.evaluation.bareme }}</strong></article><article class="teacher-panel"><i>groups</i><small>Participants</small><strong>{{ detail.resultats.length }}</strong></article></section>
+            <section class="teacher-panel teacher-evaluation-results"><app-master-table title="Résultats et appréciations" [columnDefinitions]="evaluationResultColumns" [dataSource]="evaluationResultsSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="false" [showExport]="true" (evaluationParticipationChange)="modifierParticipationEvaluation($event)" (evaluationScoreChange)="modifierNoteEvaluation($event)" (evaluationCommentChange)="modifierAppreciationEvaluation($event)" (evaluationFileChange)="ajouterCopieEvaluation($event)" /><footer><span>Les absents ne reçoivent pas de note. Une copie PDF peut être jointe à chaque élève.</span><button type="button" class="primary" [disabled]="enregistrementResultats()" (click)="enregistrerResultatsEvaluation()"><i>{{ enregistrementResultats() ? 'progress_activity' : 'save' }}</i>{{ enregistrementResultats() ? 'Enregistrement…' : 'Enregistrer les résultats' }}</button></footer></section>
+          }
+        }
+        @case ('dossier') {
+          <section class="teacher-record-layout">
+            <aside class="teacher-panel teacher-profile-summary">
+              <div class="teacher-profile-cover"></div><div class="teacher-profile-avatar">{{ data.profil.prenom.slice(0, 1) }}{{ data.profil.nom.slice(0, 1) }}</div>
+              <h2>{{ data.profil.prenom }} {{ data.profil.nom }}</h2><p>{{ data.profil.matricule }}</p><span class="teacher-status"><i></i>Actif</span>
+              <dl><div><dt>Spécialité</dt><dd>{{ data.profil.specialite || 'Non renseignée' }}</dd></div><div><dt>Contrat</dt><dd>{{ data.profil.type_contrat || 'Non renseigné' }}</dd></div><div><dt>Prise de service</dt><dd>{{ data.profil.date_embauche | date:'dd MMM yyyy' }}</dd></div><div><dt>Expérience</dt><dd>{{ data.profil.experience_annees || 0 }} an(s)</dd></div></dl>
+              <div class="teacher-contact"><i>call</i><span><small>Coordonnées</small><strong>{{ data.profil.telephone || 'Non renseigné' }}</strong><b>{{ data.profil.email || 'E-mail non renseigné' }}</b></span></div>
+            </aside>
+            <div class="teacher-record-main">
+              <nav class="teacher-record-tabs teacher-panel" aria-label="Sections de mon dossier">
+                <button [class.active]="dossierTab() === 'profil'" (click)="changerOngletDossier('profil')"><i>person</i>Profil</button>
+                <button [class.active]="dossierTab() === 'enseignements'" (click)="changerOngletDossier('enseignements')"><i>menu_book</i>Enseignements</button>
+                <button [class.active]="dossierTab() === 'emploi-temps'" (click)="changerOngletDossier('emploi-temps')"><i>calendar_month</i>Emploi du temps</button>
+                <button [class.active]="dossierTab() === 'remuneration'" (click)="changerOngletDossier('remuneration')"><i>payments</i>Rémunération</button>
+              </nav>
+              @if (dossierTab() === 'profil') {
+                <section class="profile-grid"><article class="teacher-panel profile-card"><header><div><h2>Informations personnelles</h2><p>Identité et coordonnées de votre dossier.</p></div><i>badge</i></header><dl><div><dt>Sexe</dt><dd>{{ data.profil.sexe || 'Non renseigné' }}</dd></div><div><dt>Date de naissance</dt><dd>{{ data.profil.date_naissance | date:'dd MMM yyyy' }}</dd></div><div><dt>Lieu de naissance</dt><dd>{{ data.profil.lieu_naissance || 'Non renseigné' }}</dd></div><div><dt>Adresse</dt><dd>{{ data.profil.adresse || 'Non renseignée' }}</dd></div></dl></article><article class="teacher-panel profile-card"><header><div><h2>Contact d’urgence</h2><p>Personne à joindre en cas de nécessité.</p></div><i>emergency</i></header><dl><div><dt>Nom</dt><dd>{{ data.profil.contact_urgence_nom || 'Non renseigné' }}</dd></div><div><dt>Téléphone</dt><dd>{{ data.profil.contact_urgence_telephone || 'Non renseigné' }}</dd></div><div><dt>Fonction</dt><dd>{{ data.profil.fonction || 'Enseignant' }}</dd></div><div><dt>Diplôme</dt><dd>{{ data.profil.diplome || 'Non renseigné' }}</dd></div></dl></article></section>
+              }
+              @if (dossierTab() === 'enseignements') {
+                <section class="teacher-stats teacher-record-stats"><article><i class="blue">groups</i><div><strong>{{ data.affectations.length }}</strong><span>Classe(s) / matière(s)</span></div></article><article><i class="green">event_available</i><div><strong>{{ data.seances.length }}</strong><span>Séance(s) générée(s)</span></div></article><article><i class="orange">fact_check</i><div><strong>{{ seancesARenseigner() }}</strong><span>À renseigner</span></div></article></section>
+                <app-master-table title="Mes affectations pédagogiques" [columnDefinitions]="affectationColumns" [dataSource]="affectationsSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="false" [showExport]="true" />
+              }
+              @if (dossierTab() === 'emploi-temps') {
+                <article class="teacher-panel teacher-timetable-card"><header><div><h2>Emploi du temps de l’enseignant</h2><p>Planning annuel de {{ contexteActif()?.type || 'votre établissement' }} · {{ contexteActif()?.campus || 'campus' }}.</p></div></header><div class="teacher-timetable-scroll"><div class="teacher-timetable-sheet"><div class="teacher-timetable-head"><span>HORAIRE</span><span>LUNDI</span><span>MARDI</span><span>MERCREDI</span><span>JEUDI</span><span>VENDREDI</span><span>SAMEDI</span></div>@for (creneau of emploiTempsParCreneau(); track creneau.debut + creneau.fin) {<div class="teacher-timetable-row"><b>{{ formatHeure(creneau.debut) }}<i>arrow_downward</i>{{ formatHeure(creneau.fin) }}</b>@for (jour of creneau.jours; track jour) {@if (creneau.cellules.get(jour); as cours) {<div><strong>{{ cours.matiere || 'Cours' }}</strong><small>{{ cours.classe }}</small><em>{{ cours.salle || 'Salle non précisée' }}</em></div>} @else {<div class="empty">Créneau libre</div>}}</div>} @empty {<div class="teacher-empty">Aucun emploi du temps n’est encore publié pour cet espace.</div>}</div></div></article>
+              }
+              @if (dossierTab() === 'remuneration') {
+                <section class="profile-grid"><article class="teacher-panel profile-card"><header><div><h2>Modalité de rémunération</h2><p>Informations définies par l’administration.</p></div><i>payments</i></header><dl><div><dt>Mode</dt><dd>{{ data.profil.type_remuneration === 'horaire' ? 'Paiement à l’heure' : 'Salaire mensuel' }}</dd></div><div><dt>Montant</dt><dd>{{ data.profil.type_remuneration === 'horaire' ? (data.profil.montant_heure || 0) + ' F CFA / heure' : (data.profil.montant_mensuel || 0) + ' F CFA / mois' }}</dd></div></dl></article><article class="teacher-panel profile-card"><header><div><h2>Présences & demandes</h2><p>Vos derniers pointages.</p></div><i>schedule</i></header><div class="attendance-list">@for (pointage of data.pointages; track pointage.id) {<div><b>{{ pointage.date_pointage | date:'dd MMM yyyy' }}</b><span>Entrée : {{ pointage.heure_entree_at || '—' }} · Sortie : {{ pointage.heure_sortie_at || '—' }}</span><em [class.complete]="pointage.statut === 'complet'">{{ pointage.statut }}</em></div>} @empty {<div class="teacher-empty">Aucun pointage enregistré.</div>}</div></article></section>
+              }
+            </div>
+          </section>
+        }
+      }
+    }
+  </main>
+  </div>
+</section>

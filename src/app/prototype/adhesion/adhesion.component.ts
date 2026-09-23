@@ -18,7 +18,8 @@ export class AdhesionComponent {
   readonly chargement = signal(false);
   readonly succes = signal<string | null>(null);
   readonly erreur = signal<string | null>(null);
-  readonly types = ['Préscolaire', 'École primaire', 'Collège', 'Lycée', 'Université', 'Formation professionnelle'];
+  readonly types = ['Préscolaire', 'École primaire', 'Collège', 'Lycée', 'Daara', 'Université', 'Formation professionnelle'];
+  readonly typesIndisponibles = new Set(['Université', 'Formation professionnelle']);
   readonly adhesion = this.formulaire.group({
     nom_institut: ['', Validators.required],
     ville: [''],
@@ -33,6 +34,7 @@ export class AdhesionComponent {
   readonly typesSelectionnes = signal<string[]>([]);
 
   basculerType(type: string): void {
+    if (this.typesIndisponibles.has(type)) return;
     this.typesSelectionnes.update((selection) => selection.includes(type)
       ? selection.filter((item) => item !== type)
       : [...selection, type]);

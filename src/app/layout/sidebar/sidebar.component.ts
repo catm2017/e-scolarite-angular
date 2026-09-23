@@ -39,6 +39,7 @@ const PRIMARY_ROUTES: RouteInfo[] = [
   { path: '', title: 'Matières', iconType: 'material-icons-outlined', icon: 'menu_book', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'subjects' },
   { path: '', title: 'Matières par classe', iconType: 'material-icons-outlined', icon: 'account_tree', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'class-subjects' },
   { path: '', title: 'Programmes & leçons', iconType: 'material-icons-outlined', icon: 'auto_stories', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'curriculum' },
+  { path: '', title: 'Suivi du Coran', iconType: 'material-icons-outlined', icon: 'menu_book', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'quran-followup' },
   { path: '', title: 'Enseignants', iconType: 'material-icons-outlined', icon: 'co_present', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'teachers' },
   { path: '', title: 'Configurer l’emploi du temps', iconType: 'material-icons-outlined', icon: 'edit_calendar', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'timetable-builder' },
   { path: '', title: 'Emploi du temps', iconType: 'material-icons-outlined', icon: 'calendar_month', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'timetable' },
@@ -73,6 +74,17 @@ const INSTITUTE_ROUTES: RouteInfo[] = [
   { path: '', title: 'Souscription', iconType: 'material-icons-outlined', icon: 'tune', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'subscription' },
   { path: '', title: 'Factures', iconType: 'material-icons-outlined', icon: 'receipt_long', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'subscription-invoices' },
   { path: '', title: 'Paramètres', iconType: 'material-icons-outlined', icon: 'settings', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'settings' },
+];
+
+/** Navigation dédiée au profil enseignant, rendue par la sidebar commune du template. */
+const TEACHER_ROUTES: Array<{ path: string; title: string; icon: string; group?: string; contextSelector?: boolean }> = [
+  { path: '/enseignant/espaces', title: 'Mes espaces de travail', icon: 'domain', group: 'MON ESPACE', contextSelector: true },
+  { path: '/enseignant/tableau-de-bord', title: 'Tableau de bord', icon: 'space_dashboard' },
+  { path: '/enseignant/emploi-du-temps', title: 'Mon emploi du temps', icon: 'calendar_month' },
+  { path: '/enseignant/classes', title: 'Classes & matières', icon: 'auto_stories', group: 'PÉDAGOGIE' },
+  { path: '/enseignant/seances', title: 'Séances & cahier de texte', icon: 'fact_check' },
+  { path: '/enseignant/evaluations', title: 'Évaluations', icon: 'edit_note' },
+  { path: '/enseignant/dossier', title: 'Mon dossier', icon: 'badge', group: 'MON DOSSIER' },
 ];
 
 @Component({
@@ -126,6 +138,8 @@ export class SidebarComponent
   isPrimaryWorkspace = false;
   isInstituteWorkspace = false;
   isSaasWorkspace = false;
+  isTeacherWorkspace = false;
+  readonly teacherNavigation = TEACHER_ROUTES;
   readonly saasNavigation = [
     { path: '/saas/tableau-de-bord', title: 'Vue d’ensemble', icon: 'space_dashboard' },
     { path: '/saas/etablissements', title: 'Instituts', icon: 'apartment' },
@@ -145,7 +159,7 @@ export class SidebarComponent
         if (this.isInstituteWorkspace) {
           this.instituteWorkspace.synchronizeFromUrl(event.urlAfterRedirects);
         }
-        if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace) {
+        if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace) {
           this.configureWorkspaceNavigation();
           this.actualiserProfilEspace();
         }
@@ -184,7 +198,7 @@ export class SidebarComponent
       this.instituteWorkspace.synchronizeFromUrl(this.router.url);
     }
 
-    if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace) {
+    if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace) {
       this.configureWorkspaceNavigation();
       this.actualiserProfilEspace();
       this.userImg = './assets/images/user/admin.jpg';
@@ -225,7 +239,13 @@ export class SidebarComponent
   private actualiserProfilEspace(): void {
     const user = this.centralApi.utilisateur();
     this.userFullName = user ? `${user.prenom} ${user.nom}`.trim() : 'Utilisateur connecté';
-    this.userType = this.isSaasWorkspace ? 'Administration E-Scolarité' : this.isInstituteWorkspace ? 'Administrateur institut' : 'Utilisateur établissement';
+    this.userType = this.isSaasWorkspace
+      ? 'Administration E-Scolarité'
+      : this.isTeacherWorkspace
+        ? 'Enseignant'
+        : this.isInstituteWorkspace
+          ? 'Administrateur institut'
+          : 'Utilisateur établissement';
     this.userImg = './assets/images/user/admin.jpg';
   }
 
@@ -277,7 +297,20 @@ export class SidebarComponent
   }
 
   isWorkspaceItemVisible(view?: string): boolean {
-    return view !== 'series' || this.primaryWorkspace.establishmentType() === 'lycee';
+    const type = this.primaryWorkspace.establishmentType();
+    if (view === 'series') return type === 'lycee';
+    if (view === 'quran-followup') return type === 'daara';
+    if (type === 'daara') {
+      return !['enrollments', 'classes', 'series', 'subjects', 'class-subjects', 'curriculum', 'timetable-builder', 'timetable', 'attendance', 'assessments', 'reports'].includes(view ?? '');
+    }
+    if (type === 'prescolaire') {
+      return !['curriculum', 'timetable-builder', 'timetable', 'attendance', 'assessments', 'reports'].includes(view ?? '');
+    }
+    return true;
+  }
+
+  canSelectTeacherWorkspace(): boolean {
+    return this.centralApi.rattachementsEnseignant().length > 1;
   }
 
   private configureWorkspaceNavigation(): void {
@@ -299,6 +332,7 @@ export class SidebarComponent
   private mettreAJourContexteNavigation(url: string): void {
     const path = url.split('?')[0].split('#')[0];
     this.isSaasWorkspace = path === '/saas' || path.startsWith('/saas/');
+    this.isTeacherWorkspace = path === '/enseignant' || path.startsWith('/enseignant/');
     this.isPrimaryWorkspace = path.startsWith('/institut/etablissements/');
     this.isInstituteWorkspace = path.startsWith('/institut')
       && !this.isPrimaryWorkspace

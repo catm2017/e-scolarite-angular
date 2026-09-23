@@ -1,12 +1,13 @@
-<main class="adhesion-page">
-  <div class="adhesion-topbar">
-    <a routerLink="/" class="adhesion-brand"><span>E</span><b>E‑Scolarité</b></a>
-    <nav><a routerLink="/">Accueil</a><span>Vous avez déjà un espace ?</span><a class="adhesion-login" routerLink="/connexion">Connexion</a><app-platform-language-switcher /></nav>
-  </div>
+<main class="adhesion-page public-page">
+  <header class="public-nav">
+    <a routerLink="/" class="public-brand"><span class="public-brand-mark"><i class="material-icons-outlined" aria-hidden="true">school</i></span><span>E-Scolarité<small>L'école, simplement.</small></span></a>
+    <nav aria-label="Navigation principale" class="public-nav-links"><a routerLink="/">Accueil</a><a routerLink="/" fragment="fonctionnalites">Fonctionnalités</a><a routerLink="/" fragment="apropos">À propos</a><a routerLink="/" fragment="tarifications">Tarification</a><a routerLink="/" fragment="contact">Contact</a></nav>
+    <div class="public-nav-actions"><app-platform-language-switcher /><a class="public-login-link" routerLink="/connexion">Connexion</a></div>
+  </header>
 
   <div class="adhesion-shell">
     <aside class="onboarding-panel">
-      <div class="panel-badge"><i>school</i> POUR LES ÉTABLISSEMENTS</div>
+      <div class="panel-badge"><i>school</i> POUR LES INSTITUTS</div>
       <h1>Votre institut mérite un espace à son image.</h1>
       <p>Présentez-nous votre organisation. Nous préparons ensuite un environnement sécurisé, adapté à vos établissements et campus.</p>
 
@@ -42,7 +43,7 @@
         </label>
         <div class="types-group">
           <div class="field-caption"><i aria-hidden="true">school</i> Types d’établissement concernés</div>
-          <div class="types">@for (type of types; track type) { <button type="button" [class.active]="typesSelectionnes().includes(type)" (click)="basculerType(type)"><i aria-hidden="true">{{ typesSelectionnes().includes(type) ? 'check_circle' : 'add_circle_outline' }}</i>{{ type }}</button> }</div>
+          <div class="types">@for (type of types; track type) { <button type="button" [disabled]="typesIndisponibles.has(type)" [class.active]="typesSelectionnes().includes(type)" [class.unavailable]="typesIndisponibles.has(type)" (click)="basculerType(type)"><i aria-hidden="true">{{ typesIndisponibles.has(type) ? 'lock' : (typesSelectionnes().includes(type) ? 'check_circle' : 'add_circle_outline') }}</i>{{ type }}@if (typesIndisponibles.has(type)) {<small>Bientôt disponible</small>}</button> }</div>
         </div>
       </div>
 

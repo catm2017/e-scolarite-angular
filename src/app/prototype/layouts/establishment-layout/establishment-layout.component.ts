@@ -55,6 +55,6 @@ export class EstablishmentLayoutComponent extends MainLayoutComponent {
   }
 
   private isEstablishmentType(value: unknown): value is EstablishmentWorkspaceType {
-    return value === 'primary' || value === 'college' || value === 'lycee';
+    return value === 'daara' || value === 'prescolaire' || value === 'primary' || value === 'college' || value === 'lycee';
   }
 }

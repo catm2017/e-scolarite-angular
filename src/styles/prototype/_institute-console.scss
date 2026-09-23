@@ -1116,6 +1116,10 @@
   .subscription-feedback.success { color: #18744e; background: #eaf8f1; }
   .subscription-feedback.error { color: #b83e3e; background: #fff0f0; }
   .subscription-feedback.pending { color: #986615; background: #fff7e5; }
+  .subscription-expired-banner { width: 100%; justify-content: flex-start; margin: 14px 0 0; border: 1px solid #f2cccc; cursor: pointer; text-align: left; }
+  .subscription-expired-banner span { display: grid; gap: 1px; }
+  .subscription-expired-banner small { color: currentColor; opacity: .84; }
+  .subscription-expired-arrow { margin-left: auto; }
   .subscription-refresh { min-height: 40px; padding: 0 14px; border: 1px solid #d6e3ec; border-radius: 8px; display: inline-flex; align-items: center; gap: 7px; background: #fff; color: #327cae; font: inherit; font-size: 13px; font-weight: 600; }
   .subscription-refresh i { font-family: 'Material Icons'; font-size: 18px; font-style: normal; }
   .subscription-refresh:disabled { opacity: .6; cursor: wait; }

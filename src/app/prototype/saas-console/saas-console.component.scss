@@ -6,3 +6,10 @@
 .saas-confirm-modal h2 { margin: .8rem 0 .5rem; font-size: 1.25rem; color: #14213d; }
 .saas-confirm-modal p { margin: 0; color: #53647d; line-height: 1.55; }
 .saas-confirm-modal > div { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.5rem; }
+.saas-editor-subsection { margin-top: 18px; padding-top: 17px; border-top: 1px solid #e5edf5; }
+.saas-editor-subsection h3 { margin: 0 0 5px; color: #274d70; font-size: 14px; }
+.saas-editor-subsection p { margin: 0 0 12px; color: #71889d; font-size: 11px; }
+.saas-type-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.saas-type-picker button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 10px; border: 1px solid #d6e5f4; border-radius: 8px; color: #58738c; background: #fff; cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; }
+.saas-type-picker button.selected { border-color: #2f80ed; color: #1768b8; background: #edf6ff; }
+.saas-type-picker mat-icon { font-size: 16px; }

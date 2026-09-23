@@ -24,6 +24,8 @@ import {
   ClasseEtablissementPayload,
   CandidatInscriptionApi,
   CentralApiService,
+  DossierEnseignantEtablissementApi,
+  DetailSeanceEtablissementApi,
   DossiersEtablissementApi,
   EmploiTempsEtablissementApi,
   EvaluationEtablissementApi,
@@ -33,8 +35,10 @@ import {
   PedagogieEtablissementApi,
   PersonnelEtablissementApi,
   SerieLyceeEtablissementApi,
+  TableauBordEtablissementApi,
 } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
+import { QuranFollowupComponent } from '../daara/quran-followup.component';
 
 type AttendanceStatus = 'P' | 'A' | 'R';
 type SubjectGradeKind = 'homework1' | 'homework2' | 'composition';
@@ -46,7 +50,7 @@ type TeacherRecordTab = 'profile' | 'teaching' | 'timetable' | 'salaries' | 'acc
 type GuardianRecordTab = 'identity' | 'children' | 'access';
 type TeacherSalaryMode = 'Mensuel' | 'Horaire';
 type WorkforceImportKind = 'teacher' | 'staff';
-type SessionStatus = 'Planifiée' | 'À compléter' | 'Terminée';
+type SessionStatus = 'Planifiée' | 'À compléter' | 'Effectuée' | 'Validée' | 'Ratée';
 type SessionSortKey = 'date' | 'subject' | 'teacher' | 'status';
 type AssessmentKind = 'Devoir' | 'Évaluation formative' | 'Contrôle' | 'Essai' | 'Composition';
 type ReportAppreciation = 'Excellent' | 'Félicitations' | 'Encouragements' | 'Tableau d’honneur' | 'Passable, peut mieux faire' | 'Insuffisant';
@@ -101,6 +105,10 @@ interface AssessmentAttachment {
 
 interface AssessmentResult {
   studentId: number;
+  backendStudentId?: string;
+  studentName?: string;
+  studentMatricule?: string;
+  pieceJointe?: { nom_original: string } | null;
   participated: boolean;
   score: number | null;
   appreciation: string;
@@ -119,6 +127,7 @@ interface PrimaryAssessment {
   date: string;
   scale: number;
   teacherId: number | null;
+  teacherName?: string | null;
   status: 'Brouillon' | 'À corriger' | 'Corrigée';
   results: AssessmentResult[];
 }
@@ -513,6 +522,7 @@ interface Student {
   status?: 'Actif' | 'En attente';
   birthPlace?: string;
   nationality?: string;
+  studentEmail?: string;
   parentRelationship?: string;
   parentFirstName?: string;
   parentLastName?: string;
@@ -538,6 +548,7 @@ interface StudentFormModel {
   birthDate: string;
   birthPlace: string;
   nationality: string;
+  studentEmail: string;
   guardianMode: GuardianMode;
   guardianId: number | null;
   parentFirstName: string;
@@ -731,6 +742,7 @@ interface TranslationSet {
     MatInputModule,
     MatSelectModule,
     MasterTableComponent,
+    QuranFollowupComponent,
   ],
   templateUrl: './primary-school.component.html',
   styleUrl: './primary-school.component.scss',
@@ -750,8 +762,16 @@ export class PrimarySchoolComponent {
   readonly activeView = this.workspace.activeView;
   readonly locale = this.workspace.locale;
   readonly selectedCampusId = this.workspace.selectedCampusId;
+  readonly isDaara = computed(() => this.workspace.establishmentType() === 'daara');
+  readonly isPreschool = computed(() => this.workspace.establishmentType() === 'prescolaire');
   readonly isHighSchool = computed(() => this.workspace.establishmentType() === 'lycee');
-  readonly isCollege = computed(() => this.workspace.establishmentType() !== 'primary');
+  readonly isCollege = computed(() => this.workspace.establishmentType() === 'college' || this.workspace.establishmentType() === 'lycee');
+  readonly establishmentTypeLabel = computed(() =>
+    this.isDaara() ? 'Daara' : this.isPreschool() ? 'Préscolaire' : this.isHighSchool() ? 'Lycée' : this.isCollege() ? 'Collège' : 'École primaire',
+  );
+  readonly establishmentTypeLabelLowercase = computed(() =>
+    this.isDaara() ? 'daara' : this.isPreschool() ? 'préscolaire' : this.isHighSchool() ? 'lycée' : this.isCollege() ? 'collège' : 'école primaire',
+  );
   /** Nom réel de l'établissement sélectionné, avec un libellé générique en secours. */
   readonly establishmentDisplayName = computed(() => {
     const code = this.codeTypeEtablissementApi();
@@ -759,10 +779,14 @@ export class PrimarySchoolComponent {
       item.code === code || item.type === code,
     )?.nom?.trim();
     if (configured) return configured;
-    return this.isHighSchool() ? 'Lycée' : this.isCollege() ? 'Collège' : 'École primaire';
+    return this.isDaara() ? 'Daara' : this.isPreschool() ? 'Préscolaire' : this.isHighSchool() ? 'Lycée' : this.isCollege() ? 'Collège' : 'École primaire';
   });
   readonly establishmentHomeLink = computed(() =>
-    this.isHighSchool()
+    this.isDaara()
+      ? '/institut/etablissements/daara'
+      : this.isPreschool()
+      ? '/institut/etablissements/prescolaire'
+      : this.isHighSchool()
       ? '/institut/etablissements/lycee'
       : this.workspace.establishmentType() === 'college'
         ? '/institut/etablissements/college'
@@ -778,6 +802,8 @@ export class PrimarySchoolComponent {
   readonly enrollmentSourceOptions = signal<Array<{ id: string; label: string; year: string }>>([]);
   readonly enrollmentLoading = signal(false);
   readonly enrollmentSaving = signal(false);
+  readonly dashboardLoading = signal(false);
+  readonly dashboardData = signal<TableauBordEtablissementApi | null>(null);
   readonly dossiersLoading = signal(false);
   readonly financesLoading = signal(false);
   readonly schoolYearsLoading = signal(false);
@@ -793,6 +819,7 @@ export class PrimarySchoolComponent {
   readonly selectedAcademicYear = this.workspace.selectedAcademicYear;
   readonly selectedTrimester = this.workspace.selectedPeriod;
   readonly selectedSubject = signal('Mathématiques');
+  readonly selectedEvaluationSubject = signal('');
   readonly anneesScolairesDisponibles = signal<AnneeScolaireInstitut[]>([]);
   readonly selectedCentralAcademicYearId = signal('');
   readonly isSelectedSchoolYearArchived = computed(() =>
@@ -1015,10 +1042,10 @@ export class PrimarySchoolComponent {
   readonly roomsLoading = signal(false);
   readonly timetableLoading = signal(false);
   readonly sessionsLoading = signal(false);
+  readonly sessionDetailLoading = signal(false);
+  readonly sessionDetailProgression = signal<DetailSeanceEtablissementApi['progression'] | null>(null);
   readonly assessmentsLoading = signal(false);
   readonly assessmentSaving = signal(false);
-  readonly assessmentEditorOpen = signal(false);
-  assessmentForm = { title: '', type: 'controle', date: '', period: '', domainId: '', componentId: '', teacherId: '' };
 
   readonly classes = signal<PrimaryClass[]>([
     { id: 'ci-a-km', campusId: 'keur-massar', name: 'CI A', level: 'CI', enrolled: 42, registrationFee: '25000', monthlyFee: '18000' },
@@ -1322,6 +1349,8 @@ export class PrimarySchoolComponent {
   ]);
 
   readonly primaryLevels = ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
+  readonly daaraLevels = ['DAARA'];
+  readonly preschoolLevels = ['PS', 'MS', 'GS'];
   readonly subjectCatalog = [
     'Français',
     'Mathématiques',
@@ -1343,6 +1372,14 @@ export class PrimarySchoolComponent {
     'Éducation au développement durable',
     'Langues nationales',
     'Enseignement franco-arabe',
+  ];
+  readonly preschoolSubjectDomains = [
+    'Langage et communication',
+    'Éveil scientifique et mathématique',
+    'Motricité et santé',
+    'Expression artistique',
+    'Vie sociale et autonomie',
+    'Éveil religieux et moral',
   ];
   readonly collegeSubjectDomains = [
     'Langues et lettres',
@@ -1375,6 +1412,17 @@ export class PrimarySchoolComponent {
     { id: 'proposition-ei', name: 'Éducation islamique', code: 'EI', domain: 'Enseignement franco-arabe', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#607d5b', francoArabic: true },
     { id: 'proposition-coran', name: 'Coran', code: 'CORAN', domain: 'Enseignement franco-arabe', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#3d8b6d', francoArabic: true },
     { id: 'proposition-hadith', name: 'Hadith', code: 'HAD', domain: 'Enseignement franco-arabe', scale: 20, levels: this.primaryLevels, teachers: 0, color: '#8a6d3b', francoArabic: true },
+  ];
+  readonly predefinedPreschoolSubjects: PrimarySubject[] = [
+    { id: 'proposition-pre-langage', name: 'Langage et communication', code: 'LANG', domain: 'Langage et communication', scale: 20, levels: this.preschoolLevels, teachers: 0, color: '#2f80ed' },
+    { id: 'proposition-pre-eveil', name: 'Éveil scientifique et mathématique', code: 'EVEIL', domain: 'Éveil scientifique et mathématique', scale: 20, levels: this.preschoolLevels, teachers: 0, color: '#7b61c9' },
+    { id: 'proposition-pre-motricite', name: 'Motricité et santé', code: 'MOT', domain: 'Motricité et santé', scale: 20, levels: this.preschoolLevels, teachers: 0, color: '#36a37c' },
+    { id: 'proposition-pre-arts', name: 'Expression artistique', code: 'ART', domain: 'Expression artistique', scale: 20, levels: this.preschoolLevels, teachers: 0, color: '#e28b4f' },
+    { id: 'proposition-pre-vie', name: 'Vie sociale et autonomie', code: 'VSA', domain: 'Vie sociale et autonomie', scale: 20, levels: this.preschoolLevels, teachers: 0, color: '#34a089' },
+    { id: 'proposition-pre-religion', name: 'Éveil religieux et moral', code: 'ERM', domain: 'Éveil religieux et moral', scale: 20, levels: this.preschoolLevels, teachers: 0, color: '#607d5b', francoArabic: true },
+  ];
+  readonly predefinedDaaraSubjects: PrimarySubject[] = [
+    { id: 'proposition-daara-coran', name: 'Coran', code: 'CORAN', domain: 'Mémorisation du Coran', scale: 0, levels: this.daaraLevels, teachers: 0, color: '#287f6b', francoArabic: true },
   ];
   readonly collegeLevels = ['6e', '5e', '4e', '3e'];
   readonly predefinedCollegeSubjects: PrimarySubject[] = [
@@ -1415,33 +1463,53 @@ export class PrimarySchoolComponent {
     { id: 'proposition-lyc-ei', name: 'Éducation islamique', code: 'EI', domain: 'Enseignement franco-arabe', scale: 20, levels: this.highSchoolLevels, teachers: 0, color: '#607d5b', francoArabic: true },
   ];
   readonly predefinedSubjects = computed<readonly PrimarySubject[]>(() =>
-    this.workspace.establishmentType() === 'primary'
+    this.workspace.establishmentType() === 'daara'
+      ? this.predefinedDaaraSubjects
+      : this.workspace.establishmentType() === 'prescolaire'
+      ? this.predefinedPreschoolSubjects
+      : this.workspace.establishmentType() === 'primary'
       ? this.predefinedPrimarySubjects
       : this.workspace.establishmentType() === 'college'
         ? this.predefinedCollegeSubjects
         : this.predefinedHighSchoolSubjects,
   );
   readonly subjectDomains = computed<readonly string[]>(() =>
-    this.workspace.establishmentType() === 'primary'
+    this.workspace.establishmentType() === 'daara'
+      ? ['Mémorisation du Coran']
+      : this.workspace.establishmentType() === 'prescolaire'
+      ? this.preschoolSubjectDomains
+      : this.workspace.establishmentType() === 'primary'
       ? this.primarySubjectDomains
       : this.workspace.establishmentType() === 'college'
         ? this.collegeSubjectDomains
         : this.highSchoolSubjectDomains,
   );
   readonly subjectProposalTitle = computed(() =>
-    this.workspace.establishmentType() === 'primary'
+    this.workspace.establishmentType() === 'daara'
+      ? 'Matière du Daara'
+      : this.workspace.establishmentType() === 'prescolaire'
+      ? 'Activités du préscolaire'
+      : this.workspace.establishmentType() === 'primary'
       ? 'Matières du primaire sénégalais'
       : this.workspace.establishmentType() === 'college'
         ? 'Matières du collège sénégalais'
         : 'Matières du lycée sénégalais',
   );
   readonly subjectProposalDescription = computed(() =>
-    this.workspace.establishmentType() === 'primary'
+    this.workspace.establishmentType() === 'daara'
+      ? 'Le Coran est la matière unique du Daara. Il est créé automatiquement et utilisé par le suivi de mémorisation.'
+      : this.workspace.establishmentType() === 'prescolaire'
+      ? 'Sélectionnez les activités d’éveil proposées dans votre établissement. Elles restent modifiables selon votre projet pédagogique.'
+      : this.workspace.establishmentType() === 'primary'
       ? 'Cochez les matières enseignées dans votre établissement. Les enseignements franco-arabes sont clairement identifiés.'
       : 'Sélectionnez le socle commun et les matières optionnelles enseignées dans votre établissement. Les enseignements franco-arabes sont clairement identifiés.',
   );
   readonly defaultSubjectProposalCodes = computed<readonly string[]>(() =>
-    this.workspace.establishmentType() === 'primary'
+    this.workspace.establishmentType() === 'daara'
+      ? ['CORAN']
+      : this.workspace.establishmentType() === 'prescolaire'
+      ? ['LANG', 'EVEIL', 'MOT', 'ART', 'VSA']
+      : this.workspace.establishmentType() === 'primary'
       ? ['FR', 'MATH', 'ESVS', 'EDD', 'EPS', 'ART', 'LN']
       : this.workspace.establishmentType() === 'college'
         ? ['FR', 'MATH', 'ANG', 'HG', 'SVT', 'PC', 'EC', 'EPS']
@@ -1516,22 +1584,26 @@ export class PrimarySchoolComponent {
       ['Français', 1], ['Éducation physique et sportive', 4], ['Mathématiques', 2],
     ]),
   ]);
-  readonly teacherTimetableRows: TeacherTimetableRow[] = [
-    this.createTeacherTimetableRow(1, '08:00', '09:00', [
-      ['Français', 'CM2 A', 'Salle 11'], null, ['Français', 'CM2 A', 'Salle 11'],
-      null, ['Français', 'CM2 A', 'Salle 11'], null,
-    ]),
-    this.createTeacherTimetableRow(2, '09:00', '10:00', [
-      null, ['Français', 'CM2 A', 'Salle 11'], null,
-      ['Français', 'CM2 A', 'Salle 11'], null, ['Français', 'CM2 A', 'Salle 11'],
-    ]),
-    this.createTeacherTimetableRow(3, '10:15', '11:15', [
-      null, null, null, null, ['Mathématiques', 'CE2 A', 'Salle 07'], null,
-    ]),
-    this.createTeacherTimetableRow(4, '11:15', '12:15', [
-      ['Mathématiques', 'CE2 A', 'Salle 07'], null, null, null, null, null,
-    ]),
-  ];
+  readonly teacherDossier = signal<DossierEnseignantEtablissementApi | null>(null);
+  readonly teacherDossierLoading = signal(false);
+  private teacherDossierRequestKey = '';
+  readonly teacherTimetableRows = computed<TeacherTimetableRow[]>(() => {
+    const jours: Record<number, TimetableDay> = { 1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday', 5: 'friday', 6: 'saturday' };
+    const parCreneau = new Map<string, Array<[string, string, string] | null>>();
+    for (const ligne of this.teacherDossier()?.emploi_temps ?? []) {
+      const cle = `${ligne.heure_debut}-${ligne.heure_fin}`;
+      if (!parCreneau.has(cle)) parCreneau.set(cle, [null, null, null, null, null, null]);
+      const index = Object.entries(jours).find(([jour, key]) => Number(jour) === Number(ligne.jour_semaine) && key)?.[0];
+      if (index === undefined) continue;
+      parCreneau.get(cle)![Number(index) - 1] = ligne.est_pause
+        ? ['Pause', '', '']
+        : [ligne.matiere || 'Matière', ligne.classe, ligne.salle || 'Salle non précisée'];
+    }
+    return [...parCreneau.entries()].map(([cle, cellules], index) => {
+      const [debut, fin] = cle.split('-');
+      return this.createTeacherTimetableRow(index + 1, debut, fin, cellules);
+    });
+  });
   timetableDraftRows = this.cloneTimetableRows(this.timetableRows());
   /**
    * Une matière est affectée une seule fois à un enseignant pour la classe
@@ -1545,7 +1617,7 @@ export class PrimarySchoolComponent {
     {
       id: 'session-cm2-a-km-2026-07-28-1', classId: 'cm2-a-km', roomId: 'room-11-km',
       date: '2026-07-28', startTime: '08:00', endTime: '09:00', subject: 'Français',
-      teacherId: 1, status: 'Terminée',
+      teacherId: 1, status: 'Validée',
       description: 'Lecture expressive du texte, repérage des personnages et correction collective des questions de compréhension.',
       lessonTitle: 'Comprendre un texte narratif', programUnit: 'Lecture et compréhension', programProgress: 68,
     },
@@ -1592,11 +1664,20 @@ export class PrimarySchoolComponent {
     { label: 'Entretien des salles', category: 'Dépense', amount: '− 95 000 F', date: '26 juil.', positive: false },
   ];
 
-  readonly currentCampus = computed<Campus>(() =>
-    this.campuses().find((campus) => campus.id === this.selectedCampusId())
+  readonly currentCampus = computed<Campus>(() => {
+    const campus = this.campuses().find((item) => item.id === this.selectedCampusId())
       ?? this.campuses()[0]
-      ?? { id: '', name: 'Aucun campus', shortName: 'Aucun campus', learners: 0, classes: 0, teachers: 0, attendance: '—', collected: '0 F' },
-  );
+      ?? { id: '', name: 'Aucun campus', shortName: 'Aucun campus', learners: 0, classes: 0, teachers: 0, attendance: '—', collected: '0 F' };
+    const dashboard = this.dashboardData();
+    if (!dashboard) return campus;
+    return {
+      ...campus,
+      learners: dashboard.effectif,
+      classes: dashboard.classes,
+      attendance: dashboard.presence.taux === null ? '—' : `${dashboard.presence.taux} %`,
+      collected: this.formatExpenseAmount(dashboard.encaisse_mois),
+    };
+  });
   readonly campusClasses = computed(() =>
     this.classes().filter((item) => item.campusId === this.selectedCampusId()),
   );
@@ -1722,7 +1803,7 @@ export class PrimarySchoolComponent {
     const sessions = this.sessions().filter((session) => session.classId === this.selectedClassId());
     return {
       total: sessions.length,
-      completed: sessions.filter((session) => session.status === 'Terminée').length,
+      completed: sessions.filter((session) => session.status === 'Validée').length,
       pending: sessions.filter((session) => session.status === 'À compléter').length,
       planned: sessions.filter((session) => session.status === 'Planifiée').length,
     };
@@ -1732,9 +1813,7 @@ export class PrimarySchoolComponent {
       .filter((assessment) =>
         assessment.classId === this.selectedClassId() &&
         assessment.trimester === this.selectedTrimester() &&
-        (this.isCollege()
-          ? assessment.subject === this.selectedSubject()
-          : assessment.evaluationDomainId === this.selectedEvaluationDomainId()),
+        (!this.selectedEvaluationSubject() || assessment.subject === this.selectedEvaluationSubject()),
       )
       .sort((first, second) => second.date.localeCompare(first.date)),
   );
@@ -1761,7 +1840,7 @@ export class PrimarySchoolComponent {
     this.schoolStaff().filter((person) => person.campusId === this.selectedCampusId()),
   );
   readonly campusGuardians = computed(() =>
-    this.guardians().filter((guardian) => guardian.campusId === this.selectedCampusId()),
+    this.guardians(),
   );
   /** Indicateurs calculés uniquement à partir des dossiers réellement chargés. */
   readonly campusGuardianLearnersCount = computed(() =>
@@ -1833,14 +1912,29 @@ export class PrimarySchoolComponent {
 
   readonly studentDataSource = new MatTableDataSource<Student>([]);
   readonly sessionDataSource = new MatTableDataSource<SchoolSession>([]);
+  readonly sessionAttendanceDataSource = new MatTableDataSource<any>([]);
+  readonly assessmentResultsDataSource = new MatTableDataSource<any>([]);
   readonly sessionColumns: ColumnDefinition[] = [
     { def: 'date', label: 'Date', type: 'dateCard', visible: true },
     { def: 'schedule', label: 'Créneau', type: 'time', visible: true },
     { def: 'subject', label: 'Matière', type: 'text', visible: true },
     { def: 'teacherName', label: 'Enseignant', type: 'text', visible: true },
     { def: 'roomName', label: 'Salle', type: 'text', visible: true },
-    { def: 'status', label: 'Statut', type: 'status', visible: true, statusBadgeMap: { Planifiée: 'badge badge-solid-blue', 'À compléter': 'badge badge-solid-orange', Terminée: 'badge badge-solid-green' } },
+    { def: 'status', label: 'Statut', type: 'status', visible: true, statusBadgeMap: { Planifiée: 'badge badge-solid-blue', 'À compléter': 'badge badge-solid-orange', Effectuée: 'badge badge-solid-orange', Validée: 'badge badge-solid-green', Ratée: 'badge badge-solid-red' } },
     { def: 'actions', label: 'Actions', type: 'actionBtn', visible: true },
+  ];
+  readonly sessionAttendanceColumns: ColumnDefinition[] = [
+    { def: 'name', label: 'Élève', type: 'nameWithImage', visible: true },
+    { def: 'matricule', label: 'Matricule', type: 'text', visible: true },
+    { def: 'attendanceStatus', label: 'Appel', type: 'attendance', sortable: false, visible: true },
+  ];
+  readonly assessmentResultColumns: ColumnDefinition[] = [
+    { def: 'nom_complet', label: 'Élève', type: 'nameWithImage', visible: true },
+    { def: 'matricule', label: 'Matricule', type: 'text', visible: true },
+    { def: 'participation', label: 'Participation', type: 'status', visible: true, statusBadgeMap: { 'A participé': 'badge badge-solid-green', Absent: 'badge badge-solid-red' } },
+    { def: 'note_affichee', label: 'Note', type: 'text', visible: true },
+    { def: 'appreciation_affichee', label: 'Appréciation', type: 'text', visible: true },
+    { def: 'piece_jointe', label: 'Copie PDF', type: 'evaluationDownload', sortable: false, visible: true },
   ];
   readonly enrollmentDataSource = new MatTableDataSource<EnrollmentCandidateRow>([]);
   readonly enrollmentColumns: ColumnDefinition[] = [
@@ -2287,6 +2381,10 @@ export class PrimarySchoolComponent {
     this.financeEntries.set([]);
     this.monthlyPaymentRecords.set({});
     this.oneTimePaymentRecords.set({});
+    if (this.isDaara()) {
+      this.schoolLevelSettings = [{ id: 'daara', code: 'DAARA', label: 'Daara' }];
+      this.trimesterSettings = [];
+    }
     this.initializeFeeConfigurations();
     this.preparerPropositionsClasses();
     this.ensureClassSubjectSelection();
@@ -2297,6 +2395,15 @@ export class PrimarySchoolComponent {
       const typeEtablissement = this.workspace.establishmentType();
       if (campusId && this.configurationReady() && this.centralApi.estConnecte()) {
         this.chargerDossiers(typeEtablissement, campusId);
+      }
+    });
+
+    effect(() => {
+      const campusId = this.selectedCampusId();
+      const anneeId = this.selectedCentralAcademicYearId();
+      const view = this.activeView();
+      if (view === 'dashboard' && campusId && anneeId && this.configurationReady() && this.centralApi.estConnecte()) {
+        this.chargerTableauBord();
       }
     });
 
@@ -2464,9 +2571,7 @@ export class PrimarySchoolComponent {
     });
 
     effect(() => {
-      const campusId = this.selectedCampusId();
       this.guardianDataSource.data = this.guardians()
-        .filter((guardian) => guardian.campusId === campusId)
         .map((guardian, index) => ({
           ...guardian,
           img: `assets/images/user/user${((index + 1) % 9) + 1}.jpg`,
@@ -2823,7 +2928,7 @@ export class PrimarySchoolComponent {
 
   downloadStudentImportTemplate(): void {
     const headers = [
-      'matricule', 'prenom_eleve', 'nom_eleve', 'sexe', 'date_naissance',
+      'matricule', 'prenom_eleve', 'nom_eleve', 'sexe', 'date_naissance', 'email_eleve',
       'lieu_naissance', 'nationalite', 'adresse_eleve', 'groupe_sanguin',
       'observations_medicales', 'regime', 'cantine', 'transport',
       'prenom_tuteur', 'nom_tuteur', 'telephone_tuteur',
@@ -2831,7 +2936,7 @@ export class PrimarySchoolComponent {
       'adresse_tuteur', 'lien_tuteur',
     ];
     const example = [
-      'PRI-260049', 'Awa', 'Ndiaye', 'F', '2015-03-12', 'Dakar', 'Sénégalaise',
+      'PRI-260049', 'Awa', 'Ndiaye', 'F', '2015-03-12', 'awa.ndiaye@exemple.sn', 'Dakar', 'Sénégalaise',
       'Keur Massar', 'O+', '', 'Externe', 'non', 'non', 'Mariama', 'Ba',
       '77 842 10 24', '76 410 20 15', 'mariama.ba@example.sn', 'Commerçante',
       'Unité 11, Keur Massar', 'Mère',
@@ -2869,6 +2974,7 @@ export class PrimarySchoolComponent {
           nom: lastName,
           sexe: importedGender.startsWith('f') ? 'F' : 'M',
           date_naissance: this.studentImportValue(row, 'date_naissance', 'birth_date') || null,
+          email: this.studentImportValue(row, 'email_eleve', 'email_student') || null,
           lieu_naissance: this.studentImportValue(row, 'lieu_naissance', 'birth_place') || null,
           nationalite: this.studentImportValue(row, 'nationalite') || 'Sénégalaise',
           adresse: this.studentImportValue(row, 'adresse_eleve', 'adresse') || null,
@@ -3066,6 +3172,9 @@ export class PrimarySchoolComponent {
   }
 
   openSessionGenerator(): void {
+    const today = this.todayIsoDate();
+    if (this.sessionGenerationForm.startDate < today) this.sessionGenerationForm.startDate = today;
+    if (this.sessionGenerationForm.endDate < this.sessionGenerationForm.startDate) this.sessionGenerationForm.endDate = this.sessionGenerationForm.startDate;
     this.selectedSessionId.set(null);
     this.sessionGeneratorOpen.set(true);
   }
@@ -3122,7 +3231,7 @@ export class PrimarySchoolComponent {
 
   generateSessions(): void {
     const { startDate, endDate, includeHolidays } = this.sessionGenerationForm;
-    if (!startDate || !endDate || startDate > endDate) {
+    if (!startDate || !endDate || startDate < this.todayIsoDate() || startDate > endDate) {
       this.snackBar.open('Veuillez saisir une période valide.', 'Fermer', {
         duration: 2800,
         verticalPosition: 'bottom',
@@ -3187,37 +3296,97 @@ export class PrimarySchoolComponent {
     );
     this.attendance.set(initialAttendance);
     this.attendanceNotes = { ...(this.sessionAttendanceNotes()[session.id] ?? {}) };
+    this.sessionAttendanceDataSource.data = this.students()
+      .filter((student) => student.classId === session.classId)
+      .map((student) => ({
+        ...student,
+        attendanceStatus: this.attendance()[student.id] ?? 'P',
+        attendanceNote: this.attendanceNotes[student.id] ?? '',
+      }));
+    this.chargerDetailSeance(session);
   }
 
   backToSessionList(): void {
     this.selectedSessionId.set(null);
   }
 
-  saveSession(): void {
+  validerSeance(): void {
     const session = this.selectedSession();
-    if (!session) {
-      return;
-    }
-    this.sessions.update((sessions) =>
-      sessions.map((item) => item.id === session.id
-        ? {
-            ...item,
-            description: this.sessionDescriptionDraft.trim(),
-            lessonTitle: this.sessionLessonDraft.trim(),
-            status: 'Terminée',
-          }
-        : item),
-    );
-    this.sessionAttendance.update((state) => ({ ...state, [session.id]: { ...this.attendance() } }));
-    this.sessionAttendanceNotes.update((state) => ({
-      ...state,
-      [session.id]: { ...this.attendanceNotes },
+    const context = this.pedagogyContext();
+    if (!session || !context || this.sessionsLoading() || session.status === 'Validée') return;
+    this.sessionsLoading.set(true);
+    this.centralApi.mettreAJourStatutSeanceEtablissement(session.id, { ...context, classe_id: session.classId, statut: 'terminee' }).subscribe({
+      next: () => {
+        this.sessions.update((sessions) => sessions.map((item) => item.id === session.id ? { ...item, status: 'Validée' } : item));
+        this.sessionsLoading.set(false);
+        this.snackBar.success('La séance a été validée par l’administration.');
+      },
+      error: (response) => {
+        this.sessionsLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'La séance n’a pas pu être validée.');
+      },
+    });
+  }
+
+  modifierAppelDepuisTable(event: { row: any; status: 'P' | 'A' | 'R' }): void {
+    this.markAttendance(event.row.id, event.status);
+    this.sessionAttendanceDataSource.data = this.sessionAttendanceDataSource.data.map((row) => row.id === event.row.id ? { ...row, attendanceStatus: event.status } : row);
+  }
+
+  modifierObservationDepuisTable(event: { row: any; note: string }): void {
+    this.attendanceNotes[event.row.id] = event.note;
+  }
+
+  private chargerDetailSeance(session: SchoolSession): void {
+    const context = this.pedagogyContext();
+    if (!context) return;
+    this.sessionDetailLoading.set(true);
+    this.sessionDetailProgression.set(null);
+    this.centralApi.detailSeanceEtablissement(session.id, { ...context, classe_id: session.classId }).subscribe({
+      next: ({ data }) => this.appliquerDetailSeanceBackend(session, data),
+      error: (response) => this.snackBar.error(response.error?.message ?? 'Le détail de la séance n’a pas pu être chargé.'),
+      complete: () => this.sessionDetailLoading.set(false),
+    });
+  }
+
+  private appliquerDetailSeanceBackend(session: SchoolSession, detail: DetailSeanceEtablissementApi): void {
+    this.sessionDescriptionDraft = detail.cahier_texte?.contenu ?? '';
+    this.sessionLessonDraft = detail.lecons.find((lecon) => lecon.id === detail.cahier_texte?.lecon_id)?.libelle ?? '';
+    const correspondances = new Map(this.students().filter((eleve) => eleve.backendId).map((eleve) => [eleve.backendId!, eleve]));
+    const appels = Object.fromEntries(detail.eleves.flatMap((eleve) => {
+      const local = correspondances.get(eleve.id);
+      return local ? [[local.id, eleve.presence_statut === 'retard' ? 'R' : eleve.presence_statut === 'absent' || eleve.presence_statut === 'justifie' ? 'A' : 'P'] as const] : [];
     }));
-    this.markCurriculumLessonCompleted(session, this.sessionLessonDraft.trim());
-    this.snackBar.open('La séance, le cahier de texte et l’appel ont été enregistrés.', 'Fermer', {
-      duration: 3000,
-      verticalPosition: 'bottom',
-      horizontalPosition: 'center',
+    const observations = Object.fromEntries(detail.eleves.flatMap((eleve) => {
+      const local = correspondances.get(eleve.id);
+      return local ? [[local.id, eleve.presence_motif ?? ''] as const] : [];
+    }));
+    this.attendance.set(appels);
+    this.attendanceNotes = observations;
+    this.sessionAttendanceDataSource.data = detail.eleves.map((eleve) => ({
+      id: eleve.id, name: `${eleve.prenom} ${eleve.nom}`.trim(), matricule: eleve.matricule,
+      attendanceStatus: eleve.presence_statut === 'retard' ? 'R' : eleve.presence_statut === 'absent' || eleve.presence_statut === 'justifie' ? 'A' : 'P',
+      attendanceNote: eleve.presence_motif ?? '',
+    }));
+    this.sessionDetailProgression.set(detail.progression);
+    this.sessions.update((sessions) => sessions.map((item) => item.id === session.id ? {
+      ...item, description: this.sessionDescriptionDraft, lessonTitle: this.sessionLessonDraft,
+      status: this.libelleStatutBackend(detail.seance.statut),
+    } : item));
+  }
+
+  markSessionMissed(): void {
+    const session = this.selectedSession();
+    const context = this.pedagogyContext();
+    if (!session || !context || this.sessionsLoading()) return;
+    this.sessionsLoading.set(true);
+    this.centralApi.mettreAJourStatutSeanceEtablissement(session.id, { ...context, classe_id: session.classId, statut: 'ratee' }).subscribe({
+      next: () => {
+        this.sessions.update((sessions) => sessions.map((item) => item.id === session.id ? { ...item, status: 'Ratée' } : item));
+        this.sessionsLoading.set(false);
+        this.snackBar.success('La séance a été marquée comme ratée.');
+      },
+      error: (response) => { this.sessionsLoading.set(false); this.snackBar.error(response.error?.message ?? 'Le statut de la séance n’a pas pu être mis à jour.'); },
     });
   }
 
@@ -3233,6 +3402,13 @@ export class PrimarySchoolComponent {
     }).format(this.parseIsoDate(date));
   }
 
+  todayIsoDate(): string {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${now.getFullYear()}-${month}-${day}`;
+  }
+
   sessionClassName(session: Pick<SchoolSession, 'classId'>): string {
     return this.classes().find((classroom) => classroom.id === session.classId)?.name ?? 'Classe non affectée';
   }
@@ -3242,7 +3418,7 @@ export class PrimarySchoolComponent {
   }
 
   sessionStatusClass(status: SessionStatus): string {
-    return status === 'Terminée' ? 'completed' : status === 'À compléter' ? 'pending' : 'planned';
+    return status === 'Validée' ? 'completed' : status === 'Effectuée' || status === 'À compléter' ? 'pending' : 'planned';
   }
 
   attendanceCount(status: AttendanceStatus): number {
@@ -3439,6 +3615,7 @@ export class PrimarySchoolComponent {
     this.loadTeacherForm(teacher);
     this.teacherRecordTab.set('profile');
     this.teacherEditorOpen.set(false);
+    this.chargerDossierEnseignant(teacher);
     this.activeView.set('teacher-detail');
   }
 
@@ -3447,6 +3624,7 @@ export class PrimarySchoolComponent {
     this.loadTeacherForm(teacher);
     this.teacherRecordTab.set('timetable');
     this.teacherEditorOpen.set(false);
+    this.chargerDossierEnseignant(teacher);
     this.activeView.set('teacher-detail');
   }
 
@@ -3460,6 +3638,16 @@ export class PrimarySchoolComponent {
 
   setTeacherRecordTab(tab: TeacherRecordTab): void {
     this.teacherRecordTab.set(tab);
+    const teacher = this.selectedTeacher();
+    if (teacher) this.chargerDossierEnseignant(teacher);
+  }
+
+  seancesEnseignantRealisees(): number {
+    return this.teacherDossier()?.seances.filter((seance) => seance.statut === 'realisee').length ?? 0;
+  }
+
+  seancesEnseignantARenseigner(): number {
+    return this.teacherDossier()?.seances.filter((seance) => seance.statut !== 'realisee').length ?? 0;
   }
 
   changeGuardianMode(mode: GuardianMode): void {
@@ -3519,6 +3707,7 @@ export class PrimarySchoolComponent {
       birthDate: this.toInputDate(student.birthDate),
       birthPlace: student.birthPlace ?? '',
       nationality: student.nationality ?? 'Sénégalaise',
+      studentEmail: student.studentEmail ?? '',
       guardianMode: student.guardianId ? 'existing' : 'new',
       guardianId: student.guardianId ?? null,
       parentFirstName: student.parentFirstName ?? guardianNames.firstName,
@@ -3607,6 +3796,48 @@ export class PrimarySchoolComponent {
     });
   }
 
+  private chargerTableauBord(forceRefresh = false): void {
+    const campusId = this.selectedCampusId();
+    const anneeId = this.selectedCentralAcademicYearId();
+    if (!campusId || !anneeId) return;
+
+    this.dashboardLoading.set(true);
+    this.centralApi.tableauBordEtablissement(this.codeTypeEtablissementApi(), campusId, anneeId, forceRefresh).subscribe({
+      next: ({ data }) => {
+        this.dashboardData.set(data);
+        this.dashboardLoading.set(false);
+      },
+      error: () => {
+        this.dashboardData.set(null);
+        this.dashboardLoading.set(false);
+      },
+    });
+  }
+
+  private chargerDossierEnseignant(teacher: Teacher): void {
+    if (!teacher.backendId) return;
+    const type = this.workspace.establishmentType() === 'primary' ? 'primaire' : this.workspace.establishmentType();
+    const campusId = this.selectedCampusId();
+    if (!campusId) return;
+    const cle = `${type}:${campusId}:${teacher.backendId}`;
+    if (this.teacherDossierRequestKey === cle && this.teacherDossier()) return;
+    this.teacherDossierRequestKey = cle;
+    this.teacherDossierLoading.set(true);
+    this.teacherDossier.set(null);
+    this.centralApi.dossierEnseignantEtablissement(type, campusId, teacher.backendId).subscribe({
+      next: ({ data }) => {
+        if (this.teacherDossierRequestKey !== cle) return;
+        this.teacherDossier.set(data);
+        this.teacherDossierLoading.set(false);
+      },
+      error: (response) => {
+        if (this.teacherDossierRequestKey !== cle) return;
+        this.teacherDossierLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'Le dossier enseignant n’a pas pu être chargé.');
+      },
+    });
+  }
+
   private appliquerDossiersApi(dossiers: DossiersEtablissementApi, campusId: string): void {
     const tuteurIds = new Map<string, number>();
     const tuteurs = dossiers.tuteurs.map((tuteur, index): Guardian => {
@@ -3643,6 +3874,7 @@ export class PrimarySchoolComponent {
         birthDate: this.toDisplayDate(eleve.date_naissance ?? ''),
         birthPlace: eleve.lieu_naissance ?? '',
         nationality: eleve.nationalite ?? '',
+        studentEmail: eleve.email ?? '',
         guardianId: tuteur ? tuteurIds.get(tuteur.id) : undefined,
         parentName: tuteur ? `${tuteur.prenom} ${tuteur.nom}`.trim() : '',
         parentFirstName: tuteur?.prenom ?? '',
@@ -3827,6 +4059,7 @@ export class PrimarySchoolComponent {
       date_naissance: form.birthDate || null,
       lieu_naissance: form.birthPlace.trim() || null,
       nationalite: form.nationality.trim() || null,
+      email: form.studentEmail.trim() || null,
       adresse: form.address.trim() || null,
       groupe_sanguin: form.bloodGroup || null,
       notes_medicales: form.medicalNotes.trim() || null,
@@ -4224,17 +4457,28 @@ export class PrimarySchoolComponent {
           const key = `${evaluation.periode ?? this.selectedTrimester()}::${evaluation.classe_id}::${domainId}`;
           primaryBooks[key] = { ...(primaryBooks[key] ?? {}), [studentId]: { ...(primaryBooks[key]?.[studentId] ?? {}), [componentId]: score } };
         }
-        return { studentId, participated: Boolean(result.a_participe), score, appreciation: result.appreciation ?? '', attachments: [] };
-      }).filter((result) => result.studentId > 0);
+        return {
+          studentId, backendStudentId: result.eleve_id,
+          studentName: `${result.prenom ?? ''} ${result.nom ?? ''}`.trim() || undefined,
+          studentMatricule: result.matricule ?? undefined,
+          pieceJointe: result.piece_jointe ?? null,
+          participated: Boolean(result.a_participe), score, appreciation: result.appreciation ?? '', attachments: [],
+        };
+      });
       return {
         id: evaluation.id, title: evaluation.titre, type: types[evaluation.type] ?? 'Contrôle', trimester: evaluation.periode ?? this.selectedTrimester(),
-        classId: evaluation.classe_id, subject: this.assessmentSubjectLabel(domainId, componentId), evaluationDomainId: domainId, componentId,
+        classId: evaluation.classe_id, subject: evaluation.matiere ?? this.assessmentSubjectLabel(domainId, componentId), evaluationDomainId: domainId, componentId,
         date: evaluation.date_evaluation, scale: Number(evaluation.bareme), teacherId: this.teachers().find((teacher) => teacher.teachingBackendId === evaluation.enseignant_id)?.id ?? null,
+        teacherName: evaluation.enseignant_nom,
         status: statuts[evaluation.statut] ?? 'Brouillon', results,
       };
     });
     this.assessments.set(mapped);
     this.primaryEvaluationGrades.update((state) => ({ ...state, ...primaryBooks }));
+  }
+
+  assessmentTeacherName(assessment: PrimaryAssessment): string {
+    return assessment.teacherName?.trim() || this.teacherName(assessment.teacherId);
   }
 
   private assessmentSubjectLabel(domainId: string, componentId: string): string {
@@ -4243,11 +4487,6 @@ export class PrimarySchoolComponent {
   }
 
   private appliquerSeancesBackend(seances: SeanceEtablissementApi[]): void {
-    const statut: Record<SeanceEtablissementApi['statut'], SessionStatus> = {
-      planifiee: 'Planifiée',
-      a_completer: 'À compléter',
-      terminee: 'Terminée',
-    };
     this.sessions.set(seances.map((seance): SchoolSession => {
       const subject = seance.matiere_libelle ?? 'Matière non définie';
       return {
@@ -4259,7 +4498,7 @@ export class PrimarySchoolComponent {
         endTime: String(seance.heure_fin).slice(0, 5),
         subject,
         teacherId: this.teachers().find((teacher) => teacher.teachingBackendId === seance.enseignant_id)?.id ?? null,
-        status: statut[seance.statut] ?? 'Planifiée',
+        status: this.libelleStatutBackend(seance.statut),
         description: seance.cahier_texte ?? '',
         lessonTitle: seance.lecon_libelle ?? '',
         programUnit: this.programUnitForSubject(subject),
@@ -4323,6 +4562,10 @@ export class PrimarySchoolComponent {
   private definitionsClassesParDefaut(): Array<Omit<ClassProposal, 'key' | 'classId' | 'enabled'>> {
     const levels = this.availableClassLevels();
 
+    if (this.isDaara()) {
+      return [{ level: 'DAARA', name: 'Daara', registrationFee: '20000', monthlyFee: '15000', seriesId: '' }];
+    }
+
     if (this.isHighSchool()) {
       // Au lycée, une classe n'a de sens qu'avec une série explicitement
       // choisie. Il n'y a donc pas de proposition automatique : chaque
@@ -4332,12 +4575,13 @@ export class PrimarySchoolComponent {
 
     return levels.map((level, index) => {
       const college = this.isCollege();
+      const preschool = this.isPreschool();
       const palier = college ? (index < 2 ? 0 : 1) : Math.floor(index / 2);
       return {
         level,
         name: level + ' A',
-        registrationFee: String((college ? 35000 : 25000) + palier * (college ? 5000 : 2500)),
-        monthlyFee: String((college ? 25000 : 18000) + palier * (college ? 3000 : 2000)),
+        registrationFee: String(preschool ? 20000 : (college ? 35000 : 25000) + palier * (college ? 5000 : 2500)),
+        monthlyFee: String(preschool ? 15000 : (college ? 25000 : 18000) + palier * (college ? 3000 : 2000)),
         seriesId: '',
       };
     });
@@ -5238,6 +5482,16 @@ export class PrimarySchoolComponent {
     remaining: number;
     progress: number;
   } {
+    const progression = this.sessionDetailProgression();
+    if (progression) {
+      return {
+        unit: this.sessionLessonDraft || session.programUnit || 'Programme annuel',
+        planned: progression.prevues,
+        completed: progression.terminees,
+        remaining: progression.restantes,
+        progress: progression.pourcentage,
+      };
+    }
     const subjectId = this.subjects().find((subject) => subject.name === session.subject)?.id;
     const chapters = subjectId === undefined
       ? []
@@ -5255,6 +5509,14 @@ export class PrimarySchoolComponent {
         ? Math.round(lessons.reduce((total, lesson) => total + lesson.progress, 0) / lessons.length)
         : session.programProgress,
     };
+  }
+
+  private libelleStatutBackend(statut: string | null | undefined): SessionStatus {
+    if (statut === 'ratee') return 'Ratée';
+    if (statut === 'terminee') return 'Validée';
+    if (statut === 'realisee') return 'Effectuée';
+    if (statut === 'a_completer') return 'À compléter';
+    return 'Planifiée';
   }
 
   toggleSubjectProposal(code: string, selected: boolean): void {
@@ -6080,6 +6342,7 @@ export class PrimarySchoolComponent {
       birthDate: '',
       birthPlace: '',
       nationality: 'Sénégalaise',
+      studentEmail: '',
       guardianMode: 'new',
       guardianId: null,
       parentFirstName: '',
@@ -6103,7 +6366,7 @@ export class PrimarySchoolComponent {
     const selected = this.selectedClass();
     return {
       id: null,
-      level: selected?.level ?? this.availableClassLevels()[0] ?? 'CI',
+      level: selected?.level ?? this.availableClassLevels()[0] ?? (this.isPreschool() ? 'PS' : 'CI'),
       name: '',
       registrationFee: selected?.registrationFee ?? '25000',
       monthlyFee: selected?.monthlyFee ?? '18000',
@@ -6180,7 +6443,7 @@ export class PrimarySchoolComponent {
   saveSchoolSettings(): void {
     const year = this.schoolYearSettings;
     const invalidLevel = this.schoolLevelSettings.some((level) => !level.code.trim() || !level.label.trim());
-    const invalidTerm = this.trimesterSettings.some((term) => !term.label.trim() || !term.startDate || !term.endDate || term.startDate > term.endDate);
+    const invalidTerm = !this.isDaara() && this.trimesterSettings.some((term) => !term.label.trim() || !term.startDate || !term.endDate || term.startDate > term.endDate);
     const periodLabel = this.isCollege() ? 'semestres' : 'trimestres';
 
     if (!year.centralYearId || !year.startDate || !year.endDate || year.startDate > year.endDate || invalidLevel || invalidTerm) {
@@ -6204,7 +6467,7 @@ export class PrimarySchoolComponent {
         code: niveau.code,
         libelle: niveau.label,
       })),
-      this.trimesterSettings.map((periode) => ({
+      (this.isDaara() ? [] : this.trimesterSettings).map((periode) => ({
         libelle: periode.label,
         date_debut: periode.startDate,
         date_fin: periode.endDate,
@@ -6218,10 +6481,10 @@ export class PrimarySchoolComponent {
         this.selectedCollectionAcademicYear.set(academicYear);
         this.selectedExpenseAcademicYear.set(academicYear);
         this.selectedFinanceAcademicYear.set(academicYear);
-        this.workspace.selectedPeriod.set(this.trimesterSettings[0].label);
+        if (!this.isDaara()) this.workspace.selectedPeriod.set(this.trimesterSettings[0]?.label ?? '');
         this.chargerAnneesScolaires();
         this.snackBar.open(
-          `Paramètres ${this.isHighSchool() ? 'du lycée' : this.isCollege() ? 'du collège' : 'du primaire'} enregistrés.`,
+          `Paramètres ${this.establishmentTypeLabelLowercase()} enregistrés.`,
           'Fermer',
           { duration: 2800 },
         );
@@ -6577,32 +6840,19 @@ export class PrimarySchoolComponent {
 
   openAssessment(assessment: PrimaryAssessment): void {
     this.selectedAssessmentId.set(assessment.id);
-    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0 }));
-  }
-
-  openAssessmentEditor(): void {
-    const domain = this.selectedEvaluationDomain();
-    const component = domain.components[0];
-    this.assessmentForm = { title: '', type: 'controle', date: new Date().toISOString().slice(0, 10), period: this.selectedTrimester(), domainId: domain.id, componentId: component?.id ?? '', teacherId: String(this.campusTeachers()[0]?.id ?? '') };
-    this.assessmentEditorOpen.set(true);
-  }
-
-  closeAssessmentEditor(): void { this.assessmentEditorOpen.set(false); }
-
-  assessmentEditorComponents(): PrimaryEvaluationComponent[] {
-    return this.primaryEvaluationDomains.find((domain) => domain.id === this.assessmentForm.domainId)?.components ?? [];
-  }
-
-  createAssessment(): void {
-    const context = this.pedagogyContext();
-    const component = this.assessmentEditorComponents().find((item) => item.id === this.assessmentForm.componentId);
-    const teacher = this.campusTeachers().find((item) => item.id === Number(this.assessmentForm.teacherId));
-    if (!context || !component || !this.assessmentForm.title.trim() || !this.assessmentForm.date) { this.snackBar.error('Renseignez le titre, la date, le domaine et la composante évaluée.'); return; }
-    this.assessmentSaving.set(true);
-    this.centralApi.creerEvaluationEtablissement({ ...context, classe_id: this.selectedClassId(), titre: this.assessmentForm.title.trim(), type: this.assessmentForm.type, date_evaluation: this.assessmentForm.date, periode: this.assessmentForm.period || null, domaine: this.assessmentForm.domainId, composante: component.id, bareme: component.scale, enseignant_id: teacher?.teachingBackendId ?? null }).subscribe({
-      next: (resultat) => { this.assessmentSaving.set(false); this.appliquerEvaluationsBackend(resultat.data); this.assessmentEditorOpen.set(false); this.snackBar.success(resultat.message); },
-      error: (response) => { this.assessmentSaving.set(false); this.snackBar.error(response.error?.message ?? 'L’évaluation n’a pas pu être créée.'); },
+    this.assessmentResultsDataSource.data = assessment.results.map((result) => {
+      const student = this.assessmentStudent(result.studentId);
+      return {
+        nom_complet: student?.name ?? result.studentName ?? 'Élève indisponible',
+        matricule: student?.matricule ?? result.studentMatricule ?? '—',
+        participation: result.participated ? 'A participé' : 'Absent',
+        note_affichee: result.score === null ? '—' : `${result.score} / ${assessment.scale}`,
+        appreciation_affichee: result.appreciation || '—',
+        piece_jointe: result.pieceJointe ?? null,
+        backend_eleve_id: result.backendStudentId,
+      };
     });
+    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0 }));
   }
 
   openAssessmentFromStudentRecord(assessment: PrimaryAssessment): void {
@@ -6614,7 +6864,25 @@ export class PrimarySchoolComponent {
 
   backToAssessmentList(): void {
     this.selectedAssessmentId.set(null);
-    this.assessmentEditorOpen.set(false);
+  }
+
+  telechargerCopieEvaluation(assessment: PrimaryAssessment, resultat: { backend_eleve_id?: string; piece_jointe?: { nom_original?: string } | null }): void {
+    const contexte = this.pedagogyContext();
+    if (!contexte || !resultat.backend_eleve_id) {
+      this.snackBar.error('La copie de cet élève n’est pas disponible.');
+      return;
+    }
+    this.centralApi.telechargerCopieEvaluation(assessment.id, resultat.backend_eleve_id, contexte).subscribe({
+      next: (response) => {
+        const url = URL.createObjectURL(response.body!);
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.download = resultat.piece_jointe?.nom_original || `copie-${assessment.title}.pdf`;
+        lien.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (response) => this.snackBar.error(response.error?.message ?? 'La copie PDF n’a pas pu être téléchargée.'),
+    });
   }
 
   saveAssessmentResults(): void {

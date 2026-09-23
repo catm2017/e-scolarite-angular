@@ -28,6 +28,18 @@
           }
           <li><div class="header">PLATEFORME</div></li>
           <li><a routerLink="/" class="menu-top"><i class="material-icons-outlined">language</i><span class="hide-menu">Voir le site public</span></a></li>
+          } @else if (isTeacherWorkspace) {
+          @for (item of teacherNavigation; track item.path) {
+            @if (item.group) {
+              <li><div class="header">{{ item.group }}</div></li>
+            }
+            <li routerLinkActive="active-top">
+              <a [routerLink]="item.contextSelector && !canSelectTeacherWorkspace() ? null : item.path" class="menu-top" [class.subscription-locked]="item.contextSelector && !canSelectTeacherWorkspace()" [attr.aria-disabled]="item.contextSelector && !canSelectTeacherWorkspace()">
+                <i class="material-icons-outlined">{{ item.icon }}</i>
+                <span class="hide-menu">{{ item.title }}</span>
+              </a>
+            </li>
+          }
           } @else if (isPrimaryWorkspace || isInstituteWorkspace) {
           @if (isPrimaryWorkspace) {
           <li>

@@ -42,6 +42,12 @@ export interface ColumnDefinition {
     | 'check'
     | 'actionBtn'
     | 'status'
+    | 'attendance'
+    | 'evaluationParticipation'
+    | 'evaluationScore'
+    | 'evaluationComment'
+    | 'evaluationFile'
+    | 'evaluationDownload'
     | 'nameWithImage'
     | 'team'
     | 'progress'
@@ -100,6 +106,7 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   readonly showEdit = input<boolean>(true);
   readonly showDelete = input<boolean>(true);
   readonly showDetails = input<boolean>(false);
+  readonly showView = input<boolean>(false);
   readonly showSchedule = input<boolean>(false);
   readonly showStatusToggle = input<boolean>(false);
   readonly showRefresh = input<boolean>(true);
@@ -113,14 +120,29 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   readonly pageSizeOptions = input<number[]>([5, 10, 25, 100]);
   readonly selectedRows = input<any[]>([]);
   readonly isRowSelectionDisabled = input<(row: any) => boolean>(() => false);
+  readonly attendanceReadonly = input<boolean>(false);
 
   // Outputs
   readonly add = output<void>();
   readonly edit = output<any>();
   readonly delete = output<any>();
   readonly details = output<any>();
+  readonly view = output<any>();
   readonly schedule = output<any>();
   readonly statusToggle = output<any>();
+  readonly attendanceChange = output<{ row: any; status: 'P' | 'A' | 'R' }>();
+  readonly attendanceNoteChange = output<{ row: any; note: string }>();
+  readonly evaluationParticipationChange = output<{ row: any; participated: boolean }>();
+  readonly evaluationScoreChange = output<{ row: any; score: number | null }>();
+  readonly evaluationCommentChange = output<{ row: any; comment: string }>();
+  readonly evaluationFileChange = output<{ row: any; file: File }>();
+  readonly evaluationDownload = output<any>();
+
+  onEvaluationFileChange(event: Event, row: any): void {
+    const fichier = (event.target as HTMLInputElement).files?.[0];
+    if (fichier) this.evaluationFileChange.emit({ row, file: fichier });
+    (event.target as HTMLInputElement).value = '';
+  }
   readonly refresh = output<void>();
   readonly bulkDelete = output<any[]>();
   readonly rowClick = output<any>();
@@ -200,6 +222,10 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
 
   onDetails(row: any) {
     this.details.emit(row);
+  }
+
+  onView(row: any) {
+    this.view.emit(row);
   }
 
   onSchedule(row: any) {

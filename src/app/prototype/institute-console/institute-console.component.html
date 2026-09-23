@@ -22,6 +22,12 @@
       <b><i></i>Vue consolidée</b>
     </div>
 
+    @if (subscriptionStatus() === 'expire') {
+      <button type="button" class="subscription-feedback error subscription-expired-banner" (click)="setView('subscription')">
+        <i>error_outline</i><span><strong>Votre souscription de {{ subscriptionDurationDays() }} jour(s) est terminée.</strong><small>Les accès aux fonctionnalités sont suspendus. Consultez votre facture et renouvelez votre offre.</small></span><i class="subscription-expired-arrow">arrow_forward</i>
+      </button>
+    }
+
     <main class="primary-content parent-content">
       @if (activeView() === 'overview') {
         <div class="page-title">
@@ -35,8 +41,8 @@
         <section class="metric-grid parent-metrics">
           <article><span class="metric-icon green"><i>account_balance</i></span><div><small>Types d’établissement</small><strong>{{ activeEstablishmentsCount() }}</strong><em>Types réellement activés pour votre institut</em></div><b>Voir</b></article>
           <article><span class="metric-icon blue"><i>location_city</i></span><div><small>Campus</small><strong>{{ campusCount() }}</strong><em>{{ roomCount() }} salle(s) et espace(s)</em></div><b class="neutral">Données réelles</b></article>
-          <article><span class="metric-icon violet"><i>groups</i></span><div><small>Effectif consolidé</small><strong>4 280</strong><em>Tous enseignements</em></div><b>+8,6%</b></article>
-          <article><span class="metric-icon orange"><i>badge</i></span><div><small>Collaborateurs</small><strong>286</strong><em>224 enseignants · 62 agents</em></div><b class="neutral">Global</b></article>
+          <article><span class="metric-icon violet"><i>groups</i></span><div><small>Effectif consolidé</small><strong>{{ dashboard()?.effectif ?? 0 }}</strong><em>Tous enseignements</em></div><b [class.neutral]="dashboardLoading()">{{ dashboardLoading() ? 'Chargement…' : 'Données réelles' }}</b></article>
+          <article><span class="metric-icon orange"><i>badge</i></span><div><small>Collaborateurs</small><strong>{{ dashboard()?.collaborateurs ?? 0 }}</strong><em>{{ dashboard()?.enseignants ?? 0 }} enseignants · {{ dashboard()?.personnels ?? 0 }} agents</em></div><b class="neutral">Global</b></article>
         </section>
 
         <section class="parent-dashboard-grid">
@@ -111,7 +117,6 @@
               </footer>
             </article>
           }
-          <button class="add-establishment-card"><i>add</i><strong>Ajouter un type d’établissement</strong><span>Choisir son métier et ses fonctionnalités</span></button>
         </section>
       }
 
@@ -177,7 +182,7 @@
               <article class="panel directory-detail-card user-scope-card"><header><div><h3>Périmètre d’accès</h3><p>Choisissez les campus et les types d’établissement visibles pour ce compte.</p></div></header><section><h4>Campus autorisés</h4><div class="access-choice-grid">@for (campus of campuses(); track campus.id) {<label><input type="checkbox" [checked]="userCampusAccessIds().includes(campus.id)" (change)="toggleUserCampus(campus.id)" /><span><i>location_city</i><strong>{{ campus.name }}</strong><small>{{ campus.city }}</small></span></label>}</div></section><section><h4>Établissements / types d’enseignement</h4><div class="access-choice-grid establishment-access-grid">@for (establishment of activeEstablishments(); track establishment.workspaceId) {@if (establishment.workspaceId) {<label><input type="checkbox" [checked]="userEstablishmentAccessIds().includes(establishment.workspaceId)" (change)="toggleUserEstablishment(establishment.workspaceId)" /><span><i>{{ establishment.icon }}</i><strong>{{ establishment.type }}</strong><small>Accès métier</small></span></label>}}</div></section><footer><span>Les changements ne sont appliqués qu’après enregistrement.</span><button type="button" class="primary-action" [disabled]="userScopeSaving()" (click)="enregistrerPerimetreUtilisateur()"><i>{{ userScopeSaving() ? 'progress_activity' : 'save' }}</i>{{ userScopeSaving() ? 'Enregistrement…' : 'Enregistrer le périmètre' }}</button></footer></article>
             }
             @if (userRecordTab() === 'security') {
-              <article class="panel directory-detail-card user-security-card"><header><div><h3>Sécurité du compte</h3><p>Gérez l’état du compte et l’envoi du code d’activation.</p></div></header><div class="security-state"><span [class.disabled]="user.status === 'Désactivé'"><i>{{ user.status === 'Désactivé' ? 'block' : 'verified_user' }}</i></span><div><small>État actuel</small><strong>{{ user.status }}</strong><p>{{ user.status === 'Désactivé' ? 'Le compte ne peut plus se connecter à la plateforme.' : 'Le compte peut accéder à son périmètre autorisé.' }}</p></div><button type="button" [disabled]="userSecuritySaving()" (click)="changerStatutUtilisateur(user.status === 'Désactivé' ? 'actif' : 'suspendu')">{{ user.status === 'Désactivé' ? 'Activer' : 'Désactiver' }}</button></div><div class="account-actions"><button type="button" disabled><i>lock_reset</i><span><strong>Réinitialiser le mot de passe</strong><small>Cette action sera disponible prochainement.</small></span></button><button type="button" [disabled]="user.status !== 'Invitation envoyée' || activationResendSaving()" (click)="renvoyerActivationUtilisateur()"><i>mark_email_unread</i><span><strong>Renvoyer le code d’activation</strong><small>{{ user.status === 'Invitation envoyée' ? 'Envoyer un nouveau code au numéro de téléphone du compte' : 'Disponible uniquement avant la première activation' }}</small></span></button></div></article>
+              <article class="panel directory-detail-card user-security-card"><header><div><h3>Sécurité du compte</h3><p>Gérez l’état du compte et les options de sécurité.</p></div></header><div class="security-state"><span [class.disabled]="user.status === 'Désactivé'"><i>{{ user.status === 'Désactivé' ? 'block' : 'verified_user' }}</i></span><div><small>État actuel</small><strong>{{ user.status }}</strong><p>{{ user.status === 'Désactivé' ? 'Le compte ne peut plus se connecter à la plateforme.' : 'Le compte peut accéder à son périmètre autorisé.' }}</p></div><button type="button" [disabled]="userSecuritySaving()" (click)="changerStatutUtilisateur(user.status === 'Désactivé' ? 'actif' : 'suspendu')">{{ user.status === 'Désactivé' ? 'Activer' : 'Désactiver' }}</button></div><div class="account-actions"><button type="button" disabled><i>lock_reset</i><span><strong>Réinitialiser le mot de passe</strong><small>Cette action sera disponible prochainement.</small></span></button></div></article>
             }
             @if (userRecordTab() === 'activity') {<article class="panel directory-detail-card user-activity-card"><header><div><h3>Traçabilité des activités</h3><p>Les actions et authentifications de {{ user.name }} sont conservées selon la configuration de suivi.</p></div><button type="button" (click)="setView('activity-log')"><i>manage_history</i>Voir le journal complet</button></header><div class="user-activity-list">@for (entry of selectedUserActivityEntries(); track entry.date) {<article><span [class.refused]="entry.status === 'Refusée'"><i>{{ entry.status === 'Réussie' ? 'check_circle' : 'error' }}</i></span><div><strong>{{ entry.action }}</strong><p>{{ entry.description }}</p><small>{{ entry.date }} · {{ entry.scope }}</small></div></article>}</div></article>}
           </div></section>
@@ -237,7 +242,7 @@
           @if (userCreationOpen()) {
             <section class="panel directory-form-card user-account-creation">
               <button type="button" class="directory-back-button" (click)="closeUserAccountCreation()"><i>arrow_back</i>Retour à la liste des utilisateurs</button>
-              <header><div><span><i>person_add</i></span><div><h2>Nouveaux utilisateurs</h2><p>Sélectionnez les profils sans compte. Leur numéro de téléphone devient leur identifiant de connexion.</p></div></div><button type="button" aria-label="Fermer" (click)="closeUserAccountCreation()"><i>close</i></button></header>
+              <header><div><span><i>person_add</i></span><div><h2>Nouveaux utilisateurs</h2><p>Sélectionnez les profils sans compte. Leur adresse e-mail devient leur identifiant ; leur numéro de téléphone devient le mot de passe initial.</p></div></div><button type="button" aria-label="Fermer" (click)="closeUserAccountCreation()"><i>close</i></button></header>
               <nav class="class-tabs institute-tabs" aria-label="Profils sans compte">
                 <button type="button" [class.active]="accountCandidateCategory() === 'all'" (click)="selectAccountCandidateCategory('all')">Tous <b>{{ accountCandidateCount('all') }}</b></button>
                 <button type="button" [class.active]="accountCandidateCategory() === 'teachers'" (click)="selectAccountCandidateCategory('teachers')">Enseignants <b>{{ accountCandidateCount('teachers') }}</b></button>
@@ -246,7 +251,7 @@
                 <button type="button" [class.active]="accountCandidateCategory() === 'learners'" (click)="selectAccountCandidateCategory('learners')">Élèves <b>{{ accountCandidateCount('learners') }}</b></button>
               </nav>
               <app-master-table title="Profils pouvant recevoir un compte" [columnDefinitions]="accountCandidateColumns" [dataSource]="accountCandidateDataSource" [isLoading]="userCandidatesLoading()" exportFileName="profils_sans_compte" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showBulkDelete]="false" [showCheckbox]="true" [disableRowClickToEdit]="true" (selectionChange)="setSelectedAccountCandidates($event)"></app-master-table>
-              <footer><span><i>info</i> Code provisoire : <b>2026</b>. Le message d’activation sera envoyé dès qu’un canal de notification sera validé.</span><div><button type="button" (click)="closeUserAccountCreation()">Annuler</button><button type="button" class="primary-action" [disabled]="!selectedAccountCandidates().length || userCreationSaving()" (click)="createSelectedAccounts()"><i>{{ userCreationSaving() ? 'progress_activity' : 'person_add' }}</i>{{ userCreationSaving() ? 'Création…' : 'Créer les comptes' }}</button></div></footer>
+              <footer><span><i>info</i> Un message de bienvenue contenant les accès sera envoyé au numéro de téléphone indiqué.</span><div><button type="button" (click)="closeUserAccountCreation()">Annuler</button><button type="button" class="primary-action" [disabled]="!selectedAccountCandidates().length || userCreationSaving()" (click)="createSelectedAccounts()"><i>{{ userCreationSaving() ? 'progress_activity' : 'person_add' }}</i>{{ userCreationSaving() ? 'Création…' : 'Créer les comptes' }}</button></div></footer>
             </section>
           }
         } @else if (activeView() === 'staff') {
@@ -414,7 +419,7 @@
               } @else {
                 <div class="custom-subscription-toolbar panel">
                   <div><small>OFFRE SUR MESURE</small><h2>Composez votre souscription</h2><p>Chaque montant est calculé avec l’effectif du type d’établissement concerné.</p></div>
-                  <label><span>Durée d’accès</span><div><input type="number" min="1" max="3650" [ngModel]="subscriptionDurationDays()" (ngModelChange)="subscriptionDurationDays.set(+$event || 1)" /><small>jours</small></div></label>
+                  <label><span>Durée d’accès</span><div><input type="number" min="1" max="90" [ngModel]="subscriptionDurationDays()" (ngModelChange)="definirDureeOffreSurMesure($event)" /><small>jours · maximum 90</small></div></label>
                 </div>
                 <div class="subscription-type-tabs">
                   @for (item of subscriptionTypes(); track item.typeId) {

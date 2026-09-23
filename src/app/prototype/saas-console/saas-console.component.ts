@@ -83,6 +83,8 @@ export class SaasConsoleComponent implements OnInit {
   readonly tarifEnEdition = signal<TarificationFonctionnalite | null>(null);
   readonly demandeEnDetail = signal<DemandeAdhesion | null>(null);
   readonly institutEnDetail = signal<{ institut: InstitutSaas; abonnement_actuel: AbonnementSaas | null; abonnements: AbonnementSaas[] } | null>(null);
+  readonly typesInstitutSelectionnes = signal<string[]>([]);
+  readonly ajoutTypesInstitutEnCours = signal(false);
   readonly tarifsSource = new MatTableDataSource<TarificationFonctionnalite>();
   readonly packagesSource = new MatTableDataSource<PackageTarification>();
   readonly anneesSource = new MatTableDataSource<AnneeScolaireCentrale>();
@@ -236,9 +238,24 @@ export class SaasConsoleComponent implements OnInit {
     this.api.detailInstitutSaas(institut.id).subscribe({
       next: (detail) => {
         this.institutEnDetail.set(detail);
+        this.typesInstitutSelectionnes.set((detail.institut.types_etablissements ?? []).map((type) => type.id));
         this.detailAbonnementsSource.data = detail.abonnements;
       },
       error: (error) => this.gererSessionExpiree(error),
+    });
+  }
+
+  basculerTypeInstitut(typeId: string): void {
+    this.typesInstitutSelectionnes.update((selection) => selection.includes(typeId) ? selection.filter((id) => id !== typeId) : [...selection, typeId]);
+  }
+
+  enregistrerTypesInstitut(): void {
+    const detail = this.institutEnDetail();
+    if (!detail || this.ajoutTypesInstitutEnCours() || !this.typesInstitutSelectionnes().length) return;
+    this.ajoutTypesInstitutEnCours.set(true);
+    this.api.ajouterTypesInstitutSaas(detail.institut.id, this.typesInstitutSelectionnes()).subscribe({
+      next: ({ types_etablissements }) => { this.institutEnDetail.update((value) => value ? { ...value, institut: { ...value.institut, types_etablissements } } : value); this.ajoutTypesInstitutEnCours.set(false); this.chargerDonnees(); },
+      error: (response) => { this.erreur.set(response.error?.message ?? 'Les types d’établissement n’ont pas pu être ajoutés.'); this.ajoutTypesInstitutEnCours.set(false); },
     });
   }
 

@@ -34,10 +34,11 @@ export type PrimaryView =
   | 'expense-settings'
   | 'expenses'
   | 'finance'
+  | 'quran-followup'
   | 'settings';
 
 export type PrimaryLocale = PlatformLocale;
-export type EstablishmentWorkspaceType = 'primary' | 'college' | 'lycee';
+export type EstablishmentWorkspaceType = 'daara' | 'prescolaire' | 'primary' | 'college' | 'lycee';
 
 const PRIMARY_VIEW_PATHS: Record<PrimaryView, string> = {
   dashboard: 'tableau-de-bord',
@@ -67,10 +68,13 @@ const PRIMARY_VIEW_PATHS: Record<PrimaryView, string> = {
   'expense-settings': 'parametrage-depenses',
   expenses: 'depenses',
   finance: 'finances',
+  'quran-followup': 'suivi-coran',
   settings: 'parametres',
 };
 
 const ESTABLISHMENT_BASE_PATHS: Record<EstablishmentWorkspaceType, string> = {
+  daara: '/institut/etablissements/daara',
+  prescolaire: '/institut/etablissements/prescolaire',
   primary: '/institut/etablissements/primaire',
   college: '/institut/etablissements/college',
   lycee: '/institut/etablissements/lycee',
@@ -104,6 +108,7 @@ const FONCTIONNALITE_PAR_VUE: Partial<Record<PrimaryView, string>> = {
   'expense-settings': 'gestion_finances',
   expenses: 'gestion_finances',
   finance: 'gestion_finances',
+  'quran-followup': 'gestion_suivi_coran',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -123,15 +128,17 @@ export class PrimaryWorkspaceService {
   readonly selectedAcademicYear = signal('2026–2027');
   readonly selectedPeriod = signal('Trimestre 1');
   readonly availablePeriods = computed<readonly string[]>(() =>
-    this.establishmentType() === 'primary'
+    this.establishmentType() === 'primary' || this.establishmentType() === 'prescolaire'
       ? ['Trimestre 1', 'Trimestre 2', 'Trimestre 3']
-      : ['Semestre 1', 'Semestre 2'],
+      : this.establishmentType() === 'daara' ? [] : ['Semestre 1', 'Semestre 2'],
   );
   readonly locale = this.language.locale;
   readonly sessionListRequest = signal(0);
   readonly classListRequest = signal(0);
   readonly assessmentListRequest = signal(0);
   private readonly configurationStates = signal<Record<EstablishmentWorkspaceType, { checked: boolean; ready: boolean }>>({
+    daara: { checked: false, ready: false },
+    prescolaire: { checked: false, ready: false },
     primary: { checked: false, ready: false },
     college: { checked: false, ready: false },
     lycee: { checked: false, ready: false },
@@ -153,8 +160,10 @@ export class PrimaryWorkspaceService {
     this.establishmentType.set(type);
 
     const periods = this.availablePeriods();
-    if (hasChanged || !periods.includes(this.selectedPeriod())) {
+    if (periods.length && (hasChanged || !periods.includes(this.selectedPeriod()))) {
       this.selectedPeriod.set(periods[0]);
+    } else if (!periods.length) {
+      this.selectedPeriod.set('');
     }
 
     if (hasChanged) {
@@ -173,7 +182,11 @@ export class PrimaryWorkspaceService {
     }
     let type: EstablishmentWorkspaceType | null = null;
 
-    if (path.startsWith('/institut/etablissements/primaire')) {
+    if (path.startsWith('/institut/etablissements/daara')) {
+      type = 'daara';
+    } else if (path.startsWith('/institut/etablissements/prescolaire')) {
+      type = 'prescolaire';
+    } else if (path.startsWith('/institut/etablissements/primaire')) {
       type = 'primary';
     } else if (path.startsWith('/institut/etablissements/college')) {
       type = 'college';
@@ -205,6 +218,20 @@ export class PrimaryWorkspaceService {
   }
 
   canAccessView(view: PrimaryView): boolean {
+    // Le préscolaire reprend le socle administratif du primaire, sans le
+    // suivi de leçons, les évaluations, les bulletins, ni la planification de
+    // séances. Cette règle protège également les accès directs par URL.
+    if (this.establishmentType() === 'daara' && [
+      'enrollments', 'classes', 'series', 'subjects', 'class-subjects', 'curriculum',
+      'timetable-builder', 'timetable', 'attendance', 'assessments', 'reports',
+    ].includes(view)) {
+      return false;
+    }
+    if (this.establishmentType() === 'prescolaire' && [
+      'curriculum', 'timetable-builder', 'timetable', 'attendance', 'assessments', 'reports',
+    ].includes(view)) {
+      return false;
+    }
     // À l’ouverture d’un espace, la configuration arrive de façon asynchrone.
     // Il ne faut donc pas remplacer l’URL demandée par Paramètres avant que le
     // backend ait confirmé si l’année, les niveaux et les périodes existent.

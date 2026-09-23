@@ -13,6 +13,7 @@ const CLES_SESSION_API = [
   'escolarite_fonctionnalites_actives',
   'escolarite_session_expire_at',
   'e-scolarite:campus-actif',
+  'e-scolarite:enseignant-contexte',
 ] as const;
 
 /** Nettoyage synchrone utilisable par l'intercepteur sans dépendance HttpClient circulaire. */
@@ -27,6 +28,48 @@ export interface CentralUser {
   nom: string;
   email: string;
   roles?: string[];
+  type?: string;
+}
+
+export interface EspaceEnseignantApi {
+  profil: { personnel_id: string; enseignant_id: string; matricule: string; prenom: string; nom: string; sexe: string | null; date_naissance: string | null; lieu_naissance: string | null; email: string | null; telephone: string | null; adresse: string | null; fonction: string | null; date_embauche: string | null; type_contrat: string | null; contact_urgence_nom: string | null; contact_urgence_telephone: string | null; specialite: string | null; diplome: string | null; experience_annees: number | null; type_remuneration: string; montant_mensuel: number | null; montant_heure: number | null };
+  contexte: ContexteEnseignant;
+  rattachements: ContexteEnseignant[];
+  affectations: Array<{ id: string; classe_id: string; classe_matiere_id: string; classe: string; matiere: string; domaine: string | null; campus: string; etablissement: string; effectif: number; coefficient: number | null; bareme?: number | null }>;
+  emploi_temps: Array<{ id: string; jour_semaine: number; est_pause: boolean; heure_debut: string; heure_fin: string; classe: string; matiere: string | null; salle: string | null }>;
+  seances: Array<{ id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; classe: string; matiere: string | null; campus: string; cahier_texte: string | null; travail_maison: string | null }>;
+  evaluations: Array<{ id: string; titre: string; type: string; date_evaluation: string; bareme: number; statut: string; classe: string; matiere: string | null; periode: string | null }>;
+  pointages: Array<{ id: string; date_pointage: string; heure_entree_at: string | null; heure_sortie_at: string | null; statut: string; observation: string | null }>;
+  demandes_absences: Array<{ id: string; motif: string; statut: string; created_at: string; date_pointage: string; heure_entree_at: string | null; heure_sortie_at: string | null }>;
+}
+
+export interface EvaluationEnseignantDetailApi {
+  evaluation: { id: string; titre: string; type: string; date_evaluation: string; bareme: number | string; statut: string; classe: string; matiere: string | null; periode: string | null };
+  resultats: Array<{ note_evaluation_id: string; eleve_id: string; matricule: string; prenom: string; nom: string; a_participe: boolean | number; note: number | string | null; bareme: number | string; appreciation: string | null; piece_jointe: { id: string; nom_original: string } | null }>;
+}
+
+export interface ContexteEnseignant {
+  etablissement_id: string;
+  campus_id: string;
+  etablissement: string;
+  type_code: string;
+  type: string;
+  campus: string;
+}
+
+export interface ClasseMatiereEnseignantApi {
+  classe_matiere: { classe_matiere_id: string; annee_scolaire_id: string; classe_id: string; classe: string; matiere: string; coefficient: number | null };
+  matiere: string;
+  eleves: Array<{ id: string; matricule: string; prenom: string; nom: string; sexe: string | null }>;
+  programme: { id: string; libelle: string; description: string | null } | null;
+  lecons: Array<{ id: string; ordre: number; libelle: string; objectifs: string | null; nombre_seances_estime: number; periode: string | null }>;
+}
+
+export interface SeanceEnseignantDetailApi {
+  seance: { id: string; classe_id: string; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; classe: string; matiere: string | null; salle: string | null; classe_matiere_id: string | null };
+  cahier_texte: { contenu: string | null; travail_maison: string | null; lecon_id: string | null } | null;
+  eleves: Array<{ id: string; matricule: string; prenom: string; nom: string; sexe: string | null; presence_statut: 'present' | 'absent' | 'retard' | 'justifie' | null; presence_motif: string | null }>;
+  lecons: Array<{ id: string; libelle: string; ordre: number }>;
 }
 
 export interface InstitutConnexion {
@@ -34,6 +77,26 @@ export interface InstitutConnexion {
   nom: string;
   slug: string;
   logo_url?: string | null;
+}
+
+export interface SuiviCoranDaaraApi {
+  riwaya: { id: string; code: string; libelle: string };
+  sourates: Array<{ id: string; numero: number; nom_arabe: string; nom_latin: string | null; nombre_versets: number }>;
+  juzs: number[];
+  hizbs: number[];
+  rubs: number[];
+  filtre: { mode: 'sourate' | 'juz' | 'hizb' | 'rub'; numero: number; verset_id: string };
+  versets: Array<{ id: string; cle_verset: string; numero_sourate: number; numero_verset: number; texte_arabe: string; numero_juz: number | null; numero_hizb: number | null; numero_rub: number | null; position_memorisation: number; sourate_arabe: string; sourate_latin: string | null }>;
+  selection: { id: string; position_memorisation: number };
+  eleves_deja_memorises: SuiviCoranEleveApi[];
+  eleves_a_apprendre: SuiviCoranEleveApi[];
+}
+
+export interface SuiviCoranEleveApi {
+  id: string;
+  matricule: string;
+  nom_complet: string;
+  avancement: { sourate: number; verset: number; juz: number | null; hizb: number | null; position: number } | null;
 }
 
 export interface SitePublicInstitut {
@@ -127,6 +190,36 @@ export interface EspaceInstitut {
   user: CentralUser & { type: string };
   etablissements: Array<Omit<TypeSouscription, 'fonctionnalites'>>;
   campus: CampusInstitut[];
+}
+
+export interface TableauBordInstitutApi {
+  effectif: number;
+  enseignants: number;
+  personnels: number;
+  collaborateurs: number;
+  effectifs_etablissements: Record<string, number>;
+}
+
+export interface TableauBordEtablissementApi {
+  effectif: number;
+  classes: number;
+  sans_classe: number;
+  encaisse_mois: number;
+  impayes: number;
+  seances_a_valider: number;
+  a_traiter: number;
+  presence: { total: number; presents: number; absents: number; retards: number; taux: number | null };
+  prochaines_seances: Array<{
+    id: string;
+    date: string;
+    heure_debut: string;
+    heure_fin: string;
+    statut: string;
+    classe: string;
+    matiere: string;
+    enseignant: string | null;
+    salle: string | null;
+  }>;
 }
 
 export interface AccesUtilisateurInstitut {
@@ -277,6 +370,7 @@ export interface InstitutSaas {
   identifiant_responsable?: string | null;
   email_responsable: string | null;
   telephone_responsable: string | null;
+  types_etablissements?: Array<{ id: string; code: string; libelle: string }>;
 }
 
 export interface AbonnementSaas {
@@ -507,7 +601,7 @@ export interface SeanceEtablissementApi {
   date_seance: string;
   heure_debut: string;
   heure_fin: string;
-  statut: 'planifiee' | 'a_completer' | 'terminee';
+  statut: 'planifiee' | 'a_completer' | 'terminee' | 'realisee' | 'ratee';
   matiere_id: string | null;
   matiere_libelle: string | null;
   enseignant_id: string | null;
@@ -517,11 +611,20 @@ export interface SeanceEtablissementApi {
   lecon_libelle: string | null;
 }
 
+export interface DetailSeanceEtablissementApi {
+  seance: { id: string; classe_id: string; classe_matiere_id: string | null; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; matiere: string | null; enseignant: string | null };
+  cahier_texte: { contenu: string | null; travail_maison: string | null; lecon_id: string | null; renseigne_at: string | null } | null;
+  eleves: Array<{ id: string; matricule: string; prenom: string; nom: string; presence_statut: 'present' | 'absent' | 'retard' | 'justifie' | null; presence_motif: string | null }>;
+  lecons: Array<{ id: string; libelle: string; ordre: number }>;
+  progression: { prevues: number; terminees: number; restantes: number; pourcentage: number };
+}
+
 export interface EvaluationEtablissementApi {
   id: string; classe_id: string; titre: string; type: string; bareme: number | string; date_evaluation: string;
   statut: string; periode: string | null; domaine_evaluation: string | null; composante_evaluation: string | null;
   enseignant_id: string | null; enseignant_nom: string | null;
-  resultats: Array<{ eleve_id: string; note: number | string | null; appreciation: string | null; a_participe: boolean | number }>;
+  matiere?: string | null;
+  resultats: Array<{ eleve_id: string; matricule?: string | null; prenom?: string | null; nom?: string | null; note: number | string | null; appreciation: string | null; a_participe: boolean | number; piece_jointe?: { nom_original: string } | null }>;
 }
 
 export type OperationInscriptionApi = 'inscription' | 'reinscription' | 'transfert';
@@ -645,6 +748,7 @@ export interface EleveEtablissementApi {
   date_naissance: string | null;
   lieu_naissance: string | null;
   nationalite: string | null;
+  email: string | null;
   adresse: string | null;
   groupe_sanguin: string | null;
   notes_medicales: string | null;
@@ -693,6 +797,15 @@ export interface DossiersEtablissementApi {
   personnels: PersonnelEtablissementApi[];
 }
 
+export interface DossierEnseignantEtablissementApi {
+  affectations: Array<{ id: string; classe_id: string; classe: string; matiere: string; bareme: number | null; coefficient: number | null }>;
+  emploi_temps: Array<{ id: string; jour_semaine: number; est_pause: boolean; heure_debut: string; heure_fin: string; classe: string; matiere: string | null; salle: string | null }>;
+  seances: Array<{ id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; classe: string; matiere: string | null }>;
+  heures_mensuelles: Array<{ mois: string; seances: number; minutes: number; heures: number }>;
+  salaires: Array<{ id: string; periode: string; date_debut: string; date_fin: string; nombre_heures: number | null; taux_horaire: number | null; montant: number; montant_paye: number; statut: string }>;
+  pointages: Array<{ id: string; date_pointage: string; heure_entree_at: string | null; heure_sortie_at: string | null; statut: string; observation: string | null }>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CentralApiService {
   private readonly http = inject(HttpClient);
@@ -708,11 +821,15 @@ export class CentralApiService {
   private readonly etablissementsInstitutState = signal<Array<Omit<TypeSouscription, 'fonctionnalites'>>>([]);
   private readonly espaceInstitutChargeState = signal(false);
   private readonly accesUtilisateurState = signal<AccesUtilisateurInstitut | null>(null);
+  private readonly contexteEnseignantState = signal<ContexteEnseignant | null>(this.lireContexteEnseignant());
+  private readonly rattachementsEnseignantState = signal<ContexteEnseignant[]>([]);
   private readonly cacheRequetes = new Map<string, { expireAt: number; valeur: Observable<unknown> }>();
   readonly campusInstitut = this.campusInstitutState.asReadonly();
   readonly etablissementsInstitut = this.etablissementsInstitutState.asReadonly();
   readonly espaceInstitutCharge = this.espaceInstitutChargeState.asReadonly();
   readonly accesUtilisateur = this.accesUtilisateurState.asReadonly();
+  readonly contexteEnseignant = this.contexteEnseignantState.asReadonly();
+  readonly rattachementsEnseignant = this.rattachementsEnseignantState.asReadonly();
   private expirationTimer: number | null = null;
 
   constructor() {
@@ -748,6 +865,81 @@ export class CentralApiService {
       this.http.get<{ data: InstitutConnexion[] }>(`${this.baseUrl}/instituts-connexion`),
       5 * 60_000,
     );
+  }
+
+  espaceEnseignant(contexte?: ContexteEnseignant | null) {
+    const selection = contexte ?? this.contexteEnseignantState();
+    const suffixe = selection ? `:${selection.etablissement_id}:${selection.campus_id}` : ':choix';
+    return this.lireAvecCache(`enseignant:espace${suffixe}`, () => this.http.get<{ data: EspaceEnseignantApi }>(`${this.baseUrl}/institut/enseignant/espace`, {
+      params: selection ? { etablissement_id: selection.etablissement_id, campus_id: selection.campus_id } : {},
+      headers: this.enteteAutorisation(),
+    }), 60_000);
+  }
+
+  classeMatiereEnseignant(classeMatiereId: string) {
+    return this.http.get<{ data: ClasseMatiereEnseignantApi }>(`${this.baseUrl}/institut/enseignant/classes-matieres/${classeMatiereId}`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  ajouterLeconClasseMatiereEnseignant(classeMatiereId: string, donnees: { libelle: string; objectifs?: string | null; periode?: string | null; nombre_seances_estime: number }) {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/institut/enseignant/classes-matieres/${classeMatiereId}/lecons`, donnees, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  seanceEnseignant(seanceId: string) {
+    return this.http.get<{ data: SeanceEnseignantDetailApi }>(`${this.baseUrl}/institut/enseignant/seances/${seanceId}`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  enregistrerSeanceEnseignant(seanceId: string, donnees: { cahier_texte: string; travail_maison: string; lecon_id: string | null; presences: Array<{ eleve_id: string; statut: string; motif?: string | null }> }) {
+    this.invaliderCache('enseignant:espace');
+    this.invaliderCache('institut:seances:');
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/enseignant/seances/${seanceId}`, donnees, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  creerEvaluationEnseignant(donnees: { classe_matiere_id: string; titre: string; type: string; date_evaluation: string; periode: string; bareme: number }) {
+    this.invaliderCache('enseignant:espace');
+    this.invaliderCache('institut:evaluations:');
+    return this.http.post<{ message: string; id: string }>(`${this.baseUrl}/institut/enseignant/evaluations`, donnees, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  detailEvaluationEnseignant(evaluationId: string) {
+    return this.http.get<{ data: EvaluationEnseignantDetailApi }>(`${this.baseUrl}/institut/enseignant/evaluations/${evaluationId}`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  enregistrerResultatsEvaluationEnseignant(evaluationId: string, resultats: Array<{ eleve_id: string; a_participe: boolean; note: number | null; appreciation: string | null }>) {
+    this.invaliderCache('enseignant:espace');
+    this.invaliderCache('institut:evaluations:');
+    return this.http.put<{ data: EvaluationEnseignantDetailApi }>(`${this.baseUrl}/institut/enseignant/evaluations/${evaluationId}/resultats`, { resultats }, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  joindreCopieEvaluationEnseignant(evaluationId: string, eleveId: string, fichier: File) {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    return this.http.post<{ message: string }>(`${this.baseUrl}/institut/enseignant/evaluations/${evaluationId}/eleves/${eleveId}/copie`, donnees, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  memoriserContexteEnseignant(contexte: ContexteEnseignant, rattachements: ContexteEnseignant[] = []): void {
+    this.contexteEnseignantState.set(contexte);
+    if (rattachements.length) this.rattachementsEnseignantState.set(rattachements);
+    localStorage.setItem('e-scolarite:enseignant-contexte', JSON.stringify(contexte));
+  }
+
+  memoriserRattachementsEnseignant(rattachements: ContexteEnseignant[]): void {
+    this.rattachementsEnseignantState.set(rattachements);
   }
 
   sitePublic(domaine = window.location.hostname) {
@@ -830,15 +1022,6 @@ export class CentralApiService {
     );
   }
 
-
-  envoyerMessageSmsInfobipTest(telephone: string, message: string) {
-    return this.http.post<{ message: string }>(`${this.baseUrl}/sms-infobip/test`, { telephone, message });
-  }
-
-  envoyerMessageSmsOrangeTest(telephone: string, message: string) {
-    return this.http.post<{ message: string }>(`${this.baseUrl}/sms-orange/test`, { telephone, message });
-  }
-
   tableauBord() {
     return this.lireAvecCache('centrale:tableau-bord', () => this.http.get<{ instituts_actifs: number; adhesions_en_attente: number; essais_en_cours: number; revenu_mensuel: number }>(
       `${this.baseUrl}/centrale/tableau-bord`,
@@ -901,6 +1084,11 @@ export class CentralApiService {
     });
   }
 
+  ajouterTypesInstitutSaas(institutId: string, typeEtablissementIds: string[]) {
+    this.invaliderCache('centrale:instituts');
+    return this.http.post<{ message: string; types_etablissements: Array<{ id: string; code: string; libelle: string }> }>(`${this.baseUrl}/centrale/instituts/${institutId}/types-etablissements`, { type_etablissement_ids: typeEtablissementIds }, { headers: this.enteteAutorisation() });
+  }
+
   abonnementsSaas() {
     return this.lireAvecCache('centrale:abonnements', () => this.http.get<{ data: AbonnementSaas[] }>(`${this.baseUrl}/centrale/abonnements`, {
       headers: this.enteteAutorisation(),
@@ -957,6 +1145,27 @@ export class CentralApiService {
         this.espaceInstitutChargeState.set(true);
       }),
     );
+  }
+
+  tableauBordInstitut(forceRefresh = false) {
+    const cle = 'institut:tableau-bord';
+    if (forceRefresh) this.invaliderCache(cle);
+    return this.lireAvecCache(cle, () => this.http.get<{ data: TableauBordInstitutApi }>(`${this.baseUrl}/institut/tableau-bord`, {
+      headers: this.enteteAutorisation(),
+    }));
+  }
+
+  tableauBordEtablissement(typeEtablissement: string, campusId: string, anneeCentraleId: string, forceRefresh = false) {
+    const cle = `institut:tableau-bord:${typeEtablissement}:${campusId}:${anneeCentraleId}`;
+    if (forceRefresh) this.invaliderCache(cle);
+    return this.lireAvecCache(cle, () => this.http.get<{ data: TableauBordEtablissementApi }>(`${this.baseUrl}/institut/etablissements/tableau-bord`, {
+      params: {
+        type_etablissement: typeEtablissement,
+        campus_id: campusId,
+        annee_scolaire_centrale_id: anneeCentraleId,
+      },
+      headers: this.enteteAutorisation(),
+    }));
   }
 
   listerCampusInstitut() {
@@ -1215,6 +1424,18 @@ export class CentralApiService {
     ));
   }
 
+  suiviCoranDaara(campusId: string, anneeCentraleId: string, mode: 'sourate' | 'juz' | 'hizb' | 'rub', numero: number, versetId?: string) {
+    const params: Record<string, string> = { type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeCentraleId, mode, numero: String(numero) };
+    if (versetId) params['verset_id'] = versetId;
+    return this.http.get<{ data: SuiviCoranDaaraApi }>(`${this.baseUrl}/institut/daara/suivi-coran`, { params, headers: this.enteteAutorisation() });
+  }
+
+  enregistrerAvancementCoranDaara(eleveId: string, campusId: string, anneeCentraleId: string, versetCoranId: string, commentaire?: string) {
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/daara/eleves/${eleveId}/avancement-coran`, {
+      type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeCentraleId, verset_coran_id: versetCoranId, statut: 'valide', commentaire: commentaire || null,
+    }, { headers: this.enteteAutorisation() });
+  }
+
   seriesLyceeEtablissement() {
     return this.lireAvecCache('institut:series-lycee', () => this.http.get<{ data: SerieLyceeEtablissementApi[] }>(
       `${this.baseUrl}/institut/series-lycee`,
@@ -1387,6 +1608,13 @@ export class CentralApiService {
     ));
   }
 
+  detailSeanceEtablissement(seanceId: string, donnees: Record<string, string>) {
+    return this.http.get<{ data: DetailSeanceEtablissementApi }>(`${this.baseUrl}/institut/seances/${seanceId}`, {
+      params: donnees,
+      headers: this.enteteAutorisation(),
+    });
+  }
+
   genererSeancesEtablissement(classeId: string, donnees: Record<string, unknown>) {
     this.invaliderCache('institut:seances:');
     return this.http.post<{ message: string; crees: number; data: SeanceEtablissementApi[] }>(
@@ -1396,20 +1624,27 @@ export class CentralApiService {
     );
   }
 
+  mettreAJourStatutSeanceEtablissement(seanceId: string, donnees: Record<string, unknown>) {
+    this.invaliderCache('institut:seances:');
+    this.invaliderCache('enseignant:espace');
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/seances/${seanceId}/statut`, donnees, { headers: this.enteteAutorisation() });
+  }
+
   evaluationsEtablissement(typeEtablissement: string, campusId: string, anneeCentraleId: string, classeId: string) {
     return this.lireAvecCache(`institut:evaluations:${typeEtablissement}:${campusId}:${anneeCentraleId}:${classeId}`, () => this.http.get<{ data: EvaluationEtablissementApi[] }>(`${this.baseUrl}/institut/evaluations`, {
       params: { type_etablissement: typeEtablissement, campus_id: campusId, annee_scolaire_centrale_id: anneeCentraleId, classe_id: classeId }, headers: this.enteteAutorisation(),
     }));
   }
 
-  creerEvaluationEtablissement(donnees: Record<string, unknown>) {
-    this.invaliderCache('institut:evaluations:');
-    return this.http.post<{ message: string; data: EvaluationEtablissementApi[] }>(`${this.baseUrl}/institut/evaluations`, donnees, { headers: this.enteteAutorisation() });
-  }
-
   enregistrerResultatsEvaluation(evaluationId: string, donnees: Record<string, unknown>) {
     this.invaliderCache('institut:evaluations:');
     return this.http.put<{ message: string; data: EvaluationEtablissementApi[] }>(`${this.baseUrl}/institut/evaluations/${evaluationId}/resultats`, donnees, { headers: this.enteteAutorisation() });
+  }
+
+  telechargerCopieEvaluation(evaluationId: string, eleveId: string, contexte: Record<string, string>) {
+    return this.http.get(`${this.baseUrl}/institut/evaluations/${evaluationId}/eleves/${eleveId}/copie`, {
+      params: contexte, headers: this.enteteAutorisation(), responseType: 'blob', observe: 'response',
+    });
   }
 
   candidatsInscriptionsEtablissement(
@@ -1521,6 +1756,15 @@ export class CentralApiService {
       params: { type_etablissement: typeEtablissement, campus_id: campusId },
       headers: this.enteteAutorisation(),
     }));
+  }
+
+  dossierEnseignantEtablissement(typeEtablissement: string, campusId: string, personnelId: string) {
+    return this.lireAvecCache(`institut:dossier-enseignant:${typeEtablissement}:${campusId}:${personnelId}`, () =>
+      this.http.get<{ data: DossierEnseignantEtablissementApi }>(`${this.baseUrl}/institut/enseignants/${personnelId}/dossier`, {
+        params: { type_etablissement: typeEtablissement, campus_id: campusId },
+        headers: this.enteteAutorisation(),
+      }),
+    );
   }
 
   enregistrerEleveEtablissement(donnees: Record<string, unknown> | FormData) {
@@ -1705,8 +1949,19 @@ export class CentralApiService {
     this.campusInstitutState.set([]);
     this.etablissementsInstitutState.set([]);
     this.accesUtilisateurState.set(null);
+    this.contexteEnseignantState.set(null);
+    this.rattachementsEnseignantState.set([]);
     this.espaceInstitutChargeState.set(false);
     this.invaliderCache();
+  }
+
+  private lireContexteEnseignant(): ContexteEnseignant | null {
+    try {
+      const valeur = localStorage.getItem('e-scolarite:enseignant-contexte');
+      return valeur ? JSON.parse(valeur) as ContexteEnseignant : null;
+    } catch {
+      return null;
+    }
   }
 
   private enteteAutorisation(): HttpHeaders {

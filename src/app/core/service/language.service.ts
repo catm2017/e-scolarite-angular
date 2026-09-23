@@ -48,7 +48,10 @@ export class LanguageService {
   }
 
   private applyDocumentLocale(locale: PlatformLocale): void {
+    const isRtl = locale === 'ar';
     this.document.documentElement.lang = locale;
-    this.document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
+    this.document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+    this.document.body?.classList.toggle('rtl', isRtl);
+    this.localStorageService.set('isRtl', isRtl ? 'true' : 'false');
   }
 }

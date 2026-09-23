@@ -84,6 +84,7 @@ export class HeaderComponent
   isFullScreen = false;
   isEstablishmentWorkspace = false;
   isInstituteWorkspace = false;
+  isTeacherWorkspace = false;
   isSaasWorkspace = false;
   workspaceUserName = '';
   workspaceInstituteName = '';
@@ -168,6 +169,7 @@ export class HeaderComponent
   private syncWorkspaceContext(userRole: Role): void {
     const path = this.router.url.split('?')[0].split('#')[0];
     this.isSaasWorkspace = path === '/saas' || path.startsWith('/saas/');
+    this.isTeacherWorkspace = path === '/enseignant' || path.startsWith('/enseignant/');
     this.isEstablishmentWorkspace = path.startsWith('/institut/etablissements/');
     this.isInstituteWorkspace = path.startsWith('/institut')
       && !this.isEstablishmentWorkspace
@@ -181,6 +183,8 @@ export class HeaderComponent
       this.homePage = '/saas';
     } else if (this.isEstablishmentWorkspace || this.isInstituteWorkspace) {
       this.homePage = '/institut';
+    } else if (this.isTeacherWorkspace) {
+      this.homePage = '/enseignant';
     } else if (userRole === Role.Admin) {
       this.homePage = 'admin/dashboard/main';
     } else if (userRole === Role.Teacher) {
@@ -197,7 +201,7 @@ export class HeaderComponent
     const institut = this.centralApi.institutActuel();
     this.workspaceUserName = user ? `${user.prenom} ${user.nom}`.trim() : '';
     this.workspaceInstituteName = institut?.nom ?? '';
-    if (this.workspaceUserName && (this.isInstituteWorkspace || this.isEstablishmentWorkspace || this.isSaasWorkspace)) {
+    if (this.workspaceUserName && (this.isInstituteWorkspace || this.isEstablishmentWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace)) {
       this.userImg = './assets/images/user/admin.jpg';
     }
   }
@@ -280,7 +284,7 @@ export class HeaderComponent
   }
 
   logout() {
-    if (this.isSaasWorkspace || this.isInstituteWorkspace || this.isEstablishmentWorkspace) {
+    if (this.isSaasWorkspace || this.isInstituteWorkspace || this.isEstablishmentWorkspace || this.isTeacherWorkspace) {
       const finish = () => {
         this.centralApi.effacerSession();
         void this.router.navigateByUrl('/connexion');
@@ -309,9 +313,18 @@ export class HeaderComponent
     return this.centralApi.campusInstitut().find((campus) => campus.id === selected)?.nom ?? '';
   }
 
+  teacherContextName(): string {
+    const contexte = this.centralApi.contexteEnseignant();
+    return contexte ? `${contexte.type} · ${contexte.etablissement}` : 'Espace à sélectionner';
+  }
+
+  teacherCampusName(): string {
+    return this.centralApi.contexteEnseignant()?.campus ?? 'Campus à sélectionner';
+  }
+
   changeEstablishmentType(event: Event): void {
     const type = (event.target as HTMLSelectElement).value;
-    if (type === 'primary' || type === 'college' || type === 'lycee') {
+    if (type === 'daara' || type === 'prescolaire' || type === 'primary' || type === 'college' || type === 'lycee') {
       this.primaryWorkspace.configureEstablishment(type);
     }
   }

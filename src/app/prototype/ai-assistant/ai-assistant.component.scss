@@ -1,6 +1,13 @@
 :host {
   --assistant-blue: #2f80ed;
   --assistant-ink: #27445f;
+  position: fixed;
+  right: max(24px, env(safe-area-inset-right, 0px));
+  bottom: max(22px, env(safe-area-inset-bottom, 0px));
+  z-index: 10000;
+  display: block;
+  max-width: calc(100vw - 24px);
+  pointer-events: none;
   font-family: Inter, Poppins, Arial, sans-serif;
 }
 
@@ -9,14 +16,12 @@
 }
 
 .assistant-wrapper {
-  position: fixed;
-  right: 24px;
-  bottom: 22px;
-  z-index: 10000;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
+  max-width: 100%;
   pointer-events: none;
 }
 
@@ -75,7 +80,7 @@
   position: absolute;
   right: 0;
   bottom: 78px;
-  width: 390px;
+  width: min(390px, calc(100vw - 24px));
   height: min(610px, calc(100vh - 120px));
   padding: 0;
   border: 1px solid rgba(210, 234, 250, 0.95);
@@ -434,9 +439,9 @@
 }
 
 @media (max-width: 600px) {
-  .assistant-wrapper {
-    right: 12px;
-    bottom: 12px;
+  :host {
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
   }
 
   .assistant-label {
@@ -444,7 +449,6 @@
   }
 
   .assistant-panel {
-    width: calc(100vw - 24px);
     height: min(620px, calc(100vh - 96px));
     bottom: 72px;
   }

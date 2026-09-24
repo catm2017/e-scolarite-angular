@@ -50,7 +50,8 @@ form > label em { margin-left: 4px; color: #d83749; font-style: normal; }
 
 @media (max-width: 600px) {
   .activation-nav { flex-wrap: wrap; padding: 20px; }
-  .activation-nav nav { gap: 16px; }
+  .activation-nav nav { width: 100%; justify-content: flex-end; gap: 16px; }
+  .activation-nav nav a { display: none; }
   .activation-brand { font-size: 20px; }
   .activation-card { padding: 28px 24px; }
   h1 { font-size: 22px; }

@@ -28,6 +28,7 @@ const PRIMARY_ROUTES: RouteInfo[] = [
   { path: '', title: 'Tableau de bord', iconType: 'material-icons-outlined', icon: 'space_dashboard', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'dashboard' },
   { path: '', title: 'Dossiers élèves', iconType: 'material-icons-outlined', icon: 'folder_shared', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'registrations' },
   { path: '', title: 'Inscriptions, réinscriptions & transferts', iconType: 'material-icons-outlined', icon: 'how_to_reg', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'enrollments' },
+  { path: '', title: 'Transferts vers le Daara', iconType: 'material-icons-outlined', icon: 'swap_horiz', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'daara-transfers' },
   { path: '', title: 'Élèves', iconType: 'material-icons-outlined', icon: 'groups', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'students' },
   { path: '', title: 'Tuteurs', iconType: 'material-icons-outlined', icon: 'family_restroom', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'guardians' },
   { path: '', title: 'Classes', iconType: 'material-icons-outlined', icon: 'class', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'classes' },

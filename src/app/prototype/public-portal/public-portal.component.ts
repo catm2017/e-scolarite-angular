@@ -3,6 +3,7 @@ import { CentralApiService } from '../central-api.service';
 import { LandingComponent } from '../landing/landing.component';
 import { PrototypeDataService } from '../prototype-data.service';
 import { SchoolSiteComponent } from '../school-site/school-site.component';
+import { estDomainePlateforme } from '../../core/config/platform-domains';
 
 @Component({
   selector: 'app-public-portal',
@@ -18,8 +19,7 @@ export class PublicPortalComponent implements OnInit {
 
   ngOnInit(): void {
     const host = window.location.hostname.toLowerCase();
-    const domainesPlateforme = ['localhost', '127.0.0.1', 'e-scolarite.local', 'escolarite.daaratech.sn'];
-    if (domainesPlateforme.includes(host)) {
+    if (estDomainePlateforme(host)) {
       this.etat.set('plateforme');
       return;
     }

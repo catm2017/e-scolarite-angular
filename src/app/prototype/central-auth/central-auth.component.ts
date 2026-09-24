@@ -3,6 +3,7 @@ import { ReactiveFormsModule, Validators, NonNullableFormBuilder } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CentralApiService, InstitutConnexion, SitePublicInstitut } from '../central-api.service';
 import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
+import { estDomainePlateforme } from '../../core/config/platform-domains';
 
 @Component({
   selector: 'app-central-auth',
@@ -50,8 +51,7 @@ export class CentralAuthComponent implements OnInit {
     });
 
     const domaine = window.location.hostname.toLowerCase();
-    const domainesPlateforme = ['localhost', '127.0.0.1', 'e-scolarite.local', 'escolarite.daaratech.sn'];
-    if (!domainesPlateforme.includes(domaine)) {
+    if (!estDomainePlateforme(domaine)) {
       this.api.sitePublic(domaine).subscribe({
         next: ({ data }) => {
           this.siteDuDomaine.set(data);

@@ -39,6 +39,7 @@ import {
 } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
 import { QuranFollowupComponent } from '../daara/quran-followup.component';
+import { DaaraStudentTransfersComponent } from '../daara/daara-student-transfers.component';
 
 type AttendanceStatus = 'P' | 'A' | 'R';
 type SubjectGradeKind = 'homework1' | 'homework2' | 'composition';
@@ -743,6 +744,7 @@ interface TranslationSet {
     MatSelectModule,
     MasterTableComponent,
     QuranFollowupComponent,
+    DaaraStudentTransfersComponent,
   ],
   templateUrl: './primary-school.component.html',
   styleUrl: './primary-school.component.scss',

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CentralApiService, SitePublicInstitut } from '../central-api.service';
 import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
+import { estDomainePlateforme } from '../../core/config/platform-domains';
 
 @Component({
   selector: 'app-forgot-password',
@@ -20,7 +21,7 @@ export class ForgotPasswordComponent implements OnInit {
 
   ngOnInit(): void {
     const domaine = window.location.hostname.toLowerCase();
-    if (['localhost', '127.0.0.1', 'e-scolarite.local', 'escolarite.daaratech.sn'].includes(domaine)) {
+    if (estDomainePlateforme(domaine)) {
       this.contextePret.set(true);
       return;
     }

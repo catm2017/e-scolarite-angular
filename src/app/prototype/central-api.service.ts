@@ -1270,8 +1270,11 @@ export class CentralApiService {
 
   enregistrerTransfertsElevesInstitut(payload: {
     annee_scolaire_centrale_id: string;
-    etablissement_cible_id: string;
-    campus_cible_id: string;
+    mode: 'etablissement' | 'campus';
+    etablissement_source_id?: string;
+    etablissement_cible_id?: string;
+    campus_source_id?: string;
+    campus_cible_id?: string;
     eleve_ids: string[];
     motif?: string | null;
   }) {
@@ -1279,6 +1282,19 @@ export class CentralApiService {
     return this.http.post<{ message: string; traites: number }>(`${this.baseUrl}/institut/transferts-eleves`, payload, {
       headers: this.enteteAutorisation(),
     });
+  }
+
+  transfertsDaara(campusId: string, anneeScolaireCentraleId: string) {
+    return this.http.get<{ classe_daara: { id: string; libelle: string }; sources: Array<{ id: string; nom: string; type: string }>; data: Array<{ id: string; matricule: string; prenom: string; nom: string; etablissement_source_id: string; etablissement_source: string }> }>(`${this.baseUrl}/institut/daara/transferts-eleves`, {
+      headers: this.enteteAutorisation(), params: { type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeScolaireCentraleId },
+    });
+  }
+
+  ajouterElevesAuDaara(campusId: string, anneeScolaireCentraleId: string, eleveIds: string[]) {
+    this.invaliderCache('institut:');
+    return this.http.post<{ message: string; traites: number }>(`${this.baseUrl}/institut/daara/transferts-eleves`, {
+      type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeScolaireCentraleId, eleve_ids: eleveIds,
+    }, { headers: this.enteteAutorisation() });
   }
 
   enregistrerMembreEquipe(donnees: Record<string, unknown>) {

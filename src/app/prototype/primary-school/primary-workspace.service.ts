@@ -34,6 +34,7 @@ export type PrimaryView =
   | 'expense-settings'
   | 'expenses'
   | 'finance'
+  | 'daara-transfers'
   | 'quran-followup'
   | 'settings';
 
@@ -68,6 +69,7 @@ const PRIMARY_VIEW_PATHS: Record<PrimaryView, string> = {
   'expense-settings': 'parametrage-depenses',
   expenses: 'depenses',
   finance: 'finances',
+  'daara-transfers': 'transferts-daara',
   'quran-followup': 'suivi-coran',
   settings: 'parametres',
 };
@@ -108,6 +110,7 @@ const FONCTIONNALITE_PAR_VUE: Partial<Record<PrimaryView, string>> = {
   'expense-settings': 'gestion_finances',
   expenses: 'gestion_finances',
   finance: 'gestion_finances',
+  'daara-transfers': 'gestion_eleves',
   'quran-followup': 'gestion_suivi_coran',
 };
 

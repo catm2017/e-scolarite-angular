@@ -2334,6 +2334,11 @@
         @else { <section class="panel empty-state"><i>menu_book</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et le niveau unique dans Paramètres avant d’ouvrir le suivi du Coran.</p></section> }
       }
 
+      @if (activeView() === 'daara-transfers') {
+        @if (selectedCentralAcademicYearId()) { <app-daara-student-transfers [campusId]="selectedCampusId()" [academicYearId]="selectedCentralAcademicYearId()" (completed)="refreshStudents()" /> }
+        @else { <section class="panel empty-state"><i>swap_horiz</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et la classe unique avant d’ajouter des apprenants au Daara.</p></section> }
+      }
+
       @if (activeView() === 'settings') {
         <div class="page-title"><div><small>CONFIGURATION {{ establishmentTypeLabel().toUpperCase() }}</small><h1>{{ t('settings') }}</h1><p>{{ isDaara() ? 'Définissez le niveau unique et les dates de l’année scolaire du campus.' : 'Définissez les niveaux, les dates de l’année sélectionnée et les ' + (isCollege() ? 'semestres' : 'trimestres') + ' du campus.' }}</p></div><div class="title-actions"><button type="button" (click)="actualiserDonneesBackend()" [disabled]="backendRefreshing()"><i>{{ backendRefreshing() ? 'sync' : 'refresh' }}</i>{{ backendRefreshing() ? 'Réactualisation…' : 'Réactualiser les données' }}</button><button type="button" class="primary-action" (click)="saveSchoolSettings()" [disabled]="isSelectedSchoolYearArchived()"><i>save</i>Enregistrer</button></div></div>
         <section class="settings-editor-grid">

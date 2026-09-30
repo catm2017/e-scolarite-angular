@@ -1,9 +1,15 @@
 {
-  "name": "smart",
-  "short_name": "smart",
+  "name": "E-Scolarité",
+  "short_name": "E-Scolarité",
+  "description": "La plateforme scolaire pensée pour les établissements au Sénégal.",
+  "lang": "fr",
+  "dir": "ltr",
+  "id": "/",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
+  "theme_color": "#1261d6",
+  "background_color": "#ffffff",
   "icons": [
     {
       "src": "icons/icon-72x72.png",

@@ -1,6 +1,6 @@
 <main class="activation-page" [class.context-loading]="!contextePret()" [style.--activation-color]="siteDuDomaine()?.contenu?.primaryColor || '#218bd2'">
   <header class="activation-nav">
-    <a routerLink="/" class="activation-brand">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> } @else { <span>{{ siteDuDomaine()?.nom?.charAt(0) || 'E' }}</span> }{{ siteDuDomaine()?.nom || 'E-Scolarité' }}</a>
+    <a routerLink="/" class="activation-brand">@if (siteDuDomaine()?.logo_url) { <img [src]="siteDuDomaine()?.logo_url" alt="Logo de l’institut" /> } @else { <img src="assets/images/e-scolarite-logo.png" alt="E-Scolarité" /> }{{ siteDuDomaine()?.nom || 'E-Scolarité' }}</a>
     <nav aria-label="Navigation">
       @if (siteDuDomaine(); as site) {
         @for (item of site.contenu.menuItems; track item.id) {

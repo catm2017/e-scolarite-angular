@@ -1,0 +1,26 @@
+<section class="admissions-page">
+  <div class="page-title admission-title"><div><small>RELATION AVEC LES FAMILLES</small><h1>Admissions</h1><p>Consultez les demandes déposées depuis le site de l’institut et traitez-les en quelques instants.</p></div><button type="button" class="refresh-button" (click)="charger(true)" [disabled]="chargement()"><i>refresh</i>Actualiser</button></div>
+  <nav class="admission-tabs panel"><button type="button" [class.active]="statutFiltre() === 'toutes'" (click)="selectionnerStatut('toutes')">Toutes <b>{{ demandes().length }}</b></button><button type="button" [class.active]="statutFiltre() === 'soumise'" (click)="selectionnerStatut('soumise')">À traiter <b>{{ demandes().filter(d => d.statut === 'soumise').length }}</b></button><button type="button" [class.active]="statutFiltre() === 'acceptee'" (click)="selectionnerStatut('acceptee')">Acceptées <b>{{ demandes().filter(d => d.statut === 'acceptee').length }}</b></button></nav>
+  @if (erreur(); as message) { <div class="feedback error"><i>error_outline</i>{{ message }}</div> }
+  <app-master-table
+    title="Demandes reçues"
+    [columnDefinitions]="columns"
+    [dataSource]="dataSource"
+    [isLoading]="chargement()"
+    [showAdd]="false"
+    [showEdit]="false"
+    [showDetails]="false"
+    [showDelete]="true"
+    [showStatusToggle]="true"
+    [showCheckbox]="false"
+    [showBulkDelete]="false"
+    [showContextMenu]="false"
+    [enableRowClick]="false"
+    [pageSize]="10"
+    [pageSizeOptions]="[5, 10, 25, 50, 100]"
+    exportFileName="demandes_admission"
+    (refresh)="charger(true)"
+    (statusToggle)="accepterDepuisTable($event)"
+    (delete)="confirmerSuppression($event)" />
+  @if (demandeASupprimer(); as demande) { <div class="modal-backdrop" role="presentation" (click)="annulerSuppression()"><section class="confirm-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()"><button type="button" class="close" (click)="annulerSuppression()" aria-label="Fermer"><i>close</i></button><span class="modal-icon"><i>delete_forever</i></span><h2>Supprimer cette demande ?</h2><p>La demande de <strong>{{ demande.prenom }} {{ demande.nom }}</strong> sera supprimée définitivement.</p><footer><button type="button" (click)="annulerSuppression()">Annuler</button><button type="button" class="danger" (click)="supprimerConfirme()"><i>delete_forever</i>Supprimer définitivement</button></footer></section></div> }
+</section>

@@ -795,6 +795,41 @@ body.dark .primary-shell {
     > button.active { border-color: #bfc8fb; background: #edf0ff; color: #5968d9; }
   }
 
+  .collection-table-toolbar {
+    min-height: 48px;
+    margin: 0 0 12px;
+    padding: 7px 10px;
+    border: 1px solid #dfe8ef;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+  }
+
+  .collection-table-toolbar label {
+    min-width: 220px;
+    flex: 1;
+    height: 34px;
+    padding: 0 9px;
+    border: 1px solid #d8e4ed;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #7890a2;
+  }
+
+  .collection-table-toolbar label i,
+  .collection-table-toolbar button i { font-family: 'Material Icons'; font-style: normal; }
+  .collection-table-toolbar input { width: 100%; min-width: 0; border: 0; outline: 0; color: #365269; background: transparent; font-size: 11px; }
+  .collection-table-toolbar > span { color: #71879a; font-size: 10px; white-space: nowrap; }
+  .collection-table-toolbar > div { display: flex; align-items: center; gap: 7px; color: #536f84; font-size: 10px; white-space: nowrap; }
+  .collection-table-toolbar button { width: 28px; height: 28px; padding: 0; border: 1px solid #d8e4ed; border-radius: 6px; display: grid; place-items: center; color: #2f80ed; background: #fff; cursor: pointer; }
+  .collection-table-toolbar button:disabled { opacity: .4; cursor: not-allowed; }
+  .collection-page-size { display: flex; align-items: center; gap: 6px; color: #71879a; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .collection-page-size select { height: 30px; min-width: 54px; padding: 0 7px; border: 1px solid #d8e4ed; border-radius: 6px; color: #365269; background: #fff; font-size: 11px; }
+
   .collection-payment-sheet { overflow: hidden; }
   .payment-table-scroll { overflow-x: auto; }
 
@@ -3158,7 +3193,7 @@ body.dark .primary-shell {
   .attendance-summary {
     margin: 14px 16px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
 
     span {
@@ -3172,6 +3207,33 @@ body.dark .primary-shell {
     small { display: block; }
     strong { color: #485064; font-size: 16px; }
     small { margin-top: 3px; color: #8991a1; font-size: 11px; }
+  }
+
+  .attendance-dashboard {
+    margin: 0 16px 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+
+    > div {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 12px;
+      border: 1px solid #e5e9f3;
+      border-radius: 9px;
+      background: #fbfcff;
+    }
+
+    i { color: #5872d8; font-family: 'Material Icons'; font-size: 19px; font-style: normal; }
+    small, strong { display: block; }
+    small { color: #8991a1; font-size: 11px; }
+    strong { margin-top: 2px; color: #485064; font-size: 13px; }
+  }
+
+  @media (max-width: 680px) {
+    .attendance-summary { grid-template-columns: repeat(2, 1fr); }
+    .attendance-dashboard { grid-template-columns: 1fr; }
   }
 
   .teaching-load {
@@ -3515,7 +3577,7 @@ body.dark .primary-shell {
   .account-actions {
     margin: 0 18px 16px;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
 
     button {
@@ -3556,6 +3618,22 @@ body.dark .primary-shell {
           background: #fff0ed;
         }
       }
+    }
+  }
+
+  .password-reset-feedback {
+    margin: -4px 18px 18px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #2e8b68;
+    font-size: 12px;
+    font-weight: 600;
+
+    i {
+      font-family: 'Material Icons';
+      font-size: 18px;
+      font-style: normal;
     }
   }
 

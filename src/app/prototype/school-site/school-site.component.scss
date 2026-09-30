@@ -116,17 +116,39 @@ button { cursor: pointer; font: inherit; }
 }
 .mobile-toggle { display: none; font-family: 'Material Icons Outlined' !important; font-size: 22px !important; }
 
+.custom-media { padding: 70px 8vw; text-align: center; background: #fff; }
+.custom-media img, .custom-media video, .custom-media iframe { width: min(100%, 1100px); max-height: 620px; aspect-ratio: 16 / 9; object-fit: cover; border: 0; border-radius: 18px; box-shadow: 0 18px 50px rgba(24, 53, 78, .12); }
+.custom-media p { max-width: 720px; margin: 18px auto 0; color: #687e8f; font-size: 14px; line-height: 1.7; }
+.custom-gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1100px; margin: auto; }
+.custom-gallery-grid img { width: 100%; height: 220px; object-fit: cover; border-radius: 13px; }
+.custom-slider-frame { max-width: 1100px; height: 390px; margin: 0 auto 24px; overflow: hidden; border-radius: 18px; background: #eef4f9; }
+.custom-slider-track { display: flex; height: 100%; animation: school-site-slider 18s infinite; }
+.custom-slider-track.single { animation: none; }
+.custom-slider-track img { width: 100%; height: 100%; flex: 0 0 100%; object-fit: cover; }
+@keyframes school-site-slider { 0%, 25% { transform: translateX(0); } 33%, 58% { transform: translateX(-100%); } 66%, 91% { transform: translateX(-200%); } 100% { transform: translateX(0); } }
+.custom-button { display: flex; justify-content: center; padding: 50px 8vw; background: #fff; }
+.custom-button a { display: inline-flex; align-items: center; gap: 10px; padding: 14px 22px; color: #fff; background: var(--school-color); border-radius: 9px; font-size: 12px; font-weight: 800; text-decoration: none; }
+.custom-button i { font: 18px 'Material Icons Outlined'; }
+
 .hero {
+  position: relative;
   min-height: 590px;
   display: grid;
-  grid-template-columns: 1.08fr .92fr;
+  grid-template-columns: 1fr;
   align-items: center;
-  gap: 75px;
+  gap: 0;
   padding: 78px 8vw;
   background:
     radial-gradient(circle at 8% 92%, color-mix(in srgb, var(--school-color) 9%, transparent) 0 130px, transparent 132px),
     linear-gradient(120deg, color-mix(in srgb, var(--school-color) 8%, #fff), #f9fcff 65%);
 }
+.hero-background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: .42; }
+.hero-external-video { border: 0; pointer-events: none; }
+.hero > *:not(.hero-background) { position: relative; z-index: 1; }
+.hero:has(.hero-background) { background: linear-gradient(120deg, color-mix(in srgb, var(--school-color) 78%, #102b45), color-mix(in srgb, var(--school-color) 28%, #fff)); color: #fff; }
+.hero:has(.hero-background) .hero-copy > small,
+.hero:has(.hero-background) .hero h2 { color: rgba(255,255,255,.84); }
+.hero:has(.hero-background) .hero-copy > p { color: rgba(255,255,255,.86); }
 .hero-copy > small,
 .content-section > small,
 .about > div > small,
@@ -137,6 +159,7 @@ button { cursor: pointer; font: inherit; }
   font-weight: 850;
   letter-spacing: 1.6px;
 }
+.hero-copy { max-width: 900px; }
 .hero h1 { max-width: 690px; margin: 15px 0 10px; font: 700 clamp(42px, 5vw, 68px)/1.02 Georgia, serif; letter-spacing: -1.8px; }
 .hero h2 { margin: 0 0 18px; color: var(--school-color); font: italic 500 21px Georgia, serif; }
 .hero-copy > p { max-width: 650px; color: #607688; font-size: 15px; line-height: 1.8; }
@@ -159,10 +182,14 @@ button { cursor: pointer; font: inherit; }
   padding: 40px;
   color: #fff;
   background: linear-gradient(145deg, color-mix(in srgb, var(--school-color) 58%, #b9d0e4), color-mix(in srgb, var(--school-color) 25%, #7c92a5));
+  background-image: linear-gradient(180deg, rgba(7, 52, 105, .1), rgba(8, 55, 111, .78)), var(--hero-image);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
   border-radius: 48% 48% 14px 14px;
   text-align: center;
 }
-.hero aside > span { font-family: 'Material Icons Outlined'; font-size: 72px; }
+.hero aside > * { position: relative; z-index: 1; }
 .hero aside strong { margin-top: 15px; font: 700 18px Georgia, serif; }
 .hero aside p { max-width: 320px; color: rgba(255,255,255,.84); font-size: 11px; line-height: 1.6; }
 .hero aside em {
@@ -230,8 +257,12 @@ button { cursor: pointer; font: inherit; }
 .news { background: #fff; }
 .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1120px; margin: auto; }
 .news-grid article { overflow: hidden; padding: 0 24px 25px; border: 1px solid #dce6ed; border-radius: 13px; text-align: left; }
-.news-grid article > div { height: 150px; display: grid; place-items: center; margin: 0 -24px 20px; color: #fff; background: linear-gradient(135deg, var(--school-color), color-mix(in srgb, var(--school-color) 30%, #7890a5)); font-family: 'Material Icons Outlined'; font-size: 50px; }
+.news-grid article > div,
+.news-grid .news-icon { height: 150px; display: grid; place-items: center; margin: 0 -24px 20px; color: #fff; background: linear-gradient(135deg, var(--school-color), color-mix(in srgb, var(--school-color) 30%, #7890a5)); font-family: 'Material Icons Outlined'; font-size: 50px; }
+.news-grid .news-thumbnail { display: block; width: calc(100% + 48px); height: 150px; margin: 0 -24px 20px; object-fit: cover; }
 .news-grid small { color: var(--school-color); font-size: 9px; font-weight: 800; letter-spacing: .8px; }
+.news-carousel { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; align-items: center; gap: 12px; max-width: 1220px; margin: auto; }
+.news-carousel .news-grid { width: 100%; }
 
 .testimonials { background: #f5f9fd; }
 .quote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 960px; margin: auto; }
@@ -242,6 +273,14 @@ button { cursor: pointer; font: inherit; }
 .quote-grid small { display: block; }
 .quote-grid strong { margin-top: 18px; font-size: 12px; }
 .quote-grid small { margin-top: 3px; color: #8192a0; font-size: 10px; }
+.testimonial-carousel { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; align-items: center; gap: 12px; max-width: 1050px; margin: auto; }
+.testimonial-carousel .quote-grid { width: 100%; }
+.carousel-arrow { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; color: var(--school-color); background: #fff; border: 1px solid #dce6ed; border-radius: 50%; cursor: pointer; }
+.carousel-arrow i { font: 22px 'Material Icons Outlined'; font-style: normal; }
+.carousel-arrow:disabled { opacity: .35; cursor: not-allowed; }
+.carousel-dots { display: flex; justify-content: center; gap: 7px; margin-top: 20px; }
+.carousel-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: #c8d7e2; cursor: pointer; }
+.carousel-dots button.active { width: 22px; border-radius: 8px; background: var(--school-color); }
 
 .contact {
   display: grid;
@@ -349,6 +388,10 @@ button { cursor: pointer; font: inherit; }
   .content-section { padding: 65px 6vw; }
   .school-grid article { grid-template-columns: 1fr; }
   .school-image { min-height: 160px; }
+  .testimonial-carousel { grid-template-columns: 32px minmax(0, 1fr) 32px; gap: 5px; }
+  .carousel-arrow { width: 30px; height: 30px; }
+  .carousel-arrow i { font-size: 18px; }
+  .news-carousel { grid-template-columns: 32px minmax(0, 1fr) 32px; gap: 5px; }
   .about,
   .contact { padding: 65px 7vw; }
   .feature-grid,
@@ -357,3 +400,14 @@ button { cursor: pointer; font: inherit; }
   .school-public footer { grid-template-columns: 1fr; padding: 48px 7vw 24px; }
   .school-public footer > small { grid-column: 1; }
 }
+.public-component { max-width: 100%; margin-left: auto; margin-right: auto; }
+.public-component.align-left > * { text-align: left !important; }
+.public-component.align-center > * { text-align: center !important; }
+.public-component.align-right > * { text-align: right !important; }
+.public-component.align-left .lead { margin-left: 0; margin-right: auto; }
+.public-component.align-right .lead { margin-left: auto; margin-right: 0; }
+.public-component.align-left .custom-button { justify-content: flex-start; }
+.public-component.align-right .custom-button { justify-content: flex-end; }
+ .public-component .custom-media img,
+ .public-component .custom-media video,
+ .public-component .custom-media iframe { display: block; max-width: 100%; margin-left: auto; margin-right: auto; }

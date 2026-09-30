@@ -681,6 +681,27 @@ body.dark {
     }
   }
 
+  .class-tabs.daara-group-tabs {
+    align-items: stretch;
+    gap: 8px;
+    padding: 3px;
+    border-bottom: 1px solid #e5edf3;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 40px;
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-weight: 750;
+
+      i { font-family: 'Material Icons Outlined', 'Material Icons'; font-size: 18px; font-style: normal; line-height: 1; }
+      b { min-width: 23px; height: 23px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; background: #edf5fb; color: #2f80ed; font-size: 11px; font-weight: 850; }
+      &.active b { background: rgba(255,255,255,.22); color: #fff; }
+    }
+  }
+
   .student-import-overlay {
     position: fixed;
     z-index: 99999;

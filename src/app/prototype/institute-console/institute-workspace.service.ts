@@ -6,6 +6,7 @@ export type InstituteView =
   | 'establishments'
   | 'campuses'
   | 'student-transfers'
+  | 'admissions'
   | 'users'
   | 'user-detail'
   | 'staff'
@@ -30,6 +31,7 @@ const INSTITUTE_VIEW_PATHS: Record<InstituteView, string> = {
   establishments: 'etablissements',
   campuses: 'campus',
   'student-transfers': 'transferts-eleves',
+  admissions: 'admissions',
   users: 'utilisateurs',
   'user-detail': 'utilisateurs',
   staff: 'personnel',
@@ -87,6 +89,9 @@ export class InstituteWorkspaceService {
 
   canAccessView(view?: string): boolean {
     if (!view || view === 'overview' || view === 'establishments') return true;
+    // La traçabilité est conservée pour une prochaine activation, mais son
+    // entrée reste désactivée dans l’espace institut pour le moment.
+    if (view === 'activity-log') return false;
     // L’administrateur de l’institut dispose de tous les accès, y compris
     // lorsque la souscription n’est pas encore configurée.
     if (this.isAdministrateur()) return true;
@@ -119,6 +124,7 @@ export class InstituteWorkspaceService {
   fonctionnalitePourVue(view?: string): string | null {
     return ({
       'student-transfers': 'gestion_transferts_eleves',
+      admissions: 'gestion_admissions_institut',
       users: 'gestion_utilisateurs_acces_institut',
       'user-detail': 'gestion_utilisateurs_acces_institut',
       roles: 'gestion_roles_permissions_institut',

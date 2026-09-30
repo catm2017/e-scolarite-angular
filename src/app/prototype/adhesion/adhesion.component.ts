@@ -27,7 +27,7 @@ export class AdhesionComponent {
     prenom_responsable: ['', Validators.required],
     nom_responsable: ['', Validators.required],
     identifiant_responsable: ['', Validators.required],
-    telephone_responsable: ['', Validators.required],
+    telephone_responsable: ['', [Validators.required, Validators.pattern(/^(?:(?:\+|00)221[\s.-]?)?(?:33|70|75|76|77|78)(?:[\s.-]?\d){7}$/)]],
     effectif_estime: [null as number | null],
     message: [''],
   });

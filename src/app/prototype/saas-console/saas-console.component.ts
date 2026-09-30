@@ -25,6 +25,8 @@ import {
   TypeEtablissementCatalogue,
 } from '../central-api.service';
 
+type DemandeAdhesionForm = Pick<DemandeAdhesion, 'nom_institut' | 'ville' | 'adresse' | 'prenom_responsable' | 'nom_responsable' | 'identifiant_responsable' | 'telephone_responsable' | 'effectif_estime' | 'message'> & { types_etablissements: string[] };
+
 @Component({
   selector: 'app-saas-console',
   imports: [RouterLink, DecimalPipe, DatePipe, FormsModule, MasterTableComponent, MatButtonModule, MatIconModule, MatInputModule, MatSelectModule, MatCheckboxModule],
@@ -51,6 +53,7 @@ export class SaasConsoleComponent implements OnInit {
   readonly packages = signal<PackageTarification[]>([]);
   readonly packageEnEdition = signal<(PackageTarificationPayload & { id: string | null }) | null>(null);
   readonly packageEnregistrement = signal(false);
+  readonly packageToggleEnCours = signal<string | null>(null);
   readonly anneesScolaires = signal<AnneeScolaireCentrale[]>([]);
   readonly anneeScolaireEnEdition = signal<AnneeScolaireCentrale | null>(null);
   readonly enregistrementAnneeScolaire = signal(false);
@@ -82,7 +85,11 @@ export class SaasConsoleComponent implements OnInit {
   readonly pricingTab = signal<'features' | 'packages'>('features');
   readonly tarifEnEdition = signal<TarificationFonctionnalite | null>(null);
   readonly demandeEnDetail = signal<DemandeAdhesion | null>(null);
+  readonly demandeEnEdition = signal<DemandeAdhesionForm | null>(null);
+  readonly demandeEditionId = signal<string | null>(null);
+  readonly demandeEditionSaving = signal(false);
   readonly institutEnDetail = signal<{ institut: InstitutSaas; abonnement_actuel: AbonnementSaas | null; abonnements: AbonnementSaas[] } | null>(null);
+  readonly logoInstitutSaving = signal(false);
   readonly typesInstitutSelectionnes = signal<string[]>([]);
   readonly ajoutTypesInstitutEnCours = signal(false);
   readonly tarifsSource = new MatTableDataSource<TarificationFonctionnalite>();
@@ -154,7 +161,15 @@ export class SaasConsoleComponent implements OnInit {
   ];
   constructor() {
     effect(() => { this.tarifsSource.data = this.fonctionnalitesFiltrees(); });
-    effect(() => { this.packagesSource.data = this.packages(); });
+    effect(() => {
+      this.packagesSource.data = this.packages().map((packageItem) => ({
+        ...packageItem,
+        canToggleStatus: this.packageToggleEnCours() !== packageItem.id,
+        statusToggleIcon: packageItem.actif ? 'toggle_on' : 'toggle_off',
+        statusToggleTooltip: packageItem.actif ? 'Désactiver le package' : 'Activer le package',
+        statusToggleAriaLabel: packageItem.actif ? 'Désactiver le package' : 'Activer le package',
+      }));
+    });
     effect(() => { this.anneesSource.data = this.anneesScolaires(); });
     effect(() => {
       this.demandesSource.data = this.demandes();
@@ -245,6 +260,24 @@ export class SaasConsoleComponent implements OnInit {
     });
   }
 
+  choisirLogoInstitut(event: Event): void {
+    const institut = this.institutEnDetail()?.institut;
+    const fichier = (event.target as HTMLInputElement).files?.[0];
+    if (!institut || !fichier || this.logoInstitutSaving()) return;
+    this.logoInstitutSaving.set(true);
+    this.erreur.set(null);
+    this.api.mettreAJourLogoInstitutSaas(institut.id, fichier).subscribe({
+      next: ({ logo_url }) => {
+        this.institutEnDetail.update((detail) => detail ? { ...detail, institut: { ...detail.institut, logo_url } } : detail);
+        this.etablissements.update((items) => items.map((item) => item.id === institut.id ? { ...item, logo_url } : item));
+        this.etablissementsSource.data = this.etablissements();
+        this.erreur.set(null);
+      },
+      error: (response) => this.erreur.set(response.error?.message ?? 'Le logo n’a pas pu être enregistré.'),
+      complete: () => this.logoInstitutSaving.set(false),
+    });
+  }
+
   basculerTypeInstitut(typeId: string): void {
     this.typesInstitutSelectionnes.update((selection) => selection.includes(typeId) ? selection.filter((id) => id !== typeId) : [...selection, typeId]);
   }
@@ -282,6 +315,45 @@ export class SaasConsoleComponent implements OnInit {
       next: () => this.chargerDonnees(),
       error: (response) => this.erreur.set(response.error?.message ?? 'L’approbation a échoué.'),
       complete: () => this.traitementId.set(null),
+    });
+  }
+
+  commencerEditionDemande(demande: DemandeAdhesion): void {
+    this.demandeEditionId.set(demande.id);
+    this.demandeEnEdition.set({
+      nom_institut: demande.nom_institut,
+      ville: demande.ville ?? '',
+      adresse: demande.adresse ?? '',
+      prenom_responsable: demande.prenom_responsable,
+      nom_responsable: demande.nom_responsable,
+      identifiant_responsable: demande.identifiant_responsable,
+      telephone_responsable: demande.telephone_responsable,
+      effectif_estime: demande.effectif_estime,
+      message: demande.message ?? '',
+      types_etablissements: [...(demande.types_etablissements ?? [])],
+    });
+  }
+
+  annulerEditionDemande(): void {
+    this.demandeEnEdition.set(null);
+    this.demandeEditionId.set(null);
+  }
+
+  enregistrerEditionDemande(): void {
+    const id = this.demandeEditionId();
+    const formulaire = this.demandeEnEdition();
+    if (!id || !formulaire || this.demandeEditionSaving()) return;
+    this.demandeEditionSaving.set(true);
+    this.erreur.set(null);
+    this.api.modifierDemandeAdhesion(id, formulaire).subscribe({
+      next: ({ demande }) => {
+        this.demandes.update((items) => items.map((item) => item.id === demande.id ? demande : item));
+        this.demandesSource.data = this.demandes();
+        this.demandeEnDetail.set(demande);
+        this.annulerEditionDemande();
+      },
+      error: (response) => this.erreur.set(response.error?.message ?? 'La demande n’a pas pu être mise à jour.'),
+      complete: () => this.demandeEditionSaving.set(false),
     });
   }
 
@@ -364,6 +436,44 @@ export class SaasConsoleComponent implements OnInit {
       prix_unitaire_eleve: item.prix_unitaire_eleve,
       prix_unitaire_personnel: item.prix_unitaire_personnel,
       fonctionnalites_types_ids: fonctionnalites,
+    });
+  }
+
+  basculerStatutPackage(item: PackageTarification): void {
+    if (this.packageToggleEnCours() || !item.id) return;
+
+    const fonctionnalites = this.catalogueFonctionnalites()
+      .filter((fonctionnalite) => item.type_etablissement_ids.includes(fonctionnalite.type_etablissement_id)
+        && item.fonctionnalites_codes.includes(fonctionnalite.code))
+      .map((fonctionnalite) => fonctionnalite.id);
+
+    if (!fonctionnalites.length) {
+      this.erreur.set('Les fonctionnalités de ce package ne sont pas disponibles pour le moment.');
+      return;
+    }
+
+    const actif = !item.actif;
+    this.erreur.set(null);
+    this.packageToggleEnCours.set(item.id);
+    this.api.enregistrerPackageTarification({
+      code: item.code,
+      libelle: item.libelle,
+      description: item.description,
+      actif,
+      type_etablissement_ids: [...item.type_etablissement_ids],
+      duree_jours: item.duree_jours,
+      prix_unitaire_eleve: item.prix_unitaire_eleve,
+      prix_unitaire_personnel: item.prix_unitaire_personnel,
+      fonctionnalites_types_ids: fonctionnalites,
+    }, item.id).subscribe({
+      next: () => {
+        this.packages.update((packages) => packages.map((current) => current.id === item.id ? { ...current, actif } : current));
+        this.packageToggleEnCours.set(null);
+      },
+      error: (response) => {
+        this.erreur.set(response.error?.message ?? 'Le statut du package n’a pas pu être modifié.');
+        this.packageToggleEnCours.set(null);
+      },
     });
   }
 

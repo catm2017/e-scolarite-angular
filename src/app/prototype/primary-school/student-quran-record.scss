@@ -1,0 +1,43 @@
+.quran-student-lessons-table .head,
+.quran-student-lesson-row {
+  grid-template-columns: 1fr 1fr 1.6fr 1fr 1fr 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.quran-student-lesson-row {
+  width: 100%;
+  display: grid;
+  border: 0;
+  border-top: 1px solid #edf2f5;
+  padding: 13px 16px;
+  background: #fff;
+  color: #42617a;
+  text-align: left;
+  font: 12px Inter, Arial, sans-serif;
+  cursor: pointer;
+}
+
+.quran-student-lesson-row:hover { background: #f2f9fe; }
+.quran-student-lesson-row strong { color: #254764; font-size: 12px; }
+.quran-student-lesson-row em { width: max-content; display: inline-flex; padding: 5px 8px; border-radius: 20px; background: #fff3d8; color: #ad7414; font-style: normal; font-weight: 800; white-space: nowrap; }
+.quran-student-lesson-row em.quran-done { background: #e3f6eb; color: #198355; }
+
+.student-quran-modal-backdrop { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 22px; background: rgba(16, 36, 63, .48); backdrop-filter: blur(3px); }
+.student-quran-modal { width: min(900px, 100%); max-height: min(86vh, 820px); overflow: hidden; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(17, 45, 79, .3); }
+.student-quran-modal > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 21px 24px 15px; border-bottom: 1px solid #e5edf3; }
+.student-quran-modal > header small { color: #1876c8; font-size: 10px; font-weight: 850; letter-spacing: .1em; }
+.student-quran-modal > header h2 { margin: 5px 0 2px; color: #254764; font-size: 19px; }
+.student-quran-modal > header p { margin: 0; color: #7c91a2; font-size: 12px; }
+.student-quran-modal > header button { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #d9e4f0; border-radius: 50%; background: #fff; color: #55708e; cursor: pointer; }
+.student-quran-modal > header button i { font-family: 'Material Icons Outlined'; font-style: normal; }
+.student-quran-modal-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 24px; background: #f8fbfd; color: #587189; font-size: 12px; }
+.student-quran-modal-meta em { padding: 5px 8px; border-radius: 20px; background: #fff3d8; color: #ad7414; font-style: normal; font-weight: 800; }
+.student-quran-modal-meta em.done { background: #e3f6eb; color: #198355; }
+.student-quran-modal-text { max-height: calc(86vh - 145px); overflow: auto; padding: 24px 30px; background: linear-gradient(155deg, #f9fcff, #f0f7fc); font-family: Amiri, 'Traditional Arabic', serif; font-size: 30px; line-height: 2.2; scrollbar-width: thin; scrollbar-color: #8bb9d7 transparent; }
+.student-quran-modal-text > span { display: inline; border-radius: 8px; padding: 4px 6px; margin: 2px 0; color: #14263b; }
+.student-quran-modal-text > span:hover { background: #dff1fd; }
+.student-quran-modal-text em { display: inline-flex; vertical-align: middle; direction: ltr; align-items: center; justify-content: center; width: 24px; height: 24px; margin: 0 5px; border: 0; border-radius: 50%; background: #1876c8; color: #fff; font: 700 9px Inter, Arial, sans-serif; font-style: normal; }
+.student-quran-modal-trace { display:flex; flex-wrap:wrap; gap:6px 14px; padding:10px 24px; color:#6b8296; background:#f8fbfd; border-top:1px solid #edf2f6; border-bottom:1px solid #e5edf3; font:600 10px Inter,Arial,sans-serif; }.student-quran-modal-trace span { display:inline-flex; align-items:center; gap:4px; }.student-quran-modal-trace i { color:#287fce; font-family:'Material Icons'; font-size:14px; font-style:normal; }.student-quran-modal-trace strong { color:#294d69; font-weight:800; }
+@media (max-width: 900px) { .quran-student-lessons-table { overflow-x: auto; }.quran-student-lessons-table .head, .quran-student-lesson-row { min-width: 760px; } }
+@media (max-width: 560px) { .student-quran-modal-backdrop { padding: 10px; }.student-quran-modal > header { padding: 16px; }.student-quran-modal-meta { padding: 11px 16px; align-items: flex-start; flex-direction: column; }.student-quran-modal-text { max-height: calc(86vh - 175px); padding: 18px 15px; font-size: 25px; } }

@@ -5,7 +5,7 @@
         (click)="isNavbarCollapsed = !isNavbarCollapsed" aria-expanded="false"></a>
       <a href="#" onClick="return false;" class="bars" (click)="mobileMenuSidebarOpen($event,'overlay-open')"></a>
       <a class="navbar-brand" routerLink={{homePage}}>
-        <img style="width: 40px;" src="assets/images/logo.png" alt="" />
+        <img class="brand-logo-image" src="assets/images/e-scolarite-logo.png" alt="E-Scolarité" />
         <span class="logo-name">E-Scolarité</span>
       </a>
     </div>
@@ -119,21 +119,12 @@
             </i></button>
         </li>
         <!-- #END# Full Screen Button -->
-        <!-- #START# Notifications-->
-        <li>
-          <app-notification-list [notifications]="notifications" (markAllAsRead)="onMarkAllNotificationsRead()"
-            (readAll)="onReadAllNotifications()" (closeNotification)="onRemoveNotification($event)"
-            (actionClick)="onNotificationActionClick($event)">
-          </app-notification-list>
-        </li>
-        <!-- #END# Notifications-->
         <!-- Global platform language -->
         <li class="nav-item">
           <app-platform-language-switcher />
         </li>
         <li class="nav-item user_profile">
-          <app-user-profile-menu [userName]="workspaceUserName || 'Utilisateur connecté'" [userImg]="userImg!" (accountClicked)="onAccountClicked()"
-            (inboxClicked)="onInboxClicked()" (settingsClicked)="onSettingsClicked()" (logoutClicked)="logout()">
+          <app-user-profile-menu [userName]="workspaceUserName || 'Utilisateur connecté'" [userImg]="userImg!" (accountClicked)="onAccountClicked()" (logoutClicked)="logout()">
           </app-user-profile-menu>
         </li>
       </ul>

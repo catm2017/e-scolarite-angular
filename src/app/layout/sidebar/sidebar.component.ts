@@ -26,11 +26,11 @@ import { CentralApiService } from '../../prototype/central-api.service';
 const PRIMARY_ROUTES: RouteInfo[] = [
   { path: '', title: 'SCOLARITÉ', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
   { path: '', title: 'Tableau de bord', iconType: 'material-icons-outlined', icon: 'space_dashboard', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'dashboard' },
-  { path: '', title: 'Dossiers élèves', iconType: 'material-icons-outlined', icon: 'folder_shared', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'registrations' },
   { path: '', title: 'Inscriptions, réinscriptions & transferts', iconType: 'material-icons-outlined', icon: 'how_to_reg', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'enrollments' },
   { path: '', title: 'Transferts vers le Daara', iconType: 'material-icons-outlined', icon: 'swap_horiz', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'daara-transfers' },
+  { path: '', title: 'Groupes du Daara', iconType: 'material-icons-outlined', icon: 'groups', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'daara-groups' },
+  { path: '', title: 'Affectation des enseignants', iconType: 'material-icons-outlined', icon: 'school', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'daara-teacher-groups' },
   { path: '', title: 'Élèves', iconType: 'material-icons-outlined', icon: 'groups', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'students' },
-  { path: '', title: 'Tuteurs', iconType: 'material-icons-outlined', icon: 'family_restroom', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'guardians' },
   { path: '', title: 'Classes', iconType: 'material-icons-outlined', icon: 'class', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'classes' },
   { path: '', title: 'Séries', iconType: 'material-icons-outlined', icon: 'account_tree', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'series' },
   { path: '', title: 'ADMINISTRATION', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
@@ -41,6 +41,8 @@ const PRIMARY_ROUTES: RouteInfo[] = [
   { path: '', title: 'Matières par classe', iconType: 'material-icons-outlined', icon: 'account_tree', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'class-subjects' },
   { path: '', title: 'Programmes & leçons', iconType: 'material-icons-outlined', icon: 'auto_stories', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'curriculum' },
   { path: '', title: 'Suivi du Coran', iconType: 'material-icons-outlined', icon: 'menu_book', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'quran-followup' },
+  { path: '', title: 'Leçons coraniques', iconType: 'material-icons-outlined', icon: 'history_edu', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'quran-lesson-history' },
+  { path: '', title: 'Révision coranique', iconType: 'material-icons-outlined', icon: 'history', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'quran-mouradja' },
   { path: '', title: 'Enseignants', iconType: 'material-icons-outlined', icon: 'co_present', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'teachers' },
   { path: '', title: 'Configurer l’emploi du temps', iconType: 'material-icons-outlined', icon: 'edit_calendar', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'timetable-builder' },
   { path: '', title: 'Emploi du temps', iconType: 'material-icons-outlined', icon: 'calendar_month', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'timetable' },
@@ -63,6 +65,7 @@ const INSTITUTE_ROUTES: RouteInfo[] = [
   { path: '', title: 'Établissements', iconType: 'material-icons-outlined', icon: 'account_balance', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'establishments' },
   { path: '', title: 'Campus', iconType: 'material-icons-outlined', icon: 'location_city', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'campuses' },
   { path: '', title: 'Transferts d’élèves', iconType: 'material-icons-outlined', icon: 'swap_horiz', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'student-transfers' },
+  { path: '', title: 'Admissions', iconType: 'material-icons-outlined', icon: 'how_to_reg', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'admissions' },
   { path: '', title: 'Utilisateurs & accès', iconType: 'material-icons-outlined', icon: 'manage_accounts', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'users' },
   { path: '', title: 'Rôles & permissions', iconType: 'material-icons-outlined', icon: 'admin_panel_settings', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'roles' },
   { path: '', title: 'ÉQUIPE & RESSOURCES', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
@@ -85,6 +88,15 @@ const TEACHER_ROUTES: Array<{ path: string; title: string; icon: string; group?:
   { path: '/enseignant/classes', title: 'Classes & matières', icon: 'auto_stories', group: 'PÉDAGOGIE' },
   { path: '/enseignant/seances', title: 'Séances & cahier de texte', icon: 'fact_check' },
   { path: '/enseignant/evaluations', title: 'Évaluations', icon: 'edit_note' },
+  { path: '/enseignant/dossier', title: 'Mon dossier', icon: 'badge', group: 'MON DOSSIER' },
+];
+const TEACHER_DAARA_ROUTES: Array<{ path: string; title: string; icon: string; group?: string; contextSelector?: boolean }> = [
+  { path: '/enseignant/espaces', title: 'Mes espaces de travail', icon: 'domain', group: 'MON ESPACE', contextSelector: true },
+  { path: '/enseignant/tableau-de-bord', title: 'Tableau de bord', icon: 'space_dashboard' },
+  { path: '/enseignant/eleves', title: 'Élèves de mes groupes', icon: 'groups', group: 'PÉDAGOGIE · DAARA' },
+  { path: '/enseignant/quran-followup', title: 'Suivi du Coran', icon: 'menu_book' },
+  { path: '/enseignant/quran-lesson-history', title: 'Leçons coraniques', icon: 'history_edu' },
+  { path: '/enseignant/quran-mouradja', title: 'Révision coranique', icon: 'history' },
   { path: '/enseignant/dossier', title: 'Mon dossier', icon: 'badge', group: 'MON DOSSIER' },
 ];
 
@@ -140,7 +152,7 @@ export class SidebarComponent
   isInstituteWorkspace = false;
   isSaasWorkspace = false;
   isTeacherWorkspace = false;
-  readonly teacherNavigation = TEACHER_ROUTES;
+  get teacherNavigation() { return this.centralApi.contexteEnseignant()?.type_code === 'daara' ? TEACHER_DAARA_ROUTES : TEACHER_ROUTES; }
   readonly saasNavigation = [
     { path: '/saas/tableau-de-bord', title: 'Vue d’ensemble', icon: 'space_dashboard' },
     { path: '/saas/etablissements', title: 'Instituts', icon: 'apartment' },
@@ -202,7 +214,7 @@ export class SidebarComponent
     if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace) {
       this.configureWorkspaceNavigation();
       this.actualiserProfilEspace();
-      this.userImg = './assets/images/user/admin.jpg';
+      window.addEventListener('escolarite-profil-modifie', this.profilModifie);
       this.initLeftSidebar();
       this.bodyTag = this.document.body;
       return;
@@ -237,6 +249,11 @@ export class SidebarComponent
     this.bodyTag = this.document.body;
   }
 
+  private readonly profilModifie = () => {
+    this.actualiserProfilEspace();
+    this.cdr.markForCheck();
+  };
+
   private actualiserProfilEspace(): void {
     const user = this.centralApi.utilisateur();
     this.userFullName = user ? `${user.prenom} ${user.nom}`.trim() : 'Utilisateur connecté';
@@ -247,7 +264,7 @@ export class SidebarComponent
         : this.isInstituteWorkspace
           ? 'Administrateur institut'
           : 'Utilisateur établissement';
-    this.userImg = './assets/images/user/admin.jpg';
+    this.userImg = user?.photo_url || './assets/images/user/admin.jpg';
   }
 
   selectPrimaryView(view?: string): void {
@@ -300,7 +317,7 @@ export class SidebarComponent
   isWorkspaceItemVisible(view?: string): boolean {
     const type = this.primaryWorkspace.establishmentType();
     if (view === 'series') return type === 'lycee';
-    if (view === 'quran-followup') return type === 'daara';
+    if (view === 'quran-followup' || view === 'quran-lessons' || view === 'quran-lesson-history' || view === 'quran-mouradja' || view === 'daara-groups' || view === 'daara-teacher-groups') return type === 'daara';
     if (type === 'daara') {
       return !['enrollments', 'classes', 'series', 'subjects', 'class-subjects', 'curriculum', 'timetable-builder', 'timetable', 'attendance', 'assessments', 'reports'].includes(view ?? '');
     }

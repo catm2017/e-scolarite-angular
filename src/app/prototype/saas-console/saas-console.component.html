@@ -128,7 +128,8 @@
             <div class="saas-form-actions"><button mat-stroked-button type="button" (click)="packageEnEdition.set(null)">Annuler</button><button mat-flat-button color="primary" type="submit" [disabled]="packageEnregistrement()"><mat-icon>save</mat-icon>{{ packageEnregistrement() ? 'Enregistrement…' : 'Enregistrer le package' }}</button></div>
           </form>
         }
-        <app-master-table title="Packages" [dataSource]="packagesSource" [columnDefinitions]="packagesColumns" [showCheckbox]="false" [showDelete]="false" [showContextMenu]="false" [showBulkDelete]="false" (add)="nouveauPackage()" (edit)="modifierPackage($event)" (refresh)="chargerDonnees()" />
+        <p class="saas-inline-help">Un package désactivé reste conservé dans l’historique, mais il n’est plus proposé aux instituts pour une nouvelle souscription.</p>
+        <app-master-table title="Packages" [dataSource]="packagesSource" [columnDefinitions]="packagesColumns" [showCheckbox]="false" [showDelete]="false" [showStatusToggle]="true" [showContextMenu]="false" [showBulkDelete]="false" (add)="nouveauPackage()" (edit)="modifierPackage($event)" (statusToggle)="basculerStatutPackage($event)" (refresh)="chargerDonnees()" />
       }
     }
 
@@ -151,7 +152,23 @@
     @if (activeView() === 'adhesions') {
       @if (demandeEnDetail(); as demande) {
         <article class="card saas-editor">
-          <h2>{{ demande.nom_institut }}</h2>
+          <header class="saas-editor-header"><h2>{{ demande.nom_institut }}</h2>@if (!demandeEnEdition() && demande.statut === 'soumise') {<button mat-stroked-button type="button" (click)="commencerEditionDemande(demande)"><mat-icon>edit</mat-icon>Modifier la demande</button>}</header>
+          @if (demandeEnEdition(); as formulaire) {
+            <form class="adhesion-edit-form" (ngSubmit)="enregistrerEditionDemande()">
+              <div class="adhesion-edit-grid">
+                <mat-form-field appearance="outline"><mat-label>Nom de l’institut</mat-label><input matInput name="nomInstitut" [(ngModel)]="formulaire.nom_institut" required /></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Ville</mat-label><input matInput name="ville" [(ngModel)]="formulaire.ville" /></mat-form-field>
+                <mat-form-field appearance="outline" class="full"><mat-label>Adresse</mat-label><input matInput name="adresse" [(ngModel)]="formulaire.adresse" /></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Prénom du responsable</mat-label><input matInput name="prenomResponsable" [(ngModel)]="formulaire.prenom_responsable" required /></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Nom du responsable</mat-label><input matInput name="nomResponsable" [(ngModel)]="formulaire.nom_responsable" required /></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>E-mail / identifiant</mat-label><input matInput name="identifiant" [(ngModel)]="formulaire.identifiant_responsable" required /></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Téléphone</mat-label><input matInput name="telephone" [(ngModel)]="formulaire.telephone_responsable" required /></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Effectif estimé</mat-label><input matInput type="number" min="1" name="effectif" [(ngModel)]="formulaire.effectif_estime" /></mat-form-field>
+                <mat-form-field appearance="outline" class="full"><mat-label>Besoin particulier</mat-label><textarea matInput rows="2" name="message" [(ngModel)]="formulaire.message"></textarea></mat-form-field>
+              </div>
+              <div class="saas-form-actions"><button mat-stroked-button type="button" (click)="annulerEditionDemande()">Annuler</button><button mat-flat-button color="primary" type="submit" [disabled]="demandeEditionSaving()"><mat-icon>save</mat-icon>{{ demandeEditionSaving() ? 'Enregistrement…' : 'Enregistrer les modifications' }}</button></div>
+            </form>
+          }
           <dl class="saas-detail-grid"><div><dt>Prénom</dt><dd>{{ demande.prenom_responsable }}</dd></div><div><dt>Nom</dt><dd>{{ demande.nom_responsable }}</dd></div><div><dt>E-mail / identifiant</dt><dd>{{ demande.identifiant_responsable }}</dd></div><div><dt>Téléphone</dt><dd>{{ demande.telephone_responsable }}</dd></div><div><dt>Types d’établissement</dt><dd>{{ demande.types_etablissements?.join(', ') }}</dd></div><div><dt>Statut</dt><dd>{{ demande.statut }}</dd></div></dl>
           <div class="saas-form-actions"><button mat-stroked-button (click)="demandeEnDetail.set(null)">Fermer</button>@if (demande.statut === 'soumise') {<button mat-flat-button color="primary" [disabled]="!!traitementId()" (click)="approuver(demande)"><mat-icon>check</mat-icon>{{ traitementId() ? 'Provisionnement…' : 'Approuver la demande' }}</button>}</div>
         </article>
@@ -162,7 +179,7 @@
     @if (activeView() === 'schools') {
       @if (institutEnDetail(); as detail) {
         <article class="card saas-editor">
-          <h2>{{ detail.institut.nom }}</h2><p>Situation commerciale et historique des abonnements de l’institut.</p>
+          <header class="saas-institute-detail-header"><div><h2>{{ detail.institut.nom }}</h2><p>Situation commerciale et historique des abonnements de l’institut.</p></div><label class="institute-logo-upload"><span>@if (detail.institut.logo_url) {<img [src]="detail.institut.logo_url" [alt]="'Logo ' + detail.institut.nom" />} @else {<mat-icon>apartment</mat-icon>}</span><input type="file" accept="image/png,image/jpeg,image/webp" (change)="choisirLogoInstitut($event)" [disabled]="logoInstitutSaving()" /><b>{{ logoInstitutSaving() ? 'Enregistrement…' : 'Ajouter le logo' }}</b><small>PNG, JPG ou WebP · 2 Mo maximum</small></label></header>
           <div class="saas-detail-grid"><div><dt>Responsable</dt><dd>{{ detail.institut.prenom_responsable }} {{ detail.institut.nom_responsable }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ detail.institut.email_responsable || 'Non renseignée' }}</dd></div><div><dt>Téléphone</dt><dd>{{ detail.institut.telephone_responsable || 'Non renseigné' }}</dd></div></div>
           <section class="saas-editor-subsection"><h3>Types d’établissement de l’institut</h3><p>Ajoutez un espace métier supplémentaire, comme un Daara ou un préscolaire.</p><div class="saas-type-picker">@for (type of catalogueTypes(); track type.id) { @if (type.code !== 'institut_partage') { <button type="button" [class.selected]="typesInstitutSelectionnes().includes(type.id)" (click)="basculerTypeInstitut(type.id)"><mat-icon>{{ typesInstitutSelectionnes().includes(type.id) ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>{{ type.libelle }}</button> } }</div><button mat-flat-button color="primary" type="button" [disabled]="ajoutTypesInstitutEnCours() || !typesInstitutSelectionnes().length" (click)="enregistrerTypesInstitut()"><mat-icon>save</mat-icon>{{ ajoutTypesInstitutEnCours() ? 'Ajout en cours…' : 'Enregistrer les types' }}</button></section>
           @if (detail.abonnement_actuel; as abonnement) {

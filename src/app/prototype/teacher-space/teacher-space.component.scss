@@ -72,6 +72,15 @@ button { font: inherit; cursor: pointer; }
 @media(max-width: 900px){.teacher-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.programme-grid,.workspace-choice-grid,.teacher-evaluation-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.teacher-record-layout{grid-template-columns:1fr}.teacher-profile-summary{display:grid;grid-template-columns:72px 1fr 1fr;gap:10px;align-items:center;text-align:left}.teacher-profile-cover{display:none}.teacher-profile-avatar{margin:0}.teacher-profile-summary dl,.teacher-contact{grid-column:2/-1;margin-top:0}.teacher-profile-summary>p,.teacher-status{grid-column:2}.teacher-profile-summary h2{align-self:end}}
 @media(max-width: 620px){.teacher-content{padding-top:20px}.teacher-heading h1{font-size:20px}.teacher-stats,.programme-grid,.profile-grid,.workspace-choice-grid,.teacher-evaluation-form-grid,.teacher-evaluation-detail-grid{grid-template-columns:1fr}.teacher-evaluation-form-grid label.wide{grid-column:auto}.profile-card.full{grid-column:auto}.schedule-list article{grid-template-columns:1fr;gap:3px}.teacher-panel{padding:15px}.profile-card dl{grid-template-columns:1fr}.teacher-record-tabs{overflow:auto}.teacher-record-tabs button{white-space:nowrap}.teacher-profile-summary{display:block;text-align:center}.teacher-profile-avatar{margin:-31px auto 10px}.teacher-profile-summary dl,.teacher-contact{margin-top:14px;text-align:left}}
 
+.teacher-group-tabs{display:flex;gap:8px;overflow:auto;margin:0 0 15px;padding:2px 0 4px}
+.teacher-group-tabs button{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border:1px solid #dce8f2;border-radius:9px;color:#617b90;background:#fff;font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer}
+.teacher-group-tabs button:hover{border-color:#9cc8ed;color:#277bd2}
+.teacher-group-tabs button.active{border-color:#2f83d8;color:#1768b1;background:#eaf4ff;box-shadow:0 2px 5px rgba(35,119,199,.08)}
+.teacher-group-tabs span{display:inline-grid;min-width:22px;height:20px;padding:0 5px;place-items:center;border-radius:10px;color:#4b6d88;background:#f0f5f9;font-size:10px}
+.teacher-group-tabs button.active span{color:#1768b1;background:#d5eaff}
+.teacher-student-quran-heading{margin-bottom:16px}.teacher-student-quran-heading header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0}.teacher-student-quran-heading p{margin:0 0 6px;color:#4786ce;font-size:10px;font-weight:850;letter-spacing:.9px}.teacher-student-quran-heading h2{margin:0;color:#304d66;font-size:19px}.teacher-student-quran-heading span{display:block;margin-top:5px;color:#7b91a4;font-size:11px;font-weight:700}.teacher-student-quran-heading header>div:last-child{display:flex;align-items:center;gap:8px}.teacher-student-quran-heading .back-link{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:0 10px;border:1px solid #d6e3ed;border-radius:8px;color:#5f788d;background:#fff;font-size:11px;font-weight:800}.teacher-student-quran-heading .back-link i{font-size:16px}
+.teacher-quran-modal-backdrop{position:fixed;z-index:1100;inset:0;display:grid;place-items:center;padding:24px;background:rgba(19,45,69,.48)}.teacher-quran-modal{width:min(940px,calc(100vw - 32px));max-height:min(820px,calc(100vh - 48px));overflow:hidden;border:1px solid #d8e5ef;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(23,68,106,.28)}.teacher-quran-modal header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin:0;padding:20px 24px;border-bottom:1px solid #e8eef3}.teacher-quran-modal header small{color:#4786ce;font-size:10px;font-weight:850;letter-spacing:1px}.teacher-quran-modal header h2{margin:7px 0 0;color:#28475f;font-size:20px}.teacher-quran-modal header p{margin:5px 0 0;color:#7b91a4;font-size:12px}.teacher-quran-modal header button{display:grid;width:34px;height:34px;place-items:center;border:0;border-radius:9px;color:#557087;background:#edf5fb;cursor:pointer}.teacher-quran-modal header button i{font-size:19px}.teacher-quran-modal-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 24px;color:#49677f;font-size:12px;font-weight:800;background:#f7fbff}.teacher-quran-modal-meta em{padding:5px 10px;border-radius:999px;color:#a46513;background:#fff1d8;font-size:10px;font-style:normal}.teacher-quran-modal-text{max-height:570px;overflow:auto;padding:28px 30px;color:#263d4c;background:#fcfeff;font-family:'Amiri','Noto Naskh Arabic','Times New Roman',serif;font-size:25px;line-height:2.25;text-align:right}.teacher-quran-modal-text>span{display:inline}.teacher-quran-modal-text>span>span{margin-inline:4px}.teacher-quran-modal-text em{display:inline-grid;width:28px;height:28px;margin:0 5px;place-items:center;border-radius:50%;color:#fff;background:#2f83d8;font-family:inherit;font-size:12px;font-style:normal;line-height:1}.teacher-quran-modal-text p{margin:0;color:#7f93a3;font-family:inherit;font-size:17px;text-align:center}@media(max-width:620px){.teacher-student-quran-heading header{align-items:flex-start;flex-direction:column}.teacher-student-quran-heading header>div:last-child{width:100%;flex-wrap:wrap}.teacher-quran-modal-text{padding:20px 16px;font-size:21px}}
+
 :host-context(.rtl) {
   .teacher-content { direction: rtl; text-align: right; }
   .workspace-choice-card { text-align: right; }
@@ -85,10 +94,29 @@ button { font: inherit; cursor: pointer; }
 }
 
 .session-detail-heading { margin-bottom: 16px; }
+.teacher-session-files { margin-top: 16px; }
+.teacher-session-files header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.teacher-session-files header i { color:#277bd2; font-family:'Material Icons Outlined', 'Material Icons' !important; font-size:22px; font-style:normal; }
+.teacher-file-picker { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:58px; padding:12px 15px; border:1px dashed #b8d2ea; border-radius:10px; background:#f7fbff; color:#315c7b; cursor:pointer; }
+.teacher-file-picker span { display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; }
+.teacher-file-picker span > i { color:#277bd2; font-size:20px; }
+.teacher-file-picker small { display:block; margin-left:4px; color:#7890a4; font-size:10px; font-weight:600; }
+.teacher-file-picker input { max-width:230px; font-size:11px; }
+.teacher-file-list { display:grid; gap:7px; margin-top:12px; }
+.teacher-file-list div { display:flex; align-items:center; gap:9px; padding:9px 11px; border:1px solid #e0eaf3; border-radius:8px; color:#385a73; background:#fff; }
+.teacher-file-list div > i { color:#277bd2; font-family:'Material Icons Outlined', 'Material Icons' !important; font-style:normal; }
+.teacher-file-list span { overflow:hidden; flex:1; font-size:12px; font-weight:750; text-overflow:ellipsis; white-space:nowrap; }
+.teacher-file-list small { color:#7a91a3; font-size:10px; }
+.teacher-files-empty { margin:12px 0 0; color:#8094a5; font-size:11px; }
 .session-detail-heading header { align-items: center; margin: 0; }
 .session-detail-heading h2 { margin-top: 7px; }
 .session-detail-heading p { margin: 8px 0 0; color: #4786ce; font-size: 10px; font-weight: 850; letter-spacing: .9px; }
 .session-detail-heading span { display: block; margin-top: 6px; color: #71879a; font-size: 12px; }
+.session-status-badge { display:inline-flex; align-items:center; width:max-content; margin-top:8px; padding:4px 9px; border-radius:999px; font-size:10px; font-style:normal; font-weight:800; }
+.session-status-badge.planifiee { color:#236db5; background:#eaf4ff; }
+.session-status-badge.completee { color:#a46612; background:#fff3dc; }
+.session-status-badge.validee { color:#1b7a52; background:#e7f7ef; }
+.session-status-badge.ratee { color:#b43d4d; background:#ffebee; }
 .teacher-session-editor, .teacher-session-attendance { margin-top: 16px; }
 .teacher-session-editor > label { display: grid; gap: 6px; margin-top: 13px; }
 .teacher-session-editor > label span { color: #506c82; font-size: 12px; font-weight: 800; }
@@ -100,3 +128,4 @@ button { font: inherit; cursor: pointer; }
 .teacher-attendance-list strong { font-size: 13px; }
 .teacher-attendance-list small { margin-top: 3px; color: #7b8d9f; font-size: 11px; }
 .teacher-attendance-list select { width: 170px; }
+.teacher-quran-modal-trace{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 24px;color:#6b8296;background:#f8fbfd;border-top:1px solid #edf2f6;border-bottom:1px solid #e5edf3;font:600 10px Inter,Arial,sans-serif}.teacher-quran-modal-trace span{display:inline-flex;align-items:center;gap:4px}.teacher-quran-modal-trace i{color:#287fce;font-family:'Material Icons';font-size:14px;font-style:normal}.teacher-quran-modal-trace strong{color:#294d69;font-weight:800}

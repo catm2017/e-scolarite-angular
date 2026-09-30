@@ -168,7 +168,7 @@
       @if (activeView() === 'user-detail') {
         @if (selectedUserRecord(); as user) {
           <div class="page-title record-page-title"><div><small>DOSSIER UTILISATEUR</small><h1>{{ user.name }}</h1><p>Rôles, permissions, périmètre d’accès, sécurité et traçabilité du compte.</p></div><div class="title-actions"><button type="button" (click)="setView('users')"><i>arrow_back</i>Retour aux utilisateurs</button><button type="button" class="primary-action" [class.user-disabled-action]="user.status === 'Désactivé'" [disabled]="userSecuritySaving()" (click)="changerStatutUtilisateur(user.status === 'Désactivé' ? 'actif' : 'suspendu')"><i>{{ user.status === 'Désactivé' ? 'check_circle' : 'block' }}</i>{{ user.status === 'Désactivé' ? 'Activer le compte' : 'Désactiver le compte' }}</button></div></div>
-          <section class="directory-record-layout user-record-layout"><aside class="panel directory-profile-card"><span>{{ user.name.slice(0, 1) }}</span><h2>{{ user.name }}</h2><p>{{ user.type }}</p><em [class.account-disabled]="user.status === 'Désactivé'"><i></i>{{ user.status }}</em><dl><div><dt>Référence</dt><dd>{{ user.matricule || 'Non renseignée' }}</dd></div><div><dt>Identifiant</dt><dd>{{ user.identifier || user.matricule || 'Non renseigné' }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ user.email || 'Non renseignée' }}</dd></div><div><dt>Dernière connexion</dt><dd>28 août 2026 · 09:18</dd></div></dl></aside><div class="directory-record-main"><nav class="record-tabs panel" aria-label="Sections du dossier utilisateur"><button type="button" [class.active]="userRecordTab() === 'roles'" (click)="setUserRecordTab('roles')"><i>admin_panel_settings</i>Rôles & permissions</button><button type="button" [class.active]="userRecordTab() === 'scope'" (click)="setUserRecordTab('scope')"><i>domain</i>Périmètre d’accès</button><button type="button" [class.active]="userRecordTab() === 'security'" (click)="setUserRecordTab('security')"><i>security</i>Sécurité</button><button type="button" [class.active]="userRecordTab() === 'activity'" (click)="setUserRecordTab('activity')"><i>history</i>Activité</button></nav>
+          <section class="directory-record-layout user-record-layout"><aside class="panel directory-profile-card"><span>{{ user.name.slice(0, 1) }}</span><h2>{{ user.name }}</h2><p>{{ user.type }}</p><em [class.account-disabled]="user.status === 'Désactivé'"><i></i>{{ user.status }}</em><dl><div><dt>Référence</dt><dd>{{ user.matricule || 'Non renseignée' }}</dd></div><div><dt>Identifiant</dt><dd>{{ user.identifier || user.matricule || 'Non renseigné' }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ user.email || 'Non renseignée' }}</dd></div><div><dt>Téléphone</dt><dd>{{ user.phone || 'Non renseigné' }}</dd></div><div><dt>Dernière connexion</dt><dd>28 août 2026 · 09:18</dd></div></dl></aside><div class="directory-record-main"><nav class="record-tabs panel" aria-label="Sections du dossier utilisateur"><button type="button" [class.active]="userRecordTab() === 'roles'" (click)="setUserRecordTab('roles')"><i>admin_panel_settings</i>Rôles & permissions</button><button type="button" [class.active]="userRecordTab() === 'scope'" (click)="setUserRecordTab('scope')"><i>domain</i>Périmètre d’accès</button><button type="button" [class.active]="userRecordTab() === 'security'" (click)="setUserRecordTab('security')"><i>security</i>Sécurité</button><button type="button" [class.active]="userRecordTab() === 'activity'" (click)="setUserRecordTab('activity')"><i>history</i>Activité</button></nav>
             @if (userRecordTab() === 'roles') {
               <article class="panel directory-detail-card user-role-card">
                 <header><div><h3>Rôles et permissions</h3><p>Affectez un ou plusieurs rôles. Les droits hérités sont consultables sur chaque rôle ; les exceptions se gèrent séparément.</p></div><button type="button" class="manage-roles-link" (click)="setView('roles')"><i>admin_panel_settings</i>Gérer les rôles</button></header>
@@ -179,10 +179,10 @@
               </article>
             }
             @if (userRecordTab() === 'scope') {
-              <article class="panel directory-detail-card user-scope-card"><header><div><h3>Périmètre d’accès</h3><p>Choisissez les campus et les types d’établissement visibles pour ce compte.</p></div></header><section><h4>Campus autorisés</h4><div class="access-choice-grid">@for (campus of campuses(); track campus.id) {<label><input type="checkbox" [checked]="userCampusAccessIds().includes(campus.id)" (change)="toggleUserCampus(campus.id)" /><span><i>location_city</i><strong>{{ campus.name }}</strong><small>{{ campus.city }}</small></span></label>}</div></section><section><h4>Établissements / types d’enseignement</h4><div class="access-choice-grid establishment-access-grid">@for (establishment of activeEstablishments(); track establishment.workspaceId) {@if (establishment.workspaceId) {<label><input type="checkbox" [checked]="userEstablishmentAccessIds().includes(establishment.workspaceId)" (change)="toggleUserEstablishment(establishment.workspaceId)" /><span><i>{{ establishment.icon }}</i><strong>{{ establishment.type }}</strong><small>Accès métier</small></span></label>}}</div></section><footer><span>Les changements ne sont appliqués qu’après enregistrement.</span><button type="button" class="primary-action" [disabled]="userScopeSaving()" (click)="enregistrerPerimetreUtilisateur()"><i>{{ userScopeSaving() ? 'progress_activity' : 'save' }}</i>{{ userScopeSaving() ? 'Enregistrement…' : 'Enregistrer le périmètre' }}</button></footer></article>
+              <article class="panel directory-detail-card user-scope-card"><header><div><h3>Périmètre d’accès</h3><p>Choisissez les campus et les types d’établissement visibles pour ce compte.</p></div></header><section><h4>Campus autorisés</h4><div class="access-choice-grid">@for (campus of campuses(); track campus.id) {<label><input type="checkbox" [checked]="userCampusAccessIds().includes(campus.id)" (change)="toggleUserCampus(campus.id)" /><span><i>location_city</i><strong>{{ campus.name }}</strong><small>{{ campus.city }}</small></span></label>}</div></section><section><h4>Établissements / types d’enseignement</h4><div class="access-choice-grid establishment-access-grid">@for (establishment of availableUserEstablishments(); track establishment.workspaceId) {@if (establishment.workspaceId) {<label><input type="checkbox" [checked]="userEstablishmentAccessIds().includes(establishment.workspaceId)" (change)="toggleUserEstablishment(establishment.workspaceId)" /><span><i>{{ establishment.icon }}</i><strong>{{ establishment.type }}</strong><small>Accès métier</small></span></label>}}</div></section><footer><span>Les changements ne sont appliqués qu’après enregistrement.</span><button type="button" class="primary-action" [disabled]="userScopeSaving()" (click)="enregistrerPerimetreUtilisateur()"><i>{{ userScopeSaving() ? 'progress_activity' : 'save' }}</i>{{ userScopeSaving() ? 'Enregistrement…' : 'Enregistrer le périmètre' }}</button></footer></article>
             }
             @if (userRecordTab() === 'security') {
-              <article class="panel directory-detail-card user-security-card"><header><div><h3>Sécurité du compte</h3><p>Gérez l’état du compte et les options de sécurité.</p></div></header><div class="security-state"><span [class.disabled]="user.status === 'Désactivé'"><i>{{ user.status === 'Désactivé' ? 'block' : 'verified_user' }}</i></span><div><small>État actuel</small><strong>{{ user.status }}</strong><p>{{ user.status === 'Désactivé' ? 'Le compte ne peut plus se connecter à la plateforme.' : 'Le compte peut accéder à son périmètre autorisé.' }}</p></div><button type="button" [disabled]="userSecuritySaving()" (click)="changerStatutUtilisateur(user.status === 'Désactivé' ? 'actif' : 'suspendu')">{{ user.status === 'Désactivé' ? 'Activer' : 'Désactiver' }}</button></div><div class="account-actions"><button type="button" disabled><i>lock_reset</i><span><strong>Réinitialiser le mot de passe</strong><small>Cette action sera disponible prochainement.</small></span></button></div></article>
+              <article class="panel directory-detail-card user-security-card"><header><div><h3>Sécurité du compte</h3><p>Gérez l’état du compte et les options de sécurité.</p></div></header><div class="security-state"><span [class.disabled]="user.status === 'Désactivé'"><i>{{ user.status === 'Désactivé' ? 'block' : 'verified_user' }}</i></span><div><small>État actuel</small><strong>{{ user.status }}</strong><p>{{ user.status === 'Désactivé' ? 'Le compte ne peut plus se connecter à la plateforme.' : 'Le compte peut accéder à son périmètre autorisé.' }}</p></div><button type="button" [disabled]="userSecuritySaving()" (click)="changerStatutUtilisateur(user.status === 'Désactivé' ? 'actif' : 'suspendu')">{{ user.status === 'Désactivé' ? 'Activer' : 'Désactiver' }}</button></div><div class="account-actions"><button type="button" [disabled]="passwordResetSending()" (click)="reinitialiserMotDePasseUtilisateur()"><i>{{ passwordResetSending() ? 'progress_activity' : 'lock_reset' }}</i><span><strong>Réinitialiser le mot de passe</strong><small>Le nouveau mot de passe sera généré depuis le téléphone puis envoyé par SMS.</small></span></button></div>@if (passwordResetSent()) {<p class="password-reset-feedback"><i>check_circle</i>Les nouveaux identifiants ont été envoyés au numéro enregistré.</p>}</article>
             }
             @if (userRecordTab() === 'activity') {<article class="panel directory-detail-card user-activity-card"><header><div><h3>Traçabilité des activités</h3><p>Les actions et authentifications de {{ user.name }} sont conservées selon la configuration de suivi.</p></div><button type="button" (click)="setView('activity-log')"><i>manage_history</i>Voir le journal complet</button></header><div class="user-activity-list">@for (entry of selectedUserActivityEntries(); track entry.date) {<article><span [class.refused]="entry.status === 'Refusée'"><i>{{ entry.status === 'Réussie' ? 'check_circle' : 'error' }}</i></span><div><strong>{{ entry.action }}</strong><p>{{ entry.description }}</p><small>{{ entry.date }} · {{ entry.scope }}</small></div></article>}</div></article>}
           </div></section>
@@ -237,7 +237,7 @@
             <button type="button" [class.active]="userCategory() === 'learners'" (click)="selectUserCategory('learners')">Élèves <b>{{ userCategoryCount('learners') }}</b></button>
           </nav>
           @if (!userCreationOpen()) {
-            <app-master-table title="Utilisateurs de l’institut" [columnDefinitions]="userColumns" [dataSource]="userDataSource" [isLoading]="usersLoading()" exportFileName="utilisateurs_institut" [showAdd]="true" [showDelete]="false" [showEdit]="true" [showDetails]="true" [showBulkDelete]="false" [showCheckbox]="false" [disableRowClickToEdit]="true" (add)="openUserAccountCreation()" (details)="viewUser($event)" (rowClick)="viewUser($event)" (refresh)="refreshDirectory()"></app-master-table>
+            <app-master-table title="Utilisateurs de l’institut" [columnDefinitions]="userColumns" [dataSource]="userDataSource" [isLoading]="usersLoading()" exportFileName="utilisateurs_institut" [showAdd]="false" [showDelete]="false" [showEdit]="true" [showDetails]="true" [showBulkDelete]="false" [showCheckbox]="false" [disableRowClickToEdit]="true" (details)="viewUser($event)" (rowClick)="viewUser($event)" (refresh)="refreshDirectory()"></app-master-table>
           }
           @if (userCreationOpen()) {
             <section class="panel directory-form-card user-account-creation">
@@ -261,7 +261,7 @@
               <button type="button" [class.active]="selectedStaffCampus() === campus.name" (click)="selectStaffCampus(campus.name)">{{ shortCampusName(campus.name) }} <b>{{ staffCampusCount(campus.name) }}</b></button>
             }
           </nav>
-          <app-master-table title="Personnel de l’institut" [columnDefinitions]="staffColumns" [dataSource]="staffDataSource" [isLoading]="false" exportFileName="personnel_institut" [showAdd]="true" [showDelete]="true" [showEdit]="true" [showDetails]="true" [showBulkDelete]="true" [showCheckbox]="true" [disableRowClickToEdit]="true" (add)="startStaffForm()" (edit)="startStaffForm($event)" (details)="viewStaff($event)" (rowClick)="viewStaff($event)" (delete)="removeStaff($event)"></app-master-table>
+          <app-master-table title="Personnel de l’institut" [columnDefinitions]="staffColumns" [dataSource]="staffDataSource" [isLoading]="false" exportFileName="personnel_institut" [showAdd]="false" [showDelete]="true" [showEdit]="true" [showDetails]="true" [showBulkDelete]="false" [showCheckbox]="false" [disableRowClickToEdit]="true" (edit)="startStaffForm($event)" (details)="viewStaff($event)" (rowClick)="viewStaff($event)" (delete)="removeStaff($event)"></app-master-table>
           @if (staffEditorOpen()) {
             <section class="panel directory-form-card">
               <header><div><span><i>badge</i></span><div><h2>{{ staffForm.matricule ? 'Modifier le personnel' : 'Nouveau personnel' }}</h2><p>Identité, fonction et rattachement au campus dans un seul dossier.</p></div></div><button type="button" aria-label="Fermer" (click)="staffEditorOpen.set(false)"><i>close</i></button></header>
@@ -278,7 +278,7 @@
               <button type="button" [class.active]="selectedTeacherEstablishment() === type.label" (click)="selectTeacherEstablishment(type.label)">{{ type.label }} <b>{{ type.count }}</b></button>
             }
           </nav>
-          <app-master-table title="Enseignants de l’institut" [columnDefinitions]="teacherColumns" [dataSource]="teacherDataSource" [isLoading]="false" exportFileName="enseignants_institut" [showAdd]="true" [showDelete]="true" [showEdit]="true" [showDetails]="true" [showSchedule]="true" [showBulkDelete]="true" [showCheckbox]="true" [disableRowClickToEdit]="true" (add)="startTeacherForm()" (edit)="startTeacherForm($event)" (details)="viewTeacher($event)" (rowClick)="viewTeacher($event)" (delete)="removeTeacher($event)"></app-master-table>
+          <app-master-table title="Enseignants de l’institut" [columnDefinitions]="teacherColumns" [dataSource]="teacherDataSource" [isLoading]="false" exportFileName="enseignants_institut" [showAdd]="false" [showDelete]="true" [showEdit]="true" [showDetails]="true" [showSchedule]="true" [showBulkDelete]="false" [showCheckbox]="false" [disableRowClickToEdit]="true" (edit)="startTeacherForm($event)" (details)="viewTeacher($event)" (rowClick)="viewTeacher($event)" (delete)="removeTeacher($event)"></app-master-table>
           @if (teacherEditorOpen()) {
             <section class="panel directory-form-card">
               <header><div><span><i>co_present</i></span><div><h2>{{ teacherForm.matricule ? 'Modifier l’enseignant' : 'Nouvel enseignant' }}</h2><p>Identité, matière et périmètre d’intervention dans l’institut.</p></div></div><button type="button" aria-label="Fermer" (click)="teacherEditorOpen.set(false)"><i>close</i></button></header>
@@ -293,6 +293,10 @@
 
       @if (activeView() === 'student-transfers') {
         <app-student-transfers></app-student-transfers>
+      }
+
+      @if (activeView() === 'admissions') {
+        <app-admissions-institut></app-admissions-institut>
       }
 
       @if (activeView() === 'spaces') {
@@ -315,14 +319,13 @@
             [dataSource]="spaceDataSource"
             [isLoading]="spacesLoading()"
             exportFileName="salles_et_espaces"
-            [showAdd]="true"
+            [showAdd]="false"
             [showDelete]="true"
             [showEdit]="true"
             [showDetails]="false"
             [showBulkDelete]="false"
-            [showCheckbox]="true"
+            [showCheckbox]="false"
             [disableRowClickToEdit]="true"
-            (add)="openSpaceForm()"
             (edit)="openSpaceForm($event)"
             (delete)="deleteSpace($event)"
             (refresh)="chargerSalles()"></app-master-table>
@@ -524,6 +527,34 @@
           <div class="subscription-modal-actions">
             <button type="button" (click)="subscriptionInterruptModalOpen.set(false)" [disabled]="subscriptionSaving()">Conserver la souscription</button>
             <button type="button" class="danger" (click)="confirmerInterruptionSouscription()" [disabled]="subscriptionSaving()"><i>{{ subscriptionSaving() ? 'progress_activity' : 'stop_circle' }}</i>{{ subscriptionSaving() ? 'Interruption…' : 'Oui, interrompre' }}</button>
+          </div>
+        </section>
+      </div>
+    }
+
+    @if (passwordResetModalOpen()) {
+      <div class="subscription-modal-backdrop" role="presentation" (click)="passwordResetModalOpen.set(false)">
+        <section class="subscription-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="password-reset-title" (click)="$event.stopPropagation()">
+          <span class="subscription-modal-icon"><i>lock_reset</i></span>
+          <h2 id="password-reset-title">Réinitialiser le mot de passe ?</h2>
+          <p>Le mot de passe actuel sera remplacé par une nouvelle valeur dérivée du numéro de téléphone. Les nouveaux identifiants seront envoyés par SMS.</p>
+          <div class="subscription-modal-actions">
+            <button type="button" (click)="passwordResetModalOpen.set(false)" [disabled]="passwordResetSending()">Annuler</button>
+            <button type="button" class="danger" (click)="confirmerReinitialisationMotDePasse()" [disabled]="passwordResetSending()"><i>{{ passwordResetSending() ? 'progress_activity' : 'sms' }}</i>{{ passwordResetSending() ? 'Envoi…' : 'Réinitialiser et envoyer' }}</button>
+          </div>
+        </section>
+      </div>
+    }
+
+    @if (pendingAccountStatus(); as statusModal) {
+      <div class="subscription-modal-backdrop" role="presentation" (click)="accountStatusModalOpen.set(false); pendingAccountStatus.set(null)">
+        <section class="subscription-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="account-status-title" (click)="$event.stopPropagation()">
+          <span class="subscription-modal-icon"><i>{{ statusModal === 'actif' ? 'check_circle' : 'block' }}</i></span>
+          <h2 id="account-status-title">{{ statusModal === 'actif' ? 'Activer ce compte ?' : 'Désactiver ce compte ?' }}</h2>
+          <p>{{ statusModal === 'actif' ? 'Cet utilisateur pourra à nouveau se connecter et accéder aux espaces qui lui sont autorisés.' : 'Cet utilisateur ne pourra plus se connecter. Ses accès seront bloqués immédiatement.' }}</p>
+          <div class="subscription-modal-actions">
+            <button type="button" (click)="accountStatusModalOpen.set(false); pendingAccountStatus.set(null)" [disabled]="userSecuritySaving()">Annuler</button>
+            <button type="button" [class.danger]="statusModal === 'suspendu'" [class.primary-action]="statusModal === 'actif'" (click)="confirmerChangementStatutUtilisateur()" [disabled]="userSecuritySaving()"><i>{{ userSecuritySaving() ? 'progress_activity' : statusModal === 'actif' ? 'check_circle' : 'block' }}</i>{{ userSecuritySaving() ? 'Mise à jour…' : statusModal === 'actif' ? 'Oui, activer' : 'Oui, désactiver' }}</button>
           </div>
         </section>
       </div>

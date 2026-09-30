@@ -3,17 +3,20 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormsModule } from '@angular/forms';
-import { CentralApiService, ClasseMatiereEnseignantApi, ContexteEnseignant, EspaceEnseignantApi, EvaluationEnseignantDetailApi, SeanceEnseignantDetailApi } from '../central-api.service';
+import { forkJoin } from 'rxjs';
+import { CentralApiService, ClasseMatiereEnseignantApi, ContexteEnseignant, EspaceEnseignantApi, EvaluationEnseignantDetailApi, SeanceEnseignantDetailApi, SuiviCoranDaaraApi } from '../central-api.service';
 import { ColumnDefinition, MasterTableComponent } from '../../shared/components/master-table/master-table.component';
+import { QuranFollowupComponent } from '../daara/quran-followup.component';
+import { QuranLessonsComponent } from '../daara/quran-lessons.component';
 
-type VueEnseignant = 'espaces' | 'tableau-de-bord' | 'emploi-du-temps' | 'classes' | 'classe-matiere' | 'programmes' | 'seances' | 'seance-detail' | 'evaluations' | 'evaluation-detail' | 'dossier';
+type VueEnseignant = 'espaces' | 'tableau-de-bord' | 'emploi-du-temps' | 'eleves' | 'eleve-dossier' | 'classes' | 'classe-matiere' | 'programmes' | 'seances' | 'seance-detail' | 'evaluations' | 'evaluation-detail' | 'quran-followup' | 'quran-lesson-history' | 'quran-mouradja' | 'dossier';
 type OngletDossier = 'profil' | 'enseignements' | 'emploi-temps' | 'remuneration';
 type TypeEvaluation = 'devoir' | 'controle' | 'essai' | 'formative' | 'composition';
 
 @Component({
   selector: 'app-teacher-space',
   standalone: true,
-  imports: [DatePipe, FormsModule, MasterTableComponent],
+  imports: [DatePipe, FormsModule, MasterTableComponent, QuranFollowupComponent, QuranLessonsComponent],
   templateUrl: './teacher-space.component.html',
   styleUrl: './teacher-space.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +36,22 @@ export class TeacherSpaceComponent implements OnInit {
   readonly evaluationsSource = new MatTableDataSource<any>([]);
   readonly elevesClasseSource = new MatTableDataSource<any>([]);
   readonly sessionStudentsSource = new MatTableDataSource<any>([]);
+  readonly groupeStudentsSource = new MatTableDataSource<any>([]);
+  readonly groupeActif = signal('tous');
+  readonly eleveDossierId = signal<string | null>(null);
+  readonly eleveDossierLoading = signal(false);
+  readonly eleveDossierError = signal<string | null>(null);
+  readonly eleveDossierLeconsSource = new MatTableDataSource<any>([]);
+  readonly eleveDossierRevisionsSource = new MatTableDataSource<any>([]);
+  readonly eleveDossierStudent = computed(() => (this.espace()?.eleves_groupes ?? []).find((eleve) => eleve.id === this.eleveDossierId()) ?? null);
+  readonly eleveDossierSelectedLesson = signal<any | null>(null);
+  readonly eleveDossierReader = signal<SuiviCoranDaaraApi | null>(null);
+  readonly eleveDossierVersets = computed(() => {
+    const lesson = this.eleveDossierSelectedLesson();
+    const verses = this.eleveDossierReader()?.versets ?? [];
+    if (!lesson) return [];
+    return verses.filter((verse) => verse.position_memorisation >= lesson.debut.position_memorisation && verse.position_memorisation <= lesson.fin.position_memorisation);
+  });
   readonly classeMatiere = signal<ClasseMatiereEnseignantApi | null>(null);
   readonly chargementClasseMatiere = signal(false);
   readonly erreurClasseMatiere = signal<string | null>(null);
@@ -43,6 +62,7 @@ export class TeacherSpaceComponent implements OnInit {
   readonly chargementSeance = signal(false);
   readonly enregistrementSeance = signal(false);
   readonly erreurSeance = signal<string | null>(null);
+  readonly televersementPieceSeance = signal(false);
   readonly cahierSeance = signal({ contenu: '', travailMaison: '', leconId: '' });
   readonly presencesSeance = signal<Record<string, string>>({});
   readonly afficherCreationEvaluation = signal(false);
@@ -61,9 +81,13 @@ export class TeacherSpaceComponent implements OnInit {
     { id: 'espaces', label: 'Mes espaces de travail', icon: 'domain' },
     { id: 'tableau-de-bord', label: 'Tableau de bord', icon: 'dashboard' },
     { id: 'emploi-du-temps', label: 'Mon emploi du temps', icon: 'calendar_month' },
+    { id: 'eleves', label: 'Élèves de mes groupes', icon: 'groups' },
     { id: 'classes', label: 'Mes classes & matières', icon: 'groups' },
     { id: 'seances', label: 'Séances & cahier de texte', icon: 'event_note' },
     { id: 'evaluations', label: 'Évaluations', icon: 'assignment_turned_in' },
+    { id: 'quran-followup', label: 'Suivi du Coran', icon: 'menu_book' },
+    { id: 'quran-lesson-history', label: 'Leçons coraniques', icon: 'history_edu' },
+    { id: 'quran-mouradja', label: 'Révision coranique', icon: 'history' },
     { id: 'dossier', label: 'Mon dossier', icon: 'badge' },
   ];
 
@@ -74,9 +98,20 @@ export class TeacherSpaceComponent implements OnInit {
   ];
   readonly elevesClasseColumns: ColumnDefinition[] = [
     { def: 'matricule', label: 'Matricule', type: 'text' },
-    { def: 'prenom', label: 'Prénom', type: 'text' },
-    { def: 'nom', label: 'Nom', type: 'text' },
-    { def: 'sexe', label: 'Sexe', type: 'text' },
+    { def: 'name', label: 'Prénom et nom', type: 'nameWithImage' },
+    { def: 'gender', label: 'Sexe', type: 'status', statusBadgeMap: { F: 'badge badge-solid-purple', M: 'badge badge-solid-green' } },
+    { def: 'birthDate', label: 'Date de naissance', type: 'text' },
+    { def: 'parentPhone', label: 'Téléphone tuteur', type: 'phone' },
+    { def: 'status', label: 'Statut', type: 'status', statusBadgeMap: { Actif: 'badge badge-solid-green', 'En attente': 'badge badge-solid-orange' } },
+  ];
+  readonly eleveQuranColumns: ColumnDefinition[] = [
+    { def: 'start', label: 'Début', type: 'text' },
+    { def: 'end', label: 'Fin', type: 'text' },
+    { def: 'sourates', label: 'Sourate(s)', type: 'text' },
+    { def: 'statutLabel', label: 'Statut', type: 'status', statusBadgeMap: { 'À réciter': 'badge badge-solid-orange', 'Déjà récité': 'badge badge-solid-green' } },
+    { def: 'assignedDate', label: 'Affectée le', type: 'date' },
+    { def: 'completedDate', label: 'Récitée le', type: 'date' },
+    { def: 'duration', label: 'Durée', type: 'text' },
   ];
   readonly sessionStudentColumns: ColumnDefinition[] = [
     { def: 'nom_complet', label: 'Élève', type: 'nameWithImage' },
@@ -84,6 +119,7 @@ export class TeacherSpaceComponent implements OnInit {
     { def: 'attendanceStatus', label: 'Appel', type: 'attendance', sortable: false },
   ];
   readonly seanceColumns: ColumnDefinition[] = [
+    { def: 'reference', label: 'Référence', type: 'text' },
     { def: 'date_seance', label: 'Date', type: 'dateCard' }, { def: 'heure_debut', label: 'Horaire', type: 'time' },
     { def: 'classe', label: 'Classe', type: 'text' }, { def: 'matiere', label: 'Matière', type: 'text' },
     {
@@ -116,8 +152,11 @@ export class TeacherSpaceComponent implements OnInit {
     .sort((a, b) => this.dateHeureSeance(a) - this.dateHeureSeance(b))
     .slice(0, 5));
   readonly seancesARenseigner = computed(() => (this.espace()?.seances ?? []).filter((seance) => !seance.cahier_texte).length);
+  readonly groupesEleves = computed(() => [...new Map((this.espace()?.eleves_groupes ?? []).map((eleve) => [eleve.groupe, eleve.groupe])).values()]);
   readonly evaluationsACorriger = computed(() => (this.espace()?.evaluations ?? []).filter((evaluation) => evaluation.statut !== 'corrigee').length);
   readonly titreVue = computed(() => this.menu.find((item) => item.id === this.vue())?.label ?? 'Espace enseignant');
+  readonly afficherEnteteVue = computed(() => !['quran-followup', 'quran-lesson-history', 'quran-mouradja'].includes(this.vue()));
+  readonly estDaara = computed(() => this.contexteActif()?.type_code === 'daara');
   readonly contexteActif = computed(() => this.espace()?.contexte ?? this.api.contexteEnseignant());
   readonly periodesAcademiques = computed(() => {
     const type = `${this.contexteActif()?.type_code ?? ''} ${this.contexteActif()?.type ?? ''}`.toLowerCase();
@@ -144,13 +183,15 @@ export class TeacherSpaceComponent implements OnInit {
         void this.router.navigate(['/enseignant', 'classes'], { replaceUrl: true });
         return;
       }
-      if (this.menu.some((item) => item.id === requested) || requested === 'classe-matiere' || requested === 'seance-detail' || requested === 'evaluation-detail') this.vue.set(requested as VueEnseignant);
+      if (this.menu.some((item) => item.id === requested) || requested === 'eleve-dossier' || requested === 'classe-matiere' || requested === 'seance-detail' || requested === 'evaluation-detail') this.vue.set(requested as VueEnseignant);
       const classeMatiereId = this.route.snapshot.queryParamMap.get('classe_matiere');
       if (requested === 'classe-matiere' && classeMatiereId) this.chargerClasseMatiere(classeMatiereId);
       const seanceId = this.route.snapshot.queryParamMap.get('seance');
       if (requested === 'seance-detail' && seanceId) this.chargerSeance(seanceId);
       const evaluationId = this.route.snapshot.queryParamMap.get('evaluation');
       if (requested === 'evaluation-detail' && evaluationId) this.chargerDetailEvaluation(evaluationId);
+      const eleveId = this.route.snapshot.queryParamMap.get('eleve');
+      if (requested === 'eleve-dossier' && eleveId) this.eleveDossierId.set(eleveId);
       this.charger();
     });
   }
@@ -164,6 +205,9 @@ export class TeacherSpaceComponent implements OnInit {
         this.espace.set(data);
         this.api.memoriserRattachementsEnseignant(data.rattachements);
         this.affectationsSource.data = data.affectations;
+        this.groupeActif.set('tous');
+        this.groupeStudentsSource.data = this.formaterElevesGroupes(data.eleves_groupes ?? []);
+        if (this.vue() === 'eleve-dossier' && this.eleveDossierId()) this.chargerSuiviCoranEleve(this.eleveDossierId()!);
         this.seancesSource.data = [...data.seances]
           .sort((a, b) => this.dateHeureSeance(a) - this.dateHeureSeance(b))
           .map((seance) => ({ ...seance, statut: this.libelleStatutSeance(seance.statut) }));
@@ -189,6 +233,73 @@ export class TeacherSpaceComponent implements OnInit {
   }
 
   ouvrir(vue: VueEnseignant): void { this.router.navigate(['/enseignant', vue]); }
+  choisirGroupeEleves(groupe: string): void {
+    this.groupeActif.set(groupe);
+    const eleves = this.espace()?.eleves_groupes ?? [];
+    this.groupeStudentsSource.data = this.formaterElevesGroupes(groupe === 'tous' ? eleves : eleves.filter((eleve) => eleve.groupe === groupe));
+  }
+  ouvrirDossierEleve(row: { id?: string }): void {
+    const eleveId = row.id;
+    const eleveAutorise = (this.espace()?.eleves_groupes ?? []).some((eleve) => eleve.id === eleveId);
+    if (!eleveId || !eleveAutorise) return;
+    this.eleveDossierId.set(eleveId);
+    void this.router.navigate(['/enseignant', 'eleve-dossier'], { queryParams: { eleve: eleveId } });
+  }
+  retourAuxEleves(): void { void this.router.navigate(['/enseignant', 'eleves']); }
+  chargerSuiviCoranEleve(eleveId: string): void {
+    const contexte = this.espace()?.contexte;
+    if (!contexte?.campus_id || !contexte.annee_scolaire_centrale_id) return;
+    this.eleveDossierLoading.set(true);
+    this.eleveDossierError.set(null);
+    this.eleveDossierSelectedLesson.set(null);
+    this.eleveDossierReader.set(null);
+    forkJoin({
+      lecons: this.api.leconsCoranDaara(contexte.campus_id, contexte.annee_scolaire_centrale_id, { eleveId, mode: 'lecons' }),
+      revisions: this.api.leconsCoranDaara(contexte.campus_id, contexte.annee_scolaire_centrale_id, { eleveId, mode: 'mouradja' }),
+      reader: this.api.suiviCoranDaara(contexte.campus_id, contexte.annee_scolaire_centrale_id, 'all', 1),
+    }).subscribe({
+      next: ({ lecons, revisions, reader }) => {
+        this.eleveDossierLeconsSource.data = this.formaterSuiviCoran(lecons.data.lecons);
+        this.eleveDossierRevisionsSource.data = this.formaterSuiviCoran(revisions.data.lecons);
+        this.eleveDossierReader.set(reader.data);
+        this.eleveDossierLoading.set(false);
+      },
+      error: (response) => {
+        this.eleveDossierLeconsSource.data = [];
+        this.eleveDossierRevisionsSource.data = [];
+        this.eleveDossierReader.set(null);
+        this.eleveDossierError.set(response.error?.message ?? 'Le suivi Coran de cet élève est indisponible.');
+        this.eleveDossierLoading.set(false);
+      },
+    });
+  }
+  private formaterSuiviCoran(lecons: Array<any>): Array<any> {
+    return lecons.map((lecon) => ({
+      ...lecon,
+      start: lecon.debut?.cle_verset ?? '—',
+      end: lecon.fin?.cle_verset ?? '—',
+      sourates: `${lecon.debut?.sourate_latin || lecon.debut?.sourate_arabe || '—'} → ${lecon.fin?.sourate_latin || lecon.fin?.sourate_arabe || '—'}`,
+      statutLabel: lecon.statut === 'deja_recite' ? 'Déjà récité' : 'À réciter',
+      assignedDate: lecon.assigned_at,
+      completedDate: lecon.completed_at,
+      duration: this.formatDuree(lecon),
+    }));
+  }
+  ouvrirTexteQuranEleve(lesson: any): void { this.eleveDossierSelectedLesson.set(lesson); }
+  fermerTexteQuranEleve(): void { this.eleveDossierSelectedLesson.set(null); }
+  private formatDuree(lesson: { assigned_at: string; completed_at: string | null; duree_jours: number | null }): string {
+    if (lesson.duree_jours === null || !lesson.completed_at) return '—';
+    const hours = Math.max(0, Math.floor((new Date(lesson.completed_at).getTime() - new Date(lesson.assigned_at).getTime()) / 3_600_000));
+    if (hours < 24) return `${hours} heure${hours === 1 ? '' : 's'}`;
+    const days = Math.max(1, Math.floor(hours / 24));
+    return `${days} jour${days === 1 ? '' : 's'}`;
+  }
+  private formaterElevesGroupes(eleves: Array<any>): Array<any> {
+    return eleves.map((eleve) => ({ ...eleve, name: `${eleve.prenom} ${eleve.nom}`.trim(), gender: eleve.sexe || '—', birthDate: eleve.date_naissance || '—', parentPhone: eleve.tuteur_telephone || '—', status: eleve.statut === 'actif' ? 'Actif' : 'En attente' }));
+  }
+  effectifGroupe(groupe: string): number {
+    return (this.espace()?.eleves_groupes ?? []).filter((eleve) => eleve.groupe === groupe).length;
+  }
   ouvrirSeance(seanceId: string): void {
     void this.router.navigate(['/enseignant', 'seance-detail'], { queryParams: { seance: seanceId } });
   }
@@ -356,6 +467,31 @@ export class TeacherSpaceComponent implements OnInit {
   modifierCahierSeance(champ: 'contenu' | 'travailMaison' | 'leconId', value: string): void {
     this.cahierSeance.update((cahier) => ({ ...cahier, [champ]: value }));
   }
+  joindrePieceSeance(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const fichier = input.files?.[0];
+    const detail = this.seanceDetail();
+    if (!fichier || !detail || this.televersementPieceSeance()) return;
+    const extensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'];
+    const extension = fichier.name.split('.').pop()?.toLowerCase() ?? '';
+    if (fichier.size > 15 * 1024 * 1024) {
+      this.erreurSeance.set('Le fichier ne doit pas dépasser 15 Mo.');
+      input.value = '';
+      return;
+    }
+    if (!extensions.includes(extension)) {
+      this.erreurSeance.set('Formats acceptés : PDF, Word, Excel, JPG ou PNG.');
+      input.value = '';
+      return;
+    }
+    this.televersementPieceSeance.set(true);
+    this.erreurSeance.set(null);
+    this.api.joindrePieceSeanceEnseignant(detail.seance.id, fichier).subscribe({
+      next: () => this.chargerSeance(detail.seance.id),
+      error: (response) => { this.televersementPieceSeance.set(false); input.value = ''; this.erreurSeance.set(response.error?.message ?? 'Le document n’a pas pu être ajouté.'); },
+      complete: () => { this.televersementPieceSeance.set(false); input.value = ''; },
+    });
+  }
   modifierPresence(eleveId: string, statut: string): void {
     this.presencesSeance.update((presences) => ({ ...presences, [eleveId]: statut }));
     this.sessionStudentsSource.data = this.sessionStudentsSource.data.map((eleve) => eleve.id === eleveId
@@ -387,7 +523,7 @@ export class TeacherSpaceComponent implements OnInit {
     return 'P';
   }
 
-  private libelleStatutSeance(statut: string | null | undefined): 'Planifiée' | 'À compléter' | 'Effectuée' | 'Validée' | 'Ratée' {
+  libelleStatutSeance(statut: string | null | undefined): 'Planifiée' | 'À compléter' | 'Effectuée' | 'Validée' | 'Ratée' {
     if (statut === 'ratee') return 'Ratée';
     if (statut === 'realisee') return 'Effectuée';
     if (statut === 'terminee') return 'Validée';

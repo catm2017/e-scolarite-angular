@@ -1,0 +1,72 @@
+.lesson-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(16, 36, 63, .48);
+  backdrop-filter: blur(3px);
+}
+
+.lesson-modal {
+  width: min(920px, 100%);
+  max-height: min(86vh, 820px);
+  overflow: hidden;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(17, 45, 79, .3);
+}
+
+.lesson-modal-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 21px 24px 15px;
+  border-bottom: 1px solid #e5edf3;
+}
+
+.lesson-modal-heading small { color: #1876c8; font-size: 10px; font-weight: 850; letter-spacing: .1em; }
+.lesson-modal-heading h2 { margin: 5px 0 2px; color: #254764; font-size: 19px; }
+.lesson-modal-heading p { margin: 0; color: #7c91a2; font-size: 12px; }
+.lesson-modal-close { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #d9e4f0; border-radius: 50%; background: #fff; color: #55708e; cursor: pointer; }
+.lesson-modal-close:hover { background: #eef7fd; color: #176d9f; }
+.lesson-modal-close i, .lesson-modal-meta i { font-family: 'Material Icons Outlined'; font-style: normal; }
+
+.lesson-modal-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 24px; background: #f8fbfd; color: #587189; font-size: 12px; }
+.lesson-modal-meta > span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+
+.lesson-modal-quran {
+  max-height: calc(86vh - 145px);
+  overflow: auto;
+  padding: 24px 30px;
+  background: linear-gradient(155deg, #f9fcff, #f0f7fc);
+  font-family: Amiri, 'Traditional Arabic', serif;
+  font-size: 25px;
+  line-height: 2.2;
+  scrollbar-width: thin;
+  scrollbar-color: #8bb9d7 transparent;
+}
+
+.lesson-ayah { display: inline; border-radius: 8px; padding: 4px 6px; margin: 2px 0; color: #14263b; }
+.lesson-ayah em { display: inline-flex; vertical-align: middle; direction: ltr; align-items: center; justify-content: center; width: 24px; height: 24px; margin: 0 5px; border: 0; border-radius: 50%; background: #1876c8; font: 700 9px Inter, Arial, sans-serif; font-style: normal; color: #fff; }
+.lesson-ayah:hover { background: #dff1fd; }
+.lesson-modal-quran .empty-reader { font-family: Inter, Arial, sans-serif; font-size: 13px; line-height: 1.5; }
+
+@media (max-width: 560px) {
+  .lesson-modal-backdrop { padding: 10px; }
+  .lesson-modal-heading { padding: 16px; }
+  .lesson-modal-meta { padding: 11px 16px; align-items: flex-start; flex-direction: column; }
+  .lesson-modal-quran { max-height: calc(86vh - 175px); padding: 18px 15px; font-size: 21px; }
+}
+
+.lesson-validation-backdrop { position: fixed; inset: 0; z-index: 1250; display: grid; place-items: center; padding: 20px; background: rgba(16, 36, 63, .48); backdrop-filter: blur(3px); }
+.lesson-validation-modal { width: min(520px, 100%); overflow: hidden; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(17, 45, 79, .3); }
+.lesson-validation-modal > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 20px 22px; border-bottom: 1px solid #e5edf3; }
+.lesson-validation-modal > header > div { display: flex; align-items: flex-start; gap: 11px; }.lesson-validation-modal > header > div > i { font-family: 'Material Icons Outlined'; font-style: normal; color: #1876c8; font-size: 26px; }
+.lesson-validation-modal h2 { margin: 0; color: #254764; font-size: 17px; }.lesson-validation-modal p { margin: 5px 22px 16px; color: #6d8295; font-size: 12px; line-height: 1.55; }.lesson-validation-modal > header p { margin: 4px 0 0; font-size: 11px; }
+.lesson-validation-modal > header button { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #d9e4f0; border-radius: 50%; background: #fff; color: #55708e; cursor: pointer; }.lesson-validation-modal > header button i { font-family: 'Material Icons Outlined'; font-style: normal; }
+.boppou-check { display: flex; align-items: flex-start; gap: 10px; margin: 0 22px 18px; padding: 13px; border: 1px solid #d9eaf5; border-radius: 10px; background: #f4faff; cursor: pointer; }.boppou-check input { width: 18px; height: 18px; accent-color: #1876c8; }.boppou-check span { display: grid; gap: 3px; }.boppou-check strong { color: #254764; font-size: 12px; }.boppou-check small { color: #71879a; font-size: 11px; }
+.lesson-validation-modal > footer { display: flex; justify-content: flex-end; gap: 9px; padding: 14px 22px; border-top: 1px solid #e5edf3; background: #f8fbfd; }.lesson-validation-modal > footer button { border: 1px solid #d7e5ef; border-radius: 8px; padding: 9px 13px; background: #fff; color: #42617a; font-weight: 700; cursor: pointer; }.lesson-validation-modal > footer .primary-action { display: inline-flex; align-items: center; gap: 6px; color: #fff; }.lesson-validation-modal > footer .primary-action i { font-family: 'Material Icons Outlined'; font-style: normal; }
+.lesson-modal-trace{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;color:#6b8296;font:600 10px Inter,Arial,sans-serif}.lesson-modal-trace span{display:inline-flex;align-items:center;gap:4px}.lesson-modal-trace i{font-family:'Material Icons';font-size:14px;color:#287fce;font-style:normal}.lesson-modal-trace strong{color:#294d69;font-weight:800}

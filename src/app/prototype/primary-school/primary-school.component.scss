@@ -1,1 +1,15 @@
 /* Styles mutualisés : src/styles/prototype/_primary-school-component.scss. */
+ .session-status-badge { display:inline-flex; align-items:center; width:max-content; margin-top:8px; padding:4px 10px; border-radius:999px; font-size:11px; font-style:normal; font-weight:800; }
+ .session-status-badge.planifiee { color:#236db5; background:#eaf4ff; }
+ .session-status-badge.completee { color:#a46612; background:#fff3dc; }
+ .session-status-badge.validee { color:#1b7a52; background:#e7f7ef; }
+ .session-status-badge.ratee { color:#b43d4d; background:#ffebee; }
+ .session-files-card { margin-top:16px; }
+ .session-files-card header { display:flex; align-items:center; justify-content:space-between; }
+ .session-files-card header > i { color:#277bd2; font-family:'Material Icons Outlined', 'Material Icons' !important; font-size:22px; font-style:normal; }
+ .session-files-list { display:grid; gap:8px; margin-top:12px; }
+ .session-files-list div { display:flex; align-items:center; gap:9px; padding:9px 11px; border:1px solid #e0eaf3; border-radius:8px; color:#385a73; background:#fff; }
+ .session-files-list div > i { color:#277bd2; font-family:'Material Icons Outlined', 'Material Icons' !important; font-style:normal; }
+ .session-files-list span { flex:1; font-size:12px; font-weight:750; }
+ .session-files-list small { color:#7a91a3; font-size:10px; }
+ .session-files-list > p { color:#8094a5; font-size:11px; }

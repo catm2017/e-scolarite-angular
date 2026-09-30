@@ -25,43 +25,66 @@
   <main>
     @for (section of selectedPage().sections; track section.id) {
       @if (section.visible) {
+        <div class="public-component" [class.align-left]="section.styles?.['textAlign'] === 'left'" [class.align-center]="section.styles?.['textAlign'] === 'center'" [class.align-right]="section.styles?.['textAlign'] === 'right'" [style.width]="section.styles?.['width'] || '100%'" [style.backgroundColor]="section.styles?.['backgroundColor'] || null" [style.color]="section.styles?.['color'] || null" [style.padding]="section.styles?.['padding'] || null">
         @switch (section.type) {
           @case ('hero') {
             <section class="hero">
-              <div class="hero-copy"><small>{{ section.eyebrow }}</small><h1>{{ section.title }}</h1><h2>{{ draft().tagline }}</h2><p>{{ section.content }}</p><div><button type="button" routerLink="/connexion">Connexion</button><a href="#decouvrir">Découvrir l’établissement <span>arrow_forward</span></a></div></div>
-              <aside><span>school</span><strong>Votre établissement en image</strong><p>Cette photographie sera administrable depuis le back-office.</p><em>Depuis 2008</em></aside>
+              @if (heroBackgroundMedia(section); as media) { @if (mediaUsesEmbed(media)) { <iframe class="hero-background hero-external-video" [src]="mediaEmbedResourceUrl(media)" title="Vidéo de présentation" loading="lazy"></iframe> } @else { <video class="hero-background" [src]="media.embedUrl || media.url" autoplay muted loop playsinline></video> } } @else { <video class="hero-background" [src]="defaultHeroBackgroundUrl" autoplay muted loop playsinline preload="metadata"></video> }
+              <div class="hero-copy"><small>{{ section.eyebrow }}</small><h1>{{ section.title }}</h1><h2>{{ draft().tagline }}</h2><p>{{ section.content }}</p><div><button type="button" [routerLink]="siteLoginHref()">Connexion</button><a [href]="sectionButtonHref(section)" (click)="openSectionLink(section, $event)" [attr.target]="section.buttonLinkType === 'external' ? '_blank' : null" [attr.rel]="section.buttonLinkType === 'external' ? 'noopener noreferrer' : null">{{ section.buttonLabel || 'Découvrir l’établissement' }} <span>arrow_forward</span></a></div></div>
             </section>
           }
           @case ('stats') {
             @if (draft().showStats) {
-              <section class="stats"><div><strong>684</strong><span>Apprenants</span></div><div><strong>42</strong><span>Enseignants</span></div><div><strong>98%</strong><span>Réussite aux examens</span></div><div><strong>16</strong><span>Années d’expérience</span></div></section>
+              <section class="stats">@for (item of sectionItems(section); track item.id) {<div><strong>{{ item.title }}</strong><span>{{ item.subtitle }}</span></div>}</section>
             }
           }
           @case ('programs') {
-            <section class="content-section programs" id="decouvrir"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="program-grid"><article><span>child_care</span><em>CI – CM2</em><h3>Préscolaire & Primaire</h3><p>Éveil, acquisition des fondamentaux et accompagnement personnalisé.</p><a href="#">Découvrir le parcours <i>arrow_forward</i></a></article><article><span>menu_book</span><em>6e – Terminale</em><h3>Collège & Lycée</h3><p>Consolidation des savoirs, orientation et préparation aux examens.</p><a href="#">Découvrir le parcours <i>arrow_forward</i></a></article><article><span>auto_stories</span><em>Parcours dédié</em><h3>Enseignement religieux</h3><p>Lecture, mémorisation, récitation et transmission des valeurs.</p><a href="#">Découvrir le parcours <i>arrow_forward</i></a></article></div></section>
+            <section class="content-section programs" id="decouvrir"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="program-grid">@for (item of sectionItems(section); track item.id) {<article><span>{{ item.icon || 'school' }}</span><em>{{ item.subtitle }}</em><h3>{{ item.title }}</h3><p>{{ item.content }}</p><a href="#">Découvrir le parcours <i>arrow_forward</i></a></article>}</div></section>
           }
           @case ('schools') {
-            <section class="content-section schools"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="school-grid"><article><div class="school-image">apartment</div><div><em>Préscolaire · Primaire · Collège</em><h3>Campus Keur Massar</h3><p><span>location_on</span>Keur Massar, Dakar</p><a href="#">Voir le campus <i>arrow_forward</i></a></div></article><article><div class="school-image">domain</div><div><em>Lycée · Formation professionnelle</em><h3>Campus Dakar Plateau</h3><p><span>location_on</span>Dakar Plateau</p><a href="#">Voir le campus <i>arrow_forward</i></a></div></article></div></section>
+            <section class="content-section schools"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="school-grid">@for (item of sectionItems(section); track item.id) {<article><div class="school-image">{{ item.icon || 'apartment' }}</div><div><em>{{ item.subtitle }}</em><h3>{{ item.title }}</h3><p><span>location_on</span>{{ item.content }}</p><a href="#">Voir le campus <i>arrow_forward</i></a></div></article>}</div></section>
           }
           @case ('about') {
-            <section class="about"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p><button type="button">Découvrir notre projet</button></div><div class="feature-grid"><article><span>person_search</span><div><h3>Accompagnement individualisé</h3><p>Un suivi attentif pour faire progresser chaque apprenant.</p></div></article><article><span>workspace_premium</span><div><h3>Excellence académique</h3><p>Des équipes engagées autour d’objectifs ambitieux et mesurables.</p></div></article><article><span>diversity_3</span><div><h3>Valeurs & citoyenneté</h3><p>Une éducation responsable, ouverte et enracinée au Sénégal.</p></div></article><article><span>lightbulb</span><div><h3>Innovation pédagogique</h3><p>Des méthodes actives et des outils adaptés à chaque cycle.</p></div></article></div></section>
+            <section class="about"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p><button type="button">Découvrir notre projet</button></div><div class="feature-grid">@for (item of sectionItems(section); track item.id) {<article><span>{{ item.icon || 'verified' }}</span><div><h3>{{ item.title }}</h3><p>{{ item.content }}</p></div></article>}</div></section>
           }
           @case ('news') {
-            <section class="content-section news"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="news-grid"><article><div>campaign</div><small>12 OCT. 2026</small><h3>Bienvenue pour la nouvelle rentrée scolaire</h3><a href="#">Lire l’actualité <i>arrow_forward</i></a></article><article><div>emoji_events</div><small>28 JUIN 2026</small><h3>Nos élèves récompensés pour leurs résultats</h3><a href="#">Lire l’actualité <i>arrow_forward</i></a></article><article><div>groups</div><small>16 MAI 2026</small><h3>Rencontre avec les familles de l’établissement</h3><a href="#">Lire l’actualité <i>arrow_forward</i></a></article></div></section>
+            <section class="content-section news"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="news-carousel"><button type="button" class="carousel-arrow" (click)="previousNewsSlide(section)" [disabled]="newsSlideIndex(section) === 0" aria-label="Actualités précédentes"><i>chevron_left</i></button><div class="news-grid">@for (item of newsSlides(section)[newsSlideIndex(section)]; track item.id) {<article>@if (item.imageId && mediaById(item.imageId); as thumbnail) {<img class="news-thumbnail" [src]="thumbnail.url" [alt]="thumbnail.alt || item.title" />} @else {<div class="news-icon">{{ item.icon || 'newspaper' }}</div>}<small>{{ item.subtitle }}</small><h3>{{ item.title }}</h3><p>{{ item.content }}</p>@if (itemExternalHref(item); as href) {<a [href]="href" target="_blank" rel="noopener noreferrer">{{ item.linkLabel || 'Lire l’actualité' }} <i>arrow_forward</i></a>}</article>}</div><button type="button" class="carousel-arrow" (click)="nextNewsSlide(section)" [disabled]="newsSlideIndex(section) >= newsSlides(section).length - 1" aria-label="Actualités suivantes"><i>chevron_right</i></button></div><div class="carousel-dots">@for (slide of newsSlides(section); track $index) {<button type="button" [class.active]="newsSlideIndex(section) === $index" (click)="setNewsSlide(section, $index)" [attr.aria-label]="'Afficher les actualités ' + ($index + 1)"></button>}</div></section>
           }
           @case ('testimonials') {
-            <section class="content-section testimonials"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="quote-grid"><article><span>format_quote</span><p>Une équipe disponible, une communication claire et un suivi qui nous met en confiance.</p><strong>Awa Ndiaye</strong><small>Parent d’élève</small></article><article><span>format_quote</span><p>J’ai trouvé un cadre exigeant qui m’a permis de progresser et de préparer mon avenir.</p><strong>Mamadou Fall</strong><small>Ancien élève</small></article></div></section>
+            <section class="content-section testimonials"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="testimonial-carousel"><button type="button" class="carousel-arrow" (click)="previousTestimonialSlide(section)" [disabled]="testimonialSlideIndex(section) === 0" aria-label="Témoignages précédents"><i>chevron_left</i></button><div class="quote-grid">@for (item of testimonialSlides(section)[testimonialSlideIndex(section)]; track item.id) {<article><span>{{ item.icon || 'format_quote' }}</span><p>{{ item.content }}</p><strong>{{ item.title }}</strong><small>{{ item.subtitle }}</small></article>}</div><button type="button" class="carousel-arrow" (click)="nextTestimonialSlide(section)" [disabled]="testimonialSlideIndex(section) >= testimonialSlides(section).length - 1" aria-label="Témoignages suivants"><i>chevron_right</i></button></div><div class="carousel-dots">@for (slide of testimonialSlides(section); track $index) {<button type="button" [class.active]="testimonialSlideIndex(section) === $index" (click)="setTestimonialSlide(section, $index)" [attr.aria-label]="'Afficher les témoignages ' + ($index + 1)"></button>}</div></section>
           }
           @case ('contact') {
-            <section class="contact"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><article><p><span>location_on</span>{{ draft().address }}</p><p><span>phone</span>{{ draft().phone }}</p><p><span>mail</span>{{ draft().email }}</p><p><span>schedule</span>Lundi au vendredi, 08h00 – 17h00</p><button type="button">Demander une visite</button></article></section>
+            <section class="contact"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><article>@for (item of sectionItems(section); track item.id) {<p><span>{{ item.icon || 'info' }}</span>{{ item.content || item.title }}</p>}<button type="button">Demander une visite</button></article></section>
+          }
+          @case ('admission') {
+            <app-admission-form></app-admission-form>
           }
           @case ('cta') {
             <section class="cta"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><button type="button" (click)="selectedPageId.set('admission')">Déposer une demande</button></section>
+          }
+          @case ('heading') {
+            <section class="content-section custom-heading"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p></section>
+          }
+          @case ('image') {
+            @if (mediaById(section.mediaId); as media) { <section class="custom-media"><img [src]="media.url" [alt]="media.alt || section.title" [style.width]="section.styles?.['imageWidth'] || '100%'" /><p>{{ section.content }}</p></section> }
+          }
+          @case ('video') {
+            @if (mediaById(section.mediaId); as media) { <section class="custom-media">@if (mediaUsesEmbed(media)) { <iframe [src]="mediaEmbedResourceUrl(media)" title="Vidéo externe" loading="lazy" [style.width]="section.styles?.['imageWidth'] || '100%'"></iframe> } @else { <video [src]="media.embedUrl || media.url" controls [style.width]="section.styles?.['imageWidth'] || '100%'"></video> }<p>{{ section.content }}</p></section> }
+          }
+          @case ('gallery') {
+            <section class="content-section custom-gallery"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="custom-gallery-grid">@for (mediaId of section.mediaItems || []; track mediaId) { @if (mediaById(mediaId); as media) { <img [src]="media.url" [alt]="media.alt || media.name" /> } }</div></section>
+          }
+          @case ('slider') {
+            <section class="content-section custom-slider"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><div class="custom-slider-frame"><div class="custom-slider-track" [class.single]="(section.mediaItems || []).length < 2">@for (mediaId of section.mediaItems || []; track mediaId) { @if (mediaById(mediaId); as media) { <img [src]="media.url" [alt]="media.alt || media.name" /> } }</div></div><p class="lead">{{ section.content }}</p></section>
+          }
+          @case ('button') {
+            <section class="custom-button"><a [href]="sectionButtonHref(section)" (click)="openSectionLink(section, $event)">{{ section.buttonLabel || section.title }}<i>arrow_forward</i></a></section>
           }
           @default {
             <section class="content-section text-block"><span class="block-icon">{{ sectionIcon(section.type) }}</span><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p></section>
           }
         }
+        </div>
       }
     }
   </main>

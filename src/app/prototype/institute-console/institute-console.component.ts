@@ -15,6 +15,7 @@ import { CampusInstitut, CentralApiService, CompteCandidatInstitut, FactureSousc
 import { AppToastService } from '@core/service/app-toast.service';
 import { TemplateMultiselectDirective } from '@shared/directives/template-multiselect.directive';
 import { StudentTransfersComponent } from './student-transfers/student-transfers.component';
+import { AdmissionsInstitutComponent } from './admissions-institut/admissions-institut.component';
 
 interface Establishment {
   id: string | null;
@@ -158,7 +159,7 @@ interface InstituteRole {
 
 @Component({
   selector: 'app-institute-console',
-  imports: [RouterLink, BreadcrumbComponent, FormsModule, MasterTableComponent, DecimalPipe, TemplateMultiselectDirective, StudentTransfersComponent],
+  imports: [RouterLink, BreadcrumbComponent, FormsModule, MasterTableComponent, DecimalPipe, TemplateMultiselectDirective, StudentTransfersComponent, AdmissionsInstitutComponent],
   templateUrl: './institute-console.component.html',
   styleUrl: './institute-console.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -173,6 +174,7 @@ export class InstituteConsoleComponent implements OnInit {
   readonly activeView = this.workspace.activeView;
   readonly establishments = signal<Establishment[]>([]);
   private readonly establishmentsCatalogue = signal<Establishment[]>([]);
+  readonly availableUserEstablishments = computed(() => this.establishmentsCatalogue().filter((item) => item.active && !!item.workspaceId));
   private readonly establishmentsAccessEffect = effect(() => {
     const catalogue = this.establishmentsCatalogue();
     const acces = this.api.accesUtilisateur();
@@ -303,6 +305,9 @@ export class InstituteConsoleComponent implements OnInit {
   readonly userCampusAccessIds = signal<string[]>([]);
   readonly userEstablishmentAccessIds = signal<string[]>([]);
   readonly passwordResetSent = signal(false);
+  readonly passwordResetModalOpen = signal(false);
+  readonly accountStatusModalOpen = signal(false);
+  readonly pendingAccountStatus = signal<'actif' | 'suspendu' | null>(null);
   readonly userAssignedRoles = signal<string[]>([]);
   readonly userRoleAssignmentDraft = signal('');
   readonly userDirectPermissions = signal<string[]>([]);
@@ -311,6 +316,7 @@ export class InstituteConsoleComponent implements OnInit {
   readonly userRolePermissionsDataSource = new MatTableDataSource<PermissionDefinition>([]);
   readonly userScopeSaving = signal(false);
   readonly userSecuritySaving = signal(false);
+  readonly passwordResetSending = signal(false);
   readonly roleManagementTab = signal<'roles' | 'permissions'>('roles');
   readonly roleFormOpen = signal(false);
   readonly roleSaving = signal(false);
@@ -1120,6 +1126,10 @@ export class InstituteConsoleComponent implements OnInit {
     this.selectedUserRecord.set(record);
     this.userRecordTab.set('roles');
     this.passwordResetSent.set(false);
+    this.passwordResetModalOpen.set(false);
+    this.accountStatusModalOpen.set(false);
+    this.pendingAccountStatus.set(null);
+    this.passwordResetSending.set(false);
     this.userRole.set(record.role || 'Gestionnaire d’établissement');
     this.userRoleAssignmentDraft.set('');
     this.userDirectPermissions.set([]);
@@ -1132,10 +1142,10 @@ export class InstituteConsoleComponent implements OnInit {
     if (!record.id) return;
     this.api.accesUtilisateurInstitut(record.id).subscribe({
       next: ({ data }) => {
-        this.userAssignedRoles.set(data.role_ids);
-        this.userDirectPermissions.set(data.permission_codes);
-        this.userCampusAccessIds.set(data.campus_ids);
-        this.userEstablishmentAccessIds.set(data.etablissement_ids);
+        this.userAssignedRoles.set((data.role_ids ?? []).map(String));
+        this.userDirectPermissions.set((data.permission_codes ?? []).map(String));
+        this.userCampusAccessIds.set((data.campus_ids ?? []).map(String));
+        this.userEstablishmentAccessIds.set((data.etablissement_ids ?? []).map(String));
         this.actualiserTablesPermissionsUtilisateur();
       },
       error: (error) => this.toast.error(error?.error?.message ?? 'Les autorisations de cet utilisateur n’ont pas pu être chargées.'),
@@ -1252,9 +1262,19 @@ export class InstituteConsoleComponent implements OnInit {
   changerStatutUtilisateur(statut: 'actif' | 'suspendu'): void {
     const user = this.selectedUserRecord();
     if (!user?.id || this.userSecuritySaving()) return;
+    this.pendingAccountStatus.set(statut);
+    this.accountStatusModalOpen.set(true);
+  }
+
+  confirmerChangementStatutUtilisateur(): void {
+    const user = this.selectedUserRecord();
+    const statut = this.pendingAccountStatus();
+    if (!user?.id || !statut || this.userSecuritySaving()) return;
     this.userSecuritySaving.set(true);
     this.api.changerStatutUtilisateurInstitut(user.id, statut).subscribe({
       next: (result) => {
+        this.accountStatusModalOpen.set(false);
+        this.pendingAccountStatus.set(null);
         this.userSecuritySaving.set(false);
         const status = statut === 'actif' ? 'Actif' : 'Désactivé';
         const misAJour = { ...user, status };
@@ -1265,6 +1285,31 @@ export class InstituteConsoleComponent implements OnInit {
         this.toast.success(result.message);
       },
       error: (error) => { this.userSecuritySaving.set(false); this.toast.error(error?.error?.message ?? 'L’état du compte n’a pas pu être modifié.'); },
+    });
+  }
+
+  reinitialiserMotDePasseUtilisateur(): void {
+    const user = this.selectedUserRecord();
+    if (!user?.id || this.passwordResetSending()) return;
+    this.passwordResetModalOpen.set(true);
+  }
+
+  confirmerReinitialisationMotDePasse(): void {
+    const user = this.selectedUserRecord();
+    if (!user?.id || this.passwordResetSending()) return;
+    this.passwordResetSent.set(false);
+    this.passwordResetSending.set(true);
+    this.api.reinitialiserMotDePasseUtilisateurInstitut(user.id).subscribe({
+      next: (result) => {
+        this.passwordResetModalOpen.set(false);
+        this.passwordResetSending.set(false);
+        this.passwordResetSent.set(true);
+        this.toast.success(result.message);
+      },
+      error: (error) => {
+        this.passwordResetSending.set(false);
+        this.toast.error(error?.error?.message ?? 'Le mot de passe n’a pas pu être réinitialisé.');
+      },
     });
   }
 
@@ -1567,6 +1612,7 @@ export class InstituteConsoleComponent implements OnInit {
       establishments: 'Établissements',
       campuses: 'Campus',
       'student-transfers': 'Transferts d’élèves',
+      admissions: 'Admissions',
       users: 'Utilisateurs & accès',
       'user-detail': 'Dossier utilisateur',
       staff: 'Personnel institut',

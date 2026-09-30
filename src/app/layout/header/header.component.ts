@@ -13,7 +13,6 @@ import { UnsubscribeOnDestroyAdapter } from '@shared';
 import { LocalStorageService } from '@shared/services';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { NotificationListComponent } from '../components/notification-list/notification-list.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { UserProfileMenuComponent } from '../components/user-profile-menu/user-profile-menu.component';
 import { SearchBarComponent } from '../components/search-bar/search-bar.component';
@@ -45,7 +44,6 @@ interface Notifications {
     MatButtonModule,
     MatIconModule,
     MatToolbarModule,
-    NotificationListComponent,
     MatMenuModule,
     PlatformLanguageSwitcherComponent,
     UserProfileMenuComponent,
@@ -155,6 +153,7 @@ export class HeaderComponent
     this.userImg =
       './assets/images/user/' + (this.authService.currentUser().avatar || 'admin.jpg');
     this.actualiserProfilEspace();
+    window.addEventListener('escolarite-profil-modifie', this.profilModifie);
     this.docElement = document.documentElement;
     this.syncWorkspaceContext(userRole);
     this.subs.sink = this.router.events.subscribe((event) => {
@@ -165,6 +164,11 @@ export class HeaderComponent
     });
 
   }
+
+  private readonly profilModifie = () => {
+    this.actualiserProfilEspace();
+    this.cdr.markForCheck();
+  };
 
   private syncWorkspaceContext(userRole: Role): void {
     const path = this.router.url.split('?')[0].split('#')[0];
@@ -202,7 +206,7 @@ export class HeaderComponent
     this.workspaceUserName = user ? `${user.prenom} ${user.nom}`.trim() : '';
     this.workspaceInstituteName = institut?.nom ?? '';
     if (this.workspaceUserName && (this.isInstituteWorkspace || this.isEstablishmentWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace)) {
-      this.userImg = './assets/images/user/admin.jpg';
+      this.userImg = user?.photo_url || './assets/images/user/admin.jpg';
     }
   }
 
@@ -342,7 +346,10 @@ export class HeaderComponent
   }
 
   onAccountClicked() {
-    this.router.navigate(['/extra-pages/profile']);
+    if (this.isSaasWorkspace) this.router.navigate(['/saas/profil']);
+    else if (this.isTeacherWorkspace) this.router.navigate(['/enseignant/profil']);
+    else if (this.isInstituteWorkspace || this.isEstablishmentWorkspace) this.router.navigate(['/institut/profil']);
+    else this.router.navigate(['/connexion']);
   }
 
   onInboxClicked() {

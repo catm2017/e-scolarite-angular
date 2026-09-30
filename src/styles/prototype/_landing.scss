@@ -39,6 +39,7 @@ body:has(.public-landing) {
   .landing-brand { display: inline-flex; align-items: center; gap: 10px; color: #143b7a; font-size: 19px; font-weight: 850; line-height: 1.05; white-space: nowrap; }
   .landing-brand > span:last-child { display: grid; gap: 3px; }
   .landing-brand small { color: #7290b9; font-size: 9px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+  .landing-brand-logo { width: 42px; height: 42px; flex: 0 0 42px; object-fit: contain; border-radius: 12px; }
   .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #0b66dc, #0643a4); box-shadow: 0 8px 18px rgba(7,87,199,.22); }
   .brand-mark i { font-size: 23px; }
   .landing-nav nav { display: flex; align-items: center; justify-content: center; gap: clamp(14px, 2vw, 29px); }
@@ -247,6 +248,7 @@ body:has(.public-landing) {
     .landing-actions > app-platform-language-switcher { flex: 0 0 auto; }
     .landing-actions > .landing-button { flex: 1 1 0; max-width: 132px; }
     .landing-brand { font-size: 17px; }
+    .landing-brand-logo { width: 37px; height: 37px; flex-basis: 37px; border-radius: 10px; }
     .brand-mark { width: 37px; height: 37px; border-radius: 10px; }
     .brand-mark i { font-size: 20px; }
     .landing-hero { background-size: 92% auto; }

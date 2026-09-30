@@ -1,0 +1,43 @@
+/* Rendu partagé avec le texte affiché dans la modale des leçons. */
+.quran-followup .ayahs,
+.quran-lessons .ayah-list {
+  background: linear-gradient(155deg, #f9fcff, #f0f7fc);
+  font-family: Amiri, 'Traditional Arabic', serif;
+  font-size: 30px;
+  line-height: 2.2;
+}
+
+.quran-followup .ayah {
+  font-family: Amiri, 'Traditional Arabic', serif;
+  font-size: 30px;
+  line-height: 2.2;
+}
+
+.quran-lessons .ayah {
+  font-family: Amiri, 'Traditional Arabic', serif;
+  font-size: 30px;
+  line-height: 2.2;
+}
+
+.quran-followup .ayah em,
+.quran-lessons .ayah em {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #1876c8;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 560px) {
+  .quran-followup .ayahs,
+  .quran-lessons .ayah-list,
+  .quran-followup .ayah,
+  .quran-lessons .ayah {
+    font-size: 25px;
+    line-height: 2.2;
+  }
+}

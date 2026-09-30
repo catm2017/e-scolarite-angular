@@ -35,7 +35,12 @@ export type PrimaryView =
   | 'expenses'
   | 'finance'
   | 'daara-transfers'
+  | 'daara-groups'
+  | 'daara-teacher-groups'
   | 'quran-followup'
+  | 'quran-lessons'
+  | 'quran-lesson-history'
+  | 'quran-mouradja'
   | 'settings';
 
 export type PrimaryLocale = PlatformLocale;
@@ -70,7 +75,12 @@ const PRIMARY_VIEW_PATHS: Record<PrimaryView, string> = {
   expenses: 'depenses',
   finance: 'finances',
   'daara-transfers': 'transferts-daara',
+  'daara-groups': 'groupes-daara',
+  'daara-teacher-groups': 'affectation-enseignants-groupes',
   'quran-followup': 'suivi-coran',
+  'quran-lessons': 'affectation-lecons',
+  'quran-lesson-history': 'liste-lecons',
+  'quran-mouradja': 'mouradja-an',
   settings: 'parametres',
 };
 
@@ -111,7 +121,12 @@ const FONCTIONNALITE_PAR_VUE: Partial<Record<PrimaryView, string>> = {
   expenses: 'gestion_finances',
   finance: 'gestion_finances',
   'daara-transfers': 'gestion_eleves',
+  'daara-groups': 'gestion_eleves',
+  'daara-teacher-groups': 'gestion_enseignants',
   'quran-followup': 'gestion_suivi_coran',
+  'quran-lessons': 'gestion_suivi_coran',
+  'quran-lesson-history': 'gestion_suivi_coran',
+  'quran-mouradja': 'gestion_suivi_coran',
 };
 
 @Injectable({ providedIn: 'root' })

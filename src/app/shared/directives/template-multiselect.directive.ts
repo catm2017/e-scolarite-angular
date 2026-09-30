@@ -13,7 +13,7 @@ import {
  * <select> natif, qui demeure la source de vérité.
  */
 @Directive({
-  selector: 'select[multiple]',
+  selector: 'select[multiple], select[data-template-select2]',
   standalone: true,
 })
 export class TemplateMultiselectDirective implements AfterViewInit, DoCheck, OnDestroy {
@@ -167,7 +167,14 @@ export class TemplateMultiselectDirective implements AfterViewInit, DoCheck, OnD
     this.renderer.appendChild(button, checkbox);
     this.renderer.appendChild(button, text);
     this.renderer.listen(button, 'click', () => {
-      option.selected = !option.selected;
+      if (this.select.multiple) {
+        option.selected = !option.selected;
+      } else {
+        this.options.forEach((item) => { item.selected = false; });
+        option.selected = true;
+        this.open = false;
+        this.query = '';
+      }
       this.select.dispatchEvent(new Event('change', { bubbles: true }));
       this.render();
     });

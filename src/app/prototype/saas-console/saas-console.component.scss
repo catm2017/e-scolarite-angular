@@ -13,3 +13,23 @@
 .saas-type-picker button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 10px; border: 1px solid #d6e5f4; border-radius: 8px; color: #58738c; background: #fff; cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; }
 .saas-type-picker button.selected { border-color: #2f80ed; color: #1768b8; background: #edf6ff; }
 .saas-type-picker mat-icon { font-size: 16px; }
+.saas-institute-detail-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1.5rem; }
+.saas-institute-detail-header h2 { margin:0; }
+.institute-logo-upload { position:relative; display:grid; grid-template-columns:52px auto; column-gap:10px; align-items:center; min-width:210px; padding:8px 10px; border:1px dashed #b9d4ec; border-radius:12px; color:#2f80ed; background:#f7fbff; cursor:pointer; }
+.institute-logo-upload > span { grid-row:1 / span 2; width:52px; height:52px; display:grid; place-items:center; overflow:hidden; border-radius:10px; color:#2f80ed; background:#e6f2ff; }
+.institute-logo-upload img { width:100%; height:100%; object-fit:contain; }
+.institute-logo-upload input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.institute-logo-upload b { font-size:11px; }
+.institute-logo-upload small { color:#7890a5; font-size:9px; }
+@media (max-width: 680px) { .saas-institute-detail-header { flex-direction:column; } }
+.saas-editor-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+.saas-editor-header h2 { margin:0; }
+.adhesion-edit-form { margin:1rem 0 1.25rem; padding:1rem; border:1px solid #dce8f4; border-radius:12px; background:#f8fbff; }
+.adhesion-edit-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.adhesion-edit-grid .full { grid-column:1 / -1; }
+@media (max-width: 680px) { .saas-editor-header { align-items:flex-start; flex-direction:column; } .adhesion-edit-grid { grid-template-columns:1fr; } .adhesion-edit-grid .full { grid-column:auto; } }
+.saas-inline-help {
+  margin: 1rem 0 .75rem;
+  color: #52627a;
+  font-size: .875rem;
+}

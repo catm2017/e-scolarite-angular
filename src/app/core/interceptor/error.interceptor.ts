@@ -19,8 +19,14 @@ export const errorInterceptor: HttpInterceptorFn = (
         // Do not auto-logout if the request is to an external AI API
         const isExternalAiApi = req.url.includes('api.openai.com') || req.url.includes('generativelanguage.googleapis.com');
         const isLoginRequest = req.url.endsWith('/connexion') || req.url.includes('/centrale/connexion');
-        const isAuthenticatedRequest = req.headers.has('Authorization');
-        if (!isExternalAiApi && !isLoginRequest && isAuthenticatedRequest) {
+        const authorization = req.headers.get('Authorization');
+        const tokenDeLaRequete = authorization?.replace(/^Bearer\s+/i, '').trim();
+        const tokenActif = localStorage.getItem('escolarite_centrale_token');
+        // Une réponse 401 d'une requête lancée *avant* une nouvelle connexion
+        // ne doit jamais effacer le jeton qui vient d'être créé. Cela arrivait
+        // notamment au premier accès au back-office après une reconnexion.
+        const concerneLaSessionActive = Boolean(tokenDeLaRequete && tokenDeLaRequete === tokenActif);
+        if (!isExternalAiApi && !isLoginRequest && concerneLaSessionActive) {
           // Une session API expirée est supprimée localement avant de revenir
           // à l'écran de connexion. Aucun nouvel appel de déconnexion n'est
           // lancé afin d'éviter une boucle sur une session déjà invalide.

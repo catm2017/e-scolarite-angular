@@ -156,6 +156,10 @@
                   <input matInput name="nationality" [(ngModel)]="studentForm.nationality" required />
                 </mat-form-field>
                 <mat-form-field appearance="outline">
+                  <mat-label>Téléphone de l’élève</mat-label>
+                  <input matInput name="studentPhone" [(ngModel)]="studentForm.studentPhone" type="tel" placeholder="Facultatif" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
                   <mat-label>Adresse e-mail de l’élève</mat-label>
                   <input matInput type="email" name="studentEmail" [(ngModel)]="studentForm.studentEmail" placeholder="eleve@exemple.sn" />
                 </mat-form-field>
@@ -419,26 +423,34 @@
             <button class="primary-action" (click)="startStudentRegistration()"><i>person_add</i>Nouveau dossier élève</button>
           </div>
         </div>
-        <div class="class-tabs">
-          @for (classroom of campusClasses(); track classroom.id) {
-            <button [class.active]="selectedClassId() === classroom.id" (click)="selectClass(classroom.id)">{{ classroom.name }} <b>{{ classroom.enrolled }}</b></button>
-          }
-          <button class="unassigned-class-tab" [class.active]="selectedClassId() === 'unassigned'" (click)="selectClass('unassigned')"><i>pending_actions</i>Classe non définie <b>{{ unassignedStudents().length }}</b></button>
-        </div>
+        @if (isDaara()) {
+          <div class="class-tabs daara-group-tabs">
+            @for (group of daaraGroups()?.groupes ?? []; track group.id) {
+              <button [class.active]="selectedClassId() === 'group:' + group.id" (click)="selectDaaraGroup('group:' + group.id)"><i class="material-icons-outlined">groups</i>{{ group.nom }} <b>{{ group.effectif }}</b></button>
+            }
+            <button class="unassigned-class-tab" [class.active]="selectedClassId() === 'group-unassigned'" (click)="selectDaaraGroup('group-unassigned')"><i class="material-icons-outlined">person_off</i>{{ t('Groupe non défini') }} <b>{{ daaraUnassignedStudents().length }}</b></button>
+          </div>
+        } @else {
+          <div class="class-tabs">
+            @for (classroom of campusClasses(); track classroom.id) {
+              <button [class.active]="selectedClassId() === classroom.id" (click)="selectClass(classroom.id)">{{ classroom.name }} <b>{{ classroom.enrolled }}</b></button>
+            }
+            <button class="unassigned-class-tab" [class.active]="selectedClassId() === 'unassigned'" (click)="selectClass('unassigned')"><i>pending_actions</i>Classe non définie <b>{{ unassignedStudents().length }}</b></button>
+          </div>
+        }
         <app-master-table
           [title]="'Élèves · ' + selectedStudentListLabel()"
           [columnDefinitions]="studentColumns"
           [dataSource]="studentDataSource"
           [isLoading]="dossiersLoading()"
           [exportFileName]="'eleves_' + selectedStudentListLabel()"
-          [showAdd]="true"
+          [showAdd]="false"
           [showDelete]="true"
           [showEdit]="true"
           [showDetails]="true"
-          [showBulkDelete]="true"
-          [showCheckbox]="true"
+          [showBulkDelete]="!isDaara()"
+          [showCheckbox]="false"
           [disableRowClickToEdit]="true"
-          (add)="startStudentRegistration()"
           (edit)="editStudent($event)"
           (details)="viewStudent($event)"
           (rowClick)="viewStudent($event)"
@@ -461,7 +473,7 @@
             <div class="student-import-body">
               <div class="student-import-notice">
                 <i>info</i>
-                <p>Les élèves importés seront placés dans <strong>Classe non définie</strong>. Les données du tuteur sont importées avec chaque élève ; un téléphone ou un e-mail déjà connu réutilise automatiquement le tuteur existant.</p>
+                <p>Les élèves importés seront placés dans <strong>{{ t(isDaara() ? 'Groupe non défini' : 'Classe non définie') }}</strong>. Les données du tuteur sont importées avec chaque élève ; un téléphone ou un e-mail déjà connu réutilise automatiquement le tuteur existant.</p>
               </div>
 
               <div class="student-import-field">
@@ -527,13 +539,12 @@
 
       @if (activeView() === 'guardian-detail') {
         @if (selectedGuardian(); as guardian) {
-          <div class="page-title record-page-title"><div><small>DOSSIER COMPLET DU TUTEUR</small><h1>{{ guardian.name }}</h1><p>Identité, apprenants rattachés dans l’institut et compte famille.</p></div><div class="title-actions"><button type="button" (click)="setView('guardians')"><i>arrow_back</i>Retour aux tuteurs</button><button type="button" class="primary-action" (click)="setGuardianRecordTab('identity')"><i>edit</i>Modifier le dossier</button></div></div>
+          <div class="page-title record-page-title"><div><small>DOSSIER COMPLET DU TUTEUR</small><h1>{{ guardian.name }}</h1><p>Identité et apprenants rattachés dans l’institut.</p></div><div class="title-actions"><button type="button" (click)="setView('guardians')"><i>arrow_back</i>Retour aux tuteurs</button><button type="button" class="primary-action" (click)="setGuardianRecordTab('identity')"><i>edit</i>Modifier le dossier</button></div></div>
           <section class="record-layout guardian-record-layout">
             <aside class="record-profile-card panel"><div class="record-profile-cover"></div><div class="record-avatar">{{ guardian.name.slice(0, 1) }}</div><h2>{{ guardian.name }}</h2><p>{{ guardian.profession || 'Profession non renseignée' }}</p><span class="record-status"><i></i>{{ guardian.accountStatus }}</span><dl><div><dt>Téléphone</dt><dd>{{ guardian.phone }}</dd></div><div><dt>E-mail</dt><dd>{{ guardian.email || 'Non renseigné' }}</dd></div><div><dt>Apprenants</dt><dd>{{ guardian.childrenCount }} dans l’institut</dd></div><div><dt>Campus actif</dt><dd>{{ currentCampus().shortName }}</dd></div></dl><div class="record-contact"><i>location_on</i><span><small>Adresse</small><strong>{{ guardian.address || 'Non renseignée' }}</strong><b>{{ guardian.secondaryPhone || 'Pas de second numéro' }}</b></span></div></aside>
-            <div class="record-main"><nav class="record-tabs panel" aria-label="Sections du dossier tuteur"><button [class.active]="guardianRecordTab() === 'identity'" (click)="setGuardianRecordTab('identity')"><i>person</i>Identité</button><button [class.active]="guardianRecordTab() === 'children'" (click)="setGuardianRecordTab('children')"><i>groups</i>Enfants</button><button [class.active]="guardianRecordTab() === 'access'" (click)="setGuardianRecordTab('access')"><i>lock_person</i>Compte</button></nav>
+            <div class="record-main"><nav class="record-tabs panel" aria-label="Sections du dossier tuteur"><button [class.active]="guardianRecordTab() === 'identity'" (click)="setGuardianRecordTab('identity')"><i>person</i>Identité</button><button [class.active]="guardianRecordTab() === 'children'" (click)="setGuardianRecordTab('children')"><i>groups</i>Enfants</button></nav>
               @if (guardianRecordTab() === 'identity') {<form class="record-tab-form" #guardianIdentityForm="ngForm" (ngSubmit)="saveGuardianRecord()"><article class="panel record-section record-editor-card"><header><div><h2>Identité et coordonnées</h2><p>Une même fiche tuteur est partagée entre tous ses enfants rattachés.</p></div><i>family_restroom</i></header><div class="record-form-grid"><label><span>Prénom(s)</span><input name="guardianFirstName" [(ngModel)]="guardianForm.firstName" required /></label><label><span>Nom</span><input name="guardianLastName" [(ngModel)]="guardianForm.lastName" required /></label><label><span>Profession</span><input name="guardianProfession" [(ngModel)]="guardianForm.profession" /></label><label><span>Téléphone / WhatsApp</span><input name="guardianPhone" [(ngModel)]="guardianForm.phone" required /></label><label><span>Téléphone secondaire</span><input name="guardianSecondaryPhone" [(ngModel)]="guardianForm.secondaryPhone" /></label><label><span>Adresse e-mail</span><input type="email" name="guardianEmail" [(ngModel)]="guardianForm.email" /></label><label class="wide"><span>Adresse</span><input name="guardianAddress" [(ngModel)]="guardianForm.address" /></label></div></article><div class="record-form-actions"><span>Les coordonnées seront répercutées dans les dossiers des enfants liés.</span><button type="submit" [disabled]="guardianIdentityForm.invalid || dossierSaving()"><i>save</i>Mettre à jour le dossier</button></div></form>}
               @if (guardianRecordTab() === 'children') {<article class="panel record-section record-table-section"><header><div><h2>Enfants inscrits dans l’établissement</h2><p>Apprenants rattachés à ce dossier tuteur sur ce campus.</p></div><span class="record-count">{{ selectedGuardianChildren().length }} enfant(s)</span></header><div class="record-data-table guardian-children-table"><div class="head"><span>Apprenant</span><span>Matricule</span><span>Classe</span><span>Régime</span><span></span></div>@for (child of selectedGuardianChildren(); track child.id) {<div><strong>{{ child.name }}</strong><span>{{ child.matricule }}</span><span>{{ studentClassName(child) }}</span><span>{{ child.regime || 'Externe' }}</span><button type="button" (click)="viewStudent(child)"><i>folder_open</i>Voir le dossier</button></div>} @empty {<div class="record-empty"><i>groups</i><span>Aucun enfant rattaché à ce tuteur sur ce campus.</span></div>}</div></article>}
-              @if (guardianRecordTab() === 'access') {<article class="panel record-section account-management-card"><header><div><h2>Compte famille</h2><p>Définissez et gérez l’accès du tuteur au portail famille.</p></div><i>manage_accounts</i></header><div class="account-summary"><span><i>verified_user</i></span><div><small>État actuel</small><strong>{{ guardian.accountStatus }}</strong><p>{{ guardian.email || 'Ajoutez une adresse e-mail pour envoyer une invitation.' }}</p></div></div><div class="account-actions"><button type="button" (click)="setGuardianAccountStatus('Invitation envoyée')"><i>mark_email_unread</i><span><strong>Autoriser la création</strong><small>Envoyer une invitation sécurisée</small></span></button><button type="button" (click)="setGuardianAccountStatus('Actif')"><i>check_circle</i><span><strong>Activer le compte</strong><small>Donner accès aux notes, absences et reçus</small></span></button><button type="button" class="warning" (click)="setGuardianAccountStatus('Désactivé')"><i>block</i><span><strong>Désactiver le compte</strong><small>Suspendre l’accès sans supprimer le dossier</small></span></button><button type="button" (click)="resetGuardianPassword()"><i>lock_reset</i><span><strong>Réinitialiser le mot de passe</strong><small>Envoyer un lien temporaire au tuteur</small></span></button></div><ul class="permission-list"><li><i>check_circle</i>Voir les notes et bulletins de ses enfants</li><li><i>check_circle</i>Recevoir les absences et messages</li><li><i>check_circle</i>Consulter les reçus de paiement</li></ul></article>}
             </div>
           </section>
         }
@@ -542,7 +553,7 @@
       @if (activeView() === 'student-detail') {
         @if (selectedStudent(); as student) {
           <div class="page-title record-page-title">
-            <div><small>DOSSIER COMPLET DE L’ÉLÈVE</small><h1>{{ student.name }}</h1><p>Identité, parcours scolaire, tuteurs, paiements, assiduité et accès famille.</p></div>
+            <div><small>DOSSIER COMPLET DE L’ÉLÈVE</small><h1>{{ student.name }}</h1><p>Identité, parcours scolaire, tuteurs, paiements et assiduité.</p></div>
             <div class="title-actions"><button type="button" (click)="setView('students')"><i>arrow_back</i>Retour à la liste</button><button class="primary-action" type="button" (click)="setStudentRecordTab('identity')"><i>edit</i>Modifier le dossier</button></div>
           </div>
 
@@ -565,10 +576,9 @@
             <div class="record-main">
               <nav class="record-tabs panel" aria-label="Sections du dossier élève">
                 <button [class.active]="studentRecordTab() === 'identity'" (click)="setStudentRecordTab('identity')"><i>person</i>Identité</button>
-                <button [class.active]="studentRecordTab() === 'schooling'" (click)="setStudentRecordTab('schooling')"><i>school</i>Scolarité</button>
+                @if (isDaara()) { <button [class.active]="studentRecordTab() === 'quran'" (click)="setStudentRecordTab('quran')"><i>menu_book</i>Suivi Coran</button> } @else { <button [class.active]="studentRecordTab() === 'schooling'" (click)="setStudentRecordTab('schooling')"><i>school</i>Scolarité</button> }
                 <button [class.active]="studentRecordTab() === 'payments'" (click)="setStudentRecordTab('payments')"><i>payments</i>Paiements</button>
                 <button [class.active]="studentRecordTab() === 'attendance'" (click)="setStudentRecordTab('attendance')"><i>event_busy</i>Absences</button>
-                <button [class.active]="studentRecordTab() === 'access'" (click)="setStudentRecordTab('access')"><i>lock_person</i>Accès</button>
               </nav>
 
               @if (studentRecordTab() === 'identity') {
@@ -583,6 +593,7 @@
                       <label><span>Date de naissance</span><input type="date" name="recordStudentBirthDate" [(ngModel)]="studentForm.birthDate" required /></label>
                       <label><span>Lieu de naissance</span><input name="recordStudentBirthPlace" [(ngModel)]="studentForm.birthPlace" /></label>
                       <label><span>Nationalité</span><input name="recordStudentNationality" [(ngModel)]="studentForm.nationality" /></label>
+                      <label><span>Téléphone de l’élève</span><input name="recordStudentPhone" [(ngModel)]="studentForm.studentPhone" type="tel" placeholder="Facultatif" /></label>
                       <label><span>Groupe sanguin</span><input name="recordStudentBloodGroup" [(ngModel)]="studentForm.bloodGroup" /></label>
                       <label class="wide"><span>Observation médicale</span><textarea name="recordStudentMedicalNotes" [(ngModel)]="studentForm.medicalNotes" rows="2"></textarea></label>
                     </div>
@@ -617,7 +628,20 @@
                 </form>
               }
 
-              @if (studentRecordTab() === 'schooling') {
+              @if (studentRecordTab() === 'quran' && isDaara()) {
+                <section class="record-metrics">
+                  <article><i class="green">menu_book</i><span><small>Leçons affectées</small><strong>{{ studentQuranLessons().length }}</strong><em>Année scolaire</em></span></article>
+                  <article><i class="orange">pending_actions</i><span><small>Leçons à réciter</small><strong>{{ studentQuranLessons().filter(l => l.statut === 'a_reciter').length }}</strong><em>En attente</em></span></article>
+                  <article><i class="blue">task_alt</i><span><small>Leçons récitées</small><strong>{{ studentQuranLessons().filter(l => l.statut === 'deja_recite').length }}</strong><em>Progression validée</em></span></article>
+                  <article><i class="violet">history</i><span><small>Révisions affectées</small><strong>{{ studentQuranRevisions().length }}</strong><em>Révision coranique</em></span></article>
+                </section>
+                @if (studentQuranLoading()) { <div class="record-loading"><i>sync</i>Chargement du suivi Coran…</div> } @else {
+                  <app-master-table title="Leçons coraniques" [columnDefinitions]="studentQuranColumns" [dataSource]="studentQuranLessonsSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="false" [showExport]="true" [disableRowClickToEdit]="true" (rowClick)="openStudentQuranLesson($event)" />
+                  <app-master-table title="Révisions coraniques" [columnDefinitions]="studentQuranColumns" [dataSource]="studentQuranRevisionsSource" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showBulkDelete]="false" [showContextMenu]="false" [showRefresh]="false" [showExport]="true" [disableRowClickToEdit]="true" (rowClick)="openStudentQuranLesson($event)" />
+                }
+              }
+
+              @if (studentRecordTab() === 'schooling' && !isDaara()) {
                 @let primaryTotal = studentPrimaryGrandTotal(student);
                 <section class="record-metrics">
                   <article><i class="blue">school</i><span><small>Classe actuelle</small><strong>{{ studentClassName(student) }}</strong><em>{{ selectedAcademicYear() }}</em></span></article>
@@ -626,9 +650,13 @@
                 </section>
                 <article class="panel record-section record-table-section">
                   <header><div><h2>Inscriptions par année scolaire</h2><p>Parcours, classe, campus et statut de chaque inscription.</p></div><button type="button">Nouvelle inscription</button></header>
-                  <div class="record-data-table"><div class="head"><span>Année</span><span>Classe</span><span>Campus</span><span>Régime</span><span>Statut</span></div><div><strong>2026–2027</strong><span>{{ studentClassName(student) }}</span><span>{{ currentCampus().shortName }}</span><b>{{ student.regime || 'Externe' }}</b><em>En cours</em></div><div><strong>2025–2026</strong><span>CM1 A</span><span>{{ currentCampus().shortName }}</span><b>Externe</b><em>Validée</em></div><div><strong>2024–2025</strong><span>CE2 A</span><span>{{ currentCampus().shortName }}</span><b>Externe</b><em>Validée</em></div></div>
+                  @if (studentDossierLoading()) { <div class="record-loading"><i>sync</i>Chargement du parcours scolaire…</div> } @else {
+                    <div class="record-data-table"><div class="head"><span>Année</span><span>Classe</span><span>Campus</span><span>Type</span><span>Statut</span></div>
+                      @for (inscription of studentDossier()?.inscriptions ?? []; track inscription.id) { <div><strong>{{ inscription.annee }}</strong><span>{{ inscription.classe || 'Classe non définie' }}</span><span>{{ inscription.campus || '—' }}</span><b>{{ inscription.type }}</b><em>{{ inscription.statut }}</em></div> } @empty { <div class="record-empty"><i>school</i><span>Aucune inscription historique enregistrée.</span></div> }
+                    </div>
+                  }
                 </article>
-                <article class="panel record-section record-table-section">
+                  <article class="panel record-section record-table-section">
                   <header><div><h2>Résultats par domaine</h2><p>Ressources et compétences issues du registre « Notes et bulletins » pour {{ selectedTrimester() }}.</p></div><div class="record-section-actions"><button type="button" (click)="setView('reports')">Voir le registre</button><button type="button" class="primary-record-action" (click)="openStudentReportCard(student.id)"><i>picture_as_pdf</i>Générer le bulletin</button></div></header>
                   <div class="student-grade-record-table">
                     <div class="head"><span>Domaine</span><span>Détail des composantes</span><span>Points obtenus</span><span>Barème</span><span>Taux</span></div>
@@ -664,43 +692,42 @@
               }
 
               @if (studentRecordTab() === 'payments') {
-                <section class="record-metrics">
-                  <article><i class="green">payments</i><span><small>Payé cette année</small><strong>198 000 F</strong><em>Inscription incluse</em></span></article>
-                  <article><i class="orange">account_balance_wallet</i><span><small>Solde restant</small><strong>22 000 F</strong><em>Février 2027</em></span></article>
-                  <article><i class="blue">receipt_long</i><span><small>Dernier reçu</small><strong>REC-00241</strong><em>05 janvier 2027</em></span></article>
+                  <section class="record-metrics">
+                  <article><i class="green">payments</i><span><small>Total payé</small><strong>{{ studentPaidTotal() | number:'1.0-0' }} F</strong><em>Historique enregistré</em></span></article>
+                  <article><i class="orange">account_balance_wallet</i><span><small>Reste à payer</small><strong>{{ studentOutstandingTotal() | number:'1.0-0' }} F</strong><em>Échéances ouvertes</em></span></article>
+                  <article><i class="blue">receipt_long</i><span><small>Dernier encaissement</small><strong>{{ studentDossier()?.paiements?.[0]?.motif || '—' }}</strong><em>{{ studentDossier()?.paiements?.[0]?.date_paiement || 'Aucun encaissement' }}</em></span></article>
                 </section>
                 <article class="panel record-section record-table-section">
                   <header><div><h2>Mensualités, inscription et autres paiements</h2><p>Historique financier complet de l’élève.</p></div><button type="button">Voir tous les reçus</button></header>
-                  <div class="record-data-table"><div class="head"><span>Date</span><span>Libellé</span><span>Mode</span><span>Montant</span><span>Statut</span></div><div><span>05/01/2027</span><strong>Mensualité janvier</strong><span>Wave</span><b>22 000 F</b><em>Payé</em></div><div><span>04/12/2026</span><strong>Mensualité décembre</strong><span>Espèces</span><b>22 000 F</b><em>Payé</em></div><div><span>03/10/2026</span><strong>Inscription annuelle</strong><span>Orange Money</span><b>30 000 F</b><em>Payé</em></div></div>
+                  @if (studentDossierLoading()) { <div class="record-loading"><i>sync</i>Chargement des paiements…</div> } @else { <div class="record-data-table"><div class="head"><span>Date</span><span>Année · Type</span><span>Mode</span><span>Montant</span><span>Statut</span></div>@for (paiement of studentDossier()?.paiements ?? []; track paiement.id) {<div><span>{{ paiement.date_paiement }}</span><strong>{{ paiement.annee }} · {{ paiement.motif || 'Autre encaissement' }}</strong><span>{{ paiement.mode_paiement }}</span><b>{{ paiement.montant | number:'1.0-0' }} F</b><em>{{ paiement.statut }}</em></div>} @empty {<div class="record-empty"><i>payments</i><span>Aucun encaissement enregistré.</span></div>}</div> }
                 </article>
               }
 
               @if (studentRecordTab() === 'attendance') {
                 <section class="record-metrics">
-                  <article><i class="green">how_to_reg</i><span><small>Assiduité</small><strong>96,8 %</strong><em>Année scolaire</em></span></article>
-                  <article><i class="orange">event_busy</i><span><small>Absences</small><strong>4</strong><em>3 justifiées</em></span></article>
-                  <article><i class="blue">schedule</i><span><small>Retards</small><strong>3</strong><em>45 minutes</em></span></article>
+                  <article><i class="green">how_to_reg</i><span><small>Assiduité</small><strong>{{ studentPresenceStats().taux | number:'1.1-1' }} %</strong><em>{{ studentPresenceStats().total ? 'Année scolaire' : 'Aucune séance' }}</em></span></article>
+                  <article><i class="orange">event_busy</i><span><small>Absences</small><strong>{{ studentPresenceStats().absences }}</strong><em>{{ studentPresenceStats().justifiees }} justifiée(s)</em></span></article>
+                  <article><i class="blue">schedule</i><span><small>Retards</small><strong>{{ studentPresenceStats().retards }}</strong><em>{{ studentPresenceStats().retards ? 'Séance(s) concernée(s)' : 'Aucun retard' }}</em></span></article>
                 </section>
-                <article class="panel record-section">
+                  <article class="panel record-section">
                   <header><div><h2>Historique des absences et retards</h2><p>Détail par séance avec justification et notification au tuteur.</p></div><button type="button">Ajouter un justificatif</button></header>
-                  <div class="attendance-summary"><span><strong>158</strong><small>Présences</small></span><span><strong>4</strong><small>Absences</small></span><span><strong>3</strong><small>Retards</small></span></div>
-                  <ul class="record-timeline"><li><i class="absent-dot"></i><span><strong>Absence justifiée · Français</strong><small>12 janvier 2027 · 08:00–09:00 · Certificat médical</small></span></li><li><i class="late-dot"></i><span><strong>Retard de 15 minutes · Mathématiques</strong><small>05 janvier 2027 · Tuteur notifié par WhatsApp</small></span></li><li><i class="present-dot"></i><span><strong>Présence complète</strong><small>Décembre 2026 · 52 séances suivies</small></span></li></ul>
+                  <div class="attendance-summary"><span><strong>{{ studentPresenceStats().total }}</strong><small>Séances suivies</small></span><span><strong>{{ studentPresenceStats().presents }}</strong><small>Présences</small></span><span><strong>{{ studentPresenceStats().absences }}</strong><small>Absences</small></span><span><strong>{{ studentPresenceStats().retards }}</strong><small>Retards</small></span></div>
+                  <div class="attendance-dashboard"><div><i>percent</i><span><small>Taux de présence</small><strong>{{ studentPresenceStats().taux | number:'1.1-1' }} %</strong></span></div><div><i>calendar_month</i><span><small>Suivi enregistré</small><strong>{{ studentPresenceStats().total }} séance(s)</strong></span></div></div>
+                  @if (studentDossierLoading()) { <div class="record-loading"><i>sync</i>Chargement de l’assiduité…</div> } @else { <ul class="record-timeline">@for (presence of studentDossier()?.presences ?? []; track presence.id) {<li><i [class.absent-dot]="presence.statut === 'absent' || presence.statut === 'justifie'" [class.late-dot]="presence.statut === 'retard'" [class.present-dot]="presence.statut === 'present'"></i><span><strong>{{ presence.statut }} · {{ presence.matiere || 'Séance' }}</strong><small>{{ presence.date_seance }} · {{ presence.heure_debut }}–{{ presence.heure_fin }}{{ presence.motif ? ' · ' + presence.motif : '' }}</small></span></li>} @empty {<li class="record-empty"><i>event_available</i><span>Aucune présence enregistrée.</span></li>}</ul> }
                 </article>
               }
 
-              @if (studentRecordTab() === 'access') {
-                <article class="panel record-section account-management-card">
-                  <header><div><h2>Compte du tuteur</h2><p>Autorisez la création du compte puis gérez son cycle de vie.</p></div><i>manage_accounts</i></header>
-                  <div class="account-summary"><span><i>verified_user</i></span><div><small>État actuel</small><strong>{{ student.portalAccount || 'Non créé' }}</strong><p>{{ student.email || 'Aucune adresse e-mail renseignée' }}</p></div></div>
-                  <div class="account-actions">
-                    <button type="button" (click)="setPortalAccountStatus('famille', 'Invitation envoyée')"><i>mark_email_unread</i><span><strong>Autoriser la création</strong><small>Envoyer une invitation sécurisée au tuteur</small></span></button>
-                    <button type="button" (click)="setPortalAccountStatus('famille', 'Actif')"><i>check_circle</i><span><strong>Activer le compte</strong><small>Donner accès au portail famille</small></span></button>
-                    <button type="button" class="warning" (click)="setPortalAccountStatus('famille', 'Désactivé')"><i>block</i><span><strong>Désactiver le compte</strong><small>Suspendre l’accès sans supprimer les données</small></span></button>
-                    <button type="button" (click)="resetPortalPassword('famille')"><i>lock_reset</i><span><strong>Réinitialiser le mot de passe</strong><small>Envoyer un lien temporaire au tuteur</small></span></button>
-                  </div>
-                  <ul class="permission-list"><li><i>check_circle</i>Voir les notes et bulletins</li><li><i>check_circle</i>Recevoir les absences par WhatsApp</li><li><i>check_circle</i>Consulter les reçus de paiement</li></ul>
-                </article>
+              @if (selectedStudentQuranLesson(); as lesson) {
+                <div class="student-quran-modal-backdrop" role="presentation" (click)="closeStudentQuranLesson()">
+                  <section class="student-quran-modal" role="dialog" aria-modal="true" aria-label="Contenu coranique" (click)="$event.stopPropagation()">
+                    <header><div><small>CONTENU CORANIQUE</small><h2>{{ lesson.debut.cle_verset }} → {{ lesson.fin.cle_verset }}</h2><p>{{ lesson.debut.sourate_latin || lesson.debut.sourate_arabe }} → {{ lesson.fin.sourate_latin || lesson.fin.sourate_arabe }}</p></div><button type="button" aria-label="Fermer" (click)="closeStudentQuranLesson()"><i>close</i></button></header>
+                    <div class="student-quran-modal-meta"><span>{{ lesson.eleve }}</span><em [class.done]="lesson.statut === 'deja_recite'">{{ lesson.statut === 'deja_recite' ? 'Déjà récité' : 'À réciter' }}</em></div>
+                    <div class="student-quran-modal-trace"><span><i>person_add</i>Affectée par : <strong>{{ lesson.affecte_par || 'Non renseigné' }}</strong></span><span><i>verified</i>Validée par : <strong>{{ lesson.valide_par || 'Non validée' }}</strong></span></div>
+                    <div class="student-quran-modal-text" dir="rtl" lang="ar">@for (ayah of selectedStudentQuranVersets(); track ayah.id) { <span><span>{{ ayah.texte_arabe }}</span><em>{{ ayah.numero_sourate }}:{{ ayah.numero_verset }}</em></span> } @empty { <p>Le texte de cette leçon est indisponible.</p> }</div>
+                  </section>
+                </div>
               }
+
             </div>
           </section>
         }
@@ -1052,15 +1079,14 @@
             [dataSource]="teacherDataSource"
             [isLoading]="dossiersLoading()"
             [exportFileName]="'enseignants_' + currentCampus().shortName"
-            [showAdd]="true"
+            [showAdd]="false"
             [showDelete]="true"
             [showEdit]="true"
             [showDetails]="true"
             [showSchedule]="true"
-            [showBulkDelete]="true"
-            [showCheckbox]="true"
+            [showBulkDelete]="!isDaara()"
+            [showCheckbox]="false"
             [disableRowClickToEdit]="true"
-            (add)="startTeacherRegistration()"
             (edit)="editTeacher($event)"
             (details)="viewTeacher($event)"
             (schedule)="viewTeacherSchedule($event)"
@@ -1235,7 +1261,7 @@
       @if (activeView() === 'teacher-detail') {
         @if (selectedTeacher(); as teacher) {
           <div class="page-title record-page-title">
-            <div><small>DOSSIER COMPLET DE L’ENSEIGNANT</small><h1>{{ teacher.name }}</h1><p>Informations administratives, charge pédagogique, heures effectuées, absences, rémunération et accès.</p></div>
+            <div><small>DOSSIER COMPLET DE L’ENSEIGNANT</small><h1>{{ teacher.name }}</h1><p>Informations administratives, charge pédagogique, heures effectuées, absences et rémunération.</p></div>
             <div class="title-actions"><button type="button" (click)="setView('teachers')"><i>arrow_back</i>Retour à la liste</button><button class="primary-action" type="button" (click)="setTeacherRecordTab('profile')"><i>edit</i>Modifier le dossier</button></div>
           </div>
 
@@ -1261,7 +1287,6 @@
                 <button [class.active]="teacherRecordTab() === 'teaching'" (click)="setTeacherRecordTab('teaching')"><i>menu_book</i>Enseignements</button>
                 <button [class.active]="teacherRecordTab() === 'timetable'" (click)="setTeacherRecordTab('timetable')"><i>calendar_month</i>Emploi du temps</button>
                 <button [class.active]="teacherRecordTab() === 'salaries'" (click)="setTeacherRecordTab('salaries')"><i>payments</i>Salaires</button>
-                <button [class.active]="teacherRecordTab() === 'access'" (click)="setTeacherRecordTab('access')"><i>lock_person</i>Accès</button>
               </nav>
 
               @if (teacherRecordTab() === 'profile') {
@@ -1351,19 +1376,6 @@
                 } @else { <section class="panel subject-loading-state"><strong>Le détail de rémunération sera disponible après le chargement du dossier.</strong></section> }
               }
 
-              @if (teacherRecordTab() === 'access') {
-                <article class="panel record-section account-management-card">
-                  <header><div><h2>Compte enseignant</h2><p>Autorisez la création du compte puis gérez son accès pédagogique.</p></div><i>manage_accounts</i></header>
-                  <div class="account-summary"><span><i>verified_user</i></span><div><small>État actuel</small><strong>{{ teacher.portalAccount || 'Non créé' }}</strong><p>{{ teacher.email || 'Aucune adresse e-mail renseignée' }}</p></div></div>
-                  <div class="account-actions">
-                    <button type="button" (click)="setPortalAccountStatus('enseignant', 'Invitation envoyée')"><i>mark_email_unread</i><span><strong>Autoriser la création</strong><small>Envoyer une invitation sécurisée</small></span></button>
-                    <button type="button" (click)="setPortalAccountStatus('enseignant', 'Actif')"><i>check_circle</i><span><strong>Activer le compte</strong><small>Donner accès au portail enseignant</small></span></button>
-                    <button type="button" class="warning" (click)="setPortalAccountStatus('enseignant', 'Désactivé')"><i>block</i><span><strong>Désactiver le compte</strong><small>Suspendre l’accès sans supprimer le dossier</small></span></button>
-                    <button type="button" (click)="resetPortalPassword('enseignant')"><i>lock_reset</i><span><strong>Réinitialiser le mot de passe</strong><small>Envoyer un lien temporaire</small></span></button>
-                  </div>
-                  <ul class="permission-list"><li><i>check_circle</i>Consulter son emploi du temps</li><li><i>check_circle</i>Saisir présences et absences</li><li><i>check_circle</i>Saisir les notes de ses classes</li><li><i>cancel</i>Accès interdit aux finances</li></ul>
-                </article>
-              }
             </div>
           </section>
         }
@@ -1381,14 +1393,13 @@
             [dataSource]="staffDataSource"
             [isLoading]="dossiersLoading()"
             [exportFileName]="'personnel_' + currentCampus().shortName"
-            [showAdd]="true"
+            [showAdd]="false"
             [showDelete]="true"
             [showEdit]="true"
             [showDetails]="true"
             [showBulkDelete]="true"
-            [showCheckbox]="true"
+            [showCheckbox]="false"
             [disableRowClickToEdit]="true"
-            (add)="startStaffRegistration()"
             (edit)="editStaff($event)"
             (details)="viewStaff($event)"
             (rowClick)="viewStaff($event)"
@@ -1471,30 +1482,12 @@
 
       @if (activeView() === 'staff-detail') {
         @if (selectedStaff(); as person) {
-          <div class="page-title record-page-title"><div><small>DOSSIER COMPLET DU PERSONNEL</small><h1>{{ person.name }}</h1><p>Informations personnelles, fonction, contrat, rémunération, documents et accès.</p></div><div class="title-actions"><button type="button" (click)="setView('staff')"><i>arrow_back</i>Retour à la liste</button><button class="primary-action" type="button" (click)="editStaff(person)"><i>edit</i>Modifier le dossier</button></div></div>
+          <div class="page-title record-page-title"><div><small>DOSSIER COMPLET DU PERSONNEL</small><h1>{{ person.name }}</h1><p>Informations personnelles, fonction, contrat, rémunération et documents.</p></div><div class="title-actions"><button type="button" (click)="setView('staff')"><i>arrow_back</i>Retour à la liste</button><button class="primary-action" type="button" (click)="editStaff(person)"><i>edit</i>Modifier le dossier</button></div></div>
           <section class="record-layout teacher-record-layout staff-record-layout">
             <aside class="record-profile-card panel teacher-profile-card"><div class="record-profile-cover"></div><div class="record-avatar">{{ person.name.slice(0, 1) }}</div><h2>{{ person.name }}</h2><p>{{ person.matricule }}</p><span class="record-status"><i></i>{{ person.status }}</span><dl><div><dt>Fonction</dt><dd>{{ person.function }}</dd></div><div><dt>Contrat</dt><dd>{{ person.contractType }}</dd></div><div><dt>Prise de service</dt><dd>{{ person.hireDate }}</dd></div><div><dt>Salaire</dt><dd>{{ person.salary || 'Non renseigné' }} F CFA</dd></div></dl><div class="record-contact"><i>call</i><span><small>Coordonnées</small><strong>{{ person.phone }}</strong><b>{{ person.email || 'E-mail non renseigné' }}</b></span></div></aside>
-            <div class="record-main"><nav class="record-tabs teacher-record-tabs panel" aria-label="Sections du dossier du personnel"><button [class.active]="staffRecordTab() === 'profile'" (click)="setStaffRecordTab('profile')"><i>person</i>Identité</button><button [class.active]="staffRecordTab() === 'employment'" (click)="setStaffRecordTab('employment')"><i>badge</i>Emploi et rémunération</button><button [class.active]="staffRecordTab() === 'access'" (click)="setStaffRecordTab('access')"><i>lock_person</i>Accès</button></nav>
+            <div class="record-main"><nav class="record-tabs teacher-record-tabs panel" aria-label="Sections du dossier du personnel"><button [class.active]="staffRecordTab() === 'profile'" (click)="setStaffRecordTab('profile')"><i>person</i>Identité</button><button [class.active]="staffRecordTab() === 'employment'" (click)="setStaffRecordTab('employment')"><i>badge</i>Emploi et rémunération</button></nav>
               @if (staffRecordTab() === 'profile') {<form class="record-tab-form" #staffProfileForm="ngForm" (ngSubmit)="saveStaffRecord()"><article class="panel record-section record-editor-card"><header><div><h2>Informations personnelles</h2><p>Identité, coordonnées et contact d’urgence.</p></div><i>badge</i></header><div class="record-form-grid"><label><span>Matricule</span><input name="recordStaffMatricule" [(ngModel)]="staffForm.matricule" required /></label><label><span>Prénom(s)</span><input name="recordStaffFirstName" [(ngModel)]="staffForm.firstName" required /></label><label><span>Nom</span><input name="recordStaffLastName" [(ngModel)]="staffForm.lastName" required /></label><label><span>Sexe</span><select name="recordStaffGender" [(ngModel)]="staffForm.gender"><option value="F">Féminin</option><option value="M">Masculin</option></select></label><label><span>Date de naissance</span><input type="date" name="recordStaffBirthDate" [(ngModel)]="staffForm.birthDate" required /></label><label><span>Lieu de naissance</span><input name="recordStaffBirthPlace" [(ngModel)]="staffForm.birthPlace" required /></label><label><span>Téléphone</span><input name="recordStaffPhone" [(ngModel)]="staffForm.phone" required /></label><label><span>Adresse du domicile</span><input name="recordStaffAddress" [(ngModel)]="staffForm.address" required /></label><label><span>Adresse e-mail</span><input type="email" name="recordStaffEmail" [(ngModel)]="staffForm.email" /></label><label><span>Personne à contacter</span><input name="recordStaffEmergencyContact" [(ngModel)]="staffForm.emergencyContact" /></label><label><span>Téléphone d’urgence</span><input name="recordStaffEmergencyPhone" [(ngModel)]="staffForm.emergencyPhone" /></label></div></article><article class="panel record-section record-editor-card"><header><div><h2>Documents du dossier</h2><p>Pièces d’identité, contrat et justificatifs.</p></div><i>folder</i></header><div class="record-document-editor"><label class="attachment-dropzone"><input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" (change)="onStaffFilesSelected($event)" /><i>upload_file</i><span><b>Ajouter des documents</b><small>PDF, JPG ou PNG</small></span></label><div class="document-list">@for (document of staffForm.attachments; track document) {<button type="button"><i>description</i><span><strong>{{ document }}</strong><small>Document joint</small></span><em (click)="removeStaffAttachment(document)">close</em></button>}</div></div></article><div class="record-form-actions"><span>Les modifications mettent à jour le dossier du personnel.</span><button type="submit" [disabled]="staffProfileForm.invalid || dossierSaving()"><i>save</i>Mettre à jour le dossier</button></div></form>}
               @if (staffRecordTab() === 'employment') {<section class="record-two-columns"><article class="panel record-section"><header><div><h2>Situation professionnelle</h2><p>Fonction et rattachement administratif.</p></div><i>work</i></header><div class="teaching-load"><span><small>Fonction</small><strong>{{ person.function }}</strong></span><span><small>Type de contrat</small><strong>{{ person.contractType }}</strong></span><span><small>Prise de service</small><strong>{{ person.hireDate }}</strong></span></div></article><article class="panel record-section"><header><div><h2>Rémunération</h2><p>Le personnel est rémunéré au mois.</p></div><i>payments</i></header><div class="teaching-load"><span><small>Salaire mensuel fixe</small><strong>{{ person.salary || 'Non renseigné' }} F CFA</strong></span><span><small>Mode de paiement</small><strong>Mensuel</strong></span><span><small>Statut</small><strong>{{ person.status }}</strong></span></div></article></section>}
-              @if (staffRecordTab() === 'access') {
-                <article class="panel record-section account-management-card">
-                  <header><div><h2>Compte du personnel</h2><p>Autorisez la création du compte puis gérez ses accès dans l’école.</p></div><i>manage_accounts</i></header>
-                  <div class="account-summary"><span><i>verified_user</i></span><div><small>État actuel</small><strong>{{ person.portalAccount || 'Non créé' }}</strong><p>{{ person.email || 'Aucune adresse e-mail renseignée' }}</p></div></div>
-                  <div class="account-actions">
-                    <button type="button" (click)="setStaffPortalAccountStatus('Invitation envoyée')"><i>mark_email_unread</i><span><strong>Autoriser la création</strong><small>Envoyer une invitation sécurisée</small></span></button>
-                    <button type="button" (click)="setStaffPortalAccountStatus('Actif')"><i>check_circle</i><span><strong>Activer le compte</strong><small>Donner accès à l’espace du personnel</small></span></button>
-                    <button type="button" class="warning" (click)="setStaffPortalAccountStatus('Désactivé')"><i>block</i><span><strong>Désactiver le compte</strong><small>Suspendre l’accès sans supprimer le dossier</small></span></button>
-                    <button type="button" (click)="resetStaffPortalPassword()"><i>lock_reset</i><span><strong>Réinitialiser le mot de passe</strong><small>Envoyer un lien temporaire</small></span></button>
-                  </div>
-                  <ul class="permission-list">
-                    <li><i>check_circle</i>Consulter les informations de l’école</li>
-                    <li><i>check_circle</i>Gérer les tâches liées à sa fonction</li>
-                    <li><i>check_circle</i>Consulter son planning et ses affectations</li>
-                    <li><i>cancel</i>Accès interdit aux notes et aux finances</li>
-                  </ul>
-                </article>
-              }
             </div>
           </section>
         }
@@ -1817,8 +1810,8 @@
           </app-master-table>
         } @else if (selectedSession(); as session) {
           <div class="page-title session-detail-title">
-            <div><small>FICHE DE SÉANCE</small><h1>{{ session.subject }} · {{ sessionClassName(session) }}</h1><p>{{ formatSessionDate(session.date) }} · {{ session.startTime }}–{{ session.endTime }}</p></div>
-            <div class="title-actions"><button type="button" (click)="backToSessionList()"><i>arrow_back</i>Retour aux séances</button><button type="button" (click)="markSessionMissed()" [disabled]="sessionsLoading() || session.status === 'Validée'"><i>event_busy</i>Marquer comme ratée</button><button class="primary-action" type="button" (click)="validerSeance()" [disabled]="sessionsLoading() || session.status !== 'Effectuée'"><i>done_all</i>{{ session.status === 'Validée' ? 'Séance validée' : 'Valider la séance' }}</button></div>
+            <div><small>FICHE DE SÉANCE · {{ session.reference || 'Référence en cours' }}</small><h1>{{ session.subject }} · {{ sessionClassName(session) }}</h1><p>{{ formatSessionDate(session.date) }} · {{ session.startTime }}–{{ session.endTime }}</p><em class="session-status-badge" [class.planifiee]="session.status === 'Planifiée'" [class.completee]="session.status === 'Effectuée'" [class.validee]="session.status === 'Validée'" [class.ratee]="session.status === 'Ratée'">{{ session.status }}</em></div>
+            <div class="title-actions"><button type="button" (click)="backToSessionList()"><i>arrow_back</i>Retour aux séances</button><button type="button" (click)="markSessionMissed()" [hidden]="!sessionEstPlanifiee(session)" [disabled]="sessionsLoading()"><i>event_busy</i>Marquer comme ratée</button><button class="primary-action" type="button" (click)="validerSeance()" [disabled]="sessionsLoading() || session.status !== 'Effectuée'"><i>done_all</i>{{ session.status === 'Validée' ? 'Séance validée' : 'Valider la séance' }}</button></div>
           </div>
 
           <section class="session-metadata-grid">
@@ -1826,7 +1819,8 @@
             <article><i>schedule</i><span><small>Créneau</small><strong>{{ session.startTime }} – {{ session.endTime }}</strong></span></article>
             <article><i>class</i><span><small>Classe</small><strong>{{ sessionClassName(session) }}</strong></span></article>
             <article><i>menu_book</i><span><small>Matière</small><strong>{{ session.subject }}</strong></span></article>
-            <article><i>co_present</i><span><small>Enseignant</small><strong>{{ teacherName(session.teacherId) }}</strong></span></article>
+            <article><i>co_present</i><span><small>Enseignant</small><strong>{{ session.teacherName || teacherName(session.teacherId) }}</strong></span></article>
+            <article><i>tag</i><span><small>Référence</small><strong>{{ session.reference || '—' }}</strong></span></article>
             <article><i>meeting_room</i><span><small>Salle</small><strong>{{ sessionRoomName(session) }}</strong></span></article>
           </section>
 
@@ -1858,6 +1852,10 @@
                   <ul><li class="done"><i>check</i><span><strong>Notion précédente maîtrisée</strong><small>Leçon validée dans le cahier de texte</small></span></li><li class="current"><i>play_arrow</i><span><strong>{{ sessionLessonDraft || 'Leçon actuelle à préciser' }}</strong><small>Séance en cours de documentation</small></span></li><li><i>schedule</i><span><strong>Prochaine leçon du programme</strong><small>À planifier depuis le référentiel pédagogique</small></span></li></ul>
                   <button type="button" (click)="openClassCurriculum(selectedClass())"><i>account_tree</i>Voir toute la progression</button>
                 }
+              </article>
+              <article class="panel session-files-card">
+                <header><div><h2>Documents joints</h2><p>Supports et pièces associés à cette séance.</p></div><i>description</i></header>
+                <div class="session-files-list">@for (piece of sessionDetailPieces(); track piece.id) {<div><i>description</i><span>{{ piece.nom_original }}</span><small>{{ piece.created_at | date:'dd MMM yyyy HH:mm' }}</small></div>} @empty {<p>Aucun fichier joint à cette séance.</p>}</div>
               </article>
             </aside>
 
@@ -2245,12 +2243,13 @@
         </section>
 
         <div class="collection-list-heading"><div><small>{{ selectedCollectionFee().frequency === 'Mensuel' ? 'SUIVI MENSUEL' : 'PAIEMENT UNIQUE' }}</small><h2>{{ selectedCollectionFee().label }} · {{ selectedClass().name }}</h2><p>{{ formatFeeAmount(selectedCollectionFee().amount) }} {{ selectedCollectionFee().frequency === 'Mensuel' ? 'par mois et par élève' : 'par élève' }}</p></div><button type="button" [class.active]="collectionUnpaidOnly()" (click)="toggleCollectionUnpaidOnly()"><i>filter_alt</i>{{ collectionUnpaidOnly() ? 'Afficher tous les élèves' : 'Impayés seulement' }}</button></div>
+        <div class="collection-table-toolbar"><label><i>search</i><input [ngModel]="collectionSearch()" (ngModelChange)="setCollectionSearch($event)" placeholder="Rechercher un élève ou un matricule…" /></label><div class="collection-page-size"><span>Lignes</span><select [ngModel]="collectionPageSize()" (ngModelChange)="setCollectionPageSize($event)" aria-label="Nombre de lignes à afficher">@for (size of collectionPageSizeOptions; track size) {<option [value]="size">{{ size }}</option>}</select></div><span>{{ collectionPageLabel() }}</span><div><button type="button" (click)="setCollectionPage(collectionPage() - 1)" [disabled]="collectionPage() === 0" aria-label="Page précédente"><i>chevron_left</i></button><strong>{{ collectionPage() + 1 }} / {{ collectionPageCount() }}</strong><button type="button" (click)="setCollectionPage(collectionPage() + 1)" [disabled]="collectionPage() >= collectionPageCount() - 1" aria-label="Page suivante"><i>chevron_right</i></button></div></div>
 
         @if (selectedCollectionFee().frequency === 'Mensuel') {
           <section class="panel payment-sheet collection-payment-sheet monthly-ledger" [style.--payment-months]="paymentMonths.length">
             <div class="payment-table-scroll">
               <div class="payment-head monthly-payment-head"><span>ÉLÈVE</span>@for (month of paymentMonths; track month) {<span>{{ month.toUpperCase() }}</span>}<span>RESTE</span></div>
-              @for (student of collectionStudents(); track student.id) {
+              @for (student of collectionStudentsPaginated(); track student.id) {
                 <article class="monthly-payment-row">
                   <div class="collection-student"><span>{{ student.name.charAt(0) }}</span><div><strong>{{ student.name }}</strong><small>{{ student.matricule }}</small></div></div>
                   @for (month of paymentMonths; track month) {
@@ -2267,7 +2266,7 @@
         } @else {
           <section class="panel payment-sheet collection-payment-sheet one-time-ledger">
             <div class="one-time-payment-head"><span>ÉLÈVE</span><span>MONTANT</span><span>ÉTAT</span><span>DATE DE PAIEMENT</span><span>ACTION</span></div>
-            @for (student of collectionStudents(); track student.id) {
+              @for (student of collectionStudentsPaginated(); track student.id) {
               <article class="one-time-payment-row">
                 <div class="collection-student"><span>{{ student.name.charAt(0) }}</span><div><strong>{{ student.name }}</strong><small>{{ student.matricule }}</small></div></div>
                 <strong>{{ formatFeeAmount(selectedCollectionFee().amount) }}</strong>
@@ -2295,6 +2294,7 @@
         <div class="collection-configuration-bar expense-configuration-bar"><label><span>Année scolaire</span><select [ngModel]="selectedExpenseAcademicYear()" (ngModelChange)="selectExpenseAcademicYear($event)">@for (academicYear of feeAcademicYears; track academicYear) {<option [value]="academicYear">{{ academicYear }}</option>}</select></label><label class="collection-fee-select"><span>Type de dépense</span><select [ngModel]="selectedExpenseTypeId()" (ngModelChange)="selectExpenseType($event)">@for (type of expenseTypes(); track type.id) {<option [value]="type.id">{{ type.label }}</option>}</select></label><label><span>Mois</span><select [ngModel]="selectedExpensePeriod()" (ngModelChange)="selectExpensePeriod($event)">@for (period of expensePeriodOptions(); track period.value) {<option [value]="period.value">{{ period.label }}</option>}</select></label><div class="collection-fee-state"><i>{{ selectedExpenseType().frequency === 'Mensuel' ? 'calendar_month' : 'payments' }}</i><span><small>FRÉQUENCE</small><strong>{{ selectedExpenseType().frequency }}</strong></span></div></div>
         <section class="collection-summary-grid expense-summary-grid"><article class="panel"><span><i>groups</i></span><div><small>Personnes concernées</small><strong>{{ salaryPeople().length }}</strong><em>{{ selectedExpenseType().target }}</em></div></article><article class="panel"><span class="success"><i>check_circle</i></span><div><small>Montant payé</small><strong>{{ formatExpenseAmount(expenseSelectedPaidTotal()) }}</strong><em>{{ expensePaidEntries() }}/{{ expenseExpectedEntries() }} paiement(s)</em></div></article><article class="panel"><span class="warning"><i>pending_actions</i></span><div><small>Reste à payer</small><strong>{{ formatExpenseAmount(expenseSelectedTotal() - expenseSelectedPaidTotal()) }}</strong><em>{{ 100 - expenseProgress() }}% restant</em></div></article><article class="panel collection-progress-card"><div><small>Progression</small><strong>{{ expenseProgress() }}%</strong></div><span><i [style.width.%]="expenseProgress()"></i></span></article></section>
         <div class="collection-list-heading expense-list-heading"><div><small>{{ selectedExpenseType().frequency === 'Mensuel' ? 'SUIVI MENSUEL' : 'PAIEMENT UNIQUE' }}</small><h2>{{ selectedExpenseType().label }} · {{ selectedExpenseType().frequency === 'Mensuel' ? selectedExpenseAcademicYear() : selectedExpensePeriod() }}</h2><p>La liste est générée automatiquement selon la cible configurée : {{ selectedExpenseType().target.toLowerCase() }}.</p></div><div class="expense-heading-actions"><button type="button" [class.active]="expenseUnpaidOnly()" (click)="toggleExpenseUnpaidOnly()"><i>filter_alt</i>{{ expenseUnpaidOnly() ? 'Afficher tout' : 'À payer seulement' }}</button></div></div>
+        <div class="collection-table-toolbar expense-table-toolbar"><label><i>search</i><input [ngModel]="expenseSearch()" (ngModelChange)="setExpenseSearch($event)" placeholder="Rechercher une personne…" /></label><div class="collection-page-size"><span>Lignes</span><select [ngModel]="expensePageSize()" (ngModelChange)="setExpensePageSize($event)" aria-label="Nombre de lignes à afficher">@for (size of expensePageSizeOptions; track size) {<option [value]="size">{{ size }}</option>}</select></div><span>{{ expensePageLabel() }}</span><div><button type="button" (click)="setExpensePage(expensePage() - 1)" [disabled]="expensePage() === 0" aria-label="Page précédente"><i>chevron_left</i></button><strong>{{ expensePage() + 1 }} / {{ expensePageCount() }}</strong><button type="button" (click)="setExpensePage(expensePage() + 1)" [disabled]="expensePage() >= expensePageCount() - 1" aria-label="Page suivante"><i>chevron_right</i></button></div></div>
         @if (selectedExpenseType().frequency === 'Mensuel') {
           <section class="panel payment-sheet collection-payment-sheet monthly-ledger salary-monthly-ledger" [style.--payment-months]="paymentMonths.length"><div class="payment-table-scroll"><div class="payment-head monthly-payment-head"><span>PERSONNE CONCERNÉE</span>@for (month of paymentMonths; track month) {<span>{{ month.toUpperCase() }}</span>}<span>RESTE</span></div>@for (person of visibleSalaryPeople(); track person.key) {<article class="monthly-payment-row"><div class="collection-student"><span>{{ person.name.charAt(0) }}</span><div><strong>{{ person.name }}</strong><small>{{ person.reference }} · {{ person.role }} · {{ isSalaryExpenseType() && person.salaryMode === 'Horaire' ? person.hourlyRate + ' F/h' : formatExpenseAmount(expensePersonAmount(person)) }}</small></div></div>@for (month of paymentMonths; track month) {@if (isSalaryExpenseType() && person.salaryMode === 'Horaire') {<div class="salary-hour-cell" [class.paid]="expensePersonPaymentDate(person, month)"><label><input type="number" min="0" [ngModel]="salaryMonthlyHours(person, month)" (ngModelChange)="updateSalaryMonthlyHours(person, month, $event)" [disabled]="!!expensePersonPaymentDate(person, month)" [attr.aria-label]="month + ' · heures effectuées pour ' + person.name" /><span>h</span></label><button type="button" [class.paid]="expensePersonPaymentDate(person, month)" (click)="toggleExpensePersonPayment(person, month)"><i>{{ expensePersonPaymentDate(person, month) ? 'check' : 'payments' }}</i><small>{{ expensePersonPaymentDate(person, month) ? 'Payé' : salaryMonthlyAmountLabel(person, month) }}</small></button></div>} @else {<button type="button" [class.paid]="expensePersonPaymentDate(person, month)" (click)="toggleExpensePersonPayment(person, month)"><i>{{ expensePersonPaymentDate(person, month) ? 'check' : 'remove' }}</i><small>{{ expensePersonPaymentDate(person, month) ? 'Payé' : 'Impayé' }}</small></button>}}<b [class.debt]="expensePersonBalance(person) !== '0 F CFA'">{{ expensePersonBalance(person) }}</b></article>} @empty {<div class="collection-empty"><i>groups</i><strong>Aucune personne concernée</strong><span>Vérifiez la cible du type de dépense et les affectations du campus.</span></div>}</div><footer><i>touch_app</i>Cliquez sur un mois pour enregistrer le paiement pour la personne concernée. Un second clic annule le paiement.</footer></section>
         } @else {
@@ -2334,9 +2334,34 @@
         @else { <section class="panel empty-state"><i>menu_book</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et le niveau unique dans Paramètres avant d’ouvrir le suivi du Coran.</p></section> }
       }
 
+      @if (activeView() === 'quran-lessons') {
+        @if (selectedCentralAcademicYearId()) { <app-quran-lessons [campusId]="selectedCampusId()" [academicYearId]="selectedCentralAcademicYearId()" view="assign" (completed)="activeView.set('quran-lesson-history')" /> }
+        @else { <section class="panel empty-state"><i>menu_book</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et le niveau unique dans Paramètres avant d’affecter une leçon.</p></section> }
+      }
+
+      @if (activeView() === 'quran-lesson-history') {
+        @if (selectedCentralAcademicYearId()) { <app-quran-lessons [campusId]="selectedCampusId()" [academicYearId]="selectedCentralAcademicYearId()" view="history" /> }
+        @else { <section class="panel empty-state"><i>history_edu</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et le niveau unique du Daara avant de consulter les leçons.</p></section> }
+      }
+
+      @if (activeView() === 'quran-mouradja') {
+        @if (selectedCentralAcademicYearId()) { <app-quran-lessons [campusId]="selectedCampusId()" [academicYearId]="selectedCentralAcademicYearId()" view="history" mode="mouradja" /> }
+        @else { <section class="panel empty-state"><i>history_edu</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et le niveau unique avant d’affecter une révision coranique.</p></section> }
+      }
+
       @if (activeView() === 'daara-transfers') {
         @if (selectedCentralAcademicYearId()) { <app-daara-student-transfers [campusId]="selectedCampusId()" [academicYearId]="selectedCentralAcademicYearId()" (completed)="refreshStudents()" /> }
         @else { <section class="panel empty-state"><i>swap_horiz</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et la classe unique avant d’ajouter des apprenants au Daara.</p></section> }
+      }
+
+      @if (activeView() === 'daara-groups') {
+        @if (selectedCentralAcademicYearId()) { <app-daara-groups [campusId]="selectedCampusId()" [academicYearId]="selectedCentralAcademicYearId()" /> }
+        @else { <section class="panel empty-state"><i>groups</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et le niveau unique avant de gérer les groupes.</p></section> }
+      }
+
+      @if (activeView() === 'daara-teacher-groups') {
+        @if (selectedCentralAcademicYearId()) { <app-daara-teacher-groups [campusId]="selectedCampusId()" [academicYearId]="selectedCentralAcademicYearId()" /> }
+        @else { <section class="panel empty-state"><i>school</i><h2>Configurez d’abord le Daara</h2><p>Enregistrez l’année scolaire et le niveau unique avant d’affecter les enseignants.</p></section> }
       }
 
       @if (activeView() === 'settings') {

@@ -1,0 +1,28 @@
+<main class="account-profile-page">
+  <div class="profile-page-title">
+    <div><small>MON COMPTE</small><h1>Mon profil</h1><p>Identité, coordonnées et sécurité de votre compte.</p></div>
+    <a class="profile-back-link" [routerLink]="espace === 'centrale' ? '/saas' : '/institut'"><i>arrow_back</i>Retour</a>
+  </div>
+  @if (chargement()) { <section class="profile-record-card profile-loading"><i>progress_activity</i>Chargement de votre profil…</section> }
+  @if (!chargement() && profil(); as user) {
+    <section class="profile-record-layout">
+      <aside class="profile-summary profile-record-card">
+        <div class="profile-summary-cover"></div>
+        <div class="profile-avatar">@if (user.photo_url) { <img [src]="user.photo_url" alt="Photo de profil" /> } @else { {{ user.prenom.slice(0, 1) }}{{ user.nom.slice(0, 1) }} }</div>
+        <label class="profile-photo-action"><input type="file" accept="image/png,image/jpeg,image/webp" (change)="choisirPhoto($event)" [disabled]="photoEnvoi()" /><i>photo_camera</i>{{ photoEnvoi() ? 'Envoi…' : 'Modifier la photo' }}</label>
+        <h2>{{ user.prenom }} {{ user.nom }}</h2><p>{{ user.identifiant || user.email }}</p><span class="profile-status"><i></i>Compte actif</span>
+        <dl><div><dt>Identifiant</dt><dd>{{ user.identifiant || user.email || 'Non renseigné' }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ user.email || 'Non renseignée' }}</dd></div><div><dt>Téléphone</dt><dd>{{ user.telephone || 'Non renseigné' }}</dd></div></dl>
+      </aside>
+      <div class="profile-record-main">
+        <nav class="profile-tabs profile-record-card" aria-label="Sections du profil"><button type="button" [class.active]="onglet() === 'identite'" (click)="onglet.set('identite')"><i>person</i>Identité et coordonnées</button><button type="button" [class.active]="onglet() === 'securite'" (click)="onglet.set('securite')"><i>lock_person</i>Sécurité du compte</button></nav>
+        @if (onglet() === 'identite') {
+          <form class="profile-detail-card profile-record-card" (ngSubmit)="enregistrerProfil()"><header><div><h2>Informations personnelles</h2><p>Ces informations sont utilisées dans vos espaces E-Scolarité.</p></div><i>badge</i></header><div class="profile-form-grid"><label><span>Prénom <b>*</b></span><input name="prenom" [(ngModel)]="user.prenom" required /></label><label><span>Nom <b>*</b></span><input name="nom" [(ngModel)]="user.nom" required /></label><label><span>Adresse e-mail <b>*</b></span><input type="email" name="email" [(ngModel)]="user.email" required /></label><label><span>Téléphone</span><input name="telephone" [(ngModel)]="user.telephone" /></label></div><footer><span><i>info</i>Les champs marqués d’un astérisque sont obligatoires.</span><button class="profile-primary-action" type="submit" [disabled]="enregistrement()"><i>save</i>{{ enregistrement() ? 'Enregistrement…' : 'Enregistrer les informations' }}</button></footer></form>
+        }
+        @if (onglet() === 'securite') {
+          <form class="profile-detail-card profile-record-card" (ngSubmit)="changerMotDePasse()"><header><div><h2>Changer le mot de passe</h2><p>Utilisez un mot de passe personnel d’au moins 8 caractères.</p></div><i>security</i></header><div class="profile-form-grid profile-security-grid"><label><span>Ancien mot de passe <b>*</b></span><input type="password" name="ancien" [(ngModel)]="passwordForm.ancien_mot_de_passe" required autocomplete="current-password" /></label><label><span>Nouveau mot de passe <b>*</b></span><input type="password" name="nouveau" [(ngModel)]="passwordForm.mot_de_passe" minlength="8" required autocomplete="new-password" /></label><label><span>Confirmer le nouveau mot de passe <b>*</b></span><input type="password" name="confirmation" [(ngModel)]="passwordForm.mot_de_passe_confirmation" minlength="8" required autocomplete="new-password" /></label></div><footer><span><i>verified_user</i>Votre mot de passe reste strictement confidentiel.</span><button class="profile-primary-action" type="submit" [disabled]="motDePasseEnvoi()"><i>lock_reset</i>{{ motDePasseEnvoi() ? 'Modification…' : 'Modifier le mot de passe' }}</button></footer></form>
+        }
+      </div>
+    </section>
+  }
+  @if (message()) { <p class="profile-feedback success"><i>check_circle</i>{{ message() }}</p> } @if (erreur()) { <p class="profile-feedback error"><i>error</i>{{ erreur() }}</p> }
+</main>

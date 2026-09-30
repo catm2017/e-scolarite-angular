@@ -1,6 +1,6 @@
 <main class="adhesion-page public-page">
   <header class="public-nav">
-    <a routerLink="/" class="public-brand"><span class="public-brand-mark"><i class="material-icons-outlined" aria-hidden="true">school</i></span><span>E-Scolarité<small>L'école, simplement.</small></span></a>
+    <a routerLink="/" class="public-brand"><img class="public-brand-logo" src="assets/images/e-scolarite-logo.png" alt="E-Scolarité" /><span>E-Scolarité<small>L'école, simplement.</small></span></a>
     <nav aria-label="Navigation principale" class="public-nav-links"><a routerLink="/">Accueil</a><a routerLink="/" fragment="fonctionnalites">Fonctionnalités</a><a routerLink="/" fragment="apropos">À propos</a><a routerLink="/" fragment="tarifications">Tarification</a><a routerLink="/" fragment="contact">Contact</a></nav>
     <div class="public-nav-actions"><app-platform-language-switcher /><a class="public-login-link" routerLink="/connexion">Connexion</a></div>
   </header>
@@ -64,7 +64,8 @@
           </label>
           <label class="field-control">
             <span class="field-caption">Téléphone <em class="required-marker">*</em></span>
-            <span class="field-input"><i aria-hidden="true">phone</i><input formControlName="telephone_responsable" placeholder="77 000 00 00" /></span>
+            <span class="field-input"><i aria-hidden="true">phone</i><input formControlName="telephone_responsable" inputmode="tel" autocomplete="tel" placeholder="77 000 00 00" /></span>
+            @if (adhesion.controls.telephone_responsable.touched && adhesion.controls.telephone_responsable.invalid) { <small class="field-error">Utilisez un numéro sénégalais valide : 33, 70, 75, 76, 77 ou 78.</small> }
           </label>
         </div>
       </div>

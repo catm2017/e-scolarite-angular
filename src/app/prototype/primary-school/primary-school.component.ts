@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
-import { concat, toArray } from 'rxjs';
+import { concat, forkJoin, toArray } from 'rxjs';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import {
   ColumnDefinition,
@@ -25,8 +26,11 @@ import {
   CandidatInscriptionApi,
   CentralApiService,
   DossierEnseignantEtablissementApi,
+  DossierEleveApi,
+  LeconCoranApi,
   DetailSeanceEtablissementApi,
   DossiersEtablissementApi,
+  GroupesDaaraApi,
   EmploiTempsEtablissementApi,
   EvaluationEtablissementApi,
   SeanceEtablissementApi,
@@ -36,19 +40,23 @@ import {
   PersonnelEtablissementApi,
   SerieLyceeEtablissementApi,
   TableauBordEtablissementApi,
+  SuiviCoranDaaraApi,
 } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
 import { QuranFollowupComponent } from '../daara/quran-followup.component';
 import { DaaraStudentTransfersComponent } from '../daara/daara-student-transfers.component';
+import { DaaraGroupsComponent } from '../daara/daara-groups.component';
+import { DaaraTeacherGroupsComponent } from '../daara/daara-teacher-groups.component';
+import { QuranLessonsComponent } from '../daara/quran-lessons.component';
 
 type AttendanceStatus = 'P' | 'A' | 'R';
 type SubjectGradeKind = 'homework1' | 'homework2' | 'composition';
 type GradeWeightKind = 'homeworkWeight' | 'compositionWeight';
 type GuardianMode = 'existing' | 'new';
 type PortalAccountStatus = 'Actif' | 'Invitation envoyée' | 'Non créé' | 'Désactivé';
-type StudentRecordTab = 'identity' | 'schooling' | 'payments' | 'attendance' | 'access';
-type TeacherRecordTab = 'profile' | 'teaching' | 'timetable' | 'salaries' | 'access';
-type GuardianRecordTab = 'identity' | 'children' | 'access';
+type StudentRecordTab = 'identity' | 'schooling' | 'quran' | 'payments' | 'attendance';
+type TeacherRecordTab = 'profile' | 'teaching' | 'timetable' | 'salaries';
+type GuardianRecordTab = 'identity' | 'children';
 type TeacherSalaryMode = 'Mensuel' | 'Horaire';
 type WorkforceImportKind = 'teacher' | 'staff';
 type SessionStatus = 'Planifiée' | 'À compléter' | 'Effectuée' | 'Validée' | 'Ratée';
@@ -78,6 +86,7 @@ interface TimetableRow {
 
 interface SchoolSession {
   id: string;
+  reference?: string | null;
   classId: string;
   roomId: string;
   date: string;
@@ -85,6 +94,7 @@ interface SchoolSession {
   endTime: string;
   subject: string;
   teacherId: number | null;
+  teacherName?: string | null;
   status: SessionStatus;
   description: string;
   lessonTitle: string;
@@ -516,6 +526,7 @@ interface Student {
   matricule: string;
   name: string;
   gender: 'F' | 'M';
+  studentPhone?: string;
   birthDate: string;
   parentPhone: string;
   guardianId?: number;
@@ -549,6 +560,7 @@ interface StudentFormModel {
   birthDate: string;
   birthPlace: string;
   nationality: string;
+  studentPhone: string;
   studentEmail: string;
   guardianMode: GuardianMode;
   guardianId: number | null;
@@ -695,7 +707,7 @@ interface SchoolStaffFormModel {
   attachments: string[];
 }
 
-type StaffRecordTab = 'profile' | 'employment' | 'access';
+type StaffRecordTab = 'profile' | 'employment';
 
 type StaffAbsencePersonType = 'Enseignant' | 'Personnel';
 
@@ -736,6 +748,8 @@ interface TranslationSet {
   standalone: true,
   imports: [
     FormsModule,
+    DatePipe,
+    DecimalPipe,
     BreadcrumbComponent,
     MatButtonModule,
     MatFormFieldModule,
@@ -745,9 +759,12 @@ interface TranslationSet {
     MasterTableComponent,
     QuranFollowupComponent,
     DaaraStudentTransfersComponent,
+    DaaraGroupsComponent,
+    DaaraTeacherGroupsComponent,
+    QuranLessonsComponent,
   ],
   templateUrl: './primary-school.component.html',
-  styleUrl: './primary-school.component.scss',
+  styleUrls: ['./primary-school.component.scss', './student-quran-record.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PrimarySchoolComponent {
@@ -807,6 +824,7 @@ export class PrimarySchoolComponent {
   readonly dashboardLoading = signal(false);
   readonly dashboardData = signal<TableauBordEtablissementApi | null>(null);
   readonly dossiersLoading = signal(false);
+  readonly daaraGroups = signal<GroupesDaaraApi | null>(null);
   readonly financesLoading = signal(false);
   readonly schoolYearsLoading = signal(false);
   readonly schoolSettingsLoading = signal(false);
@@ -916,6 +934,14 @@ export class PrimarySchoolComponent {
   readonly selectedCollectionAcademicYear = signal(this.currentFeeAcademicYear);
   readonly selectedCollectionFeeId = signal('monthlyFee');
   readonly collectionUnpaidOnly = signal(false);
+  readonly collectionSearch = signal('');
+  readonly collectionPage = signal(0);
+  readonly collectionPageSizeOptions = [5, 10, 25, 50, 100];
+  readonly collectionPageSize = signal(10);
+  readonly expenseSearch = signal('');
+  readonly expensePage = signal(0);
+  readonly expensePageSizeOptions = [5, 10, 25, 50, 100];
+  readonly expensePageSize = signal(10);
   readonly expenseEditorOpen = signal(false);
   readonly selectedExpenseTypeId = signal('staff-salary');
   readonly selectedExpensePeriod = signal('2026-08');
@@ -998,6 +1024,31 @@ export class PrimarySchoolComponent {
   private readonly financeTariffIds = new Map<string, string>();
   private financesRequestKey = '';
   readonly selectedStudentId = signal<number | null>(null);
+  readonly studentDossier = signal<DossierEleveApi | null>(null);
+  readonly studentDossierLoading = signal(false);
+  readonly studentQuranLessons = signal<LeconCoranApi[]>([]);
+  readonly studentQuranRevisions = signal<LeconCoranApi[]>([]);
+  readonly studentQuranLessonsSource = new MatTableDataSource<any>([]);
+  readonly studentQuranRevisionsSource = new MatTableDataSource<any>([]);
+  readonly studentQuranReader = signal<SuiviCoranDaaraApi | null>(null);
+  readonly studentQuranLoading = signal(false);
+  readonly selectedStudentQuranLessonId = signal('');
+  readonly selectedStudentQuranLesson = computed(() => [...this.studentQuranLessons(), ...this.studentQuranRevisions()].find((lesson) => lesson.id === this.selectedStudentQuranLessonId()) ?? null);
+  readonly selectedStudentQuranVersets = computed(() => {
+    const lesson = this.selectedStudentQuranLesson();
+    const verses = this.studentQuranReader()?.versets ?? [];
+    if (!lesson) return [];
+    return verses.filter((verse) => verse.position_memorisation >= lesson.debut.position_memorisation && verse.position_memorisation <= lesson.fin.position_memorisation);
+  });
+  readonly studentQuranColumns: ColumnDefinition[] = [
+    { def: 'start', label: 'Début', type: 'text' },
+    { def: 'end', label: 'Fin', type: 'text' },
+    { def: 'sourates', label: 'Sourate(s)', type: 'text' },
+    { def: 'statutLabel', label: 'Statut', type: 'status', statusBadgeMap: { 'À réciter': 'badge badge-solid-orange', 'Déjà récité': 'badge badge-solid-green' } },
+    { def: 'assignedDate', label: 'Affectée le', type: 'date' },
+    { def: 'completedDate', label: 'Récitée le', type: 'date' },
+    { def: 'duration', label: 'Durée', type: 'text' },
+  ];
   readonly selectedGuardianId = signal<number | null>(null);
   readonly selectedTeacherId = signal<number | null>(null);
   readonly studentRecordTab = signal<StudentRecordTab>('identity');
@@ -1046,6 +1097,7 @@ export class PrimarySchoolComponent {
   readonly sessionsLoading = signal(false);
   readonly sessionDetailLoading = signal(false);
   readonly sessionDetailProgression = signal<DetailSeanceEtablissementApi['progression'] | null>(null);
+  readonly sessionDetailPieces = signal<DetailSeanceEtablissementApi['pieces_jointes']>([]);
   readonly assessmentsLoading = signal(false);
   readonly assessmentSaving = signal(false);
 
@@ -1688,8 +1740,22 @@ export class PrimarySchoolComponent {
       (student) => student.campusId === this.selectedCampusId() && !student.classId,
     ),
   );
+  readonly daaraUnassignedStudents = computed(() => {
+    const assigned = new Set((this.daaraGroups()?.groupes ?? []).flatMap((group) => group.eleve_ids));
+    return this.students().filter((student) => student.campusId === this.selectedCampusId() && !assigned.has(student.backendId ?? ''));
+  });
   readonly visibleStudents = computed(() => {
     const classId = this.selectedClassId();
+    if (this.isDaara() && classId.startsWith('group:')) {
+      const groupId = classId.slice('group:'.length);
+      const group = this.daaraGroups()?.groupes.find((item) => item.id === groupId);
+      const ids = new Set(group?.eleve_ids ?? []);
+      return this.students().filter((student) => student.campusId === this.selectedCampusId() && ids.has(student.backendId ?? ''));
+    }
+    if (this.isDaara() && classId === 'group-unassigned') {
+      const assigned = new Set((this.daaraGroups()?.groupes ?? []).flatMap((group) => group.eleve_ids));
+      return this.students().filter((student) => student.campusId === this.selectedCampusId() && !assigned.has(student.backendId ?? ''));
+    }
     return this.students().filter(
       (student) =>
         student.campusId === this.selectedCampusId() &&
@@ -1784,7 +1850,7 @@ export class PrimarySchoolComponent {
     const direction = this.sessionSortDirection() === 'asc' ? 1 : -1;
     const key = this.sessionSortKey();
     return this.visibleSessions()
-      .filter((session) => !search || [session.subject, this.teacherName(session.teacherId), this.sessionClassName(session), this.sessionRoomName(session), session.status, session.date]
+      .filter((session) => !search || [session.subject, session.teacherName || this.teacherName(session.teacherId), this.sessionClassName(session), this.sessionRoomName(session), session.status, session.date, session.reference]
         .join(' ').toLocaleLowerCase('fr').includes(search))
       .sort((first, second) => {
         const firstValue = key === 'date' ? `${first.date}-${first.startTime}` : key === 'subject' ? first.subject : key === 'teacher' ? this.teacherName(first.teacherId) : first.status;
@@ -1917,6 +1983,7 @@ export class PrimarySchoolComponent {
   readonly sessionAttendanceDataSource = new MatTableDataSource<any>([]);
   readonly assessmentResultsDataSource = new MatTableDataSource<any>([]);
   readonly sessionColumns: ColumnDefinition[] = [
+    { def: 'reference', label: 'Référence', type: 'text', visible: true },
     { def: 'date', label: 'Date', type: 'dateCard', visible: true },
     { def: 'schedule', label: 'Créneau', type: 'time', visible: true },
     { def: 'subject', label: 'Matière', type: 'text', visible: true },
@@ -2401,6 +2468,12 @@ export class PrimarySchoolComponent {
     });
 
     effect(() => {
+      this.selectedCentralAcademicYearId();
+      this.selectedCampusId();
+      if (this.isDaara() && this.configurationReady() && this.centralApi.estConnecte()) this.chargerGroupesDaara();
+    });
+
+    effect(() => {
       const campusId = this.selectedCampusId();
       const anneeId = this.selectedCentralAcademicYearId();
       const view = this.activeView();
@@ -2445,7 +2518,7 @@ export class PrimarySchoolComponent {
 
     effect(() => {
       const campusId = this.selectedCampusId();
-      if (this.selectedClassId() === 'unassigned') {
+      if (this.selectedClassId() === 'unassigned' || (this.isDaara() && (this.selectedClassId().startsWith('group:') || this.selectedClassId() === 'group-unassigned'))) {
         return;
       }
       const selectedClass = this.classes().find((item) => item.id === this.selectedClassId());
@@ -2479,7 +2552,7 @@ export class PrimarySchoolComponent {
       this.sessionDataSource.data = this.visibleSessions().map((session) => ({
         ...session,
         schedule: `${session.startTime} – ${session.endTime}`,
-        teacherName: this.teacherName(session.teacherId),
+        teacherName: session.teacherName || this.teacherName(session.teacherId),
         roomName: this.sessionRoomName(session),
       }));
     });
@@ -2734,11 +2807,13 @@ export class PrimarySchoolComponent {
         this.chargerDossiers(this.workspace.establishmentType(), this.selectedCampusId());
         this.chargerCandidatsInscriptions();
         const creeFrais = operation === 'inscription' || operation === 'reinscription';
-        const toast = this.snackBar.success(
+        this.snackBar.success(
           creeFrais ? `${resultat.message} Les frais d’inscription sont prêts à encaisser.` : resultat.message,
-          creeFrais ? 'Voir encaissements' : 'Fermer',
+          'Fermer',
         );
-        if (creeFrais) toast.onAction().subscribe(() => this.setView('payments'));
+        // Une inscription ou une réinscription crée immédiatement les frais
+        // correspondants : ouvrir directement la liste des encaissements.
+        if (creeFrais) this.setView('payments');
       },
       error: (response) => {
         this.enrollmentSaving.set(false);
@@ -2906,9 +2981,11 @@ export class PrimarySchoolComponent {
   }
 
   selectedStudentListLabel(): string {
-    return this.selectedClassId() === 'unassigned'
-      ? 'Classe non définie'
-      : this.selectedClass()?.name ?? 'Élèves';
+    if (this.isDaara()) {
+      if (this.selectedClassId() === 'group-unassigned') return 'Groupe non défini';
+      if (this.selectedClassId().startsWith('group:')) return this.daaraGroups()?.groupes.find((group) => `group:${group.id}` === this.selectedClassId())?.nom ?? 'Groupe';
+    }
+    return this.selectedClassId() === 'unassigned' ? 'Classe non définie' : this.selectedClass()?.name ?? 'Élèves';
   }
 
   openStudentImport(): void {
@@ -2930,7 +3007,7 @@ export class PrimarySchoolComponent {
 
   downloadStudentImportTemplate(): void {
     const headers = [
-      'matricule', 'prenom_eleve', 'nom_eleve', 'sexe', 'date_naissance', 'email_eleve',
+      'matricule', 'prenom_eleve', 'nom_eleve', 'sexe', 'date_naissance', 'telephone_eleve', 'email_eleve',
       'lieu_naissance', 'nationalite', 'adresse_eleve', 'groupe_sanguin',
       'observations_medicales', 'regime', 'cantine', 'transport',
       'prenom_tuteur', 'nom_tuteur', 'telephone_tuteur',
@@ -2938,7 +3015,7 @@ export class PrimarySchoolComponent {
       'adresse_tuteur', 'lien_tuteur',
     ];
     const example = [
-      'PRI-260049', 'Awa', 'Ndiaye', 'F', '2015-03-12', 'awa.ndiaye@exemple.sn', 'Dakar', 'Sénégalaise',
+      'PRI-260049', 'Awa', 'Ndiaye', 'F', '2015-03-12', '', 'awa.ndiaye@exemple.sn', 'Dakar', 'Sénégalaise',
       'Keur Massar', 'O+', '', 'Externe', 'non', 'non', 'Mariama', 'Ba',
       '77 842 10 24', '76 410 20 15', 'mariama.ba@example.sn', 'Commerçante',
       'Unité 11, Keur Massar', 'Mère',
@@ -2976,6 +3053,7 @@ export class PrimarySchoolComponent {
           nom: lastName,
           sexe: importedGender.startsWith('f') ? 'F' : 'M',
           date_naissance: this.studentImportValue(row, 'date_naissance', 'birth_date') || null,
+          telephone: this.studentImportValue(row, 'telephone_eleve', 'telephone_enfant', 'student_phone') || null,
           email: this.studentImportValue(row, 'email_eleve', 'email_student') || null,
           lieu_naissance: this.studentImportValue(row, 'lieu_naissance', 'birth_place') || null,
           nationalite: this.studentImportValue(row, 'nationalite') || 'Sénégalaise',
@@ -3371,6 +3449,7 @@ export class PrimarySchoolComponent {
       attendanceNote: eleve.presence_motif ?? '',
     }));
     this.sessionDetailProgression.set(detail.progression);
+    this.sessionDetailPieces.set(detail.pieces_jointes ?? []);
     this.sessions.update((sessions) => sessions.map((item) => item.id === session.id ? {
       ...item, description: this.sessionDescriptionDraft, lessonTitle: this.sessionLessonDraft,
       status: this.libelleStatutBackend(detail.seance.statut),
@@ -3390,6 +3469,11 @@ export class PrimarySchoolComponent {
       },
       error: (response) => { this.sessionsLoading.set(false); this.snackBar.error(response.error?.message ?? 'Le statut de la séance n’a pas pu être mis à jour.'); },
     });
+  }
+
+  sessionEstPlanifiee(session: Pick<SchoolSession, 'status'> | null | undefined): boolean {
+    const statut = `${session?.status ?? ''}`.trim().toLowerCase();
+    return statut === 'planifiée' || statut === 'planifiee' || statut === 'planifie';
   }
 
   formatSessionDate(date: string): string {
@@ -3601,9 +3685,101 @@ export class PrimarySchoolComponent {
   viewStudent(student: Student): void {
     this.selectedStudentId.set(student.id);
     this.loadStudentForm(student);
+    this.chargerDossierEleve(student);
     this.studentRecordTab.set('identity');
     this.activeView.set('student-detail');
   }
+
+  private chargerDossierEleve(student: Student): void {
+    if (!student.backendId || !this.selectedCampusId()) {
+      this.studentDossier.set(null);
+      this.studentQuranLessons.set([]);
+      this.studentQuranRevisions.set([]);
+      this.studentQuranLessonsSource.data = [];
+      this.studentQuranRevisionsSource.data = [];
+      this.studentQuranReader.set(null);
+      return;
+    }
+    const type = this.workspace.establishmentType() === 'primary' ? 'primaire' : this.workspace.establishmentType();
+    this.studentDossier.set(null);
+    this.studentDossierLoading.set(true);
+    this.centralApi.dossierEleveEtablissement(type, this.selectedCampusId(), student.backendId).subscribe({
+      next: ({ data }) => {
+        this.studentDossier.set(data);
+        this.studentDossierLoading.set(false);
+      },
+      error: () => {
+        this.studentDossier.set(null);
+        this.studentDossierLoading.set(false);
+      },
+    });
+    if (this.isDaara()) this.chargerLeconsCoranEleve(student.backendId);
+    else {
+      this.studentQuranLessons.set([]);
+      this.studentQuranRevisions.set([]);
+      this.studentQuranLessonsSource.data = [];
+      this.studentQuranRevisionsSource.data = [];
+      this.studentQuranReader.set(null);
+    }
+  }
+
+  private chargerLeconsCoranEleve(eleveId: string): void {
+    const campusId = this.selectedCampusId();
+    const anneeId = this.selectedCentralAcademicYearId();
+    if (!campusId || !anneeId) return;
+    this.studentQuranLoading.set(true);
+    this.studentQuranLessons.set([]);
+    this.studentQuranRevisions.set([]);
+    this.studentQuranLessonsSource.data = [];
+    this.studentQuranRevisionsSource.data = [];
+    this.studentQuranReader.set(null);
+    forkJoin({
+      lessons: this.centralApi.leconsCoranDaara(campusId, anneeId, { eleveId }),
+      revisions: this.centralApi.leconsCoranDaara(campusId, anneeId, { eleveId, mode: 'mouradja' }),
+      reader: this.centralApi.suiviCoranDaara(campusId, anneeId, 'all', 1),
+    }).subscribe({
+      next: ({ lessons, revisions, reader }) => {
+        this.studentQuranLessons.set(lessons.data.lecons);
+        this.studentQuranRevisions.set(revisions.data.lecons);
+        this.studentQuranLessonsSource.data = this.formatStudentQuranRows(lessons.data.lecons);
+        this.studentQuranRevisionsSource.data = this.formatStudentQuranRows(revisions.data.lecons);
+        this.studentQuranReader.set(reader.data);
+        this.studentQuranLoading.set(false);
+      },
+      error: () => {
+        this.studentQuranLessons.set([]);
+        this.studentQuranRevisions.set([]);
+        this.studentQuranLessonsSource.data = [];
+        this.studentQuranRevisionsSource.data = [];
+        this.studentQuranReader.set(null);
+        this.studentQuranLoading.set(false);
+      },
+    });
+  }
+
+  private formatStudentQuranRows(lecons: LeconCoranApi[]): any[] {
+    return lecons.map((lecon) => ({
+      ...lecon,
+      start: lecon.debut?.cle_verset ?? '—',
+      end: lecon.fin?.cle_verset ?? '—',
+      sourates: `${lecon.debut?.sourate_latin || lecon.debut?.sourate_arabe || '—'} → ${lecon.fin?.sourate_latin || lecon.fin?.sourate_arabe || '—'}`,
+      statutLabel: lecon.statut === 'deja_recite' ? 'Déjà récité' : 'À réciter',
+      assignedDate: lecon.assigned_at,
+      completedDate: lecon.completed_at,
+      duration: this.formatStudentQuranDuration(lecon),
+    }));
+  }
+
+  private formatStudentQuranDuration(lesson: LeconCoranApi): string {
+    if (lesson.duree_jours === null || !lesson.completed_at) return '—';
+    const hours = Math.max(0, Math.floor((new Date(lesson.completed_at).getTime() - new Date(lesson.assigned_at).getTime()) / 3_600_000));
+    if (hours < 24) return `${hours} heure${hours === 1 ? '' : 's'}`;
+    const days = Math.max(1, Math.floor(hours / 24));
+    return `${days} jour${days === 1 ? '' : 's'}`;
+  }
+
+  openStudentQuranLesson(lesson: LeconCoranApi): void { this.selectedStudentQuranLessonId.set(lesson.id); }
+  closeStudentQuranLesson(): void { this.selectedStudentQuranLessonId.set(''); }
 
   viewGuardian(guardian: Guardian): void {
     this.selectedGuardianId.set(guardian.id);
@@ -3709,6 +3885,7 @@ export class PrimarySchoolComponent {
       birthDate: this.toInputDate(student.birthDate),
       birthPlace: student.birthPlace ?? '',
       nationality: student.nationality ?? 'Sénégalaise',
+      studentPhone: student.studentPhone ?? '',
       studentEmail: student.studentEmail ?? '',
       guardianMode: student.guardianId ? 'existing' : 'new',
       guardianId: student.guardianId ?? null,
@@ -3768,6 +3945,21 @@ export class PrimarySchoolComponent {
     this.chargerDossiers(this.workspace.establishmentType(), this.selectedCampusId(), true);
   }
 
+  selectDaaraGroup(groupId: string): void { this.selectedClassId.set(groupId); }
+
+  private chargerGroupesDaara(): void {
+    if (!this.isDaara() || !this.selectedCampusId() || !this.selectedCentralAcademicYearId()) return;
+    this.centralApi.groupesDaara(this.selectedCampusId(), this.selectedCentralAcademicYearId()).subscribe({
+      next: ({ data }) => {
+        this.daaraGroups.set(data);
+        const current = this.selectedClassId();
+        const valid = current.startsWith('group:') && data.groupes.some((group) => `group:${group.id}` === current);
+        if (!valid && data.groupes[0]) this.selectedClassId.set(`group:${data.groupes[0].id}`);
+      },
+      error: () => this.daaraGroups.set(null),
+    });
+  }
+
   refreshGuardians(): void {
     this.centralApi.invaliderCache('institut:dossiers:');
     this.chargerDossiers(this.workspace.establishmentType(), this.selectedCampusId(), true);
@@ -3784,6 +3976,7 @@ export class PrimarySchoolComponent {
           return;
         }
         this.appliquerDossiersApi(dossiers, campusId);
+        this.chargerGroupesDaara();
         this.dossiersLoading.set(false);
         if (notifier) {
           this.snackBar.open('Les dossiers ont été réactualisés depuis la base de données.', 'Fermer', { duration: 2800 });
@@ -3876,6 +4069,7 @@ export class PrimarySchoolComponent {
         birthDate: this.toDisplayDate(eleve.date_naissance ?? ''),
         birthPlace: eleve.lieu_naissance ?? '',
         nationality: eleve.nationalite ?? '',
+        studentPhone: eleve.telephone ?? '',
         studentEmail: eleve.email ?? '',
         guardianId: tuteur ? tuteurIds.get(tuteur.id) : undefined,
         parentName: tuteur ? `${tuteur.prenom} ${tuteur.nom}`.trim() : '',
@@ -4057,6 +4251,7 @@ export class PrimarySchoolComponent {
       matricule: form.matricule.trim() || null,
       prenom: form.firstName.trim(),
       nom: form.lastName.trim(),
+      telephone: form.studentPhone.trim() || null,
       sexe: form.gender,
       date_naissance: form.birthDate || null,
       lieu_naissance: form.birthPlace.trim() || null,
@@ -4493,6 +4688,7 @@ export class PrimarySchoolComponent {
       const subject = seance.matiere_libelle ?? 'Matière non définie';
       return {
         id: seance.id,
+        reference: seance.reference,
         classId: seance.classe_id,
         roomId: seance.salle_id ?? '',
         date: seance.date_seance,
@@ -4500,6 +4696,7 @@ export class PrimarySchoolComponent {
         endTime: String(seance.heure_fin).slice(0, 5),
         subject,
         teacherId: this.teachers().find((teacher) => teacher.teachingBackendId === seance.enseignant_id)?.id ?? null,
+        teacherName: seance.enseignant_nom,
         status: this.libelleStatutBackend(seance.statut),
         description: seance.cahier_texte ?? '',
         lessonTitle: seance.lecon_libelle ?? '',
@@ -5504,12 +5701,12 @@ export class PrimarySchoolComponent {
     const completed = lessons.filter((lesson) => lesson.status === 'Terminée').length;
     return {
       unit: this.sessionLessonDraft || session.programUnit || 'Programme annuel',
-      planned: lessons.length || 16,
-      completed: lessons.length ? completed : 11,
-      remaining: lessons.length ? lessons.length - completed : 5,
+      planned: lessons.length,
+      completed,
+      remaining: Math.max(0, lessons.length - completed),
       progress: lessons.length
         ? Math.round(lessons.reduce((total, lesson) => total + lesson.progress, 0) / lessons.length)
-        : session.programProgress,
+        : 0,
     };
   }
 
@@ -6344,6 +6541,7 @@ export class PrimarySchoolComponent {
       birthDate: '',
       birthPlace: '',
       nationality: 'Sénégalaise',
+      studentPhone: '',
       studentEmail: '',
       guardianMode: 'new',
       guardianId: null,
@@ -7454,6 +7652,23 @@ export class PrimarySchoolComponent {
       .sort((first, second) => second.assessment.date.localeCompare(first.assessment.date));
   }
 
+  studentPaidTotal(): number {
+    return (this.studentDossier()?.paiements ?? []).filter((p) => p.statut === 'confirme' || p.statut === 'payee').reduce((sum, p) => sum + Number(p.montant || 0), 0);
+  }
+
+  studentOutstandingTotal(): number {
+    return (this.studentDossier()?.echeances ?? []).reduce((sum, e) => sum + Math.max(0, Number(e.montant_initial || 0) - Number(e.montant_regle || 0)), 0);
+  }
+
+  studentPresenceStats(): { total: number; presents: number; absences: number; justifiees: number; retards: number; taux: number } {
+    const lignes = this.studentDossier()?.presences ?? [];
+    const presents = lignes.filter((p) => p.statut === 'present').length;
+    const justifiees = lignes.filter((p) => p.statut === 'justifie').length;
+    const absences = lignes.filter((p) => p.statut === 'absent' || p.statut === 'justifie').length;
+    const retards = lignes.filter((p) => p.statut === 'retard').length;
+    return { total: lignes.length, presents, absences, justifiees, retards, taux: lignes.length ? (presents / lignes.length) * 100 : 0 };
+  }
+
   studentOverallAverage(student: Student): string {
     const averages = this.studentSubjectGradeSummaries(student)
       .map((summary) => summary.subjectAverageValue);
@@ -7537,16 +7752,61 @@ export class PrimarySchoolComponent {
 
   selectCollectionClass(classId: string): void {
     this.selectClass(classId);
+    this.collectionPage.set(0);
     this.ensureCollectionFeeSelection();
   }
 
   selectCollectionFee(feeId: string): void {
     this.selectedCollectionFeeId.set(feeId);
     this.collectionUnpaidOnly.set(false);
+    this.collectionPage.set(0);
   }
 
   toggleCollectionUnpaidOnly(): void {
     this.collectionUnpaidOnly.update((value) => !value);
+    this.collectionPage.set(0);
+  }
+
+  setCollectionSearch(value: string): void {
+    this.collectionSearch.set(value);
+    this.collectionPage.set(0);
+  }
+
+  collectionFilteredStudents(): Student[] {
+    const terme = this.collectionSearch().trim().toLowerCase();
+    const students = this.collectionStudents();
+    if (!terme) return students;
+    return students.filter((student) => `${student.name} ${student.matricule}`.toLowerCase().includes(terme));
+  }
+
+  collectionStudentsPaginated(): Student[] {
+    const taille = this.collectionPageSize();
+    const debut = this.collectionPage() * taille;
+    return this.collectionFilteredStudents().slice(debut, debut + taille);
+  }
+
+  collectionPageCount(): number {
+    return Math.max(1, Math.ceil(this.collectionFilteredStudents().length / this.collectionPageSize()));
+  }
+
+  collectionPageLabel(): string {
+    const total = this.collectionFilteredStudents().length;
+    if (!total) return '0 élève';
+    const taille = this.collectionPageSize();
+    const debut = this.collectionPage() * taille + 1;
+    const fin = Math.min((this.collectionPage() + 1) * taille, total);
+    return `${debut}–${fin} sur ${total}`;
+  }
+
+  setCollectionPageSize(value: number | string): void {
+    const taille = Number(value);
+    if (!this.collectionPageSizeOptions.includes(taille)) return;
+    this.collectionPageSize.set(taille);
+    this.collectionPage.set(0);
+  }
+
+  setCollectionPage(page: number): void {
+    this.collectionPage.set(Math.max(0, Math.min(page, this.collectionPageCount() - 1)));
   }
 
   collectionEligibleStudents(): Student[] {
@@ -7699,6 +7959,8 @@ export class PrimarySchoolComponent {
       this.selectedCollectionFeeId.set(options.find((fee) => fee.id === 'monthlyFee')?.id ?? options[0]?.id ?? '');
     }
     this.collectionUnpaidOnly.set(false);
+    this.collectionSearch.set('');
+    this.collectionPage.set(0);
   }
 
   selectedExpenseType(): ExpenseType {
@@ -7722,6 +7984,8 @@ export class PrimarySchoolComponent {
   selectExpenseType(typeId: string): void {
     this.selectedExpenseTypeId.set(typeId);
     this.expenseUnpaidOnly.set(false);
+    this.expenseSearch.set('');
+    this.expensePage.set(0);
     const type = this.expenseTypes().find((item) => item.id === typeId);
     if (type) {
       this.expenseForm.frequency = type.frequency;
@@ -7809,6 +8073,7 @@ export class PrimarySchoolComponent {
   selectExpensePeriod(period: string): void {
     this.selectedExpensePeriod.set(period);
     this.expenseUnpaidOnly.set(false);
+    this.expensePage.set(0);
   }
 
   expensePeriodOptions(): Array<{ value: string; label: string }> {
@@ -7822,10 +8087,12 @@ export class PrimarySchoolComponent {
   selectExpenseAcademicYear(academicYear: string): void {
     this.selectedExpenseAcademicYear.set(academicYear);
     this.expenseUnpaidOnly.set(false);
+    this.expensePage.set(0);
   }
 
   toggleExpenseUnpaidOnly(): void {
     this.expenseUnpaidOnly.update((value) => !value);
+    this.expensePage.set(0);
   }
 
   filteredExpenses(): SchoolExpense[] {
@@ -7848,12 +8115,54 @@ export class PrimarySchoolComponent {
     return [...teachers, ...staff].sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  visibleSalaryPeople(): ExpensePayee[] {
-    const people = this.salaryPeople();
+  private visibleSalaryPeopleAll(): ExpensePayee[] {
+    const terme = this.expenseSearch().trim().toLowerCase();
+    const people = this.salaryPeople().filter((person) =>
+      !terme || `${person.name} ${person.reference} ${person.role}`.toLowerCase().includes(terme),
+    );
     if (!this.expenseUnpaidOnly()) return people;
     return this.selectedExpenseType().frequency === 'Mensuel'
       ? people.filter((person) => this.paymentMonths.some((month) => !this.expensePersonPaymentDate(person, month)))
       : people.filter((person) => !this.expensePersonPaymentDate(person));
+  }
+
+  visibleSalaryPeoplePaginated(): ExpensePayee[] {
+    const taille = this.expensePageSize();
+    const debut = this.expensePage() * taille;
+    return this.visibleSalaryPeopleAll().slice(debut, debut + taille);
+  }
+
+  visibleSalaryPeople(): ExpensePayee[] {
+    return this.visibleSalaryPeoplePaginated();
+  }
+
+  expensePageCount(): number {
+    return Math.max(1, Math.ceil(this.visibleSalaryPeopleAll().length / this.expensePageSize()));
+  }
+
+  expensePageLabel(): string {
+    const total = this.visibleSalaryPeopleAll().length;
+    if (!total) return '0 personne';
+    const taille = this.expensePageSize();
+    const debut = this.expensePage() * taille + 1;
+    const fin = Math.min((this.expensePage() + 1) * taille, total);
+    return `${debut}–${fin} sur ${total}`;
+  }
+
+  setExpenseSearch(value: string): void {
+    this.expenseSearch.set(value);
+    this.expensePage.set(0);
+  }
+
+  setExpensePageSize(value: number | string): void {
+    const taille = Number(value);
+    if (!this.expensePageSizeOptions.includes(taille)) return;
+    this.expensePageSize.set(taille);
+    this.expensePage.set(0);
+  }
+
+  setExpensePage(page: number): void {
+    this.expensePage.set(Math.max(0, Math.min(page, this.expensePageCount() - 1)));
   }
 
   private expenseRecord(person: ExpensePayee, month?: string): SchoolExpense | undefined {

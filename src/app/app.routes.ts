@@ -120,6 +120,7 @@ export const APP_ROUTE: Route[] = [
       ),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'tableau-de-bord' },
+      { path: 'profil', loadComponent: () => import('./prototype/account-profile/account-profile.component').then(c => c.AccountProfileComponent) },
       { path: ':vue', loadComponent: () => import('./prototype/saas-console/saas-console.component').then(c => c.SaasConsoleComponent) },
     ],
   },
@@ -162,6 +163,7 @@ export const APP_ROUTE: Route[] = [
       .then((component) => component.TeacherLayoutComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'tableau-de-bord' },
+      { path: 'profil', loadComponent: () => import('./prototype/account-profile/account-profile.component').then(c => c.AccountProfileComponent) },
       { path: ':vue', loadComponent: () => import('./prototype/teacher-space/teacher-space.component').then((component) => component.TeacherSpaceComponent) },
     ],
   },
@@ -176,6 +178,7 @@ export const APP_ROUTE: Route[] = [
     // Cela évite de recréer la sidebar, le navtop et le panneau de thème à
     // chaque navigation, source de lenteurs et de rendus instables.
     children: [
+      { path: 'profil', loadComponent: () => import('./prototype/account-profile/account-profile.component').then(c => c.AccountProfileComponent) },
       {
         path: 'etablissements/daara',
         data: { establishmentType: 'daara' },

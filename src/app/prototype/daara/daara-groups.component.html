@@ -1,0 +1,20 @@
+<section class="daara-groups">
+  <header class="page-title"><div><small>{{ t('ADMINISTRATION · DAARA') }}</small><h1>{{ t('Groupes du Daara') }}</h1><p>{{ t('Organisez les apprenants inscrits dans des groupes de travail.') }}</p></div><button type="button" (click)="load()" [disabled]="loading()"><i class="material-icons-outlined">{{ loading() ? 'sync' : 'refresh' }}</i>{{ t('Actualiser') }}</button></header>
+  <section class="panel create-group"><div><span class="icon"><i class="material-icons-outlined">group_add</i></span><div><h2>{{ t('Nouveau groupe') }}</h2><p>{{ t('Le groupe général est créé automatiquement avec tous les apprenants du Daara.') }}</p></div></div><label><span>{{ t('Nom du groupe') }} <b>*</b></span><input [ngModel]="newName()" (ngModelChange)="newName.set($event)" [placeholder]="t('Ex. Groupe matin')" /></label><button type="button" class="primary-action" (click)="create()" [disabled]="!newName().trim() || saving()"><i class="material-icons-outlined">add</i>{{ t('Créer le groupe') }}</button></section>
+  @if (loading()) { <div class="loading"><i class="material-icons-outlined">sync</i>{{ t('Chargement des groupes…') }}</div> }
+  @if (!loading()) { <div class="group-grid">
+    @for (group of data()?.groupes ?? []; track group.id) {
+      <article class="panel group-card">
+        <header><div><span class="group-code">{{ group.code }}</span>
+          @if (editingId() === group.id) { <input class="edit-name" [ngModel]="editingName()" (ngModelChange)="editingName.set($event)" /> <div class="edit-actions"><button type="button" class="primary-action" (click)="saveEdit(group.id)"><i class="material-icons-outlined">check</i></button><button type="button" (click)="cancelEdit()"><i class="material-icons-outlined">close</i></button></div> }
+          @else { <h2>{{ group.nom }}</h2> }
+        </div><div class="card-actions">@if (editingId() !== group.id) {<button type="button" class="icon-button" (click)="startEdit(group.id)" [attr.aria-label]="t('Modifier')"><i class="material-icons-outlined">edit</i></button>}<button type="button" class="icon-button" (click)="askDelete(group.id)" [disabled]="group.code === 'GRP-001'" [attr.aria-label]="t('Supprimer')"><i class="material-icons-outlined">delete</i></button></div></header>
+        <p>{{ group.effectif }} {{ t('apprenant(s)') }}</p>
+        <label><span>{{ t('Élèves libres ou déjà dans ce groupe') }}</span><select multiple data-template-select2 (change)="selectionChanged(group.id, $event)">@for (student of availableStudents(group.id); track student.id) {<option [value]="student.id" [attr.selected]="members(group.id).includes(student.id) ? '' : null">{{ student.nom_complet }} · {{ student.matricule }}</option>}</select></label>
+        <button type="button" class="save-members" (click)="saveMembers(group.id)" [disabled]="saving()"><i class="material-icons-outlined">save</i>{{ t('Enregistrer les élèves') }}</button>
+        <footer><i class="material-icons-outlined">info</i>{{ group.code === 'GRP-001' ? t('Ce groupe contient par défaut tous les élèves inscrits au Daara.') : t('Désélectionnez un élève pour le rendre disponible dans un autre groupe.') }}</footer>
+      </article>
+    } @empty { <div class="empty panel"><i class="material-icons-outlined">groups</i><h2>{{ t('Aucun groupe') }}</h2><p>{{ t('Créez votre premier groupe de travail.') }}</p></div> }
+  </div> }
+  @if (deleteId()) { <div class="modal-backdrop"><section class="delete-modal panel"><div class="modal-icon"><i class="material-icons-outlined">delete</i></div><h2>{{ t('Supprimer ce groupe ?') }}</h2><p>{{ t('Les élèves redeviendront libres et pourront être affectés à un autre groupe.') }}</p><footer><button type="button" (click)="cancelDelete()">{{ t('Annuler') }}</button><button type="button" class="danger-action" (click)="delete()" [disabled]="saving()"><i class="material-icons-outlined">delete</i>{{ t('Supprimer') }}</button></footer></section></div> }
+</section>

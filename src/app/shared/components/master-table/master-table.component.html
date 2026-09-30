@@ -432,9 +432,9 @@
               }
               @if (showStatusToggle() && row.canToggleStatus !== false) {
               <button mat-icon-button color="primary" (click)="$event.stopPropagation()" (click)="onStatusToggle(row)"
-                class="tbl-action-btn" [matTooltip]="row.status === 'Validée' ? 'Annuler l’opération' : 'Valider l’opération'"
-                [attr.aria-label]="row.status === 'Validée' ? 'Annuler l’opération' : 'Valider l’opération'">
-                <mat-icon class="material-icons-outlined">{{ row.status === 'Validée' ? 'undo' : 'check_circle' }}</mat-icon>
+                class="tbl-action-btn" [matTooltip]="row.statusToggleTooltip ?? (row.status === 'Validée' || row.status === 'Déjà récité' ? 'Remettre en attente' : 'Marquer comme effectué')"
+                [attr.aria-label]="row.statusToggleAriaLabel ?? (row.status === 'Validée' || row.status === 'Déjà récité' ? 'Remettre en attente' : 'Marquer comme effectué')">
+                <mat-icon class="material-icons-outlined">{{ row.statusToggleIcon ?? (row.status === 'Validée' || row.status === 'Déjà récité' ? 'undo' : 'check_circle') }}</mat-icon>
               </button>
               }
               @if (showDelete()) {

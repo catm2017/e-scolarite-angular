@@ -91,8 +91,8 @@ export class CentralAuthComponent implements OnInit {
             ? '/institut?vue=souscription'
             : '/institut',
       ),
-      error: () => {
-        this.erreur.set('Les informations de connexion sont incorrectes. Vérifiez votre e-mail ou identifiant, votre mot de passe et, si nécessaire, l’établissement sélectionné, puis réessayez.');
+      error: (error) => {
+        this.erreur.set(error?.error?.message ?? 'Les informations de connexion sont incorrectes. Vérifiez votre e-mail ou identifiant, votre mot de passe et, si nécessaire, l’établissement sélectionné, puis réessayez.');
         this.chargement.set(false);
       },
       complete: () => this.chargement.set(false),

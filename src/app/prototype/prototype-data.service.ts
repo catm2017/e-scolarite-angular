@@ -9,8 +9,40 @@ export type WebsiteSectionType =
   | 'news'
   | 'testimonials'
   | 'contact'
+  | 'admission'
   | 'cta'
-  | 'text';
+  | 'text'
+  | 'heading'
+  | 'image'
+  | 'video'
+  | 'gallery'
+  | 'slider'
+  | 'button';
+
+export interface WebsiteMedia {
+  id: string;
+  name: string;
+  url: string;
+  type: 'image' | 'video';
+  source?: 'local' | 'external';
+  embedUrl?: string;
+  alt?: string;
+  createdAt?: string;
+  storagePath?: string | null;
+  sizeBytes?: number;
+}
+
+export interface WebsiteSectionItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  content?: string;
+  icon?: string;
+  meta?: string;
+  imageId?: string | null;
+  linkLabel?: string;
+  linkUrl?: string;
+}
 
 export interface WebsiteSection {
   id: string;
@@ -19,6 +51,20 @@ export interface WebsiteSection {
   eyebrow: string;
   content: string;
   visible: boolean;
+  mediaId?: string | null;
+  /** Image et textes de la carte visuelle affichée dans la bannière. */
+  heroImageId?: string | null;
+  heroImageTitle?: string;
+  heroImageDescription?: string;
+  heroImageBadge?: string;
+  mediaUrl?: string | null;
+  mediaItems?: string[];
+  buttonLabel?: string;
+  buttonUrl?: string;
+  buttonLinkType?: 'internal' | 'external';
+  buttonPageId?: string;
+  items?: WebsiteSectionItem[];
+  styles?: Record<string, string>;
 }
 
 export interface WebsitePage {
@@ -52,12 +98,15 @@ export interface WebsiteDraft {
   primaryColor: string;
   admissionsOpen: boolean;
   showStats: boolean;
+  mediaLibrary: WebsiteMedia[];
   pages: WebsitePage[];
   menuItems: WebsiteMenuItem[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class PrototypeDataService {
+  private readonly siteDraftStoragePrefix = 'escolarite-site-draft:';
+
   readonly website = signal<WebsiteDraft>({
     schoolName: 'Institut Le Joyau du Savoir',
     logoUrl: null,
@@ -70,6 +119,7 @@ export class PrototypeDataService {
     primaryColor: '#2F80ED',
     admissionsOpen: true,
     showStats: true,
+    mediaLibrary: [],
     pages: [
       {
         id: 'home',
@@ -84,6 +134,7 @@ export class PrototypeDataService {
           { id: 'home-programs', type: 'programs', eyebrow: 'NOS PARCOURS', title: 'Un programme pour chaque ambition', content: 'Du préscolaire au lycée, avec un parcours religieux structuré.', visible: true },
           { id: 'home-schools', type: 'schools', eyebrow: 'NOS ÉTABLISSEMENTS', title: 'Des écoles proches des familles', content: 'Retrouvez nos campus, leurs cycles et leurs coordonnées.', visible: true },
           { id: 'home-about', type: 'about', eyebrow: 'POURQUOI NOUS CHOISIR', title: 'Exigence, accompagnement et valeurs', content: 'Une pédagogie active, une équipe engagée et un suivi individualisé.', visible: true },
+          { id: 'home-news', type: 'news', eyebrow: 'ACTUALITÉS', title: 'Les nouvelles de l’institut', content: 'Partagez vos événements, annonces et réussites.', visible: true },
           { id: 'home-testimonials', type: 'testimonials', eyebrow: 'TÉMOIGNAGES', title: 'La parole à notre communauté', content: 'Parents, élèves et anciens partagent leur expérience.', visible: true },
           { id: 'home-cta', type: 'cta', eyebrow: 'ADMISSIONS', title: 'Les préinscriptions sont ouvertes', content: 'Déposez une demande et notre équipe vous accompagne dans les prochaines étapes.', visible: true },
         ],
@@ -122,7 +173,19 @@ export class PrototypeDataService {
         isHome: false,
         sections: [
           { id: 'admission-hero', type: 'hero', eyebrow: 'RENTRÉE 2026–2027', title: 'Rejoignez notre établissement', content: 'Consultez la procédure et envoyez votre demande de préinscription.', visible: true },
-          { id: 'admission-content', type: 'text', eyebrow: 'PROCÉDURE', title: 'Une admission simple et accompagnée', content: 'Choisissez le cycle, préparez les pièces demandées et transmettez votre demande. Notre équipe vous recontactera.', visible: true },
+          { id: 'admission-content', type: 'admission', eyebrow: 'CANDIDATURE', title: 'Déposer une demande d’admission', content: 'Choisissez le type d’établissement, votre campus et la classe souhaitée.', visible: true },
+        ],
+      },
+      {
+        id: 'news',
+        title: 'Actualités',
+        slug: 'actualites',
+        description: 'Les événements, annonces et réussites de l’institut.',
+        status: 'published',
+        isHome: false,
+        sections: [
+          { id: 'news-hero', type: 'hero', eyebrow: 'ACTUALITÉS', title: 'La vie de notre communauté', content: 'Retrouvez les dernières nouvelles et les moments forts de l’établissement.', visible: true },
+          { id: 'news-list', type: 'news', eyebrow: 'À LA UNE', title: 'Nos dernières nouvelles', content: 'Ajoutez une image, un texte et un lien à chaque actualité.', visible: true },
         ],
       },
       {
@@ -140,18 +203,55 @@ export class PrototypeDataService {
     ],
     menuItems: [
       { id: 'menu-home', label: 'Accueil', linkType: 'internal', pageId: 'home', openInNewTab: false, visible: true },
-      { id: 'menu-schools', label: 'Nos écoles', linkType: 'internal', pageId: 'schools', openInNewTab: false, visible: true },
-      { id: 'menu-about', label: 'À propos', linkType: 'internal', pageId: 'about', openInNewTab: false, visible: true },
-      { id: 'menu-admission', label: 'Admission', linkType: 'internal', pageId: 'admission', openInNewTab: false, visible: true },
+      { id: 'menu-schools', label: 'Nos parcours', linkType: 'internal', pageId: 'schools', openInNewTab: false, visible: true },
+      { id: 'menu-about', label: 'Notre institut', linkType: 'internal', pageId: 'about', openInNewTab: false, visible: true },
+      { id: 'menu-admission', label: 'Admissions', linkType: 'internal', pageId: 'admission', openInNewTab: false, visible: true },
+      { id: 'menu-news', label: 'Actualités', linkType: 'internal', pageId: 'news', openInNewTab: false, visible: true },
       { id: 'menu-contact', label: 'Contact', linkType: 'internal', pageId: 'contact', openInNewTab: false, visible: true },
     ],
   });
 
   updateWebsite(patch: Partial<WebsiteDraft>): void {
-    this.website.update((draft) => ({ ...draft, ...patch }));
+    this.website.update((draft) => {
+      const next = { ...draft, ...patch };
+      this.sauvegarderBrouillonLocal(next);
+      return next;
+    });
   }
 
   remplacerWebsite(draft: WebsiteDraft): void {
     this.website.set(draft);
+  }
+
+  restaurerBrouillonLocal(): WebsiteDraft | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      const brut = window.localStorage.getItem(this.siteDraftStorageKey());
+      if (!brut) return null;
+      const draft = JSON.parse(brut) as WebsiteDraft;
+      return draft?.pages && draft?.menuItems ? draft : null;
+    } catch {
+      return null;
+    }
+  }
+
+  effacerBrouillonLocal(): void {
+    if (typeof window === 'undefined') return;
+    try { window.localStorage.removeItem(this.siteDraftStorageKey()); } catch { /* stockage indisponible */ }
+  }
+
+  private sauvegarderBrouillonLocal(draft: WebsiteDraft): void {
+    if (typeof window === 'undefined') return;
+    try { window.localStorage.setItem(this.siteDraftStorageKey(), JSON.stringify(draft)); } catch { /* quota ou stockage indisponible */ }
+  }
+
+  private siteDraftStorageKey(): string {
+    if (typeof window === 'undefined') return `${this.siteDraftStoragePrefix}default`;
+    let institutId = 'default';
+    try {
+      const session = JSON.parse(window.localStorage.getItem('escolarite_institut') || '{}') as Record<string, unknown>;
+      institutId = String(session['id'] || session['institut_id'] || 'default');
+    } catch { /* session non lisible */ }
+    return `${this.siteDraftStoragePrefix}${institutId}`;
   }
 }

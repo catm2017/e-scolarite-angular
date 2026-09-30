@@ -5,10 +5,37 @@
     <div class="editor-actions">
       <app-platform-language-switcher />
       <span class="saved"><span>cloud_done</span> {{ message() || (chargement() ? 'Chargement…' : 'Modifications locales') }}</span>
+      <a routerLink="/demo/joyau-du-savoir" [queryParams]="{ page: selectedPageId() }" class="view-site" target="_blank" rel="noopener noreferrer" (click)="prepareSitePreview()"><span>visibility</span>Voir le site</a>
+      <button type="button" class="editor-reset" (click)="demanderReinitialisation()" [disabled]="enregistrement() || reinitialisation()"><span>restore</span>Proposition initiale</button>
       <button type="button" class="editor-save" (click)="enregistrer()" [disabled]="enregistrement()">Enregistrer</button>
       <button type="button" (click)="enregistrer(true)" [disabled]="enregistrement()">{{ enregistrement() ? 'Publication…' : 'Publier' }}</button>
     </div>
   </header>
+
+  @if (mediaUploadError(); as erreurMedia) {
+    <div class="media-error-modal-backdrop" role="presentation" (click)="fermerErreurMedia()">
+      <section class="media-error-modal" role="alertdialog" aria-modal="true" aria-labelledby="media-error-title" (click)="$event.stopPropagation()">
+        <div class="media-error-icon"><span>error_outline</span></div>
+        <div class="media-error-content"><small>FICHIER NON ENREGISTRÉ</small><h2 id="media-error-title">{{ mediaUploadErrorTitle() }}</h2><p>{{ erreurMedia }}</p><button type="button" (click)="fermerErreurMedia()">Compris</button></div>
+        <button type="button" class="media-error-close" (click)="fermerErreurMedia()" aria-label="Fermer">close</button>
+      </section>
+    </div>
+  }
+
+  @if (confirmationReinitialisation()) {
+    <div class="site-reset-modal-backdrop" role="presentation" (click)="annulerReinitialisation()">
+      <section class="site-reset-modal" role="alertdialog" aria-modal="true" aria-labelledby="site-reset-title" (click)="$event.stopPropagation()">
+        <div class="site-reset-icon"><span>restore</span></div>
+        <div class="site-reset-content">
+          <small>RÉINITIALISATION DU SITE</small>
+          <h2 id="site-reset-title">Revenir à la proposition initiale ?</h2>
+          <p>Les pages, menus et contenus proposés seront restaurés. Votre médiathèque sera conservée.</p>
+          <div class="site-reset-actions"><button type="button" class="secondary-action" (click)="annulerReinitialisation()">Annuler</button><button type="button" class="site-reset-confirm" (click)="reinitialiserProposition()" [disabled]="reinitialisation()"><span>restore</span>{{ reinitialisation() ? 'Réinitialisation…' : 'Réinitialiser le site' }}</button></div>
+        </div>
+        <button type="button" class="site-reset-close" (click)="annulerReinitialisation()" aria-label="Fermer"><span>close</span></button>
+      </section>
+    </div>
+  }
 
   <main>
     <aside class="editor-sidebar">
@@ -30,9 +57,18 @@
           <p>Ajoutez, modifiez et réordonnez les blocs par glisser-déposer.</p>
         </section>
 
-        <section class="section-list" cdkDropList [cdkDropListData]="selectedPage().sections" (cdkDropListDropped)="dropSection($event)">
+        <section class="component-palette">
+          <div class="palette-heading"><span>widgets</span><div><strong>Composants</strong><small>Glissez un bloc directement dans l’aperçu</small></div></div>
+          <div class="palette-grid" id="component-palette-list" cdkDropList [cdkDropListData]="sectionOptions" [cdkDropListConnectedTo]="['preview-sections-list']" [cdkDropListSortingDisabled]="true">
+            @for (option of sectionOptions; track option.value) {
+              <button type="button" cdkDrag [cdkDragData]="option.value" (click)="addSection(option.value)" [attr.title]="'Ajouter ' + option.label"><i>{{ option.icon }}</i><span>{{ option.label }}</span></button>
+            }
+          </div>
+        </section>
+
+        <section class="section-list" id="section-editor-list" cdkDropList [cdkDropListData]="selectedPage().sections" cdkDropListConnectedTo="preview-sections-list" (cdkDropListDropped)="dropSection($event)">
           @for (section of selectedPage().sections; track section.id) {
-            <article class="section-editor-card" cdkDrag>
+            <article class="section-editor-card" cdkDrag [class.selected]="selectedSectionId() === section.id" (click)="selectSection(section.id)">
               <div class="section-card-head">
                 <button type="button" class="drag-handle" cdkDragHandle title="Déplacer">drag_indicator</button>
                 <span class="section-icon">{{ sectionIcon(section.type) }}</span>
@@ -46,10 +82,75 @@
               <label>Sur-titre<input [ngModel]="section.eyebrow" (ngModelChange)="updateSection(section.id, { eyebrow: $event })" /></label>
               <label>Titre<input [ngModel]="section.title" (ngModelChange)="updateSection(section.id, { title: $event })" /></label>
               <label>Texte<textarea rows="3" [ngModel]="section.content" (ngModelChange)="updateSection(section.id, { content: $event })"></textarea></label>
+              @if (section.type === 'image' || section.type === 'video' || section.type === 'hero') {
+                <label>{{ section.type === 'hero' ? 'Fond de la bannière (vidéo facultative)' : 'Média' }}
+                  <select [ngModel]="section.mediaId || ''" (ngModelChange)="selectMediaForSection(section, $event)">
+                    <option value="">{{ section.type === 'hero' ? 'Visuel par défaut (aucune vidéo)' : 'Choisir dans la médiathèque' }}</option>
+                    @for (media of draft().mediaLibrary; track media.id) {
+                      @if (section.type !== 'hero' || media.type === 'video') { <option [value]="media.id">{{ media.name }} · {{ media.type }}</option> }
+                    }
+                  </select>
+                </label>
+                @if (mediaFor(section); as media) { <small class="selected-media-note">{{ media.url }}</small> }
+              }
+              @if (section.type === 'gallery' || section.type === 'slider') {
+                <div class="media-checklist"><span>Images sélectionnées</span>
+                  @for (media of draft().mediaLibrary; track media.id) {
+                    @if (media.type === 'image') {
+                      <label><input type="checkbox" [checked]="isMediaSelected(section, media.id)" (change)="toggleMediaInSection(section, media.id)" /><span>{{ media.name }}</span></label>
+                    }
+                  }
+                  @if (!draft().mediaLibrary.length) { <small>Aucun média disponible.</small> }
+                </div>
+              }
+              @if (section.type === 'button' || section.type === 'hero' || section.type === 'cta') {
+                <label>{{ section.type === 'hero' ? 'Libellé du lien Découvrir' : 'Libellé du bouton' }}<input [ngModel]="section.buttonLabel || ''" (ngModelChange)="updateSection(section.id, { buttonLabel: $event })" /></label>
+                <label>Type de lien<select [ngModel]="section.buttonLinkType || (section.type === 'hero' ? 'internal' : 'external')" (ngModelChange)="updateSection(section.id, { buttonLinkType: $event })"><option value="internal">Page de l’institut</option><option value="external">Lien externe</option></select></label>
+                @if ((section.buttonLinkType || (section.type === 'hero' ? 'internal' : 'external')) === 'internal') {
+                  <label>Page cible<select [ngModel]="section.buttonPageId || (section.type === 'hero' ? 'schools' : 'home')" (ngModelChange)="setSectionButtonPage(section, $event)">@for (page of draft().pages; track page.id) {<option [value]="page.id">{{ page.title }}</option>}</select></label>
+                } @else {
+                  <label>Lien externe<input [ngModel]="section.buttonUrl || ''" (ngModelChange)="updateSection(section.id, { buttonUrl: $event })" placeholder="https://…" /></label>
+                }
+              }
+              @if (selectedSectionId() === section.id && supportsItems(section.type)) {
+                <div class="content-items-editor">
+                  <div class="items-editor-heading"><div><small>CONTENU STRUCTURÉ</small><strong>Éléments du composant</strong></div>@if (section.type === 'schools') { <button type="button" class="sync-content-button" (click)="synchroniserEtablissements(section)"><i>sync</i>Importer les établissements</button> }<button type="button" class="add-item-button" (click)="addSectionItem(section)"><i>add</i>Ajouter</button></div>
+                  @for (item of sectionItems(section); track item.id) {
+                    <div class="content-item-row">
+                      <div class="content-item-row-head"><span>{{ item.icon || 'widgets' }}</span><strong>Élément {{ $index + 1 }}</strong><button type="button" class="icon-button danger" (click)="removeSectionItem(section, item.id)" title="Supprimer">delete</button></div>
+                      <div class="content-item-grid"><label>Titre<input [ngModel]="item.title" (ngModelChange)="updateSectionItem(section, item.id, { title: $event })" /></label><label>Icône<input [ngModel]="item.icon || ''" (ngModelChange)="updateSectionItem(section, item.id, { icon: $event })" placeholder="school" /></label><label>Sous-titre<input [ngModel]="item.subtitle || ''" (ngModelChange)="updateSectionItem(section, item.id, { subtitle: $event })" /></label><label>Contenu<textarea rows="2" [ngModel]="item.content || ''" (ngModelChange)="updateSectionItem(section, item.id, { content: $event })"></textarea></label>
+                        @if (section.type === 'news') {
+                          <label>Miniature <select [ngModel]="item.imageId || ''" (ngModelChange)="updateSectionItem(section, item.id, { imageId: $event || null })"><option value="">Icône par défaut</option>@for (media of draft().mediaLibrary; track media.id) {@if (media.type === 'image') {<option [value]="media.id">{{ media.name }}</option>}}</select></label>
+                          <label>Texte du lien<input [ngModel]="item.linkLabel || 'Lire l’actualité'" (ngModelChange)="updateSectionItem(section, item.id, { linkLabel: $event })" placeholder="Lire l’actualité" /></label>
+                          <label>Lien vers la page web<input [ngModel]="item.linkUrl || ''" (ngModelChange)="updateSectionItem(section, item.id, { linkUrl: $event })" placeholder="https://…" /></label>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
             </article>
           } @empty {
             <div class="empty-state"><span>widgets</span><strong>Aucune section</strong><p>Ajoutez un premier bloc à cette page.</p></div>
           }
+        </section>
+
+        <section class="media-library-panel">
+          <div class="panel-heading compact"><small>MÉDIATHÈQUE DE L’INSTITUT</small><h2>Images et vidéos</h2><p>Réutilisez vos médias dans plusieurs pages sans les téléverser à nouveau.</p></div>
+          <div class="media-upload-form">
+            <label>Source du média<select [ngModel]="mediaUploadSource()" (ngModelChange)="changerSourceMedia($event)"><option value="local">Fichier local</option><option value="external">Vidéo externe</option></select></label>
+            <label>Nom du média <b class="required-mark">*</b><input [ngModel]="mediaUploadName()" (ngModelChange)="mediaUploadName.set($event)" required [placeholder]="mediaUploadSource() === 'external' ? 'Ex. Présentation de l’établissement' : 'Nom du fichier ou de la sélection'" /></label>
+            @if (mediaUploadSource() === 'external') {<label>Lien vidéo externe <b class="required-mark">*</b><input [ngModel]="mediaUploadExternalUrl()" (ngModelChange)="mediaUploadExternalUrl.set($event)" required placeholder="https://youtube.com/watch?v=…" /></label>}
+            <label>Texte alternatif<input [ngModel]="mediaUploadAlt()" (ngModelChange)="mediaUploadAlt.set($event)" placeholder="Décrivez l’image" /></label>
+            <div class="media-upload-actions">@if (mediaUploadSource() === 'local') {<label class="file-button"><input type="file" accept="image/*,video/*" multiple (change)="onMediaFileSelected($event)" [disabled]="mediaUploadBusy()" /><span>upload</span>Choisir un ou plusieurs fichiers</label>}<button type="button" class="secondary-action" (click)="enregistrerMedias()" [disabled]="mediaUploadBusy() || !mediaUploadName().trim() || (mediaUploadSource() === 'external' ? !mediaUploadExternalUrl().trim() : !mediaUploadFiles().length)">{{ mediaUploadSource() === 'external' ? 'Enregistrer la vidéo' : (mediaUploadFiles().length > 1 ? 'Enregistrer les médias' : 'Enregistrer le média') }}</button>@if (mediaUploadFiles().length) {<button type="button" class="secondary-action media-cancel-selection" (click)="annulerSelectionMedias()" [disabled]="mediaUploadBusy()">Annuler la sélection</button>}</div>
+            <p class="media-upload-hint">@if (mediaUploadSource() === 'local') {Taille maximale : {{ formatBytes(mediaMaxFileBytes) }} par fichier · limite totale : {{ formatBytes(mediaQuotaBytes) }} par institut. {{ mediaUploadFiles().length ? mediaUploadFiles().length + ' fichier(s) sélectionné(s) · ' + formatBytes(mediaUploadSize()) : 'Sélectionnez vos fichiers puis enregistrez-les.' }} } @else {Seuls les liens vers des vidéos YouTube, Vimeo ou des fichiers vidéo directs sont acceptés.}</p>
+          </div>
+          <div class="media-filter"><button type="button" [class.active]="mediaFilter() === 'all'" (click)="mediaFilter.set('all')">Tous</button><button type="button" [class.active]="mediaFilter() === 'image'" (click)="mediaFilter.set('image')">Images</button><button type="button" [class.active]="mediaFilter() === 'video'" (click)="mediaFilter.set('video')">Vidéos</button></div>
+          <div class="media-library-grid">
+            @for (media of filteredMedia(); track media.id) {
+              <article class="media-library-item"><div class="media-thumb">@if (media.type === 'image') { <img [src]="media.url" [alt]="media.alt || media.name" /> } @else if (mediaUsesEmbed(media)) { <iframe [src]="mediaEmbedResourceUrl(media)" title="Aperçu vidéo externe" loading="lazy"></iframe> } @else { <video [src]="media.embedUrl || media.url" muted controls preload="metadata"></video> }<span>{{ media.source === 'external' ? 'link' : (media.type === 'image' ? 'image' : 'movie') }}</span></div><strong>{{ media.name }}</strong><small>{{ media.url }}</small><div class="media-item-actions">@if (media.source !== 'external') {<label class="icon-button" title="Remplacer"><input type="file" accept="image/*,video/*" (change)="onMediaReplacementSelected($event, media)" [disabled]="mediaUploadBusy()" /><span>sync</span></label>}<button type="button" class="icon-button danger" (click)="removeMedia(media)" title="Supprimer">delete</button></div></article>
+            } @empty { <div class="empty-state"><span>perm_media</span><strong>Aucun média</strong><p>Téléversez une image, une vidéo ou ajoutez une URL.</p></div> }
+          </div>
         </section>
 
         <section class="add-section">
@@ -200,44 +301,72 @@
             </div>
           </nav>
 
+          <div class="preview-sections-dropzone" id="preview-sections-list" cdkDropList [cdkDropListData]="selectedPage().sections" [cdkDropListConnectedTo]="['section-editor-list', 'component-palette-list']" (cdkDropListDropped)="dropSectionOnPreview($event)">
           @for (section of selectedPage().sections; track section.id) {
             @if (section.visible) {
+              <div class="preview-component" [class.selected]="selectedSectionId() === section.id" [class.align-left]="sectionStyle(section, 'textAlign') === 'left'" [class.align-center]="sectionStyle(section, 'textAlign') === 'center'" [class.align-right]="sectionStyle(section, 'textAlign') === 'right'" (click)="selectSection(section.id, $event)" [style.width]="sectionStyle(section, 'width', '100%')" [style.backgroundColor]="sectionStyle(section, 'backgroundColor')" [style.color]="sectionStyle(section, 'color')" [style.padding]="sectionStyle(section, 'padding')">
               @switch (section.type) {
                 @case ('hero') {
                   <section class="preview-hero">
-                    <div><small>{{ section.eyebrow }}</small><h1>{{ section.title }}</h1><p>{{ section.content }}</p><div><button type="button">Connexion</button><a>Découvrir l’établissement →</a></div></div>
-                    <aside><span>school</span><strong>Photo de l’établissement</strong><small>Image administrable depuis le back-office</small></aside>
+                    @if (heroMediaFor(section); as media) { @if (mediaUsesEmbed(media)) { <iframe class="preview-hero-background preview-external-video" [src]="mediaEmbedResourceUrl(media)" title="Vidéo de fond externe" loading="lazy"></iframe> } @else { <video class="preview-hero-background" [src]="media.embedUrl || media.url" autoplay muted loop playsinline></video> } } @else { <video class="preview-hero-background" [src]="defaultHeroBackgroundUrl" autoplay muted loop playsinline preload="metadata"></video> }
+                    <div><small>{{ section.eyebrow }}</small><h1>{{ section.title }}</h1><p>{{ section.content }}</p><div><button type="button">Connexion</button><a [href]="sectionButtonHref(section)" [attr.target]="section.buttonLinkType === 'external' ? '_blank' : null" [attr.rel]="section.buttonLinkType === 'external' ? 'noopener noreferrer' : null">{{ section.buttonLabel || 'Découvrir l’établissement' }} <span>arrow_forward</span></a></div></div>
                   </section>
                 }
                 @case ('stats') {
                   @if (draft().showStats) {
-                    <section class="preview-stats"><div><strong>684</strong><span>Apprenants</span></div><div><strong>42</strong><span>Enseignants</span></div><div><strong>98%</strong><span>Réussite aux examens</span></div><div><strong>16</strong><span>Années d’expérience</span></div></section>
+                    <section class="preview-stats">@for (item of sectionItems(section); track item.id) {<div><strong>{{ item.title }}</strong><span>{{ item.subtitle }}</span></div>}</section>
                   }
                 }
                 @case ('programs') {
-                  <section class="preview-section preview-programs"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="card-grid"><article><span>child_care</span><em>CI – CM2</em><h3>Préscolaire & Primaire</h3><p>Éveil, fondamentaux et accompagnement dans un cadre stimulant.</p></article><article><span>menu_book</span><em>6e – Terminale</em><h3>Collège & Lycée</h3><p>Exigence académique, orientation et préparation aux examens.</p></article><article><span>auto_stories</span><em>Parcours dédié</em><h3>Enseignement religieux</h3><p>Lecture, mémorisation et éducation aux valeurs.</p></article></div></section>
+                  <section class="preview-section preview-programs"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="card-grid">@for (item of sectionItems(section); track item.id) {<article><span>{{ item.icon || 'school' }}</span><em>{{ item.subtitle }}</em><h3>{{ item.title }}</h3><p>{{ item.content }}</p></article>}</div></section>
                 }
                 @case ('schools') {
-                  <section class="preview-section preview-schools"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="school-grid"><article><div>apartment</div><strong>Campus Keur Massar</strong><span>Préscolaire · Primaire · Collège</span><small>location_on Dakar</small></article><article><div>domain</div><strong>Campus Dakar Plateau</strong><span>Lycée · Formation professionnelle</span><small>location_on Dakar</small></article></div></section>
+                  <section class="preview-section preview-schools"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="school-grid">@for (item of sectionItems(section); track item.id) {<article><div>{{ item.icon || 'apartment' }}</div><strong>{{ item.title }}</strong><span>{{ item.subtitle }}</span><small>location_on {{ item.content }}</small></article>}</div></section>
                 }
                 @case ('about') {
-                  <section class="preview-about"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><div class="feature-grid"><article><span>person_search</span><strong>Suivi individualisé</strong><p>Chaque apprenant bénéficie d’un accompagnement attentif.</p></article><article><span>workspace_premium</span><strong>Excellence académique</strong><p>Des objectifs clairs et des équipes pédagogiques engagées.</p></article><article><span>diversity_3</span><strong>Valeurs & citoyenneté</strong><p>Une école ouverte, responsable et enracinée dans son contexte.</p></article></div></section>
+                  <section class="preview-about"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><div class="feature-grid">@for (item of sectionItems(section); track item.id) {<article><span>{{ item.icon || 'verified' }}</span><strong>{{ item.title }}</strong><p>{{ item.content }}</p></article>}</div></section>
+                }
+                @case ('news') {
+                  <section class="preview-section preview-news"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="news-carousel"><button type="button" class="carousel-arrow" (click)="previousNewsSlide(section)" [disabled]="newsSlideIndex(section) === 0" aria-label="Actualités précédentes"><i>chevron_left</i></button><div class="news-grid">@for (item of newsSlides(section)[newsSlideIndex(section)]; track item.id) {<article>@if (item.imageId && mediaById(item.imageId); as thumbnail) {<img class="news-thumbnail" [src]="thumbnail.url" [alt]="thumbnail.alt || item.title" />} @else {<div class="news-icon">{{ item.icon || 'newspaper' }}</div>}<small>{{ item.subtitle }}</small><h3>{{ item.title }}</h3><p>{{ item.content }}</p>@if (itemExternalHref(item); as href) {<a [href]="href" target="_blank" rel="noopener noreferrer">{{ item.linkLabel || 'Lire l’actualité' }} <i>arrow_forward</i></a>}</article>}</div><button type="button" class="carousel-arrow" (click)="nextNewsSlide(section)" [disabled]="newsSlideIndex(section) >= newsSlides(section).length - 1" aria-label="Actualités suivantes"><i>chevron_right</i></button></div><div class="carousel-dots">@for (slide of newsSlides(section); track $index) {<button type="button" [class.active]="newsSlideIndex(section) === $index" (click)="setNewsSlide(section, $index)" [attr.aria-label]="'Afficher les actualités ' + ($index + 1)"></button>}</div></section>
                 }
                 @case ('testimonials') {
-                  <section class="preview-section preview-testimonials"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="quote-grid"><article><span>format_quote</span><p>Une équipe disponible et un suivi qui nous met en confiance.</p><strong>Awa Ndiaye</strong><small>Parent d’élève</small></article><article><span>format_quote</span><p>J’ai trouvé un cadre exigeant qui m’a aidé à progresser.</p><strong>Mamadou Fall</strong><small>Ancien élève</small></article></div></section>
+                  <section class="preview-section preview-testimonials"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="testimonial-carousel"><button type="button" class="carousel-arrow" (click)="previousTestimonialSlide(section)" [disabled]="testimonialSlideIndex(section) === 0" aria-label="Témoignages précédents"><i>chevron_left</i></button><div class="quote-grid">@for (item of testimonialSlides(section)[testimonialSlideIndex(section)]; track item.id) {<article><span>{{ item.icon || 'format_quote' }}</span><p>{{ item.content }}</p><strong>{{ item.title }}</strong><small>{{ item.subtitle }}</small></article>}</div><button type="button" class="carousel-arrow" (click)="nextTestimonialSlide(section)" [disabled]="testimonialSlideIndex(section) >= testimonialSlides(section).length - 1" aria-label="Témoignages suivants"><i>chevron_right</i></button></div><div class="carousel-dots">@for (slide of testimonialSlides(section); track $index) {<button type="button" [class.active]="testimonialSlideIndex(section) === $index" (click)="setTestimonialSlide(section, $index)" [attr.aria-label]="'Afficher les témoignages ' + ($index + 1)"></button>}</div></section>
                 }
                 @case ('contact') {
-                  <section class="preview-contact"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><article><p><span>location_on</span>{{ draft().address }}</p><p><span>phone</span>{{ draft().phone }}</p><p><span>mail</span>{{ draft().email }}</p><button type="button">Demander une visite</button></article></section>
+                  <section class="preview-contact"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><article>@for (item of sectionItems(section); track item.id) {<p><span>{{ item.icon || 'info' }}</span>{{ item.content || item.title }}</p>}<button type="button">Demander une visite</button></article></section>
+                }
+                @case ('admission') {
+                  <section class="preview-section preview-admission"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="admission-preview-fields"><span>Type d’établissement</span><span>Campus</span><span>Classe souhaitée</span><button type="button">Envoyer ma demande</button></div></section>
                 }
                 @case ('cta') {
                   <section class="preview-cta"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><button type="button">Déposer une demande</button></section>
+                }
+                @case ('heading') {
+                  <section class="preview-section preview-heading"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></section>
+                }
+                @case ('image') {
+                  @if (mediaFor(section); as media) { <section class="preview-media"><img [src]="media.url" [alt]="media.alt || section.title" [style.width]="sectionStyle(section, 'imageWidth', '100%')" /><small>{{ section.content }}</small></section> } @else { <section class="preview-media empty"><span>image</span><strong>Choisissez une image dans la médiathèque</strong></section> }
+                }
+                @case ('video') {
+                  @if (mediaFor(section); as media) { <section class="preview-media">@if (mediaUsesEmbed(media)) { <iframe [src]="mediaEmbedResourceUrl(media)" title="Vidéo externe" loading="lazy" [style.width]="sectionStyle(section, 'imageWidth', '100%')"></iframe> } @else { <video [src]="media.embedUrl || media.url" controls [style.width]="sectionStyle(section, 'imageWidth', '100%')"></video> }<small>{{ section.content }}</small></section> } @else { <section class="preview-media empty"><span>movie</span><strong>Choisissez une vidéo dans la médiathèque</strong></section> }
+                }
+                @case ('gallery') {
+                  <section class="preview-section preview-gallery"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="gallery-grid">@for (mediaId of section.mediaItems || []; track mediaId) { @if (mediaById(mediaId); as media) { <img [src]="media.url" [alt]="media.alt || media.name" /> } } @empty { <div class="preview-media empty"><span>collections</span><strong>Sélectionnez des images pour composer la galerie</strong></div> }</div></section>
+                }
+                @case ('slider') {
+                  <section class="preview-section preview-slider"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><div class="slider-frame">@if ((section.mediaItems || []).length) { @if (mediaById((section.mediaItems || [])[0]); as media) { <img [src]="media.url" [alt]="media.alt || media.name" /> } } @else { <div class="preview-media empty"><span>view_carousel</span><strong>Ajoutez des images pour créer le slider</strong></div> }</div><p class="lead">{{ section.content }}</p></section>
+                }
+                @case ('button') {
+                  <section class="preview-button-block"><a [href]="sectionButtonHref(section)">{{ section.buttonLabel || section.title }}<span>arrow_forward</span></a></section>
                 }
                 @default {
                   <section class="preview-section preview-text"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p></section>
                 }
               }
+              </div>
             }
           }
+          </div>
 
           <footer>
             <div class="footer-brand">@if (draft().logoUrl) { <img [src]="draft().logoUrl" alt="Logo de l’institut" /> } @else { <b>{{ draft().schoolName.charAt(0) }}</b> }<div><strong>{{ draft().schoolName }}</strong><p>{{ draft().description }}</p></div></div>
@@ -248,5 +377,17 @@
         </div>
       </div>
     </section>
+
+    <aside class="style-panel">
+      <div class="style-panel-heading"><span>tune</span><div><small>PALETTE DU COMPOSANT</small><strong>{{ selectedSection() ? sectionLabel(selectedSection()!.type) : 'Aucun composant sélectionné' }}</strong></div></div>
+      @if (selectedSection(); as section) {
+        <p class="style-panel-hint">Cliquez sur un bloc dans l’aperçu ou dans la liste pour modifier son apparence.</p>
+        <label>Couleur d’arrière-plan<div class="color-field"><input type="color" [ngModel]="sectionStyle(section, 'backgroundColor', '#ffffff')" (ngModelChange)="updateSectionStyle(section, 'backgroundColor', $event)" /><span>{{ sectionStyle(section, 'backgroundColor', '#ffffff') }}</span></div></label>
+        <label>Couleur du texte<div class="color-field"><input type="color" [ngModel]="sectionStyle(section, 'color', '#233b53')" (ngModelChange)="updateSectionStyle(section, 'color', $event)" /><span>{{ sectionStyle(section, 'color', '#233b53') }}</span></div></label>
+        <div class="inspector-grid"><label>Largeur<select [ngModel]="sectionStyle(section, 'width', '100%')" (ngModelChange)="updateSectionStyle(section, 'width', $event)"><option value="100%">Pleine largeur</option><option value="90%">90 %</option><option value="75%">75 %</option><option value="50%">50 %</option></select></label><label>Alignement<select [ngModel]="sectionStyle(section, 'textAlign', 'left')" (ngModelChange)="updateSectionStyle(section, 'textAlign', $event)"><option value="left">Gauche</option><option value="center">Centré</option><option value="right">Droite</option></select></label><label>Espacement<select [ngModel]="sectionStyle(section, 'padding', '0')" (ngModelChange)="updateSectionStyle(section, 'padding', $event)"><option value="0">Standard</option><option value="16px">Petit</option><option value="32px">Moyen</option><option value="48px">Grand</option></select></label>@if (section.type === 'image' || section.type === 'video') {<label>Taille du média<select [ngModel]="sectionStyle(section, 'imageWidth', '100%')" (ngModelChange)="updateSectionStyle(section, 'imageWidth', $event)"><option value="100%">100 %</option><option value="80%">80 %</option><option value="60%">60 %</option><option value="40%">40 %</option></select></label>}</div>
+      } @else {
+        <div class="style-empty"><span>touch_app</span><strong>Sélectionnez un composant</strong><p>La palette de style apparaîtra ici sans vous faire quitter l’aperçu.</p></div>
+      }
+    </aside>
   </main>
 </div>

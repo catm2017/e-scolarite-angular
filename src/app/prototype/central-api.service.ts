@@ -1,8 +1,8 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, defer, Observable, shareReplay, tap, throwError } from 'rxjs';
-import type { WebsiteDraft } from './prototype-data.service';
+import { catchError, defer, map, Observable, shareReplay, tap, throwError } from 'rxjs';
+import type { WebsiteDraft, WebsiteMedia } from './prototype-data.service';
 import { urlApiActive } from '../core/config/api-url';
 
 const CLES_SESSION_API = [
@@ -27,8 +27,21 @@ export interface CentralUser {
   prenom: string;
   nom: string;
   email: string;
+  identifiant?: string;
+  telephone?: string | null;
+  photo_url?: string | null;
   roles?: string[];
   type?: string;
+}
+
+export interface ProfilCompteApi {
+  id: string;
+  prenom: string;
+  nom: string;
+  identifiant?: string | null;
+  email: string | null;
+  telephone: string | null;
+  photo_url: string | null;
 }
 
 export interface EspaceEnseignantApi {
@@ -37,10 +50,23 @@ export interface EspaceEnseignantApi {
   rattachements: ContexteEnseignant[];
   affectations: Array<{ id: string; classe_id: string; classe_matiere_id: string; classe: string; matiere: string; domaine: string | null; campus: string; etablissement: string; effectif: number; coefficient: number | null; bareme?: number | null }>;
   emploi_temps: Array<{ id: string; jour_semaine: number; est_pause: boolean; heure_debut: string; heure_fin: string; classe: string; matiere: string | null; salle: string | null }>;
-  seances: Array<{ id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; classe: string; matiere: string | null; campus: string; cahier_texte: string | null; travail_maison: string | null }>;
+  seances: Array<{ id: string; reference: string | null; date_seance: string; heure_debut: string; heure_fin: string; statut: string; classe: string; matiere: string | null; campus: string; cahier_texte: string | null; travail_maison: string | null }>;
   evaluations: Array<{ id: string; titre: string; type: string; date_evaluation: string; bareme: number; statut: string; classe: string; matiere: string | null; periode: string | null }>;
   pointages: Array<{ id: string; date_pointage: string; heure_entree_at: string | null; heure_sortie_at: string | null; statut: string; observation: string | null }>;
   demandes_absences: Array<{ id: string; motif: string; statut: string; created_at: string; date_pointage: string; heure_entree_at: string | null; heure_sortie_at: string | null }>;
+  eleves_groupes?: Array<{
+    id: string;
+    matricule: string;
+    prenom: string;
+    nom: string;
+    sexe?: string | null;
+    date_naissance?: string | null;
+    statut?: string | null;
+    tuteur_telephone?: string | null;
+    groupe: string;
+  }>;
+  groupes_daara?: Array<{ id: string; code: string; nom: string }>;
+  quran_stats?: { lecons: { total: number; a_reciter: number; deja_recite: number }; revisions: { total: number; a_reciter: number; deja_recite: number } };
 }
 
 export interface EvaluationEnseignantDetailApi {
@@ -55,6 +81,7 @@ export interface ContexteEnseignant {
   type_code: string;
   type: string;
   campus: string;
+  annee_scolaire_centrale_id?: string | null;
 }
 
 export interface ClasseMatiereEnseignantApi {
@@ -66,10 +93,11 @@ export interface ClasseMatiereEnseignantApi {
 }
 
 export interface SeanceEnseignantDetailApi {
-  seance: { id: string; classe_id: string; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; classe: string; matiere: string | null; salle: string | null; classe_matiere_id: string | null };
+  seance: { id: string; reference: string | null; classe_id: string; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; classe: string; matiere: string | null; salle: string | null; classe_matiere_id: string | null };
   cahier_texte: { contenu: string | null; travail_maison: string | null; lecon_id: string | null } | null;
   eleves: Array<{ id: string; matricule: string; prenom: string; nom: string; sexe: string | null; presence_statut: 'present' | 'absent' | 'retard' | 'justifie' | null; presence_motif: string | null }>;
   lecons: Array<{ id: string; libelle: string; ordre: number }>;
+  pieces_jointes: Array<{ id: string; nom_original: string; mime_type: string | null; taille: number | null; created_at: string }>;
 }
 
 export interface InstitutConnexion {
@@ -85,11 +113,41 @@ export interface SuiviCoranDaaraApi {
   juzs: number[];
   hizbs: number[];
   rubs: number[];
-  filtre: { mode: 'sourate' | 'juz' | 'hizb' | 'rub'; numero: number; verset_id: string };
+  filtre: { mode: 'all' | 'sourate' | 'juz' | 'hizb' | 'rub'; numero: number; verset_id: string };
   versets: Array<{ id: string; cle_verset: string; numero_sourate: number; numero_verset: number; texte_arabe: string; numero_juz: number | null; numero_hizb: number | null; numero_rub: number | null; position_memorisation: number; sourate_arabe: string; sourate_latin: string | null }>;
   selection: { id: string; position_memorisation: number };
   eleves_deja_memorises: SuiviCoranEleveApi[];
   eleves_a_apprendre: SuiviCoranEleveApi[];
+}
+
+export interface LeconCoranApi {
+  id: string;
+  eleve_id: string;
+  eleve: string;
+  matricule: string;
+  start_ayah_id: string;
+  end_ayah_id: string;
+  debut: SuiviCoranDaaraApi['versets'][number];
+  fin: SuiviCoranDaaraApi['versets'][number];
+  statut: 'a_reciter' | 'deja_recite';
+  assigned_at: string;
+  completed_at: string | null;
+  affecte_par?: string | null;
+  valide_par?: string | null;
+  valide_at?: string | null;
+  boppou_sourate_effectue?: boolean;
+  duree_jours: number | null;
+}
+
+export interface LeconsCoranDaaraApi {
+  lecons: LeconCoranApi[];
+  eleves: Array<{ id: string; matricule: string; nom_complet: string }>;
+}
+
+export interface GroupesDaaraApi {
+  groupes: Array<{ id: string; code: string; nom: string; statut: string; effectif: number; eleve_ids: string[]; enseignant_ids: string[] }>;
+  eleves: Array<{ id: string; matricule: string; nom_complet: string }>;
+  enseignants: Array<{ id: string; matricule: string; nom_complet: string }>;
 }
 
 export interface SuiviCoranEleveApi {
@@ -105,7 +163,39 @@ export interface SitePublicInstitut {
   slug: string;
   logo_url: string | null;
   statut: 'brouillon' | 'publie';
+  est_initial?: boolean;
   contenu: WebsiteDraft;
+}
+
+export interface AdmissionTypeApi { id: string; code: string; libelle: string; }
+export interface AdmissionCampusApi { id: string; nom: string; adresse?: string | null; type_etablissement_ids: string[]; }
+export interface AdmissionClasseApi { id: string; libelle: string; code: string; niveau?: string | null; campus_id: string; type_etablissement_id?: string | null; type_etablissement_code: string; type_etablissement_libelle?: string | null; }
+export interface AdmissionOptionsApi { types: AdmissionTypeApi[]; campuses: AdmissionCampusApi[]; classes: AdmissionClasseApi[]; }
+export interface AdmissionInstitutApi {
+  id: string;
+  prenom: string;
+  nom: string;
+  telephone_eleve?: string | null;
+  sexe?: string | null;
+  date_naissance?: string | null;
+  lieu_naissance?: string | null;
+  nationalite?: string | null;
+  adresse?: string | null;
+  prenom_tuteur: string;
+  nom_tuteur: string;
+  telephone_tuteur: string;
+  email_tuteur?: string | null;
+  profession_tuteur?: string | null;
+  type_etablissement_code: string;
+  type_etablissement_libelle?: string | null;
+  campus_id: string;
+  campus_nom?: string | null;
+  classe_id: string;
+  classe_libelle?: string | null;
+  statut: 'soumise' | 'acceptee' | 'rejetee' | string;
+  soumise_at?: string | null;
+  traitee_at?: string | null;
+  message?: string | null;
 }
 
 export interface ParametresInstitut {
@@ -370,6 +460,7 @@ export interface InstitutSaas {
   identifiant_responsable?: string | null;
   email_responsable: string | null;
   telephone_responsable: string | null;
+  logo_url?: string | null;
   types_etablissements?: Array<{ id: string; code: string; libelle: string }>;
 }
 
@@ -459,6 +550,7 @@ export interface DemandeAdhesion {
   id: string;
   nom_institut: string;
   ville?: string;
+  adresse?: string;
   prenom_responsable: string;
   nom_responsable: string;
   identifiant_responsable: string;
@@ -466,6 +558,7 @@ export interface DemandeAdhesion {
   telephone_responsable: string;
   types_etablissements?: string[];
   effectif_estime?: number;
+  message?: string;
   statut: string;
   created_at: string;
 }
@@ -596,6 +689,7 @@ export interface EmploiTempsEtablissementApi {
 
 export interface SeanceEtablissementApi {
   id: string;
+  reference: string | null;
   classe_id: string;
   salle_id: string | null;
   date_seance: string;
@@ -612,11 +706,12 @@ export interface SeanceEtablissementApi {
 }
 
 export interface DetailSeanceEtablissementApi {
-  seance: { id: string; classe_id: string; classe_matiere_id: string | null; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; matiere: string | null; enseignant: string | null };
+  seance: { id: string; reference: string | null; classe_id: string; classe_matiere_id: string | null; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; matiere: string | null; enseignant: string | null };
   cahier_texte: { contenu: string | null; travail_maison: string | null; lecon_id: string | null; renseigne_at: string | null } | null;
   eleves: Array<{ id: string; matricule: string; prenom: string; nom: string; presence_statut: 'present' | 'absent' | 'retard' | 'justifie' | null; presence_motif: string | null }>;
   lecons: Array<{ id: string; libelle: string; ordre: number }>;
   progression: { prevues: number; terminees: number; restantes: number; pourcentage: number };
+  pieces_jointes: Array<{ id: string; nom_original: string; mime_type: string | null; taille: number | null; created_at: string }>;
 }
 
 export interface EvaluationEtablissementApi {
@@ -748,6 +843,7 @@ export interface EleveEtablissementApi {
   date_naissance: string | null;
   lieu_naissance: string | null;
   nationalite: string | null;
+  telephone: string | null;
   email: string | null;
   adresse: string | null;
   groupe_sanguin: string | null;
@@ -795,6 +891,16 @@ export interface DossiersEtablissementApi {
   tuteurs: TuteurEtablissementApi[];
   enseignants: PersonnelEtablissementApi[];
   personnels: PersonnelEtablissementApi[];
+}
+
+export interface DossierEleveApi {
+  eleve: Record<string, unknown>;
+  inscriptions: Array<{ id: string; annee: string; campus: string | null; classe: string | null; type: string; statut: string; date_inscription: string }>; 
+  echeances: Array<{ id: string; annee: string; date_echeance: string; periode: string | null; motif: string; montant_initial: number; montant_regle: number; statut: string }>;
+  paiements: Array<{ id: string; annee: string; reference: string; motif: string | null; montant: number; mode_paiement: string; statut: string; date_paiement: string; observation: string | null }>;
+  presences: Array<{ id: string; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; matiere: string | null; statut: string; motif: string | null }>;
+  evaluations: Array<{ id: string; annee_scolaire_id: string; titre: string; type: string; date_evaluation: string; matiere: string | null; note: number | null; bareme: number | null; appreciation: string | null }>;
+  tuteurs: Array<{ id: string; prenom: string; nom: string; telephone: string | null; email: string | null; profession: string | null; adresse: string | null; statut_compte: string | null; lien_parente: string | null; est_responsable_financier: boolean; est_contact_urgence: boolean }>;
 }
 
 export interface DossierEnseignantEtablissementApi {
@@ -902,6 +1008,14 @@ export class CentralApiService {
     });
   }
 
+  joindrePieceSeanceEnseignant(seanceId: string, fichier: File) {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    return this.http.post<{ message: string; id: string }>(`${this.baseUrl}/institut/enseignant/seances/${seanceId}/pieces-jointes`, donnees, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
   creerEvaluationEnseignant(donnees: { classe_matiere_id: string; titre: string; type: string; date_evaluation: string; periode: string; bareme: number }) {
     this.invaliderCache('enseignant:espace');
     this.invaliderCache('institut:evaluations:');
@@ -948,8 +1062,22 @@ export class CentralApiService {
     });
   }
 
+  admissionOptions(domaine = window.location.hostname) {
+    return this.http.get<{ data: AdmissionOptionsApi }>(`${this.baseUrl}/public/admission-options`, { params: { domaine } });
+  }
+
+  deposerAdmission(domaine: string, payload: Record<string, unknown>) {
+    return this.http.post<{ message: string; id: string }>(`${this.baseUrl}/public/admissions`, payload, { params: { domaine } });
+  }
+
   siteWebInstitut() {
     return this.http.get<{ data: SitePublicInstitut }>(`${this.baseUrl}/institut/site-web`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  propositionInitialeSiteWebInstitut() {
+    return this.http.post<{ message: string; data: SitePublicInstitut }>(`${this.baseUrl}/institut/site-web/proposition-initiale`, {}, {
       headers: this.enteteAutorisation(),
     });
   }
@@ -958,6 +1086,32 @@ export class CentralApiService {
     const donnees: { contenu: WebsiteDraft; publier?: boolean } = { contenu };
     if (publier !== undefined) donnees.publier = publier;
     return this.http.put<{ message: string; data: SitePublicInstitut }>(`${this.baseUrl}/institut/site-web`, donnees, { headers: this.enteteAutorisation() });
+  }
+
+  televerserMediaSiteWeb(fichier: File, nom?: string, alt?: string) {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    if (nom?.trim()) donnees.append('nom', nom.trim());
+    if (alt?.trim()) donnees.append('alt', alt.trim());
+    return this.http.post<{ message: string; media: WebsiteMedia; contenu: WebsiteDraft }>(
+      `${this.baseUrl}/institut/site-web/medias`, donnees, { headers: this.enteteAutorisation() },
+    );
+  }
+
+  supprimerMediaSiteWeb(mediaId: string) {
+    return this.http.delete<{ message: string; contenu: WebsiteDraft }>(
+      `${this.baseUrl}/institut/site-web/medias/${mediaId}`, { headers: this.enteteAutorisation() },
+    );
+  }
+
+  remplacerMediaSiteWeb(mediaId: string, fichier: File, nom?: string, alt?: string) {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    if (nom?.trim()) donnees.append('nom', nom.trim());
+    if (alt?.trim()) donnees.append('alt', alt.trim());
+    return this.http.post<{ message: string; media: WebsiteMedia; contenu: WebsiteDraft }>(
+      `${this.baseUrl}/institut/site-web/medias/${mediaId}/remplacer`, donnees, { headers: this.enteteAutorisation() },
+    );
   }
 
   parametresInstitut() {
@@ -976,6 +1130,48 @@ export class CentralApiService {
 
   envoyerAdhesion(donnees: Record<string, unknown>) {
     return this.http.post<{ message: string; demande_id: string }>(`${this.baseUrl}/adhesions`, donnees);
+  }
+
+  profilCompte(espace: 'centrale' | 'institut') {
+    const prefixe = espace === 'centrale' ? 'centrale' : 'institut';
+    return this.http.get<{ user: ProfilCompteApi }>(`${this.baseUrl}/${prefixe}/mon-profil`, { headers: this.enteteAutorisation() }).pipe(
+      map((response) => ({ ...response, user: this.normaliserProfil(response.user) })),
+    );
+  }
+
+  modifierProfilCompte(espace: 'centrale' | 'institut', donnees: Pick<ProfilCompteApi, 'prenom' | 'nom' | 'email' | 'telephone'>) {
+    const prefixe = espace === 'centrale' ? 'centrale' : 'institut';
+    return this.http.put<{ message: string; user: ProfilCompteApi }>(`${this.baseUrl}/${prefixe}/mon-profil`, donnees, { headers: this.enteteAutorisation() }).pipe(
+      map((response) => ({ ...response, user: this.normaliserProfil(response.user) })),
+    );
+  }
+
+  changerMotDePasseCompte(espace: 'centrale' | 'institut', donnees: { ancien_mot_de_passe: string; mot_de_passe: string; mot_de_passe_confirmation: string }) {
+    const prefixe = espace === 'centrale' ? 'centrale' : 'institut';
+    return this.http.put<{ message: string }>(`${this.baseUrl}/${prefixe}/mon-profil/mot-de-passe`, donnees, { headers: this.enteteAutorisation() });
+  }
+
+  televerserPhotoCompte(espace: 'centrale' | 'institut', photo: File) {
+    const formulaire = new FormData();
+    formulaire.append('photo', photo);
+    const prefixe = espace === 'centrale' ? 'centrale' : 'institut';
+    return this.http.post<{ message: string; photo_url: string }>(`${this.baseUrl}/${prefixe}/mon-profil/photo`, formulaire, { headers: this.enteteAutorisation() }).pipe(
+      map((response) => ({ ...response, photo_url: this.normaliserUrlPhoto(response.photo_url) ?? response.photo_url })),
+    );
+  }
+
+  /** Actualise l'identité affichée par les layouts sans attendre une reconnexion. */
+  actualiserUtilisateurLocal(profil: Pick<ProfilCompteApi, 'id' | 'prenom' | 'nom' | 'email' | 'telephone' | 'identifiant' | 'photo_url'>): void {
+    const utilisateur = this.utilisateur();
+    if (!utilisateur) return;
+    // En session institut, l'ancien endpoint renvoyait parfois l'identifiant
+    // de la copie locale alors que le profil renvoie celui de la centrale.
+    // L'identité courante reste la clé de session, mais ses champs visibles
+    // sont remplacés par les valeurs fraîchement enregistrées.
+    const profilNormalise = this.normaliserProfil(profil);
+    const utilisateurActualise = { ...utilisateur, ...profilNormalise, id: utilisateur.id };
+    localStorage.setItem(this.userKey, JSON.stringify(utilisateurActualise));
+    window.dispatchEvent(new Event('escolarite-profil-modifie'));
   }
 
   institutsActivationCompte() {
@@ -1044,6 +1240,15 @@ export class CentralApiService {
     );
   }
 
+  modifierDemandeAdhesion(id: string, donnees: Record<string, unknown>) {
+    this.invaliderCache('centrale:demandes-adhesion');
+    return this.http.put<{ message: string; demande: DemandeAdhesion }>(
+      `${this.baseUrl}/centrale/demandes-adhesion/${id}`,
+      donnees,
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
   catalogueFonctionnalites() {
     return this.lireAvecCache('centrale:catalogue-fonctionnalites', () => this.http.get<{ types: TypeEtablissementCatalogue[]; data: TarificationFonctionnalite[] }>(`${this.baseUrl}/centrale/catalogue-fonctionnalites`, {
       headers: this.enteteAutorisation(),
@@ -1080,6 +1285,15 @@ export class CentralApiService {
 
   detailInstitutSaas(institutId: string) {
     return this.http.get<{ institut: InstitutSaas; abonnement_actuel: AbonnementSaas | null; abonnements: AbonnementSaas[] }>(`${this.baseUrl}/centrale/instituts/${institutId}`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  mettreAJourLogoInstitutSaas(institutId: string, logo: File) {
+    const formulaire = new FormData();
+    formulaire.append('logo', logo);
+    this.invaliderCache('centrale:instituts');
+    return this.http.post<{ message: string; logo_url: string }>(`${this.baseUrl}/centrale/instituts/${institutId}/logo`, formulaire, {
       headers: this.enteteAutorisation(),
     });
   }
@@ -1188,6 +1402,22 @@ export class CentralApiService {
     }));
   }
 
+  admissionsInstitut(forceRefresh = false) {
+    const cle = 'institut:admissions';
+    if (forceRefresh) this.invaliderCache(cle);
+    return this.lireAvecCache(cle, () => this.http.get<{ data: AdmissionInstitutApi[] }>(`${this.baseUrl}/institut/admissions`, { headers: this.enteteAutorisation() }));
+  }
+
+  accepterAdmissionInstitut(id: string) {
+    this.invaliderCache('institut:admissions');
+    return this.http.post<{ message: string }>(`${this.baseUrl}/institut/admissions/${id}/accepter`, {}, { headers: this.enteteAutorisation() });
+  }
+
+  supprimerAdmissionInstitut(id: string) {
+    this.invaliderCache('institut:admissions');
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/institut/admissions/${id}`, { headers: this.enteteAutorisation() });
+  }
+
   candidatsComptesInstitut() {
     return this.http.get<{ data: CompteCandidatInstitut[] }>(`${this.baseUrl}/institut/utilisateurs/candidats`, {
       headers: this.enteteAutorisation(),
@@ -1252,6 +1482,10 @@ export class CentralApiService {
     return this.http.post<{ message: string }>(`${this.baseUrl}/institut/utilisateurs/${userId}/renvoyer-activation`, {}, { headers: this.enteteAutorisation() });
   }
 
+  reinitialiserMotDePasseUtilisateurInstitut(userId: string) {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/institut/utilisateurs/${userId}/reinitialiser-mot-de-passe`, {}, { headers: this.enteteAutorisation() });
+  }
+
   creerComptesInstitut(candidats: Array<{ id: string; type: CompteCandidatInstitut['type'] }>) {
     return this.http.post<{ message: string; data: Array<{ id: string; profil_id: string; type: string; telephone: string; identifiant: string }>; erreurs: Array<{ id: string; type: string; message: string }> }>(
       `${this.baseUrl}/institut/utilisateurs/creer-comptes`, { candidats }, { headers: this.enteteAutorisation() },
@@ -1295,6 +1529,33 @@ export class CentralApiService {
     return this.http.post<{ message: string; traites: number }>(`${this.baseUrl}/institut/daara/transferts-eleves`, {
       type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeScolaireCentraleId, eleve_ids: eleveIds,
     }, { headers: this.enteteAutorisation() });
+  }
+
+  groupesDaara(campusId: string, anneeScolaireCentraleId: string) {
+    return this.http.get<{ data: GroupesDaaraApi }>(`${this.baseUrl}/institut/daara/groupes`, {
+      headers: this.enteteAutorisation(), params: { type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeScolaireCentraleId },
+    });
+  }
+
+  creerGroupeDaara(campusId: string, anneeScolaireCentraleId: string, nom: string, eleveIds: string[] = []) {
+    this.invaliderCache('institut:');
+    return this.http.post<{ message: string; id: string }>(`${this.baseUrl}/institut/daara/groupes`, {
+      type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeScolaireCentraleId, nom, eleve_ids: eleveIds,
+    }, { headers: this.enteteAutorisation() });
+  }
+
+  modifierGroupeDaara(groupeId: string, campusId: string, anneeScolaireCentraleId: string, donnees: { nom?: string; statut?: string; eleve_ids?: string[]; enseignant_ids?: string[] }) {
+    this.invaliderCache('institut:');
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/daara/groupes/${groupeId}`, {
+      type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeScolaireCentraleId, ...donnees,
+    }, { headers: this.enteteAutorisation() });
+  }
+
+  supprimerGroupeDaara(groupeId: string, campusId: string, anneeScolaireCentraleId: string) {
+    this.invaliderCache('institut:');
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/institut/daara/groupes/${groupeId}`, {
+      headers: this.enteteAutorisation(), params: { type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeScolaireCentraleId },
+    });
   }
 
   enregistrerMembreEquipe(donnees: Record<string, unknown>) {
@@ -1440,10 +1701,34 @@ export class CentralApiService {
     ));
   }
 
-  suiviCoranDaara(campusId: string, anneeCentraleId: string, mode: 'sourate' | 'juz' | 'hizb' | 'rub', numero: number, versetId?: string) {
+  suiviCoranDaara(campusId: string, anneeCentraleId: string, mode: 'all' | 'sourate' | 'juz' | 'hizb' | 'rub', numero = 1, versetId?: string) {
     const params: Record<string, string> = { type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeCentraleId, mode, numero: String(numero) };
     if (versetId) params['verset_id'] = versetId;
     return this.http.get<{ data: SuiviCoranDaaraApi }>(`${this.baseUrl}/institut/daara/suivi-coran`, { params, headers: this.enteteAutorisation() });
+  }
+
+  leconsCoranDaara(campusId: string, anneeCentraleId: string, filtres: { eleveId?: string; statut?: string; sourate?: number; hizb?: number; juz?: number; dateDebut?: string; dateFin?: string; mode?: 'lecons' | 'mouradja' } = {}) {
+    const params: Record<string, string> = { type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeCentraleId, mode: filtres.mode ?? 'lecons' };
+    if (filtres.eleveId) params['eleve_id'] = filtres.eleveId;
+    if (filtres.statut) params['statut'] = filtres.statut;
+    if (filtres.sourate) params['sourate'] = String(filtres.sourate);
+    if (filtres.hizb) params['hizb'] = String(filtres.hizb);
+    if (filtres.juz) params['juz'] = String(filtres.juz);
+    if (filtres.dateDebut) params['date_debut'] = filtres.dateDebut;
+    if (filtres.dateFin) params['date_fin'] = filtres.dateFin;
+    return this.http.get<{ data: LeconsCoranDaaraApi }>(`${this.baseUrl}/institut/daara/lecons-coran`, { params, headers: this.enteteAutorisation() });
+  }
+
+  affecterLeconCoranDaara(eleveId: string, startAyahId: string, endAyahId: string, campusId: string, anneeCentraleId: string, mode: 'lecons' | 'mouradja' = 'lecons') {
+    return this.http.post<{ message: string; id: string }>(`${this.baseUrl}/institut/daara/lecons-coran`, {
+      type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeCentraleId, mode, eleve_id: eleveId, start_ayah_id: startAyahId, end_ayah_id: endAyahId,
+    }, { headers: this.enteteAutorisation() });
+  }
+
+  mettreAJourStatutLeconCoranDaara(leconId: string, statut: 'a_reciter' | 'deja_recite', campusId: string, anneeCentraleId: string, boppouSourateEffectue = false, mode: 'lecons' | 'mouradja' = 'lecons') {
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/daara/lecons-coran/${leconId}/statut`, {
+      type_etablissement: 'daara', campus_id: campusId, annee_scolaire_centrale_id: anneeCentraleId, mode, statut, boppou_sourate_effectue: boppouSourateEffectue,
+    }, { headers: this.enteteAutorisation() });
   }
 
   enregistrerAvancementCoranDaara(eleveId: string, campusId: string, anneeCentraleId: string, versetCoranId: string, commentaire?: string) {
@@ -1774,6 +2059,13 @@ export class CentralApiService {
     }));
   }
 
+  dossierEleveEtablissement(typeEtablissement: string, campusId: string, eleveId: string) {
+    return this.http.get<{ data: DossierEleveApi }>(`${this.baseUrl}/institut/eleves/${eleveId}/dossier`, {
+      params: { type_etablissement: typeEtablissement, campus_id: campusId },
+      headers: this.enteteAutorisation(),
+    });
+  }
+
   dossierEnseignantEtablissement(typeEtablissement: string, campusId: string, personnelId: string) {
     return this.lireAvecCache(`institut:dossier-enseignant:${typeEtablissement}:${campusId}:${personnelId}`, () =>
       this.http.get<{ data: DossierEnseignantEtablissementApi }>(`${this.baseUrl}/institut/enseignants/${personnelId}/dossier`, {
@@ -1851,7 +2143,7 @@ export class CentralApiService {
 
   utilisateur(): CentralUser | null {
     const valeur = localStorage.getItem(this.userKey);
-    return valeur ? (JSON.parse(valeur) as CentralUser) : null;
+    return valeur ? this.normaliserProfil(JSON.parse(valeur) as CentralUser) : null;
   }
 
   institutActuel(): InstitutConnexion | null {
@@ -1896,13 +2188,55 @@ export class CentralApiService {
     expireAt?: string,
   ): void {
     localStorage.setItem(this.tokenKey, token);
-    localStorage.setItem(this.userKey, JSON.stringify(user));
+    localStorage.setItem(this.userKey, JSON.stringify(this.normaliserProfil(user)));
     if (institut) localStorage.setItem(this.institutKey, JSON.stringify(institut));
     else localStorage.removeItem(this.institutKey);
     this.actualiserAccesSouscription(souscriptionValidee, fonctionnalitesActives);
     if (expireAt) localStorage.setItem(this.expirationKey, expireAt);
     else localStorage.removeItem(this.expirationKey);
     this.planifierExpirationSession();
+  }
+
+  /**
+   * Laravel renvoie parfois l’URL du disque public sous forme relative
+   * (`/storage/...`). Sur un déploiement où l’API et Angular sont séparés,
+   * cette URL doit rester attachée à l’origine de l’API pour que les layouts
+   * puissent charger la photo depuis le bon serveur.
+   */
+  private normaliserUrlPhoto(url: string | null | undefined): string | null {
+    if (!url) return null;
+    const origineApi = this.baseUrl.replace(/\/api\/?$/, '');
+    if (/^https?:\/\//i.test(url)) {
+      // Une ancienne URL absolue peut encore pointer vers le serveur local
+      // après un déploiement. On conserve son chemin public mais on le sert
+      // depuis l'API active.
+      try {
+        const adresse = new URL(url);
+        if (adresse.pathname.startsWith('/storage/')) {
+          const chemin = adresse.pathname.replace(/^\/storage\//, '');
+          if (chemin.startsWith('profils/utilisateurs/')) {
+            return `${origineApi}/api/public/profil/${chemin}`;
+          }
+          return `${origineApi}${adresse.pathname}`;
+        }
+      } catch {
+        return url;
+      }
+      return url;
+    }
+    if (/^(data:|blob:)/i.test(url)) return url;
+    const chemin = url.replace(/^\/+/, '');
+    if (chemin.startsWith('storage/profils/utilisateurs/')) {
+      return `${origineApi}/api/public/profil/${chemin.replace(/^storage\//, '')}`;
+    }
+    if (chemin.startsWith('api/public/profil/')) {
+      return `${origineApi}/${chemin}`;
+    }
+    return `${origineApi}/${chemin}`;
+  }
+
+  private normaliserProfil<T extends { photo_url?: string | null }>(profil: T): T {
+    return { ...profil, photo_url: this.normaliserUrlPhoto(profil.photo_url) };
   }
 
   private planifierExpirationSession(): void {

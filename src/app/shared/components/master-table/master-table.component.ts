@@ -184,7 +184,7 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
 
   getDisplayedColumns(): string[] {
     return this.columnDefinitions()
-      .filter((cd) => cd.visible !== false)
+      .filter((cd) => cd.visible !== false && (cd.def !== 'select' || this.showCheckbox()))
       .map((cd) => cd.def);
   }
 

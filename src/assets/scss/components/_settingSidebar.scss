@@ -60,6 +60,35 @@
     height: 100%;
   }
 
+  .setting-panel-close {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid #dbe4ee;
+    border-radius: 50%;
+    color: #60758a;
+    background: #fff;
+    cursor: pointer;
+    transition: color .18s ease, border-color .18s ease, background .18s ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: #8bbcf0;
+      color: #176dc0;
+      background: #edf6ff;
+      outline: none;
+    }
+
+    .mat-icon {
+      width: 20px;
+      height: 20px;
+      font-size: 20px;
+      line-height: 20px;
+    }
+  }
+
   /* Section animations */
   .p-15,
   .rightSetting {
@@ -232,7 +261,7 @@
   .setting-panel-header {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     padding: 18px 20px;
     color: #3f4254;
     font-size: 16px;

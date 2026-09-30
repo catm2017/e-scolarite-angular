@@ -5,7 +5,11 @@
   <ng-scrollbar [style.height]="maxHeight + 'px'" visibility="hover">
     <div class="settingSidebar-body ps-container ps-theme-default">
       <div class=" fade show active">
-        <div class="setting-panel-header">Setting Panel
+        <div class="setting-panel-header">
+          <span>Setting Panel</span>
+          <button type="button" class="setting-panel-close" (click)="toggleRightSidebar()" aria-label="Fermer le panneau des paramètres">
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
         </div>
         <div class="p-15 border-bottom rightSetting">
           <p class="font-medium m-b-10">Select Layout</p>

@@ -52,7 +52,7 @@ export class SiteEditorComponent implements OnInit, OnDestroy {
   readonly mediaMaxFileBytes = 2 * 1024 * 1024;
   /** Visuel par défaut de la bannière, remplaçable par une vidéo de la médiathèque. */
   readonly defaultHeroBackgroundUrl = 'assets/videos/default-school-hero.mp4';
-  readonly mediaFilter = signal<'all' | 'image' | 'video'>('all');
+  readonly mediaFilter = signal<'all' | 'image' | 'video' | 'pdf'>('all');
   /** Slide actif par composant témoignages (chaque section garde sa propre position). */
   readonly testimonialSlideBySection = signal<Record<string, number>>({});
   readonly newsSlideBySection = signal<Record<string, number>>({});
@@ -453,9 +453,12 @@ export class SiteEditorComponent implements OnInit, OnDestroy {
   }
 
   dropSectionOnPreview(event: CdkDragDrop<WebsiteSection[]>): void {
-    const type = event.item.data as WebsiteSectionType;
-    if (!this.sectionOptions.some((option) => option.value === type)) return;
-    this.addSection(type, event.currentIndex);
+    const data = event.item.data as WebsiteSection | WebsiteSectionType | undefined;
+    if (typeof data === 'string') {
+      if (this.sectionOptions.some((option) => option.value === data)) this.addSection(data, event.currentIndex);
+      return;
+    }
+    this.reorderSection(event, data);
   }
 
   updateSection(sectionId: string, patch: Partial<WebsiteSection>): void {
@@ -473,10 +476,23 @@ export class SiteEditorComponent implements OnInit, OnDestroy {
   }
 
   dropSection(event: CdkDragDrop<WebsiteSection[]>): void {
+    this.reorderSection(event, event.item.data as WebsiteSection | undefined);
+  }
+
+  private reorderSection(event: CdkDragDrop<WebsiteSection[]>, draggedSection?: WebsiteSection): void {
     const page = this.selectedPage();
-    if (!page) return;
+    if (!page || !draggedSection?.id) return;
     const sections = [...page.sections];
-    moveItemInArray(sections, event.previousIndex, event.currentIndex);
+    if (event.previousContainer === event.container) {
+      moveItemInArray(sections, event.previousIndex, event.currentIndex);
+    } else {
+      const sourceIndex = sections.findIndex((section) => section.id === draggedSection.id);
+      if (sourceIndex < 0) return;
+      const [moved] = sections.splice(sourceIndex, 1);
+      let targetIndex = Math.max(0, Math.min(event.currentIndex, sections.length));
+      if (sourceIndex < targetIndex) targetIndex -= 1;
+      sections.splice(targetIndex, 0, moved);
+    }
     this.updatePage(page.id, { sections });
   }
 
@@ -532,12 +548,12 @@ export class SiteEditorComponent implements OnInit, OnDestroy {
       input.value = '';
       return;
     }
-    const extensionsMedia = ['jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'svg', 'avif', 'heic', 'heif', 'mp4', 'webm', 'mov', 'ogg', 'm4v', 'avi', 'mkv'];
+    const extensionsMedia = ['jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'svg', 'avif', 'heic', 'heif', 'mp4', 'webm', 'mov', 'ogg', 'm4v', 'avi', 'mkv', 'pdf'];
     if (fichiers.some((fichier) => {
       const extension = fichier.name.split('.').pop()?.toLowerCase() ?? '';
       return !fichier.type.startsWith('image/') && !fichier.type.startsWith('video/') && !extensionsMedia.includes(extension);
     })) {
-      this.message.set('Choisissez uniquement des fichiers image ou vidéo reconnus.');
+      this.message.set('Choisissez uniquement des fichiers image, vidéo ou PDF reconnus.');
       input.value = '';
       return;
     }
@@ -551,6 +567,39 @@ export class SiteEditorComponent implements OnInit, OnDestroy {
     if (!this.mediaUploadName().trim()) this.mediaUploadName.set(fichiers.length === 1 ? fichiers[0].name : 'Médias sélectionnés');
     this.message.set(`${fichiers.length} média${fichiers.length > 1 ? 's' : ''} prêt${fichiers.length > 1 ? 's' : ''}. Cliquez sur « Enregistrer le média${fichiers.length > 1 ? 's' : ''} ».`);
     input.value = '';
+  }
+
+  onNewsPdfSelected(event: Event, section: WebsiteSection, item: WebsiteSectionItem): void {
+    const input = event.target as HTMLInputElement;
+    const fichier = input.files?.[0];
+    input.value = '';
+    if (!fichier || this.mediaUploadBusy()) return;
+    const extension = fichier.name.split('.').pop()?.toLowerCase() ?? '';
+    if (fichier.type !== 'application/pdf' && extension !== 'pdf') {
+      this.afficherErreurMedia('Sélectionnez uniquement un fichier PDF pour cette actualité.', 'Fichier non valide');
+      return;
+    }
+    if (fichier.size > this.mediaMaxFileBytes) {
+      this.afficherErreurMedia(`« ${fichier.name} » fait ${this.formatBytes(fichier.size)}. La taille maximale autorisée est de ${this.formatBytes(this.mediaMaxFileBytes)} par fichier.`, 'Taille du PDF trop élevée');
+      return;
+    }
+    if (this.mediaLibrarySize() + fichier.size > this.mediaQuotaBytes) {
+      this.afficherErreurMedia(`La limite de ${this.formatBytes(this.mediaQuotaBytes)} par institut serait dépassée.`, 'Espace de stockage atteint');
+      return;
+    }
+
+    this.mediaUploadBusy.set(true);
+    this.message.set('Téléversement du document PDF…');
+    this.api.televerserMediaSiteWeb(fichier, `Document · ${item.title || 'actualité'}`, `Document joint à l’actualité ${item.title || ''}`.trim()).subscribe({
+      next: ({ contenu, media, message }) => {
+        this.remplacerContenuMedia(contenu);
+        const sectionCourante = this.draft().pages.flatMap((page) => page.sections).find((candidate) => candidate.id === section.id);
+        if (sectionCourante) this.updateSectionItem(sectionCourante, item.id, { attachmentId: media.id });
+        this.message.set(message || 'Document PDF ajouté à cette actualité. Cliquez sur Enregistrer pour conserver la modification.');
+      },
+      error: (response) => this.afficherErreurMedia(this.messageErreurMedia(response, 'Le document PDF n’a pas pu être téléversé.')),
+      complete: () => this.mediaUploadBusy.set(false),
+    });
   }
 
   changerSourceMedia(source: 'local' | 'external'): void {
@@ -718,7 +767,8 @@ export class SiteEditorComponent implements OnInit, OnDestroy {
 
   removeMedia(media: WebsiteMedia): void {
     const used = this.draft().pages.some((page) => page.sections.some((section) => section.mediaId === media.id || (section.mediaItems ?? []).includes(media.id)));
-    if (used) {
+    const usedInNews = this.draft().pages.some((page) => page.sections.some((section) => section.items?.some((item) => item.attachmentId === media.id)));
+    if (used || usedInNews) {
       this.message.set('Ce média est utilisé dans une page. Retirez-le d’abord de cette page.');
       return;
     }

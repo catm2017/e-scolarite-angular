@@ -129,3 +129,34 @@ button { font: inherit; cursor: pointer; }
 .teacher-attendance-list small { margin-top: 3px; color: #7b8d9f; font-size: 11px; }
 .teacher-attendance-list select { width: 170px; }
 .teacher-quran-modal-trace{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 24px;color:#6b8296;background:#f8fbfd;border-top:1px solid #edf2f6;border-bottom:1px solid #e5edf3;font:600 10px Inter,Arial,sans-serif}.teacher-quran-modal-trace span{display:inline-flex;align-items:center;gap:4px}.teacher-quran-modal-trace i{color:#287fce;font-family:'Material Icons';font-size:14px;font-style:normal}.teacher-quran-modal-trace strong{color:#294d69;font-weight:800}
+/* Pointage mobile et web : le même parcours peut être utilisé sur téléphone. */
+.teacher-pointage-panel { max-width: 920px; margin: 0 auto; }
+.teacher-pointage-panel > header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.teacher-pointage-panel > header p { margin: 0 0 6px; color: #2f80ed; font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+.teacher-pointage-panel > header h2 { margin: 0 0 5px; }
+.teacher-pointage-panel > header span { color: #6f7e98; }
+.teacher-pointage-panel > header > i { color: #2f80ed; font-size: 34px; }
+.teacher-pointage-card { display: grid; grid-template-columns: 96px 1fr; gap: 22px; align-items: center; margin-top: 24px; padding: 22px; border: 1px solid #dfe9f6; border-radius: 16px; background: linear-gradient(135deg, #f8fbff, #edf5ff); }
+.teacher-pointage-icon { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 18px; background: #d9ebff; color: #1769c2; }
+.teacher-pointage-icon i { font-size: 44px; }
+.teacher-pointage-card h3 { margin: 0 0 5px; }
+.teacher-pointage-card p { margin: 0 0 16px; color: #6d7c96; }
+.pointage-sortie-countdown { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 13px; padding: 9px 11px; border: 1px solid #f3d6a2; border-radius: 9px; color: #91621e; background: #fff8e9; font-size: 12px; font-weight: 700; }
+.pointage-sortie-countdown i { font-family: 'Material Icons Outlined', 'Material Icons'; font-style: normal; }
+.pointage-sortie-countdown strong { color: #764b0b; font-variant-numeric: tabular-nums; }
+.teacher-pointage-card label { display: grid; gap: 6px; margin-bottom: 12px; color: #52627d; font-weight: 700; font-size: 13px; }
+.teacher-pointage-card input { min-height: 42px; border: 1px solid #d5e1f0; border-radius: 10px; padding: 0 12px; background: #fff; }
+.teacher-pointage-card button { min-height: 42px; border: 0; border-radius: 10px; padding: 0 15px; background: #1769c2; color: white; font-weight: 800; cursor: pointer; }
+.teacher-pointage-card button:disabled { opacity: .55; cursor: not-allowed; }
+.teacher-pointage-card button.secondary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; margin-bottom: 12px; background: #e8f2ff; color: #1769c2; }
+.teacher-pointage-video { display: block; width: min(100%, 420px); aspect-ratio: 4 / 3; margin-bottom: 12px; border-radius: 12px; object-fit: cover; background: #10253f; }
+.teacher-pointage-feedback { display: flex; gap: 8px; align-items: center; margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-weight: 700; }
+.teacher-pointage-feedback.success { color: #14703b; background: #e7f8ed; }
+.teacher-pointage-feedback.error { color: #a33131; background: #fff0f0; }
+.teacher-pointage-history { margin-top: 26px; }
+.teacher-pointage-history h3 { margin: 0 0 10px; color: #34516a; font-size: 14px; font-weight: 750; }
+.teacher-pointage-history article { display: flex; gap: 14px; align-items: center; padding: 11px 0; border-bottom: 1px solid #e9eef5; }
+.teacher-pointage-history article b { min-width: 125px; }
+.teacher-pointage-history article span { flex: 1; color: #667590; }
+.teacher-pointage-history article em { font-style: normal; color: #1769c2; font-weight: 700; }
+@media (max-width: 650px) { .teacher-pointage-card { grid-template-columns: 1fr; } .teacher-pointage-icon { width: 72px; height: 72px; } .teacher-pointage-icon i { font-size: 34px; } .teacher-pointage-card button { width: 100%; } .teacher-pointage-history article { align-items: flex-start; flex-direction: column; gap: 4px; } }

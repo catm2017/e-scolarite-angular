@@ -1,0 +1,91 @@
+:host { display: block; }
+.my-pointage-page { min-height: calc(100vh - 190px); padding: 30px clamp(16px, 3vw, 34px) 46px; color: #294c67; background: #f7fbff; }
+.my-pointage-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+.my-pointage-heading small, .my-pointage-kicker { color: #2f80ed; font-size: 10px; font-weight: 900; letter-spacing: .14em; }
+.my-pointage-heading h1 { margin: 7px 0 5px; color: #1e4565; font-size: clamp(23px, 3vw, 30px); }
+.my-pointage-heading p { max-width: 650px; margin: 0; color: #71879b; font-size: 13px; line-height: 1.55; }
+.my-pointage-refresh, .secondary-action, .primary-action { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 14px; border-radius: 9px; font-size: 12px; font-weight: 800; cursor: pointer; }
+.my-pointage-refresh, .secondary-action { border: 1px solid #d5e4ef; color: #52738c; background: #fff; }
+.primary-action { border: 0; color: #fff; background: #2f80ed; box-shadow: 0 6px 14px rgba(47,128,237,.18); }
+.my-pointage-refresh:disabled, .primary-action:disabled { cursor: wait; opacity: .62; }
+.my-pointage-refresh i, .secondary-action i, .primary-action i, .my-pointage-card i, .my-pointage-history-card i, .my-pointage-feedback i { font-family: 'Material Icons Outlined', 'Material Icons'; font-style: normal; line-height: 1; }
+.my-pointage-card, .my-pointage-history-card { padding: clamp(17px, 2.4vw, 25px); border: 1px solid #e1edf5; border-radius: 15px; background: #fff; box-shadow: 0 10px 28px rgba(42,88,121,.06); }
+.my-pointage-card-heading { display: flex; align-items: flex-start; gap: 13px; padding-bottom: 17px; border-bottom: 1px solid #edf3f7; }
+.my-pointage-icon { display: grid; flex: 0 0 44px; width: 44px; height: 44px; place-items: center; border-radius: 12px; color: #1d75c9; background: #e9f4ff; font-size: 24px; }
+.my-pointage-card h2, .my-pointage-history-card h2 { margin: 6px 0 4px; color: #2c536f; font-size: 19px; }
+.my-pointage-card-heading p { margin: 0; color: #7890a3; font-size: 12px; }
+.my-pointage-scan-grid { display: grid; grid-template-columns: minmax(220px, .9fr) minmax(0, 1.1fr); gap: 22px; margin-top: 20px; }
+.my-pointage-camera-zone { display: grid; gap: 10px; min-width: 0; }
+.my-pointage-camera-zone video { width: 100%; min-height: 210px; border-radius: 12px; object-fit: cover; background: #173a55; }
+.my-pointage-camera-placeholder { display: grid; min-height: 210px; place-items: center; align-content: center; gap: 7px; border: 1px dashed #b7d2e7; border-radius: 12px; color: #6d879a; background: #f7fbff; text-align: center; }
+.my-pointage-camera-placeholder i { color: #2f80ed; font-size: 34px; }
+.my-pointage-camera-placeholder span { color: #45677f; font-size: 14px; font-weight: 800; }
+.my-pointage-camera-placeholder small, .my-pointage-manual-zone > small { color: #8799a8; font-size: 11px; line-height: 1.5; }
+.my-pointage-camera-zone button { justify-self: start; }
+.my-pointage-manual-zone { display: grid; align-content: center; gap: 12px; min-width: 0; }
+.my-pointage-manual-zone label { display: grid; gap: 7px; color: #536f84; font-size: 12px; font-weight: 800; }
+.my-pointage-manual-zone input { width: 100%; min-height: 44px; box-sizing: border-box; border: 1px solid #d8e6f0; border-radius: 9px; padding: 0 12px; color: #244b68; font: inherit; }
+.my-pointage-manual-zone input:focus { outline: 3px solid rgba(47,128,237,.12); border-color: #6ba8df; }
+.my-pointage-manual-zone .primary-action { justify-self: start; }
+.my-pointage-feedback { display: flex; align-items: center; gap: 8px; margin-top: 16px; padding: 11px 13px; border-radius: 9px; font-size: 12px; font-weight: 700; }
+.my-pointage-feedback.error { color: #b14b4e; background: #fff1f1; }
+.my-pointage-feedback.success { color: #207651; background: #edf9f3; }
+.my-pointage-history-card { margin-top: 18px; }
+.my-pointage-history-card > header { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 14px; }
+.my-pointage-history-card h2 { margin-bottom: 0; }
+.history-count { display: grid; min-width: 28px; height: 28px; place-items: center; border-radius: 50%; color: #2a6fa8; background: #eaf4ff; font-size: 12px; font-weight: 900; }
+.my-pointage-history-list { display: grid; gap: 8px; }
+.my-pointage-history-list article { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 11px 12px; border: 1px solid #e7eff5; border-radius: 10px; }
+.history-date { display: grid; flex: 0 0 44px; width: 44px; height: 44px; place-items: center; align-content: center; border-radius: 10px; color: #276b9f; background: #edf6fd; }
+.history-date b { font-size: 16px; line-height: 1; }.history-date small { margin-top: 3px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.my-pointage-history-list article > div { min-width: 0; flex: 1; }.my-pointage-history-list strong { display: block; overflow: hidden; color: #345b74; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.my-pointage-history-list p { margin: 4px 0 0; color: #7890a2; font-size: 11px; }
+.my-pointage-history-list em { flex: 0 0 auto; padding: 5px 9px; border-radius: 999px; color: #a26714; background: #fff3dc; font-size: 10px; font-style: normal; font-weight: 800; }.my-pointage-history-list em.complete { color: #217750; background: #e8f7ef; }
+.my-pointage-loading, .my-pointage-empty { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 90px; color: #7b91a3; font-size: 12px; }.my-pointage-loading i { animation: my-pointage-spin .9s linear infinite; }.my-pointage-empty i { color: #82a6c1; font-size: 23px; }
+@keyframes my-pointage-spin { to { transform: rotate(360deg); } }
+@media (max-width: 720px) { .my-pointage-page { padding-top: 22px; }.my-pointage-heading { flex-direction: column; }.my-pointage-refresh { align-self: flex-start; }.my-pointage-scan-grid { grid-template-columns: 1fr; }.my-pointage-camera-zone button, .my-pointage-manual-zone .primary-action { width: 100%; }.my-pointage-history-list article { align-items: flex-start; flex-wrap: wrap; }.my-pointage-history-list article em { margin-left: 56px; } }
+
+/* Même présentation que le pointage de l'espace enseignant. */
+.teacher-pointage-panel { max-width: 920px; margin: 0 auto; }
+.teacher-pointage-panel > header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.teacher-pointage-panel > header p { margin: 0 0 6px; color: #2f80ed; font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+.teacher-pointage-panel > header h2 { margin: 0 0 5px; }
+.my-pointage-page .teacher-pointage-panel > header h2 { font-size: 17px; font-weight: 750; }
+.teacher-pointage-panel > header span { color: #6f7e98; }
+.teacher-pointage-panel > header > i { color: #2f80ed; font-family: 'Material Icons Outlined', 'Material Icons'; font-size: 34px; font-style: normal; }
+.teacher-pointage-card { display: grid; grid-template-columns: 96px 1fr; gap: 22px; align-items: center; margin-top: 24px; padding: 22px; border: 1px solid #dfe9f6; border-radius: 16px; background: linear-gradient(135deg, #f8fbff, #edf5ff); }
+.teacher-pointage-icon { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 18px; background: #d9ebff; color: #1769c2; }
+.teacher-pointage-icon i { font-family: 'Material Icons Outlined', 'Material Icons'; font-size: 44px; font-style: normal; }
+.teacher-pointage-card h3 { margin: 0 0 5px; }
+.teacher-pointage-card p { margin: 0 0 16px; color: #6d7c96; }
+.pointage-sortie-countdown { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 13px; padding: 9px 11px; border: 1px solid #f3d6a2; border-radius: 9px; color: #91621e; background: #fff8e9; font-size: 12px; font-weight: 700; }
+.pointage-sortie-countdown i { font-family: 'Material Icons Outlined', 'Material Icons'; font-style: normal; }
+.pointage-sortie-countdown strong { color: #764b0b; font-variant-numeric: tabular-nums; }
+.teacher-pointage-card label { display: grid; gap: 6px; margin-bottom: 12px; color: #52627d; font-weight: 700; font-size: 13px; }
+.teacher-pointage-card input { width: 100%; box-sizing: border-box; min-height: 42px; border: 1px solid #d5e1f0; border-radius: 10px; padding: 0 12px; background: #fff; font: inherit; }
+.teacher-pointage-card button { min-height: 42px; border: 0; border-radius: 10px; padding: 0 15px; background: #1769c2; color: white; font-weight: 800; cursor: pointer; }
+.teacher-pointage-card button:disabled { opacity: .55; cursor: not-allowed; }
+.teacher-pointage-card button.secondary { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; background: #e8f2ff; color: #1769c2; }
+.teacher-pointage-card button i { font-family: 'Material Icons Outlined', 'Material Icons'; font-size: 17px; font-style: normal; vertical-align: middle; }
+.teacher-pointage-video { display: block; width: min(100%, 420px); aspect-ratio: 4 / 3; margin-bottom: 12px; border-radius: 12px; object-fit: cover; background: #10253f; }
+.teacher-pointage-feedback { display: flex; gap: 8px; align-items: center; margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-weight: 700; }
+.teacher-pointage-feedback i { font-family: 'Material Icons Outlined', 'Material Icons'; font-style: normal; }
+.teacher-pointage-feedback.success { color: #14703b; background: #e7f8ed; }
+.teacher-pointage-feedback.error { color: #a33131; background: #fff0f0; }
+.teacher-pointage-history { margin-top: 26px; }
+.teacher-pointage-history h3 { margin: 0 0 10px; color: #34516a; font-size: 14px; font-weight: 750; }
+.teacher-pointage-history article { display: flex; gap: 14px; align-items: center; padding: 11px 0; border-bottom: 1px solid #e9eef5; }
+.teacher-pointage-history article b { min-width: 125px; }
+.teacher-pointage-history article span { flex: 1; color: #667590; }
+.teacher-pointage-history article em { font-style: normal; color: #1769c2; font-weight: 700; }
+.teacher-pointage-history > p { color: #8292a2; font-size: 13px; }
+@media (max-width: 650px) { .teacher-pointage-card { grid-template-columns: 1fr; } .teacher-pointage-icon { width: 72px; height: 72px; } .teacher-pointage-icon i { font-size: 34px; } .teacher-pointage-card button { width: 100%; } .teacher-pointage-history article { align-items: flex-start; flex-direction: column; gap: 4px; } }
+
+/* Le pointage personnel reprend le même fond et le même espacement que l'espace enseignant. */
+.my-pointage-page { min-width: 0; min-height: auto; padding: 0 0 46px; color: #283b51; background: transparent; }
+.my-pointage-page > .teacher-pointage-panel { margin-top: 0; }
+.my-pointage-page .teacher-pointage-panel { padding: 20px; border: 1px solid #e8edf3; border-radius: 12px; background: #fff; box-shadow: 0 4px 16px rgba(38, 61, 89, .03); }
+.my-pointage-page > header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+.my-pointage-page > header p { margin: 0 0 6px; color: #2f80ed; font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+.my-pointage-page > header h2 { margin: 0 0 5px; }
+.my-pointage-page > header span { color: #6f7e98; }
+.my-pointage-page > header > i { color: #2f80ed; font-family: 'Material Icons Outlined', 'Material Icons'; font-size: 34px; font-style: normal; }

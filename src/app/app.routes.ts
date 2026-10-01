@@ -95,8 +95,22 @@ const PAGES_LYCEE: Route[] = [
   },
 ];
 
+const PAGES_FAMILLE: Route[] = [
+  { path: '', pathMatch: 'full', redirectTo: 'accueil' },
+  {
+    path: ':vue',
+    loadComponent: () => import('./prototype/family-space/family-space.component')
+      .then((component) => component.FamilySpaceComponent),
+  },
+];
+
 const PAGES_INSTITUT: Route[] = [
   { path: '', pathMatch: 'full', redirectTo: 'tableau-de-bord' },
+  {
+    path: 'mon-pointage',
+    loadComponent: () => import('./prototype/my-pointage/my-pointage.component')
+      .then((component) => component.MyPointageComponent),
+  },
   {
     path: ':vue',
     loadComponent: () => import('./prototype/institute-console/institute-console.component')
@@ -166,6 +180,12 @@ export const APP_ROUTE: Route[] = [
       { path: 'profil', loadComponent: () => import('./prototype/account-profile/account-profile.component').then(c => c.AccountProfileComponent) },
       { path: ':vue', loadComponent: () => import('./prototype/teacher-space/teacher-space.component').then((component) => component.TeacherSpaceComponent) },
     ],
+  },
+  {
+    path: 'famille',
+    loadComponent: () => import('./prototype/layouts/family-layout/family-layout.component')
+      .then((component) => component.FamilyLayoutComponent),
+    children: PAGES_FAMILLE,
   },
   {
     path: 'institut',

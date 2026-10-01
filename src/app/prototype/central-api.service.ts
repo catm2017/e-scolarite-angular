@@ -334,6 +334,44 @@ export interface CampusInstitut {
   salles_count: number;
 }
 
+export interface PointageInstitutApi {
+  id: string;
+  personnel_id: string;
+  campus_id: string;
+  borne_pointage_id: string | null;
+  date_pointage: string;
+  heure_entree_at: string | null;
+  heure_sortie_at: string | null;
+  mode_entree: string | null;
+  mode_sortie: string | null;
+  statut: string;
+  observation: string | null;
+  matricule: string;
+  prenom: string;
+  nom: string;
+  nom_complet: string;
+  telephone: string | null;
+  campus: string;
+  profil: 'enseignant' | 'personnel';
+  duree_minutes: number | null;
+}
+
+export interface BornePointageInstitutApi {
+  id: string;
+  code: string;
+  libelle: string;
+  campus_id: string;
+  campus: string;
+  qr_jeton: string | null;
+  qr_expire_at: string | null;
+}
+
+export interface PointagesInstitutApi {
+  data: PointageInstitutApi[];
+  resume: { total: number; complets: number; incomplets: number; en_attente: number; enseignants: number; personnels: number };
+  bornes: BornePointageInstitutApi[];
+}
+
 export interface EleveTransferableInstitut {
   id: string;
   matricule: string;
@@ -478,6 +516,35 @@ export interface AbonnementSaas {
   etat_abonnement: string;
   etat_paiement: string;
   facture_numero: string | null;
+}
+
+export interface TraceSaas {
+  id: string;
+  source: 'saas' | 'institut' | 'authentification' | 'systeme' | string;
+  institut_id: string | null;
+  institut: string;
+  user_id: string | null;
+  utilisateur: string;
+  action: string;
+  module: string;
+  sujet_type: string | null;
+  sujet_id: string | null;
+  statut: string;
+  gravite: string;
+  description: string;
+  donnees_avant: Record<string, unknown> | null;
+  donnees_apres: Record<string, unknown> | null;
+  adresse_ip: string | null;
+  agent_utilisateur: string | null;
+  correlation_id: string | null;
+  requete_id: string | null;
+  survenu_at: string;
+}
+
+export interface TracesSaasResponse {
+  data: TraceSaas[];
+  meta: { page: number; par_page: number; total: number; dernier_page: number };
+  filtres?: { instituts: Array<{ id: string; nom: string }>; modules: string[]; actions: string[] };
 }
 
 export interface PackageSouscription {
@@ -834,6 +901,30 @@ export interface TuteurEtablissementApi {
   lien_parente?: string | null;
 }
 
+export interface EnfantDossierTuteurInstitutApi {
+  id: string;
+  matricule: string;
+  prenom: string;
+  nom: string;
+  sexe: 'F' | 'M' | null;
+  annee_scolaire_id: string;
+  annee_scolaire: string | null;
+  etablissement_id: string;
+  type_etablissement: string | null;
+  type_code: string | null;
+  campus_id: string | null;
+  campus: string | null;
+  classe_id: string | null;
+  classe: string | null;
+  statut_inscription: string;
+  date_inscription: string | null;
+}
+
+export interface DossierTuteurInstitutApi {
+  tuteur: TuteurEtablissementApi & { statut?: string | null };
+  enfants: EnfantDossierTuteurInstitutApi[];
+}
+
 export interface EleveEtablissementApi {
   id: string;
   matricule: string;
@@ -901,6 +992,30 @@ export interface DossierEleveApi {
   presences: Array<{ id: string; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; matiere: string | null; statut: string; motif: string | null }>;
   evaluations: Array<{ id: string; annee_scolaire_id: string; titre: string; type: string; date_evaluation: string; matiere: string | null; note: number | null; bareme: number | null; appreciation: string | null }>;
   tuteurs: Array<{ id: string; prenom: string; nom: string; telephone: string | null; email: string | null; profession: string | null; adresse: string | null; statut_compte: string | null; lien_parente: string | null; est_responsable_financier: boolean; est_contact_urgence: boolean }>;
+}
+
+export interface EnfantEspaceFamilleApi {
+  id: string;
+  matricule: string;
+  prenom: string;
+  nom: string;
+  sexe: string | null;
+  photo_url: string | null;
+  annee_scolaire_id: string;
+  annee_scolaire: string;
+  etablissement_id: string;
+  type_code: string | null;
+  type_etablissement: string;
+  campus_id: string;
+  campus: string;
+  classe_id: string | null;
+  classe: string | null;
+}
+
+export interface EspaceFamilleApi {
+  mode: 'tuteur' | 'eleve';
+  institut_id: string | null;
+  enfants: EnfantEspaceFamilleApi[];
 }
 
 export interface DossierEnseignantEtablissementApi {
@@ -978,6 +1093,12 @@ export class CentralApiService {
     const suffixe = selection ? `:${selection.etablissement_id}:${selection.campus_id}` : ':choix';
     return this.lireAvecCache(`enseignant:espace${suffixe}`, () => this.http.get<{ data: EspaceEnseignantApi }>(`${this.baseUrl}/institut/enseignant/espace`, {
       params: selection ? { etablissement_id: selection.etablissement_id, campus_id: selection.campus_id } : {},
+      headers: this.enteteAutorisation(),
+    }), 60_000);
+  }
+
+  espaceFamille() {
+    return this.lireAvecCache('famille:espace', () => this.http.get<{ data: EspaceFamilleApi }>(`${this.baseUrl}/institut/famille/espace`, {
       headers: this.enteteAutorisation(),
     }), 60_000);
   }
@@ -1225,6 +1346,23 @@ export class CentralApiService {
     ));
   }
 
+  tracabiliteSaas(params: Record<string, string | number | null | undefined> = {}) {
+    const propres = Object.entries(params).reduce((acc, [cle, valeur]) => {
+      if (valeur !== null && valeur !== undefined && valeur !== '') acc[cle] = String(valeur);
+      return acc;
+    }, {} as Record<string, string>);
+    const cle = `centrale:tracabilite:${JSON.stringify(propres)}`;
+    return this.lireAvecCache(cle, () => this.http.get<TracesSaasResponse>(`${this.baseUrl}/centrale/tracabilite`, {
+      headers: this.enteteAutorisation(), params: propres,
+    }), 30_000);
+  }
+
+  detailTracabiliteSaas(id: string, source: string) {
+    return this.http.get<{ data: TraceSaas }>(`${this.baseUrl}/centrale/tracabilite/${id}`, {
+      headers: this.enteteAutorisation(), params: { source },
+    });
+  }
+
   demandesAdhesion() {
     return this.lireAvecCache('centrale:demandes-adhesion', () => this.http.get<{ data: DemandeAdhesion[] }>(`${this.baseUrl}/centrale/demandes-adhesion`, {
       headers: this.enteteAutorisation(),
@@ -1452,7 +1590,13 @@ export class CentralApiService {
 
   chargerAccesUtilisateurInstitut() {
     const user = this.utilisateur();
-    if (!user?.id) return;
+    // Le service de navigation est aussi instancié par le layout global (y
+    // compris dans /saas). Le profil central n'a pas de périmètre institut :
+    // ne jamais appeler l'API institut dans ce contexte.
+    if (!user?.id || !this.institutActuel() || !this.estConnecte()) {
+      this.accesUtilisateurState.set(null);
+      return;
+    }
     this.accesUtilisateurInstitut(user.id).subscribe({
       next: ({ data }) => this.accesUtilisateurState.set(data),
       error: () => this.accesUtilisateurState.set(null),
@@ -1624,6 +1768,35 @@ export class CentralApiService {
     return this.http.delete<{ message: string }>(`${this.baseUrl}/institut/salles/${salleId}`, {
       headers: this.enteteAutorisation(),
     });
+  }
+
+  pointagesInstitut(filtres: Record<string, string | undefined> = {}, forceRefresh = false) {
+    // Versionner la clé pour écarter les anciennes réponses mises en cache
+    // avant que le jeton QR chiffré ne soit renvoyé par l'API.
+    const cle = `institut:pointages:qr-v2:${JSON.stringify(filtres)}`;
+    if (forceRefresh) this.invaliderCache('institut:pointages:');
+    return this.lireAvecCache(cle, () => this.http.get<PointagesInstitutApi>(`${this.baseUrl}/institut/pointages`, {
+      params: Object.fromEntries(Object.entries(filtres).filter(([, value]) => !!value)) as Record<string, string>,
+      headers: this.enteteAutorisation(),
+    }));
+  }
+
+  creerBornePointage(campusId: string, libelle: string) {
+    this.invaliderCache('institut:pointages:');
+    return this.http.post<{ message: string; data: { borne_id: string; code: string; jeton: string; expire_at: string } }>(`${this.baseUrl}/institut/pointages/bornes`, { campus_id: campusId, libelle }, { headers: this.enteteAutorisation() });
+  }
+
+  regenererQrPointage(borneId: string) {
+    this.invaliderCache('institut:pointages:');
+    return this.http.post<{ message: string; data: { borne_id: string; code: string; jeton: string; expire_at: string } }>(`${this.baseUrl}/institut/pointages/bornes/${borneId}/qr`, {}, { headers: this.enteteAutorisation() });
+  }
+
+  scannerPointage(jeton: string) {
+    return this.http.post<{ message: string; action: 'entree' | 'sortie'; heure: string; borne: string }>(`${this.baseUrl}/institut/pointages/scanner`, { jeton }, { headers: this.enteteAutorisation() });
+  }
+
+  mesPointages() {
+    return this.http.get<{ data: PointageInstitutApi[] }>(`${this.baseUrl}/institut/pointages/mes-pointages`, { headers: this.enteteAutorisation() });
   }
 
   souscriptionInstitut() {
@@ -2059,6 +2232,29 @@ export class CentralApiService {
     }));
   }
 
+  tuteursInstitut() {
+    return this.lireAvecCache('institut:tuteurs', () => this.http.get<{ data: TuteurEtablissementApi[] }>(
+      `${this.baseUrl}/institut/tuteurs`,
+      { headers: this.enteteAutorisation() },
+    ));
+  }
+
+  dossierTuteurInstitut(tuteurId: string) {
+    return this.lireAvecCache(`institut:dossier-tuteur:${tuteurId}`, () => this.http.get<{ data: DossierTuteurInstitutApi }>(
+      `${this.baseUrl}/institut/tuteurs/${tuteurId}/dossier`,
+      { headers: this.enteteAutorisation() },
+    ));
+  }
+
+  modifierTuteurInstitut(tuteurId: string, donnees: Record<string, unknown>) {
+    this.invaliderCache('institut:');
+    return this.http.put<{ message: string }>(
+      `${this.baseUrl}/institut/tuteurs/${tuteurId}/profil`,
+      donnees,
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
   dossierEleveEtablissement(typeEtablissement: string, campusId: string, eleveId: string) {
     return this.http.get<{ data: DossierEleveApi }>(`${this.baseUrl}/institut/eleves/${eleveId}/dossier`, {
       params: { type_etablissement: typeEtablissement, campus_id: campusId },
@@ -2190,7 +2386,14 @@ export class CentralApiService {
     localStorage.setItem(this.tokenKey, token);
     localStorage.setItem(this.userKey, JSON.stringify(this.normaliserProfil(user)));
     if (institut) localStorage.setItem(this.institutKey, JSON.stringify(institut));
-    else localStorage.removeItem(this.institutKey);
+    else {
+      // Une connexion au back-office SaaS ne doit jamais conserver le contexte
+      // d'une précédente connexion institut. Sinon les composants partagés
+      // peuvent lancer un appel /institut avec le jeton central et provoquer
+      // une déconnexion immédiate sur réponse 401.
+      localStorage.removeItem(this.institutKey);
+      this.accesUtilisateurState.set(null);
+    }
     this.actualiserAccesSouscription(souscriptionValidee, fonctionnalitesActives);
     if (expireAt) localStorage.setItem(this.expirationKey, expireAt);
     else localStorage.removeItem(this.expirationKey);

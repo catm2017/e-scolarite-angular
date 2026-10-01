@@ -1,0 +1,29 @@
+<section class="content primary-shell parent-console-shell">
+  <div class="content-block primary-workspace parent-workspace">
+    <div class="block-header">
+      <app-breadcrumb [title]="'Mon pointage'" [items]="[]" [active_item]="'Mon pointage'" homeLink="/institut" [showTitle]="false" />
+    </div>
+
+    <div class="primary-context-bar card parent-context-bar">
+      <div>
+        <span class="primary-context-icon material-icons-outlined">corporate_fare</span>
+        <p><small>ESPACE PARENT · INSTITUT</small><strong>{{ espace()?.institut?.nom || 'Institut' }}</strong></p>
+      </div>
+      <span>{{ etablissementsActifs() }} établissement(s) activé(s)</span>
+      <span>{{ espace()?.user ? (espace()!.user.prenom + ' ' + espace()!.user.nom) : 'Utilisateur connecté' }}</span>
+      <span>2026–2027</span>
+      <b><i></i>Vue consolidée</b>
+    </div>
+
+    <main class="primary-content parent-content my-pointage-page">
+      <section class="teacher-panel teacher-pointage-panel">
+        <header><div><p>PRÉSENCE PROFESSIONNELLE</p><h2>Mon pointage</h2><span>Scannez le QR code affiché à l’entrée de votre campus.</span></div><i>qr_code_scanner</i></header>
+        <div class="teacher-pointage-card"><div class="teacher-pointage-icon"><i>qr_code_scanner</i></div><div><h3>Scanner la borne du campus</h3><p>Le premier scan de la journée enregistre votre entrée. Le second enregistre votre sortie.</p>@if (sortieDisponibleDansSecondes() > 0) {<div class="pointage-sortie-countdown"><i>schedule</i><span>Sortie disponible dans <strong>{{ formatCompteRebours(sortieDisponibleDansSecondes()) }}</strong></span></div>} @if (scannerActif()) {<video #pointageVideo class="teacher-pointage-video" muted playsinline></video><button type="button" class="secondary" (click)="arreterScanner()"><i>close</i>Fermer le scanner</button>} @else {<button type="button" class="secondary" [disabled]="sortieDisponibleDansSecondes() > 0 || envoi()" (click)="demarrerScanner()"><i>photo_camera</i>{{ sortieDisponibleDansSecondes() > 0 ? 'Scanner bientôt disponible' : 'Scanner le QR code' }}</button>}</div></div>
+        @if (scannerErreur()) {<div class="teacher-pointage-feedback error"><i>camera_alt</i>{{ scannerErreur() }}</div>}
+        @if (message()) {<div class="teacher-pointage-feedback success"><i>check_circle</i>{{ message() }}</div>}
+        @if (erreur()) {<div class="teacher-pointage-feedback error"><i>error_outline</i>{{ erreur() }}</div>}
+        <div class="teacher-pointage-history"><h3>Mes derniers pointages</h3>@if (chargement()) {<p>Chargement de vos pointages…</p>} @else {@for (pointage of pointages(); track pointage.id) {<article><b>{{ pointage.date_pointage | date:'dd MMM yyyy' }}</b><span>Entrée {{ pointage.heure_entree_at || '—' }} · Sortie {{ pointage.heure_sortie_at || '—' }}</span><em>{{ pointage.statut }}</em></article>} @empty {<p>Aucun pointage enregistré.</p>}}</div>
+      </section>
+    </main>
+  </div>
+</section>

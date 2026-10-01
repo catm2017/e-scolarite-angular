@@ -131,7 +131,7 @@
               <div class="campus-visual"><span>location_city</span><em>{{ campus.status }}</em><b>0{{ index + 1 }}</b></div>
               <div class="campus-body">
                 <small>{{ campus.city }}</small><h2>{{ campus.name }}</h2>
-                <p><i>qr_code_2</i>Code : {{ campus.code }}</p>
+                <p><i>qr_code_scanner</i>Code : {{ campus.code }}</p>
                 <dl><div><dt>Structures</dt><dd>{{ campus.establishments }}</dd></div><div><dt>Téléphone</dt><dd>{{ campus.phone || '—' }}</dd></div><div><dt>Salles</dt><dd>{{ campus.rooms }}</dd></div></dl>
                 <button type="button" (click)="openCampusForm(campus)">Modifier le campus <i>edit</i></button>
               </div>
@@ -163,6 +163,49 @@
             </form>
           </section>
         }
+      }
+
+      @if (activeView() === 'pointages') {
+        <div class="page-title">
+          <div><small>PRÉSENCES DU PERSONNEL</small><h1>Pointages</h1><p>Suivez les heures d’entrée et de sortie des enseignants et personnels par campus.</p></div>
+          <button type="button" class="primary-action" (click)="chargerPointages(true)" [disabled]="pointagesLoading()"><i>{{ pointagesLoading() ? 'progress_activity' : 'refresh' }}</i>{{ pointagesLoading() ? 'Chargement…' : 'Actualiser' }}</button>
+        </div>
+        @if (pointagesError()) { <div class="subscription-feedback error"><i>error_outline</i>{{ pointagesError() }}</div> }
+        <section class="metric-grid parent-metrics pointage-metrics">
+          <article><span class="metric-icon blue"><i>how_to_reg</i></span><div><small>Pointages affichés</small><strong>{{ pointagesResume().total }}</strong><em>{{ pointagesResume().enseignants }} enseignants · {{ pointagesResume().personnels }} personnels</em></div></article>
+          <article><span class="metric-icon green"><i>verified</i></span><div><small>Journées complètes</small><strong>{{ pointagesResume().complets }}</strong><em>Entrée et sortie enregistrées</em></div></article>
+          <article><span class="metric-icon orange"><i>pending_actions</i></span><div><small>Pointages incomplets</small><strong>{{ pointagesResume().incomplets }}</strong><em>Sortie à renseigner</em></div></article>
+          <article><span class="metric-icon violet"><i>rule</i></span><div><small>Régularisations</small><strong>{{ pointagesResume().en_attente }}</strong><em>Demandes à examiner</em></div></article>
+        </section>
+        <section class="panel pointage-filters-card">
+          <div class="pointage-filter-grid">
+            <label><span>Campus</span><select [ngModel]="pointageFilterCampus()" (ngModelChange)="pointageFilterCampus.set($event); chargerPointages(true)"><option value="">Tous les campus</option>@for (campus of campuses(); track campus.id) {<option [value]="campus.id">{{ campus.name }}</option>}</select></label>
+            <label><span>Établissement</span><select [ngModel]="pointageFilterEtablissement()" (ngModelChange)="pointageFilterEtablissement.set($event); chargerPointages(true)"><option value="">Tous les établissements</option>@for (establishment of establishments(); track establishment.workspaceId) {@if (establishment.workspaceId) {<option [value]="establishment.workspaceId">{{ establishment.type }}</option>}}</select></label>
+            <label><span>Profil</span><select [ngModel]="pointageFilterProfil()" (ngModelChange)="pointageFilterProfil.set($event); chargerPointages(true)"><option value="">Enseignants et personnels</option><option value="enseignant">Enseignants</option><option value="personnel">Personnels</option></select></label>
+            <label><span>État</span><select [ngModel]="pointageFilterStatut()" (ngModelChange)="pointageFilterStatut.set($event); chargerPointages(true)"><option value="">Tous les états</option><option value="complet">Complet</option><option value="incomplet">Incomplet</option><option value="regularisation_en_attente">Régularisation en attente</option><option value="regularise">Régularisé</option></select></label>
+            <label><span>Date de début</span><input type="date" [ngModel]="pointageFilterDateDebut()" (ngModelChange)="pointageFilterDateDebut.set($event)" /></label>
+            <label><span>Date de fin</span><input type="date" [ngModel]="pointageFilterDateFin()" (ngModelChange)="pointageFilterDateFin.set($event)" /></label>
+            <label><span>Rechercher</span><input [ngModel]="pointageFilterRecherche()" (ngModelChange)="pointageFilterRecherche.set($event)" (keyup.enter)="chargerPointages(true)" placeholder="Nom ou matricule" /></label>
+          </div>
+          <button type="button" class="link-button" (click)="chargerPointages(true)"><i>search</i>Appliquer la recherche</button>
+        </section>
+        <section class="panel pointage-table-card">
+          <app-master-table title="Registre des pointages" [columnDefinitions]="pointagesColumns" [dataSource]="pointagesDataSource" [isLoading]="pointagesLoading()" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showBulkDelete]="false" [showContextMenu]="false" [showExport]="true" [showRefresh]="true" exportFileName="pointages_personnels" (refresh)="chargerPointages(true)"></app-master-table>
+        </section>
+        <section class="panel pointage-borne-card">
+          <header><div><h2>Bornes QR des campus</h2><p>Chaque borne identifie un campus. Le jeton est renouvelable par l’administration.</p></div><i>qr_code_scanner</i></header>
+          <form class="pointage-borne-form" (ngSubmit)="creerBornePointage()"><label><span>Campus <b>*</b></span><select name="pointageBorneCampus" [ngModel]="pointageBorneCampus()" (ngModelChange)="pointageBorneCampus.set($event)" required><option value="">Choisir un campus</option>@for (campus of campuses(); track campus.id) {<option [value]="campus.id">{{ campus.name }}</option>}</select></label><label><span>Libellé de la borne <b>*</b></span><input name="pointageBorneLabel" [ngModel]="pointageBorneLabel()" (ngModelChange)="pointageBorneLabel.set($event)" placeholder="Entrée principale" required /></label><button type="submit" class="primary-action" [disabled]="pointageBorneSaving()"><i>{{ pointageBorneSaving() ? 'progress_activity' : 'qr_code_scanner' }}</i>{{ pointageBorneSaving() ? 'Génération…' : 'Créer une borne' }}</button></form>
+          @if (pointageQrToken(); as token) {
+            <div class="pointage-qr-preview">
+              <div class="pointage-qr-image-wrap">
+                @if (pointageQrImage(); as qrImage) { <img [src]="qrImage" [alt]="'QR code de pointage ' + pointageQrLabel()" /> }
+                @else { <span class="pointage-qr-loading"><i>progress_activity</i>Génération du QR…</span> }
+              </div>
+              <div class="pointage-qr-copy"><span class="pointage-qr-kicker">AFFICHE QR PRÊTE À TÉLÉCHARGER</span><h3>{{ pointageQrLabel() }}</h3><p>{{ pointageQrCampus() }} · Entrée et sortie du personnel</p><small>Une affiche E‑Scolarité est préparée avec le logo, le slogan et les consignes. Téléchargez-la puis imprimez-la où vous le souhaitez.</small><div class="pointage-qr-actions"><a class="primary-action" [href]="pointageQrPosterImage()" download="affiche-qr-pointage-e-scolarite.png" [class.disabled]="!pointageQrPosterImage()"><i>download</i>Télécharger l’affiche</a></div><details><summary>Afficher le jeton technique</summary><code>{{ token }}</code></details></div>
+            </div>
+          }
+          <div class="pointage-borne-list">@for (borne of bornesPointage(); track borne.id) {<article><span><i>qr_code_scanner</i></span><div><strong>{{ borne.libelle }}</strong><small>{{ borne.campus }} · {{ borne.code }}</small>@if (borne.qr_expire_at) {<small>Valide jusqu’au {{ borne.qr_expire_at | date:'dd/MM/yyyy' }}</small>}</div><div class="pointage-borne-actions">@if (borne.qr_jeton) {<button type="button" class="secondary-action" (click)="afficherQrBorne(borne)"><i>visibility</i>Afficher</button>}<button type="button" (click)="regenererQrPointage(borne)"><i>sync</i>Régénérer</button></div></article>} @empty {<p class="campus-summary-empty"><i>qr_code_scanner</i>Aucune borne QR configurée.</p>}</div>
+        </section>
       }
 
       @if (activeView() === 'user-detail') {
@@ -350,6 +393,47 @@
         }
       }
 
+      @if (activeView() === 'guardians') {
+        <div class="page-title">
+          <div><small>DOSSIERS FAMILLE · INSTITUT</small><h1>Tuteurs</h1><p>Retrouvez les responsables légaux de tous les établissements et campus de l’institut.</p></div>
+          <button type="button" class="primary-action" (click)="chargerTuteurs(true)" [disabled]="guardiansLoading()"><i>{{ guardiansLoading() ? 'sync' : 'refresh' }}</i>{{ guardiansLoading() ? 'Actualisation…' : 'Actualiser' }}</button>
+        </div>
+        @if (guardiansError()) {<div class="subscription-feedback error"><i>error_outline</i>{{ guardiansError() }}</div>}
+        <app-master-table title="Tuteurs de l’institut" [columnDefinitions]="guardianColumns" [dataSource]="guardianDataSource" [isLoading]="guardiansLoading()" exportFileName="tuteurs_institut" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="true" [showBulkDelete]="false" [showCheckbox]="false" [disableRowClickToEdit]="true" (details)="viewGuardian($event)" (rowClick)="viewGuardian($event)" (refresh)="chargerTuteurs(true)"></app-master-table>
+      }
+
+      @if (activeView() === 'guardian-detail') {
+        @if (guardianDetailLoading()) {
+          <section class="panel institute-settings-loading"><i>progress_activity</i><strong>Chargement du dossier tuteur…</strong></section>
+        } @else if (selectedGuardian(); as guardian) {
+          <div class="page-title record-page-title"><div><small>DOSSIER TUTEUR</small><h1>{{ guardian.name }}</h1><p>Identité du responsable légal et enfants rattachés dans l’institut.</p></div><div class="title-actions"><button type="button" (click)="setView('guardians')"><i>arrow_back</i>Retour aux tuteurs</button><button type="button" class="primary-action" (click)="startGuardianForm(guardian)"><i>edit</i>Modifier le dossier</button></div></div>
+          <section class="directory-record-layout">
+            <aside class="panel directory-profile-card"><span>{{ guardian.name.slice(0, 1) }}</span><h2>{{ guardian.name }}</h2><p>Responsable légal</p><em><i></i>{{ guardian.status }}</em><dl><div><dt>Téléphone</dt><dd>{{ guardian.phone || 'Non renseigné' }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ guardian.email || 'Non renseignée' }}</dd></div><div><dt>Enfants rattachés</dt><dd>{{ guardian.numberOfChildren ?? 0 }}</dd></div></dl></aside>
+            <div class="directory-record-main">
+              @if (guardianEditorOpen()) {
+                <section class="panel directory-form-card guardian-form-card">
+                  <header><div><span><i>edit</i></span><div><h2>Modifier les informations du tuteur</h2><p>Ces informations sont partagées par tous les établissements et campus de l’institut.</p></div></div><button type="button" aria-label="Fermer" (click)="closeGuardianForm()"><i>close</i></button></header>
+                  <form (ngSubmit)="saveGuardian()">
+                    <div class="directory-form-grid">
+                      <label><span>Prénom(s) <b>*</b></span><input name="guardianFirstName" [(ngModel)]="guardianForm.firstName" required /></label>
+                      <label><span>Nom <b>*</b></span><input name="guardianLastName" [(ngModel)]="guardianForm.lastName" required /></label>
+                      <label><span>Téléphone <b>*</b></span><input name="guardianPhone" [(ngModel)]="guardianForm.phone" required /></label>
+                      <label><span>Téléphone secondaire</span><input name="guardianSecondaryPhone" [(ngModel)]="guardianForm.secondaryPhone" /></label>
+                      <label><span>Adresse e-mail</span><input type="email" name="guardianEmail" [(ngModel)]="guardianForm.email" /></label>
+                      <label><span>Profession</span><input name="guardianProfession" [(ngModel)]="guardianForm.function" /></label>
+                      <label class="space-description"><span>Adresse</span><textarea name="guardianAddress" [(ngModel)]="guardianForm.address" rows="3"></textarea></label>
+                    </div>
+                    <footer><span>Les champs marqués d’un <b>*</b> sont obligatoires.</span><div><button type="button" (click)="closeGuardianForm()" [disabled]="guardianSaving()">Annuler</button><button type="submit" class="primary-action" [disabled]="guardianSaving() || !guardianForm.firstName?.trim() || !guardianForm.lastName?.trim() || !guardianForm.phone?.trim()"><i>{{ guardianSaving() ? 'progress_activity' : 'save' }}</i>{{ guardianSaving() ? 'Enregistrement…' : 'Enregistrer les modifications' }}</button></div></footer>
+                  </form>
+                </section>
+              }
+              <article class="panel directory-detail-card"><h3>Identité et contacts</h3><dl><div><dt>Prénom(s) et nom</dt><dd>{{ guardian.name }}</dd></div><div><dt>Téléphone</dt><dd>{{ guardian.phone || 'Non renseigné' }}</dd></div><div><dt>Téléphone secondaire</dt><dd>{{ guardian.secondaryPhone || 'Non renseigné' }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ guardian.email || 'Non renseignée' }}</dd></div><div><dt>Profession</dt><dd>{{ guardian.function || 'Non renseignée' }}</dd></div><div><dt>Adresse</dt><dd>{{ guardian.address || 'Non renseignée' }}</dd></div></dl></article>
+              <app-master-table title="Enfants rattachés" [columnDefinitions]="guardianChildrenColumns" [dataSource]="guardianChildrenDataSource" [isLoading]="false" exportFileName="enfants_tuteur" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showBulkDelete]="false" [showCheckbox]="false" [disableRowClickToEdit]="true"></app-master-table>
+            </div>
+          </section>
+        }
+      }
+
       @if (activeView() === 'activity-log') {
         <div class="page-title"><div><small>SUIVI ET SÉCURITÉ</small><h1>Traçabilité</h1><p>Journal des activités de la plateforme et configuration du suivi par type d’utilisateur.</p></div></div>
         <nav class="class-tabs institute-tabs trace-tabs" aria-label="Sections de traçabilité"><button type="button" [class.active]="traceConfigurationTab() === 'journal'" (click)="traceConfigurationTab.set('journal')"><i>manage_history</i>Journal des activités</button><button type="button" [class.active]="traceConfigurationTab() === 'settings'" (click)="traceConfigurationTab.set('settings')"><i>settings_suggest</i>Configuration du suivi</button></nav>
@@ -527,6 +611,20 @@
           <div class="subscription-modal-actions">
             <button type="button" (click)="subscriptionInterruptModalOpen.set(false)" [disabled]="subscriptionSaving()">Conserver la souscription</button>
             <button type="button" class="danger" (click)="confirmerInterruptionSouscription()" [disabled]="subscriptionSaving()"><i>{{ subscriptionSaving() ? 'progress_activity' : 'stop_circle' }}</i>{{ subscriptionSaving() ? 'Interruption…' : 'Oui, interrompre' }}</button>
+          </div>
+        </section>
+      </div>
+    }
+
+    @if (pointageQrRegenerationBorne(); as borne) {
+      <div class="subscription-modal-backdrop" role="presentation" (click)="annulerRegenerationQrPointage()">
+        <section class="subscription-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="pointage-qr-regeneration-title" (click)="$event.stopPropagation()">
+          <span class="subscription-modal-icon"><i>print</i></span>
+          <h2 id="pointage-qr-regeneration-title">Régénérer le QR code ?</h2>
+          <p>Un nouveau QR code sera créé pour « {{ borne.libelle }} ». L’ancien code ne fonctionnera plus : vous devrez imprimer ce nouveau code et remplacer celui affiché à l’entrée du campus.</p>
+          <div class="subscription-modal-actions">
+            <button type="button" (click)="annulerRegenerationQrPointage()">Annuler</button>
+            <button type="button" class="danger" (click)="confirmerRegenerationQrPointage()"><i>sync</i>Oui, régénérer et imprimer</button>
           </div>
         </section>
       </div>

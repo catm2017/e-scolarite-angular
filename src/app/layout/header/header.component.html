@@ -17,7 +17,7 @@
           </button>
         </li>
         <!-- Spotlight Standalone Search Bar Component -->
-        @if (!isEstablishmentWorkspace && !isInstituteWorkspace && !isSaasWorkspace && !isTeacherWorkspace) {
+        @if (!isEstablishmentWorkspace && !isInstituteWorkspace && !isSaasWorkspace && !isTeacherWorkspace && !isFamilyWorkspace) {
         <li class="ms-4 search-bar-list-item">
           <app-search-bar></app-search-bar>
         </li>
@@ -91,6 +91,14 @@
         <div class="workspace-campus-switcher institute-context-switcher">
           <i class="material-icons-outlined">co_present</i>
           <span><small>{{ teacherContextName() }}</small><strong>{{ teacherCampusName() }}</strong></span>
+        </div>
+      </div>
+      }
+      @if (isFamilyWorkspace) {
+      <div class="workspace-nav-controls institute-nav-controls">
+        <div class="workspace-campus-switcher institute-context-switcher">
+          <i class="material-icons-outlined">family_restroom</i>
+          <span><small>{{ workspaceInstituteName || 'E-Scolarité' }}</small><strong>Espace famille</strong></span>
         </div>
       </div>
       }

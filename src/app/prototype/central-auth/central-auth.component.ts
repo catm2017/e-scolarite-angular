@@ -83,10 +83,12 @@ export class CentralAuthComponent implements OnInit {
     const { identifiant, password, institut_id } = this.connexion.getRawValue();
     this.api.connexion(identifiant, password, institut_id || undefined, this.institutDuDomaine() ? window.location.hostname : undefined).subscribe({
       next: (result) => this.router.navigateByUrl(
-        result.espace === 'centrale'
+          result.espace === 'centrale'
           ? '/saas'
           : result.user.type === 'enseignant'
             ? '/enseignant'
+          : result.user.type === 'tuteur' || result.user.type === 'eleve'
+            ? '/famille/accueil'
           : !result.souscription_validee
             ? '/institut?vue=souscription'
             : '/institut',

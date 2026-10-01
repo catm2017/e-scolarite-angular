@@ -11,4 +11,6 @@ export interface RouteInfo {
   role: string[];
   submenu: RouteInfo[];
   workspaceView?: string;
+  personnelOnly?: boolean;
+  pointageEligibleOnly?: boolean;
 }

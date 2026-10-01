@@ -40,6 +40,16 @@
               </a>
             </li>
           }
+          } @else if (isFamilyWorkspace) {
+          @for (item of familyNavigation; track item.path) {
+            @if (item.group) { <li><div class="header">{{ item.group }}</div></li> }
+            <li routerLinkActive="active-top">
+              <a [routerLink]="item.path" class="menu-top">
+                <i class="material-icons-outlined">{{ item.icon }}</i>
+                <span class="hide-menu">{{ primaryWorkspace.translate(item.title) }}</span>
+              </a>
+            </li>
+          }
           } @else if (isPrimaryWorkspace || isInstituteWorkspace) {
           @if (isPrimaryWorkspace) {
           <li>
@@ -50,7 +60,7 @@
           </li>
           }
           @for (sidebarItem of sidebarItems; track sidebarItem.title) {
-          @if (isWorkspaceItemVisible(sidebarItem.workspaceView)) {
+          @if (isWorkspaceItemVisible(sidebarItem.workspaceView) && (!sidebarItem.personnelOnly || isPersonnelUser()) && (!sidebarItem.pointageEligibleOnly || isPointageEligibleUser())) {
           <li [class.active-top]="isPrimaryWorkspace ? isPrimaryViewActive(sidebarItem.workspaceView) : isInstituteViewActive(sidebarItem.workspaceView)">
             @if (sidebarItem.groupTitle === true) {
             <div class="header">{{ primaryWorkspace.translate(sidebarItem.title) }}</div>

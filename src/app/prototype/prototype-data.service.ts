@@ -23,7 +23,7 @@ export interface WebsiteMedia {
   id: string;
   name: string;
   url: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'pdf';
   source?: 'local' | 'external';
   embedUrl?: string;
   alt?: string;
@@ -40,6 +40,8 @@ export interface WebsiteSectionItem {
   icon?: string;
   meta?: string;
   imageId?: string | null;
+  /** Pièce jointe PDF associée à une actualité. */
+  attachmentId?: string | null;
   linkLabel?: string;
   linkUrl?: string;
 }

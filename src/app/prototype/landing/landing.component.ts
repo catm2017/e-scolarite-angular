@@ -32,6 +32,10 @@ export class LandingComponent implements OnInit {
     { code: 'gestion_emplois_temps', title: 'Gestion des emplois du temps', image: 'Timetable Management.svg', text: 'Réunissez les matières, les enseignants et les salles.' },
     { code: 'gestion_suivi_programme_cahier_texte', title: 'Programmes et cahier de texte', image: 'Lesson Management.svg', text: 'Préparez les leçons et suivez la progression des apprentissages.' },
     { code: 'gestion_presences', title: 'Gestion des présences', image: 'Attendance Management.svg', text: 'Suivez les présences des élèves et de vos équipes.' },
+    { code: 'gestion_pointages', title: 'Pointage du personnel', image: 'Attendance Management.svg', text: 'Enregistrez les heures d’entrée et de sortie grâce au QR code de votre institut.' },
+    { code: 'gestion_suivi_coran', title: 'Suivi coranique', image: 'Lesson Management.svg', text: 'Suivez la progression de chaque apprenant dans sa mémorisation du Coran.' },
+    { code: 'gestion_lecons_coraniques', title: 'Leçons coraniques', image: 'Assignment Management.svg', text: 'Affectez des passages à réciter et gardez un historique clair des apprentissages.' },
+    { code: 'gestion_revisions_coraniques', title: 'Révisions coraniques', image: 'Assignment Management.svg', text: 'Organisez les révisions et accompagnez durablement les acquis des apprenants.' },
     { code: 'gestion_evaluations', title: 'Gestion des évaluations', image: 'Exam Management.svg', text: 'Organisez les devoirs, les compositions et leurs résultats.' },
     { code: 'gestion_finance', title: 'Gestion des finances', image: 'Fees Management.svg', text: 'Gardez une vue claire sur les encaissements et les dépenses.' },
     { code: 'gestion_site_web', title: 'Gestion du site web', image: 'Website Management.svg', text: 'Créez un site à l’image de votre institut, simplement.' },
@@ -39,6 +43,7 @@ export class LandingComponent implements OnInit {
     { code: 'gestion_seances', title: 'Gestion des séances', image: 'Session Year Management.svg', text: 'Générez les séances et renseignez le cahier de texte.' },
     { code: 'gestion_matieres', title: 'Gestion des matières', image: 'Academics Management.svg', text: 'Adaptez les matières et les barèmes à chaque enseignement.' },
     { code: 'gestion_inscriptions_reinscriptions', title: 'Inscriptions et réinscriptions', image: 'Student Management.svg', text: 'Accompagnez le parcours des élèves d’une année à l’autre.' },
+    { code: 'gestion_admissions_institut', title: 'Admissions en ligne', image: 'Announcement Management.svg', text: 'Recevez et traitez les demandes d’admission directement depuis votre site.' },
   ];
   readonly visibleFeatures = computed(() => this.allFeaturesVisible() ? this.features : this.features.slice(0, 9));
   // Le comparatif utilise exclusivement les fonctionnalités des offres publiées.
@@ -91,6 +96,9 @@ export class LandingComponent implements OnInit {
       gestion_finances: 'Gestion des finances', gestion_site: 'Gestion du site web',
       gestion_transferts_eleves: 'Transferts des élèves', gestion_utilisateurs: 'Gestion des utilisateurs',
       gestion_roles_permissions: 'Rôles et permissions', gestion_tracabilite: 'Journal d’activité',
+      gestion_pointages: 'Pointage du personnel', gestion_suivi_coran: 'Suivi coranique',
+      gestion_lecons_coraniques: 'Leçons coraniques', gestion_revisions_coraniques: 'Révisions coraniques',
+      gestion_admissions_institut: 'Admissions en ligne',
     };
     return labels[code] ?? code.replace(/^gestion_/, '').replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
   }

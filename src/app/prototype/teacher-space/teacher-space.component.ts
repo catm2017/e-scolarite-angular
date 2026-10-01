@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormsModule } from '@angular/forms';
@@ -9,9 +9,10 @@ import { ColumnDefinition, MasterTableComponent } from '../../shared/components/
 import { QuranFollowupComponent } from '../daara/quran-followup.component';
 import { QuranLessonsComponent } from '../daara/quran-lessons.component';
 
-type VueEnseignant = 'espaces' | 'tableau-de-bord' | 'emploi-du-temps' | 'eleves' | 'eleve-dossier' | 'classes' | 'classe-matiere' | 'programmes' | 'seances' | 'seance-detail' | 'evaluations' | 'evaluation-detail' | 'quran-followup' | 'quran-lesson-history' | 'quran-mouradja' | 'dossier';
+type VueEnseignant = 'espaces' | 'tableau-de-bord' | 'emploi-du-temps' | 'pointage' | 'eleves' | 'eleve-dossier' | 'classes' | 'classe-matiere' | 'programmes' | 'seances' | 'seance-detail' | 'evaluations' | 'evaluation-detail' | 'quran-followup' | 'quran-lesson-history' | 'quran-mouradja' | 'dossier';
 type OngletDossier = 'profil' | 'enseignements' | 'emploi-temps' | 'remuneration';
 type TypeEvaluation = 'devoir' | 'controle' | 'essai' | 'formative' | 'composition';
+type PointageAvecHeures = { date_pointage: string; heure_entree_at: string | null; heure_sortie_at: string | null };
 
 @Component({
   selector: 'app-teacher-space',
@@ -21,7 +22,7 @@ type TypeEvaluation = 'devoir' | 'controle' | 'essai' | 'formative' | 'compositi
   styleUrl: './teacher-space.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TeacherSpaceComponent implements OnInit {
+export class TeacherSpaceComponent implements OnInit, OnDestroy {
   private readonly api = inject(CentralApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -76,11 +77,23 @@ export class TeacherSpaceComponent implements OnInit {
   readonly enregistrementResultats = signal(false);
   readonly erreurEvaluationDetail = signal<string | null>(null);
   readonly evaluationResultsSource = new MatTableDataSource<any>([]);
+  readonly pointageJeton = signal('');
+  readonly pointageEnvoi = signal(false);
+  readonly pointageMessage = signal<string | null>(null);
+  readonly pointageErreur = signal<string | null>(null);
+  readonly pointageScannerActif = signal(false);
+  readonly pointageScannerErreur = signal<string | null>(null);
+  readonly sortieDisponibleDansSecondes = signal(0);
+  @ViewChild('pointageVideo') private pointageVideo?: ElementRef<HTMLVideoElement>;
+  private pointageFlux: MediaStream | null = null;
+  private pointageScanTimer: number | null = null;
+  private sortieTimer: number | null = null;
 
   readonly menu: Array<{ id: VueEnseignant; label: string; icon: string }> = [
     { id: 'espaces', label: 'Mes espaces de travail', icon: 'domain' },
     { id: 'tableau-de-bord', label: 'Tableau de bord', icon: 'dashboard' },
     { id: 'emploi-du-temps', label: 'Mon emploi du temps', icon: 'calendar_month' },
+    { id: 'pointage', label: 'Mon pointage', icon: 'qr_code_scanner' },
     { id: 'eleves', label: 'Élèves de mes groupes', icon: 'groups' },
     { id: 'classes', label: 'Mes classes & matières', icon: 'groups' },
     { id: 'seances', label: 'Séances & cahier de texte', icon: 'event_note' },
@@ -203,6 +216,7 @@ export class TeacherSpaceComponent implements OnInit {
     this.api.espaceEnseignant(contexteMemorise).subscribe({
       next: ({ data }) => {
         this.espace.set(data);
+        this.actualiserDelaiSortie(data.pointages);
         this.api.memoriserRattachementsEnseignant(data.rattachements);
         this.affectationsSource.data = data.affectations;
         this.groupeActif.set('tous');
@@ -233,6 +247,73 @@ export class TeacherSpaceComponent implements OnInit {
   }
 
   ouvrir(vue: VueEnseignant): void { this.router.navigate(['/enseignant', vue]); }
+  private actualiserDelaiSortie(pointages: PointageAvecHeures[]): void {
+    if (this.sortieTimer !== null) window.clearInterval(this.sortieTimer);
+    const aujourdHui = this.dateLocale();
+    const ouvert = pointages.find((pointage) => pointage.date_pointage === aujourdHui && pointage.heure_entree_at && !pointage.heure_sortie_at);
+    if (!ouvert?.heure_entree_at) { this.sortieDisponibleDansSecondes.set(0); return; }
+    const entree = new Date(ouvert.heure_entree_at.replace(' ', 'T')).getTime();
+    const sortiePossibleAt = entree + 15 * 60 * 1000;
+    const actualiser = (): void => {
+      const secondes = Math.max(0, Math.ceil((sortiePossibleAt - Date.now()) / 1000));
+      this.sortieDisponibleDansSecondes.set(secondes);
+      if (secondes === 0 && this.sortieTimer !== null) { window.clearInterval(this.sortieTimer); this.sortieTimer = null; }
+    };
+    actualiser();
+    if (this.sortieDisponibleDansSecondes() > 0) this.sortieTimer = window.setInterval(actualiser, 1000);
+  }
+  private dateLocale(): string {
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  formatCompteRebours(secondes: number): string {
+    return `${String(Math.floor(secondes / 60)).padStart(2, '0')}:${String(secondes % 60).padStart(2, '0')}`;
+  }
+  enregistrerPointage(): void {
+    const jeton = this.pointageJeton().trim();
+    if (!jeton || this.pointageEnvoi()) return;
+    this.pointageEnvoi.set(true); this.pointageMessage.set(null); this.pointageErreur.set(null);
+    this.api.scannerPointage(jeton).subscribe({
+      next: (result) => { this.pointageEnvoi.set(false); this.arreterScanner(); this.pointageJeton.set(''); this.pointageMessage.set(`${result.message} à ${result.heure} · ${result.borne}`); this.charger(); },
+      error: (response) => { this.pointageEnvoi.set(false); this.pointageErreur.set(response.error?.message ?? 'Le pointage n’a pas pu être enregistré.'); },
+    });
+  }
+  demarrerScanner(): void {
+    this.pointageScannerErreur.set(null);
+    const BarcodeDetectorCtor = (window as unknown as { BarcodeDetector?: new (options?: { formats: string[] }) => { detect(video: HTMLVideoElement): Promise<Array<{ rawValue?: string }>> } }).BarcodeDetector;
+    if (!BarcodeDetectorCtor || !navigator.mediaDevices?.getUserMedia) {
+      this.pointageScannerErreur.set('La lecture QR automatique n’est pas prise en charge par ce navigateur. Utilisez un appareil ou un navigateur compatible.');
+      return;
+    }
+    this.pointageScannerActif.set(true);
+    setTimeout(() => {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then((flux) => {
+        this.pointageFlux = flux;
+        const video = this.pointageVideo?.nativeElement;
+        if (!video) return;
+        video.srcObject = flux;
+        void video.play();
+        const detector = new BarcodeDetectorCtor({ formats: ['qr_code'] });
+        const lire = (): void => {
+          if (!this.pointageScannerActif() || !this.pointageVideo?.nativeElement) return;
+          detector.detect(this.pointageVideo.nativeElement).then((codes) => {
+            const valeur = codes[0]?.rawValue?.trim();
+            if (valeur) { this.pointageJeton.set(valeur); this.arreterScanner(); this.enregistrerPointage(); return; }
+            this.pointageScanTimer = window.setTimeout(lire, 250);
+          }).catch(() => { this.pointageScanTimer = window.setTimeout(lire, 500); });
+        };
+        lire();
+      }).catch(() => { this.pointageScannerActif.set(false); this.pointageScannerErreur.set('La caméra n’a pas pu être ouverte. Vérifiez l’autorisation du navigateur.'); });
+    });
+  }
+  arreterScanner(): void {
+    this.pointageScannerActif.set(false);
+    if (this.pointageScanTimer !== null) { window.clearTimeout(this.pointageScanTimer); this.pointageScanTimer = null; }
+    this.pointageFlux?.getTracks().forEach((track) => track.stop());
+    this.pointageFlux = null;
+    if (this.pointageVideo?.nativeElement) this.pointageVideo.nativeElement.srcObject = null;
+  }
+  ngOnDestroy(): void { this.arreterScanner(); if (this.sortieTimer !== null) window.clearInterval(this.sortieTimer); }
   choisirGroupeEleves(groupe: string): void {
     this.groupeActif.set(groupe);
     const eleves = this.espace()?.eleves_groupes ?? [];

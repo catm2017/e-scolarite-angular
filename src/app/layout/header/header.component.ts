@@ -83,6 +83,7 @@ export class HeaderComponent
   isEstablishmentWorkspace = false;
   isInstituteWorkspace = false;
   isTeacherWorkspace = false;
+  isFamilyWorkspace = false;
   isSaasWorkspace = false;
   workspaceUserName = '';
   workspaceInstituteName = '';
@@ -174,6 +175,7 @@ export class HeaderComponent
     const path = this.router.url.split('?')[0].split('#')[0];
     this.isSaasWorkspace = path === '/saas' || path.startsWith('/saas/');
     this.isTeacherWorkspace = path === '/enseignant' || path.startsWith('/enseignant/');
+    this.isFamilyWorkspace = path === '/famille' || path.startsWith('/famille/');
     this.isEstablishmentWorkspace = path.startsWith('/institut/etablissements/');
     this.isInstituteWorkspace = path.startsWith('/institut')
       && !this.isEstablishmentWorkspace
@@ -189,6 +191,8 @@ export class HeaderComponent
       this.homePage = '/institut';
     } else if (this.isTeacherWorkspace) {
       this.homePage = '/enseignant';
+    } else if (this.isFamilyWorkspace) {
+      this.homePage = '/famille';
     } else if (userRole === Role.Admin) {
       this.homePage = 'admin/dashboard/main';
     } else if (userRole === Role.Teacher) {
@@ -205,8 +209,11 @@ export class HeaderComponent
     const institut = this.centralApi.institutActuel();
     this.workspaceUserName = user ? `${user.prenom} ${user.nom}`.trim() : '';
     this.workspaceInstituteName = institut?.nom ?? '';
-    if (this.workspaceUserName && (this.isInstituteWorkspace || this.isEstablishmentWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace)) {
+    if (this.workspaceUserName && (this.isInstituteWorkspace || this.isEstablishmentWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace || this.isFamilyWorkspace)) {
       this.userImg = user?.photo_url || './assets/images/user/admin.jpg';
+    }
+    if (this.isFamilyWorkspace) {
+      this.workspaceInstituteName = institut?.nom ?? 'E-Scolarité';
     }
   }
 
@@ -288,7 +295,7 @@ export class HeaderComponent
   }
 
   logout() {
-    if (this.isSaasWorkspace || this.isInstituteWorkspace || this.isEstablishmentWorkspace || this.isTeacherWorkspace) {
+    if (this.isSaasWorkspace || this.isInstituteWorkspace || this.isEstablishmentWorkspace || this.isTeacherWorkspace || this.isFamilyWorkspace) {
       const finish = () => {
         this.centralApi.effacerSession();
         void this.router.navigateByUrl('/connexion');
@@ -348,6 +355,7 @@ export class HeaderComponent
   onAccountClicked() {
     if (this.isSaasWorkspace) this.router.navigate(['/saas/profil']);
     else if (this.isTeacherWorkspace) this.router.navigate(['/enseignant/profil']);
+    else if (this.isFamilyWorkspace) this.router.navigate(['/famille/profil']);
     else if (this.isInstituteWorkspace || this.isEstablishmentWorkspace) this.router.navigate(['/institut/profil']);
     else this.router.navigate(['/connexion']);
   }

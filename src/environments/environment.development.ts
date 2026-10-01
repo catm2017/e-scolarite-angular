@@ -6,6 +6,7 @@ export const environment = {
   // En développement, l'API passe par le proxy Angular. Cela évite le délai
   // macOS lié à la résolution des domaines en `.local` à chaque requête.
   apiUrl: '/api',
+  publicUrl: 'http://e-scolarite.local',
 };
 
 /*

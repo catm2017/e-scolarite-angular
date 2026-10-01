@@ -121,12 +121,12 @@ const FONCTIONNALITE_PAR_VUE: Partial<Record<PrimaryView, string>> = {
   expenses: 'gestion_finances',
   finance: 'gestion_finances',
   'daara-transfers': 'gestion_eleves',
-  'daara-groups': 'gestion_eleves',
-  'daara-teacher-groups': 'gestion_enseignants',
+  'daara-groups': 'gestion_groupes_daara',
+  'daara-teacher-groups': 'gestion_affectations_enseignants_daara',
   'quran-followup': 'gestion_suivi_coran',
-  'quran-lessons': 'gestion_suivi_coran',
-  'quran-lesson-history': 'gestion_suivi_coran',
-  'quran-mouradja': 'gestion_suivi_coran',
+  'quran-lessons': 'gestion_lecons_coraniques',
+  'quran-lesson-history': 'gestion_lecons_coraniques',
+  'quran-mouradja': 'gestion_revisions_coraniques',
 };
 
 @Injectable({ providedIn: 'root' })

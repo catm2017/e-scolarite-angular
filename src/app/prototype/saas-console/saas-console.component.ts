@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, effect, computed, inject, signal } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe, UpperCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -23,13 +23,14 @@ import {
   InstitutActivationCompte,
   TarificationFonctionnalite,
   TypeEtablissementCatalogue,
+  TraceSaas,
 } from '../central-api.service';
 
 type DemandeAdhesionForm = Pick<DemandeAdhesion, 'nom_institut' | 'ville' | 'adresse' | 'prenom_responsable' | 'nom_responsable' | 'identifiant_responsable' | 'telephone_responsable' | 'effectif_estime' | 'message'> & { types_etablissements: string[] };
 
 @Component({
   selector: 'app-saas-console',
-  imports: [RouterLink, DecimalPipe, DatePipe, FormsModule, MasterTableComponent, MatButtonModule, MatIconModule, MatInputModule, MatSelectModule, MatCheckboxModule],
+  imports: [RouterLink, DecimalPipe, DatePipe, UpperCasePipe, FormsModule, MasterTableComponent, MatButtonModule, MatIconModule, MatInputModule, MatSelectModule, MatCheckboxModule],
   templateUrl: './saas-console.component.html',
   styleUrl: './saas-console.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,7 +39,7 @@ export class SaasConsoleComponent implements OnInit {
   private readonly api = inject(CentralApiService);
   private readonly router = inject(Router);
 
-  readonly activeView = signal<'dashboard' | 'pricing' | 'schools' | 'adhesions' | 'account-activations' | 'academic-years' | 'subscription-invoices' | 'subscription-history'>('dashboard');
+  readonly activeView = signal<'dashboard' | 'pricing' | 'schools' | 'adhesions' | 'account-activations' | 'academic-years' | 'subscription-invoices' | 'subscription-history' | 'activity-log'>('dashboard');
   readonly demandes = signal<DemandeAdhesion[]>([]);
   readonly traitementId = signal<string | null>(null);
   readonly erreur = signal<string | null>(null);
@@ -105,9 +106,24 @@ export class SaasConsoleComponent implements OnInit {
   readonly facturesSouscriptionsSource = new MatTableDataSource<FactureSouscriptionSaas & { etat_paiement: string }>();
   readonly factureARegler = signal<FactureSouscriptionSaas | null>(null);
   readonly reglementFactureEnCours = signal(false);
+  readonly traces = signal<TraceSaas[]>([]);
+  readonly tracesSource = new MatTableDataSource<TraceSaas>();
+  readonly traceDetail = signal<TraceSaas | null>(null);
+  readonly tracesChargement = signal(false);
+  readonly traceMeta = signal({ page: 1, par_page: 25, total: 0, dernier_page: 1 });
+  readonly traceFiltres = signal<{ instituts: Array<{ id: string; nom: string }>; modules: string[]; actions: string[] }>({ instituts: [], modules: [], actions: [] });
+  readonly traceRecherche = signal('');
+  readonly traceInstitut = signal('');
+  readonly traceModule = signal('');
+  readonly traceAction = signal('');
+  readonly traceSource = signal('');
+  readonly traceStatut = signal('');
+  readonly traceGravite = signal('');
+  readonly traceDateDebut = signal('');
+  readonly traceDateFin = signal('');
   readonly pageTitle = computed(() => ({
     dashboard: 'Vue d’ensemble', pricing: 'Tarification et packages', schools: 'Instituts',
-    adhesions: 'Demandes d’adhésion', 'account-activations': 'Activations de comptes', 'academic-years': 'Années scolaires', 'subscription-invoices': 'Factures de souscription', 'subscription-history': 'Historique des abonnements',
+    adhesions: 'Demandes d’adhésion', 'account-activations': 'Activations de comptes', 'academic-years': 'Années scolaires', 'subscription-invoices': 'Factures de souscription', 'subscription-history': 'Historique des abonnements', 'activity-log': 'Traçabilité globale',
   })[this.activeView()]);
   private columns(items: [string, string, ColumnDefinition['type']][]): ColumnDefinition[] {
     return items.map(([def, label, type]) => ({ def, label, type, visible: true, sortable: type !== 'actionBtn' }));
@@ -159,6 +175,16 @@ export class SaasConsoleComponent implements OnInit {
     { def: 'etat_paiement', label: 'État', type: 'status', visible: true, sortable: true, statusBadgeMap: { Payé: 'badge badge-solid-green', 'À régler': 'badge badge-solid-red' } },
     { def: 'actions', label: 'Actions', type: 'actionBtn', visible: true, sortable: false },
   ];
+  readonly tracesColumns: ColumnDefinition[] = [
+    { def: 'survenu_at', label: 'Date', type: 'date', visible: true, sortable: true },
+    { def: 'institut', label: 'Institut', type: 'text', visible: true, sortable: true },
+    { def: 'utilisateur', label: 'Utilisateur', type: 'text', visible: true, sortable: true },
+    { def: 'module', label: 'Module', type: 'text', visible: true, sortable: true },
+    { def: 'action', label: 'Action', type: 'text', visible: true, sortable: true },
+    { def: 'statut', label: 'Résultat', type: 'status', visible: true, sortable: true, statusBadgeMap: { reussi: 'badge badge-solid-green', réussi: 'badge badge-solid-green', echec: 'badge badge-solid-red', échec: 'badge badge-solid-red' } },
+    { def: 'gravite', label: 'Gravité', type: 'status', visible: true, sortable: true, statusBadgeMap: { normale: 'badge badge-solid-blue', importante: 'badge badge-solid-orange', critique: 'badge badge-solid-red' } },
+    { def: 'actions', label: 'Détails', type: 'actionBtn', visible: true, sortable: false },
+  ];
   constructor() {
     effect(() => { this.tarifsSource.data = this.fonctionnalitesFiltrees(); });
     effect(() => {
@@ -180,6 +206,7 @@ export class SaasConsoleComponent implements OnInit {
       ...facture,
       etat_paiement: facture.statut === 'reglee' ? 'Payé' : 'À régler',
     })); });
+    effect(() => { this.tracesSource.data = this.traces(); });
   }
   modifierTarif(item: TarificationFonctionnalite): void {
     this.tarifEnEdition.set({ ...item });
@@ -188,14 +215,14 @@ export class SaasConsoleComponent implements OnInit {
 
   setView(view: string): void {
     const paths: Record<string, string> = { dashboard: 'tableau-de-bord', pricing: 'tarification',
-      schools: 'etablissements', adhesions: 'adhesions', 'account-activations': 'activations-comptes', 'academic-years': 'annees-scolaires', 'subscription-invoices': 'factures-souscriptions', 'subscription-history': 'abonnements' };
+      schools: 'etablissements', adhesions: 'adhesions', 'account-activations': 'activations-comptes', 'academic-years': 'annees-scolaires', 'subscription-invoices': 'factures-souscriptions', 'subscription-history': 'abonnements', 'activity-log': 'tracabilite' };
     void this.router.navigate(['/saas', paths[view] ?? 'tableau-de-bord']);
   }
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const views = { 'tableau-de-bord': 'dashboard', tarification: 'pricing', etablissements: 'schools',
-        adhesions: 'adhesions', 'activations-comptes': 'account-activations', 'annees-scolaires': 'academic-years', 'factures-souscriptions': 'subscription-invoices', abonnements: 'subscription-history' } as const;
+        adhesions: 'adhesions', 'activations-comptes': 'account-activations', 'annees-scolaires': 'academic-years', 'factures-souscriptions': 'subscription-invoices', abonnements: 'subscription-history', tracabilite: 'activity-log' } as const;
       this.activeView.set(views[params.get('vue') as keyof typeof views] ?? 'dashboard');
     });
 
@@ -242,6 +269,44 @@ export class SaasConsoleComponent implements OnInit {
       next: ({ data }) => this.facturesSouscriptions.set(data.data),
       error: (error) => this.gererSessionExpiree(error),
     });
+    if (this.activeView() === 'activity-log') this.chargerTracabilite();
+  }
+
+  chargerTracabilite(page = this.traceMeta().page): void {
+    this.tracesChargement.set(true);
+    this.api.invaliderCache('centrale:tracabilite:');
+    this.api.tracabiliteSaas({
+      q: this.traceRecherche(), institut_id: this.traceInstitut(), module: this.traceModule(), action: this.traceAction(),
+      source: this.traceSource(), statut: this.traceStatut(), gravite: this.traceGravite(),
+      date_debut: this.traceDateDebut(), date_fin: this.traceDateFin(), page, par_page: this.traceMeta().par_page,
+    }).subscribe({
+      next: (reponse) => { this.traces.set(reponse.data); this.traceMeta.set(reponse.meta); if (reponse.filtres) this.traceFiltres.set(reponse.filtres); this.tracesChargement.set(false); },
+      error: (error) => { this.tracesChargement.set(false); this.gererSessionExpiree(error); },
+    });
+  }
+
+  reinitialiserFiltresTracabilite(): void {
+    this.traceRecherche.set(''); this.traceInstitut.set(''); this.traceModule.set(''); this.traceAction.set('');
+    this.traceSource.set(''); this.traceStatut.set(''); this.traceGravite.set(''); this.traceDateDebut.set(''); this.traceDateFin.set('');
+    this.chargerTracabilite(1);
+  }
+
+  pageTracabilite(delta: number): void {
+    const meta = this.traceMeta();
+    const page = Math.max(1, Math.min(meta.dernier_page, meta.page + delta));
+    if (page !== meta.page) this.chargerTracabilite(page);
+  }
+
+  ouvrirTrace(trace: TraceSaas): void {
+    this.api.detailTracabiliteSaas(trace.id, trace.source).subscribe({
+      next: ({ data }) => this.traceDetail.set(data),
+      error: () => this.traceDetail.set(trace),
+    });
+  }
+
+  formaterDonneesTrace(valeur: unknown): string {
+    if (valeur === null || valeur === undefined) return 'Aucune donnée';
+    try { return JSON.stringify(valeur, null, 2); } catch { return String(valeur); }
   }
 
   reglerFactureSouscription(facture: FactureSouscriptionSaas): void {

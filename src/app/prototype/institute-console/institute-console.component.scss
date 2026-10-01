@@ -1,1 +1,70 @@
 /* Styles mutualisés : src/styles/prototype/_institute-console.scss. */
+/* Pointage QR : une présentation compacte et lisible sur desktop comme mobile. */
+.pointage-metrics { margin-bottom: 18px; }
+.pointage-metrics article,
+.pointage-filters-card,
+.pointage-table-card,
+.pointage-borne-card { min-width: 0; }
+.pointage-filters-card,
+.pointage-table-card,
+.pointage-borne-card { margin-top: 18px; }
+.pointage-filters-card,
+.pointage-borne-card { padding: clamp(16px, 2.2vw, 24px); overflow: hidden; }
+.pointage-filter-grid,
+.pointage-borne-form { width: 100%; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: end; }
+.pointage-filter-grid label,
+.pointage-borne-form label { min-width: 0; display: grid; gap: 7px; color: #52627d; font-size: 13px; font-weight: 700; }
+.pointage-filter-grid input,
+.pointage-filter-grid select,
+.pointage-borne-form input,
+.pointage-borne-form select { width: 100%; min-width: 0; max-width: 100%; min-height: 42px; box-sizing: border-box; border: 1px solid #dce5f4; border-radius: 10px; padding: 0 12px; background: #fff; color: #172b4d; font: inherit; font-weight: 500; }
+.pointage-filter-grid select,
+.pointage-borne-form select { text-overflow: ellipsis; }
+.pointage-filter-grid input::placeholder,
+.pointage-borne-form input::placeholder { color: #99a7ba; }
+.pointage-filters-card > .link-button { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; margin-top: 18px; white-space: normal; }
+.pointage-filters-card > .link-button i,
+.pointage-borne-card i,
+.pointage-metrics i,
+.pointage-table-card i { font-family: 'Material Icons Outlined', 'Material Icons'; font-style: normal; font-weight: normal; line-height: 1; }
+.pointage-borne-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.pointage-borne-card > header h2 { margin: 0 0 5px; }
+.pointage-borne-card > header p { max-width: 680px; margin: 0; color: #73809a; line-height: 1.5; }
+.pointage-borne-card > header > i { flex: 0 0 auto; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #eaf4ff; color: #2f80ed; font-size: 24px; }
+.pointage-borne-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+.pointage-borne-form button { min-width: 0; white-space: nowrap; }
+.pointage-borne-list { display: grid; gap: 9px; margin-top: 18px; }
+.pointage-borne-list article { min-width: 0; display: flex; align-items: center; gap: 12px; padding: 11px 13px; border: 1px solid #e5ebf5; border-radius: 12px; }
+.pointage-borne-list article > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #e8f2ff; color: #1769c2; }
+.pointage-borne-list article > div { min-width: 0; display: grid; flex: 1; gap: 3px; }
+.pointage-borne-list article strong,
+.pointage-borne-list article small { overflow-wrap: anywhere; }
+.pointage-borne-list article small { color: #75829b; }
+.pointage-borne-list article button { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; border: 0; background: transparent; color: #1769c2; font-weight: 700; cursor: pointer; }
+.pointage-borne-list article .pointage-borne-actions { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; gap: 10px; }
+.pointage-borne-list article .pointage-borne-actions .secondary-action { min-height: 34px; padding: 0 10px; border: 1px solid #d9e5f4; border-radius: 8px; background: #f7fbff; }
+.pointage-token { display: grid; gap: 7px; margin-top: 16px; padding: 13px; background: #f3f7fd; border: 1px dashed #a8c4e8; border-radius: 10px; }
+.pointage-token code { overflow-wrap: anywhere; font-size: 12px; color: #163c72; }
+.pointage-token small { color: #667590; }
+.pointage-qr-preview { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); align-items: center; gap: clamp(20px, 4vw, 42px); margin-top: 22px; padding: clamp(16px, 2.5vw, 24px); border: 1px solid #dbe9f7; border-radius: 16px; background: linear-gradient(135deg, #f7fbff 0%, #edf5ff 100%); }
+.pointage-qr-image-wrap { min-height: 250px; display: grid; place-items: center; border-radius: 14px; background: #fff; box-shadow: 0 9px 22px rgba(27, 82, 132, .12); }
+.pointage-qr-image-wrap img { display: block; width: min(100%, 280px); aspect-ratio: 1; height: auto; padding: 8px; object-fit: contain; }
+.pointage-qr-loading { display: inline-flex; align-items: center; gap: 8px; color: #54708b; font-size: 13px; font-weight: 700; }
+.pointage-qr-loading i { animation: pointage-qr-spin .9s linear infinite; }
+.pointage-qr-copy { min-width: 0; }
+.pointage-qr-kicker { color: #2f80ed; font-size: 11px; font-weight: 900; letter-spacing: .12em; }
+.pointage-qr-copy h3 { margin: 7px 0 4px; color: #183e62; font-size: 20px; }
+.pointage-qr-copy p { margin: 0 0 9px; color: #54708b; font-weight: 700; }
+.pointage-qr-copy > small { display: block; max-width: 540px; color: #71859a; line-height: 1.55; }
+.pointage-qr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+.pointage-qr-actions .secondary-action,
+.pointage-qr-actions .primary-action { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; text-decoration: none; }
+.pointage-qr-actions .secondary-action { border: 1px solid #c9dced; border-radius: 9px; color: #286291; background: #fff; font-weight: 800; }
+.pointage-qr-actions .secondary-action.disabled { opacity: .5; pointer-events: none; }
+.pointage-qr-copy details { margin-top: 16px; color: #73869a; font-size: 11px; }
+.pointage-qr-copy summary { cursor: pointer; font-weight: 700; }
+.pointage-qr-copy details code { display: block; max-width: 680px; margin-top: 7px; overflow-wrap: anywhere; color: #365b7a; }
+@keyframes pointage-qr-spin { to { transform: rotate(360deg); } }
+@media (max-width: 900px) { .pointage-filter-grid, .pointage-borne-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pointage-borne-form button { grid-column: 1 / -1; justify-self: start; } }
+@media (max-width: 700px) { .pointage-qr-preview { grid-template-columns: 1fr; gap: 18px; } .pointage-qr-image-wrap { min-height: 0; padding: 14px; } .pointage-qr-image-wrap img { width: min(100%, 240px); } }
+@media (max-width: 600px) { .pointage-filters-card, .pointage-borne-card { padding: 15px; } .pointage-filter-grid, .pointage-borne-form { grid-template-columns: 1fr; gap: 12px; } .pointage-borne-form button { grid-column: auto; width: 100%; } .pointage-borne-card > header { gap: 10px; } .pointage-borne-card > header > i { width: 38px; height: 38px; font-size: 21px; } .pointage-borne-list article { align-items: flex-start; flex-wrap: wrap; } .pointage-borne-list article .pointage-borne-actions { width: 100%; margin-left: 50px; justify-content: flex-start; } }

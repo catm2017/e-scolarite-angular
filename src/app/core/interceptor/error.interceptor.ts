@@ -22,11 +22,18 @@ export const errorInterceptor: HttpInterceptorFn = (
         const authorization = req.headers.get('Authorization');
         const tokenDeLaRequete = authorization?.replace(/^Bearer\s+/i, '').trim();
         const tokenActif = localStorage.getItem('escolarite_centrale_token');
+        const requeteInstitut = /\/api\/institut(?:\/|$)/i.test(req.url);
+        const contexteInstitut = Boolean(localStorage.getItem('escolarite_institut'));
+        const routeInstitut = /^\/(institut|enseignant|famille)(?:\/|$)/i.test(router.url);
         // Une réponse 401 d'une requête lancée *avant* une nouvelle connexion
         // ne doit jamais effacer le jeton qui vient d'être créé. Cela arrivait
         // notamment au premier accès au back-office après une reconnexion.
         const concerneLaSessionActive = Boolean(tokenDeLaRequete && tokenDeLaRequete === tokenActif);
-        if (!isExternalAiApi && !isLoginRequest && concerneLaSessionActive) {
+        // Une requête institut résiduelle peut encore terminer après une
+        // connexion SaaS. Elle reçoit légitimement 401 (un jeton central n'est
+        // pas un jeton institut), mais ne doit jamais effacer la session SaaS.
+        const doitTerminerSession = !requeteInstitut || (contexteInstitut && routeInstitut);
+        if (!isExternalAiApi && !isLoginRequest && concerneLaSessionActive && doitTerminerSession) {
           // Une session API expirée est supprimée localement avant de revenir
           // à l'écran de connexion. Aucun nouvel appel de déconnexion n'est
           // lancé afin d'éviter une boucle sur une session déjà invalide.

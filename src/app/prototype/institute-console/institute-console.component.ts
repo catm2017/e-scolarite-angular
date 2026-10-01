@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
@@ -11,11 +11,13 @@ import {
   InstituteWorkspaceService,
 } from './institute-workspace.service';
 import { PrimaryWorkspaceService } from '../primary-school/primary-workspace.service';
-import { CampusInstitut, CentralApiService, CompteCandidatInstitut, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TableauBordInstitutApi, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
+import { BornePointageInstitutApi, CampusInstitut, CentralApiService, CompteCandidatInstitut, DossierTuteurInstitutApi, EnfantDossierTuteurInstitutApi, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, PointageInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TableauBordInstitutApi, TuteurEtablissementApi, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
 import { TemplateMultiselectDirective } from '@shared/directives/template-multiselect.directive';
 import { StudentTransfersComponent } from './student-transfers/student-transfers.component';
 import { AdmissionsInstitutComponent } from './admissions-institut/admissions-institut.component';
+import QRCode from 'qrcode';
+import { environment } from '../../../environments/environment';
 
 interface Establishment {
   id: string | null;
@@ -67,6 +69,7 @@ interface InstituteDirectoryRow {
   lastName?: string;
   email?: string;
   phone?: string;
+  secondaryPhone?: string;
   address?: string;
   gender?: 'F' | 'M';
   birthDate?: string;
@@ -85,11 +88,15 @@ interface InstituteDirectoryRow {
   function?: string;
   subject?: string;
   establishment?: string;
+  typeEtablissement?: string;
+  classe?: string;
+  anneeScolaire?: string;
   scope?: string;
   campus?: string;
   status: string;
   campusIds?: string[];
   establishmentIds?: string[];
+  numberOfChildren?: number;
 }
 
 interface CompteCandidatRow extends InstituteDirectoryRow {
@@ -159,7 +166,7 @@ interface InstituteRole {
 
 @Component({
   selector: 'app-institute-console',
-  imports: [RouterLink, BreadcrumbComponent, FormsModule, MasterTableComponent, DecimalPipe, TemplateMultiselectDirective, StudentTransfersComponent, AdmissionsInstitutComponent],
+  imports: [RouterLink, BreadcrumbComponent, FormsModule, MasterTableComponent, DatePipe, DecimalPipe, TemplateMultiselectDirective, StudentTransfersComponent, AdmissionsInstitutComponent],
   templateUrl: './institute-console.component.html',
   styleUrl: './institute-console.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -227,6 +234,40 @@ export class InstituteConsoleComponent implements OnInit {
   ];
 
   readonly campuses = signal<Campus[]>([]);
+  readonly pointages = signal<PointageInstitutApi[]>([]);
+  readonly bornesPointage = signal<BornePointageInstitutApi[]>([]);
+  readonly pointagesLoading = signal(false);
+  readonly pointagesError = signal<string | null>(null);
+  readonly pointagesResume = signal({ total: 0, complets: 0, incomplets: 0, en_attente: 0, enseignants: 0, personnels: 0 });
+  readonly pointageFilterCampus = signal('');
+  readonly pointageFilterEtablissement = signal('');
+  readonly pointageFilterProfil = signal('');
+  readonly pointageFilterStatut = signal('');
+  readonly pointageFilterRecherche = signal('');
+  readonly pointageFilterDateDebut = signal('');
+  readonly pointageFilterDateFin = signal('');
+  readonly pointageBorneCampus = signal('');
+  readonly pointageBorneLabel = signal('Entrée principale');
+  readonly pointageBorneSaving = signal(false);
+  readonly pointageQrToken = signal<string | null>(null);
+  readonly pointageQrBorneId = signal<string | null>(null);
+  readonly pointageQrImage = signal<string | null>(null);
+  readonly pointageQrPosterImage = signal<string | null>(null);
+  readonly pointageQrLabel = signal('');
+  readonly pointageQrCampus = signal('');
+  readonly pointageQrRegenerationBorne = signal<BornePointageInstitutApi | null>(null);
+  readonly pointagesDataSource = new MatTableDataSource<Record<string, unknown>>([]);
+  readonly pointagesColumns: ColumnDefinition[] = [
+    { def: 'nom_complet', label: 'Collaborateur', type: 'nameWithImage', visible: true, sortable: true },
+    { def: 'matricule', label: 'Matricule', type: 'text', visible: true, sortable: true },
+    { def: 'profil_label', label: 'Profil', type: 'text', visible: true, sortable: true },
+    { def: 'campus', label: 'Campus', type: 'text', visible: true, sortable: true },
+    { def: 'date_pointage', label: 'Date', type: 'dateCard', visible: true, sortable: true },
+    { def: 'heure_entree', label: 'Entrée', type: 'text', visible: true },
+    { def: 'heure_sortie', label: 'Sortie', type: 'text', visible: true },
+    { def: 'duree', label: 'Durée', type: 'text', visible: true },
+    { def: 'statut_label', label: 'État', type: 'status', visible: true, statusBadgeMap: { Complet: 'badge badge-solid-green', Incomplet: 'badge badge-solid-orange', 'Régularisation en attente': 'badge badge-solid-blue', Régularisé: 'badge badge-solid-green' } },
+  ];
   readonly campusCount = computed(() => this.campuses().length);
   readonly roomCount = computed(() => this.campuses().reduce((total, campus) => total + campus.rooms, 0));
   readonly campusSaving = signal(false);
@@ -271,6 +312,33 @@ export class InstituteConsoleComponent implements OnInit {
   readonly userCreationSaving = signal(false);
   readonly staffDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.staffRows);
   readonly teacherDataSource = new MatTableDataSource<InstituteDirectoryRow>(this.teacherRows);
+  readonly guardiansLoading = signal(false);
+  readonly guardiansError = signal<string | null>(null);
+  readonly guardianRows = signal<InstituteDirectoryRow[]>([]);
+  readonly guardianDataSource = new MatTableDataSource<InstituteDirectoryRow>([]);
+  readonly selectedGuardian = signal<InstituteDirectoryRow | null>(null);
+  readonly guardianDetail = signal<DossierTuteurInstitutApi | null>(null);
+  readonly guardianDetailLoading = signal(false);
+  readonly guardianEditorOpen = signal(false);
+  readonly guardianSaving = signal(false);
+  guardianForm: InstituteDirectoryRow = this.emptyGuardianForm();
+  readonly guardianChildrenDataSource = new MatTableDataSource<InstituteDirectoryRow>([]);
+  readonly guardianColumns: ColumnDefinition[] = [
+    { def: 'name', label: 'Tuteur', type: 'nameWithImage', visible: true, sortable: true },
+    { def: 'phone', label: 'Téléphone', type: 'phone', visible: true, sortable: true },
+    { def: 'email', label: 'Adresse e-mail', type: 'email', visible: true, sortable: true },
+    { def: 'numberOfChildren', label: 'Enfants rattachés', type: 'number', visible: true, sortable: true },
+    { def: 'status', label: 'Compte', type: 'status', visible: true, statusBadgeMap: { Actif: 'badge badge-solid-green', 'Invitation envoyée': 'badge badge-solid-blue', 'Sans compte': 'badge badge-solid-orange', Désactivé: 'badge badge-solid-red' } },
+  ];
+  readonly guardianChildrenColumns: ColumnDefinition[] = [
+    { def: 'name', label: 'Élève', type: 'nameWithImage', visible: true, sortable: true },
+    { def: 'matricule', label: 'Matricule', type: 'text', visible: true, sortable: true },
+    { def: 'typeEtablissement', label: 'Établissement', type: 'text', visible: true, sortable: true },
+    { def: 'classe', label: 'Classe', type: 'text', visible: true, sortable: true },
+    { def: 'campus', label: 'Campus', type: 'text', visible: true, sortable: true },
+    { def: 'anneeScolaire', label: 'Année scolaire', type: 'text', visible: true, sortable: true },
+    { def: 'status', label: 'Inscription', type: 'status', visible: true, statusBadgeMap: { Active: 'badge badge-solid-green' } },
+  ];
   readonly membresEquipe = signal<MembreEquipeInstitut[]>([]);
   readonly subscriptionFeatureDataSource = new MatTableDataSource<FonctionnaliteSouscription>([]);
   readonly subscriptionFeatureColumns: ColumnDefinition[] = [
@@ -499,6 +567,10 @@ export class InstituteConsoleComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.route.paramMap.subscribe((params) => {
+      const vue = params.get('vue');
+      if (vue) this.workspace.synchronizeFromUrl(`/institut/${vue}`);
+    });
     const vueDemandee = this.route.snapshot.queryParamMap.get('vue');
     // Compatibilité des anciens liens /institut?vue=… : ils deviennent des
     // URLs réelles, donc un changement de menu réactive bien son composant.
@@ -513,10 +585,6 @@ export class InstituteConsoleComponent implements OnInit {
     }
 
     this.workspace.synchronizeFromUrl(this.router.url);
-    if (!this.workspace.subscriptionValidated() && !['overview', 'establishments', 'campuses', 'subscription', 'subscription-invoices'].includes(this.activeView())) {
-      void this.router.navigateByUrl(this.workspace.cheminVue('subscription'), { replaceUrl: true });
-      return;
-    }
     this.chargerEspace();
   }
 
@@ -530,8 +598,10 @@ export class InstituteConsoleComponent implements OnInit {
         this.campuses.set(espace.campus.map((campus) => this.presenterCampus(campus)));
         this.establishmentsCatalogue.set(espace.etablissements.map((item) => this.presenterEtablissement(item)));
         this.chargerTableauBord();
+        this.chargerPointages();
         this.chargerSalles();
         this.chargerEquipe();
+        this.chargerTuteurs();
         this.chargerUtilisateurs();
         this.chargerRolesPermissions();
         this.chargerSouscription();
@@ -566,6 +636,193 @@ export class InstituteConsoleComponent implements OnInit {
     });
   }
 
+  chargerPointages(forceRefresh = false): void {
+    this.pointagesLoading.set(true);
+    this.pointagesError.set(null);
+    this.api.pointagesInstitut({
+      campus_id: this.pointageFilterCampus() || undefined,
+      etablissement_id: this.pointageFilterEtablissement() || undefined,
+      profil: this.pointageFilterProfil() || undefined,
+      statut: this.pointageFilterStatut() || undefined,
+      recherche: this.pointageFilterRecherche().trim() || undefined,
+      date_debut: this.pointageFilterDateDebut() || undefined,
+      date_fin: this.pointageFilterDateFin() || undefined,
+    }, forceRefresh).subscribe({
+      next: (result) => {
+        this.pointages.set(result.data);
+        this.pointagesResume.set(result.resume);
+        this.bornesPointage.set(result.bornes);
+        const borneAvecQr = result.bornes.find((borne) => borne.id === this.pointageQrBorneId() && borne.qr_jeton)
+          ?? result.bornes.find((borne) => !!borne.qr_jeton);
+        if (borneAvecQr?.qr_jeton) {
+          this.afficherQrPointage(borneAvecQr.qr_jeton, borneAvecQr.libelle, borneAvecQr.campus, borneAvecQr.id);
+        } else {
+          this.pointageQrBorneId.set(null);
+          this.pointageQrToken.set(null);
+          this.pointageQrImage.set(null);
+        }
+        this.pointagesDataSource.data = result.data.map((item) => ({
+          ...item,
+          nom_complet: item.nom_complet,
+          profil_label: item.profil === 'enseignant' ? 'Enseignant' : 'Personnel',
+          heure_entree: this.heurePointage(item.heure_entree_at),
+          heure_sortie: this.heurePointage(item.heure_sortie_at),
+          duree: item.duree_minutes === null ? '—' : `${Math.floor(item.duree_minutes / 60)} h ${item.duree_minutes % 60} min`,
+          statut_label: this.libelleStatutPointage(item.statut),
+          status: this.libelleStatutPointage(item.statut),
+        }));
+        this.pointagesLoading.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.pointagesLoading.set(false);
+        this.pointagesError.set(error.error?.message ?? 'Les pointages ne sont pas disponibles pour le moment.');
+      },
+    });
+  }
+
+  heurePointage(valeur: string | null): string { return valeur ? valeur.substring(11, 16) : '—'; }
+  libelleStatutPointage(statut: string): string { return ({ complet: 'Complet', incomplet: 'Incomplet', regularisation_en_attente: 'Régularisation en attente', regularise: 'Régularisé' } as Record<string, string>)[statut] ?? statut; }
+  creerBornePointage(): void {
+    if (!this.pointageBorneCampus() || !this.pointageBorneLabel().trim()) return;
+    this.pointageBorneSaving.set(true);
+    this.api.creerBornePointage(this.pointageBorneCampus(), this.pointageBorneLabel().trim()).subscribe({
+      next: (result) => {
+        this.pointageBorneSaving.set(false);
+        this.afficherQrPointage(result.data.jeton, this.pointageBorneLabel().trim(), this.nomCampus(this.pointageBorneCampus()), result.data.borne_id);
+        this.toast.success(result.message);
+        this.chargerPointages(true);
+      },
+      error: (error) => { this.pointageBorneSaving.set(false); this.toast.error(error.error?.message ?? 'La borne n’a pas pu être créée.'); },
+    });
+  }
+  regenererQrPointage(borne: BornePointageInstitutApi): void {
+    this.pointageQrRegenerationBorne.set(borne);
+  }
+
+  annulerRegenerationQrPointage(): void {
+    this.pointageQrRegenerationBorne.set(null);
+  }
+
+  confirmerRegenerationQrPointage(): void {
+    const borne = this.pointageQrRegenerationBorne();
+    if (!borne) return;
+    this.api.regenererQrPointage(borne.id).subscribe({
+      next: (result) => {
+        this.pointageQrRegenerationBorne.set(null);
+        this.afficherQrPointage(result.data.jeton, borne.libelle, borne.campus, result.data.borne_id);
+        this.toast.success(result.message);
+        this.chargerPointages(true);
+      },
+      error: (error) => this.toast.error(error.error?.message ?? 'Le QR code n’a pas pu être régénéré.'),
+    });
+  }
+
+  afficherQrBorne(borne: BornePointageInstitutApi): void {
+    if (!borne.qr_jeton) {
+      this.toast.error('Ce QR code historique ne peut pas être réaffiché. Régénérez-le une seule fois pour obtenir un nouveau code imprimable.');
+      return;
+    }
+    this.afficherQrPointage(borne.qr_jeton, borne.libelle, borne.campus, borne.id);
+  }
+
+  private nomCampus(campusId: string): string {
+    return this.campuses().find((campus) => campus.id === campusId)?.name ?? 'Campus';
+  }
+
+  private afficherQrPointage(token: string, libelle: string, campus: string, borneId?: string): void {
+    this.pointageQrToken.set(token);
+    if (borneId) this.pointageQrBorneId.set(borneId);
+    this.pointageQrLabel.set(libelle);
+    this.pointageQrCampus.set(campus);
+    this.pointageQrImage.set(null);
+    this.pointageQrPosterImage.set(null);
+    void QRCode.toDataURL(token, {
+      width: 320,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+      color: { dark: '#123f70', light: '#ffffff' },
+    }).then((image) => {
+      this.pointageQrImage.set(image);
+      this.construireAfficheQr(image, libelle, campus);
+    })
+      .catch(() => this.toast.error('Le QR code n’a pas pu être généré.'));
+  }
+
+  private construireAfficheQr(qrImage: string, libelle: string, campus: string): void {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 1500;
+    const contexte = canvas.getContext('2d');
+    if (!contexte) return;
+
+    const dessiner = (logo: HTMLImageElement | null, qr: HTMLImageElement): void => {
+      // Affiche claire, imprimable sur papier blanc : le bleu reste un accent
+      // de marque et ne masque jamais le logo bleu E-Scolarité.
+      contexte.fillStyle = '#ffffff';
+      contexte.fillRect(0, 0, canvas.width, canvas.height);
+      contexte.strokeStyle = '#d7eaf9';
+      contexte.lineWidth = 4;
+      contexte.strokeRect(56, 42, 1088, 1416);
+      contexte.fillStyle = '#dff1ff';
+      contexte.fillRect(56, 42, 1088, 12);
+      contexte.fillStyle = '#1266c4';
+      contexte.fillRect(56, 54, 12, 214);
+
+      if (logo) {
+        const ratio = Math.min(290 / logo.width, 145 / logo.height);
+        contexte.drawImage(logo, 90, 76, logo.width * ratio, logo.height * ratio);
+      } else {
+        contexte.fillStyle = '#1266c4';
+        contexte.font = '700 42px Arial';
+        contexte.fillText('E-Scolarité', 90, 145);
+      }
+      contexte.textAlign = 'right';
+      contexte.fillStyle = '#1266c4';
+      contexte.font = '700 22px Arial';
+      contexte.fillText(environment.publicUrl, 1080, 106);
+      contexte.fillStyle = '#56718b';
+      contexte.font = '600 23px Arial';
+      contexte.fillText('Pensée pour les écoles.', 1080, 154);
+      contexte.fillText('Conçue pour leur quotidien.', 1080, 190);
+
+      contexte.textAlign = 'center';
+      contexte.fillStyle = '#123f70';
+      contexte.font = '800 34px Arial';
+      contexte.fillText('POINTAGE DU PERSONNEL', 600, 365);
+      contexte.fillStyle = '#eaf5ff';
+      contexte.fillRect(340, 383, 520, 3);
+      contexte.fillStyle = '#68809a';
+      contexte.font = '500 24px Arial';
+      contexte.fillText(`${campus} · ${libelle}`, 600, 408);
+      contexte.fillStyle = '#1f5b91';
+      contexte.font = '700 25px Arial';
+      contexte.fillText('Scannez le QR code à l’arrivée et au départ de la journée.', 600, 468);
+      contexte.textAlign = 'left';
+
+      const margeQr = 150;
+      contexte.drawImage(qr, margeQr, 560, 900, 900);
+      contexte.fillStyle = '#1266c4';
+      contexte.fillRect(56, 1460, 1088, 4);
+      contexte.fillStyle = '#56718b';
+      contexte.font = '600 21px Arial';
+      contexte.fillText('Présence simplifiée  ·  Suivi fiable  ·  Gestion centralisée', 120, 1490);
+      contexte.fillStyle = '#1266c4';
+      contexte.font = '700 20px Arial';
+      contexte.fillText(environment.publicUrl, 850, 1490);
+      this.pointageQrPosterImage.set(canvas.toDataURL('image/png'));
+    };
+
+    const qr = new Image();
+    qr.onload = () => {
+      const logo = new Image();
+      logo.onload = () => dessiner(logo, qr);
+      logo.onerror = () => dessiner(null, qr);
+      logo.src = 'assets/images/e-scolarite-logo.png';
+    };
+    qr.onerror = () => this.toast.error('L’affiche QR n’a pas pu être préparée.');
+    qr.src = qrImage;
+  }
+
   private chargerEquipe(): void {
     this.api.equipeInstitut().subscribe({
       next: ({ data }) => {
@@ -596,6 +853,129 @@ export class InstituteConsoleComponent implements OnInit {
         // Les données de démonstration restent visibles si le répertoire est temporairement indisponible.
       },
     });
+  }
+
+  chargerTuteurs(forceRefresh = false): void {
+    this.guardiansLoading.set(true);
+    this.guardiansError.set(null);
+    if (forceRefresh) this.api.invaliderCache('institut:tuteurs');
+    this.api.tuteursInstitut().subscribe({
+      next: ({ data }) => {
+        const rows = data.map((tuteur) => this.presenterTuteur(tuteur));
+        this.guardianRows.set(rows);
+        this.guardianDataSource.data = rows;
+        this.guardiansLoading.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.guardiansLoading.set(false);
+        this.guardiansError.set(error.error?.message ?? 'La liste des tuteurs n’est pas disponible pour le moment.');
+      },
+    });
+  }
+
+  private presenterTuteur(tuteur: TuteurEtablissementApi): InstituteDirectoryRow {
+    const statut = tuteur.statut_compte === 'actif'
+      ? 'Actif'
+      : tuteur.statut_compte === 'en_attente_activation'
+        ? 'Invitation envoyée'
+        : tuteur.statut_compte === 'suspendu'
+          ? 'Désactivé'
+          : 'Sans compte';
+    return {
+      id: tuteur.id,
+      name: `${tuteur.prenom ?? ''} ${tuteur.nom ?? ''}`.trim(),
+      firstName: tuteur.prenom,
+      lastName: tuteur.nom,
+      email: tuteur.email ?? undefined,
+      phone: tuteur.telephone ?? undefined,
+      secondaryPhone: tuteur.telephone_secondaire ?? undefined,
+      address: tuteur.adresse ?? undefined,
+      function: tuteur.profession ?? undefined,
+      numberOfChildren: Number(tuteur.nombre_enfants ?? 0),
+      type: 'Tuteur',
+      role: 'Responsable légal',
+      scope: `${Number(tuteur.nombre_enfants ?? 0)} enfant(s) rattaché(s)`,
+      status: statut,
+    };
+  }
+
+  viewGuardian(record: InstituteDirectoryRow): void {
+    if (!record.id) return;
+    this.selectedGuardian.set(record);
+    this.guardianDetail.set(null);
+    this.guardianChildrenDataSource.data = [];
+    this.guardianDetailLoading.set(true);
+    this.guardianEditorOpen.set(false);
+    this.workspace.selectView('guardian-detail');
+    this.api.dossierTuteurInstitut(record.id).subscribe({
+      next: ({ data }) => {
+        this.guardianDetail.set(data);
+        this.guardianChildrenDataSource.data = data.enfants.map((enfant) => this.presenterEnfantTuteur(enfant));
+        this.guardianDetailLoading.set(false);
+      },
+      error: (error) => {
+        this.guardianDetailLoading.set(false);
+        this.toast.error(error?.error?.message ?? 'Le dossier du tuteur n’a pas pu être chargé.');
+      },
+    });
+  }
+
+  startGuardianForm(record?: InstituteDirectoryRow): void {
+    const source = record ?? this.selectedGuardian();
+    if (!source) return;
+    this.guardianForm = { ...source };
+    this.guardianEditorOpen.set(true);
+  }
+
+  closeGuardianForm(): void {
+    this.guardianEditorOpen.set(false);
+  }
+
+  saveGuardian(): void {
+    const form = this.guardianForm;
+    if (!form.id || !form.firstName?.trim() || !form.lastName?.trim() || !form.phone?.trim() || this.guardianSaving()) return;
+    this.guardianSaving.set(true);
+    this.api.modifierTuteurInstitut(form.id, {
+      prenom: form.firstName.trim(),
+      nom: form.lastName.trim(),
+      telephone: form.phone.trim(),
+      telephone_secondaire: form.secondaryPhone?.trim() || null,
+      email: form.email?.trim() || null,
+      profession: form.function?.trim() || null,
+      adresse: form.address?.trim() || null,
+    }).subscribe({
+      next: (result) => {
+        this.guardianSaving.set(false);
+        this.guardianEditorOpen.set(false);
+        this.toast.success(result.message);
+        this.chargerTuteurs(true);
+        this.viewGuardian({ ...this.selectedGuardian()!, ...form, name: `${form.firstName!.trim()} ${form.lastName!.trim()}`.trim() });
+      },
+      error: (error) => {
+        this.guardianSaving.set(false);
+        this.toast.error(error?.error?.message ?? 'Le dossier tuteur n’a pas pu être mis à jour.');
+      },
+    });
+  }
+
+  private emptyGuardianForm(): InstituteDirectoryRow {
+    return { id: '', name: '', firstName: '', lastName: '', phone: '', secondaryPhone: '', email: '', function: '', address: '', status: 'Sans compte' };
+  }
+
+  private presenterEnfantTuteur(enfant: EnfantDossierTuteurInstitutApi): InstituteDirectoryRow {
+    return {
+      id: enfant.id,
+      matricule: enfant.matricule,
+      name: `${enfant.prenom} ${enfant.nom}`.trim(),
+      firstName: enfant.prenom,
+      lastName: enfant.nom,
+      type: 'Élève',
+      typeEtablissement: enfant.type_etablissement ?? '—',
+      classe: enfant.classe ?? 'Classe non définie',
+      campus: enfant.campus ?? '—',
+      anneeScolaire: enfant.annee_scolaire ?? '—',
+      status: enfant.statut_inscription === 'active' ? 'Active' : enfant.statut_inscription,
+    };
   }
 
   private presenterUtilisateur(item: UtilisateurInstitutApi): InstituteDirectoryRow {
@@ -991,6 +1371,11 @@ export class InstituteConsoleComponent implements OnInit {
     if (view === 'roles') this.selectedRole.set(null);
     if (view === 'staff') this.selectedStaffRecord.set(null);
     if (view === 'teachers') this.selectedTeacherRecord.set(null);
+    if (view === 'guardians') {
+      this.selectedGuardian.set(null);
+      this.guardianDetail.set(null);
+      this.guardianChildrenDataSource.data = [];
+    }
     this.workspace.selectView(view);
   }
 
@@ -1571,6 +1956,7 @@ export class InstituteConsoleComponent implements OnInit {
     switch (this.activeView()) {
       case 'staff': return 'Personnel institut';
       case 'teachers': return 'Enseignants';
+      case 'guardians': return 'Tuteurs';
       default: return 'Utilisateurs & accès';
     }
   }
@@ -1579,6 +1965,7 @@ export class InstituteConsoleComponent implements OnInit {
     switch (this.activeView()) {
       case 'staff': return 'Retrouvez le personnel administratif et technique rattaché à l’institut ou à un campus.';
       case 'teachers': return 'Consultez les enseignants de l’institut avant leurs affectations dans les établissements.';
+      case 'guardians': return 'Consultez les responsables légaux et les enfants qui leur sont rattachés dans l’institut.';
       default: return 'Définissez les rôles et le périmètre d’accès de chaque utilisateur de l’institut.';
     }
   }
@@ -1587,6 +1974,7 @@ export class InstituteConsoleComponent implements OnInit {
     switch (this.activeView()) {
       case 'staff': return 'Ajouter un personnel';
       case 'teachers': return 'Ajouter un enseignant';
+      case 'guardians': return '';
       default: return 'Nouvel utilisateur';
     }
   }
@@ -1598,6 +1986,10 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   refreshDirectory(): void {
+    if (this.activeView() === 'guardians') {
+      this.chargerTuteurs(true);
+      return;
+    }
     this.chargerUtilisateurs();
   }
 
@@ -1611,6 +2003,8 @@ export class InstituteConsoleComponent implements OnInit {
       overview: 'Tableau de bord',
       establishments: 'Établissements',
       campuses: 'Campus',
+      pointages: 'Pointages',
+      'mon-pointage': 'Mon pointage',
       'student-transfers': 'Transferts d’élèves',
       admissions: 'Admissions',
       users: 'Utilisateurs & accès',
@@ -1619,6 +2013,8 @@ export class InstituteConsoleComponent implements OnInit {
       'staff-detail': 'Dossier personnel',
       teachers: 'Enseignants',
       'teacher-detail': 'Dossier enseignant',
+      guardians: 'Tuteurs',
+      'guardian-detail': 'Dossier tuteur',
       spaces: 'Salles & espaces',
       'activity-log': 'Traçabilité',
       roles: 'Rôles & permissions',

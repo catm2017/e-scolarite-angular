@@ -5,6 +5,8 @@ export type InstituteView =
   | 'overview'
   | 'establishments'
   | 'campuses'
+  | 'pointages'
+  | 'mon-pointage'
   | 'student-transfers'
   | 'admissions'
   | 'users'
@@ -13,6 +15,8 @@ export type InstituteView =
   | 'staff-detail'
   | 'teachers'
   | 'teacher-detail'
+  | 'guardians'
+  | 'guardian-detail'
   | 'spaces'
   | 'activity-log'
   | 'roles'
@@ -30,6 +34,8 @@ const INSTITUTE_VIEW_PATHS: Record<InstituteView, string> = {
   overview: 'tableau-de-bord',
   establishments: 'etablissements',
   campuses: 'campus',
+  pointages: 'pointages',
+  'mon-pointage': 'mon-pointage',
   'student-transfers': 'transferts-eleves',
   admissions: 'admissions',
   users: 'utilisateurs',
@@ -38,6 +44,8 @@ const INSTITUTE_VIEW_PATHS: Record<InstituteView, string> = {
   'staff-detail': 'personnel',
   teachers: 'enseignants',
   'teacher-detail': 'enseignants',
+  guardians: 'tuteurs',
+  'guardian-detail': 'tuteurs',
   spaces: 'salles-espaces',
   'activity-log': 'tracabilite',
   roles: 'roles-permissions',
@@ -59,7 +67,12 @@ export class InstituteWorkspaceService {
   constructor() {
     // Les droits du compte sont chargés une seule fois pour alimenter la
     // navigation du back-office parent et des espaces d’établissement.
-    this.api.chargerAccesUtilisateurInstitut();
+    // Le layout de navigation est partagé avec le back-office SaaS. Dans ce
+    // dernier, le jeton est central et ne peut pas être accepté par les
+    // routes /institut : ne pas déclencher cet appel hors contexte institut.
+    if (this.api.institutActuel() && this.api.estConnecte()) {
+      this.api.chargerAccesUtilisateurInstitut();
+    }
   }
 
   selectView(view: InstituteView): void {
@@ -73,7 +86,11 @@ export class InstituteWorkspaceService {
     const segment = path.replace(/^\/institut\/?/, '').split('/')[0];
     const view = (Object.entries(INSTITUTE_VIEW_PATHS)
       .find(([, value]) => value === segment)?.[0] ?? 'overview') as InstituteView;
-    this.selectView(view);
+    // La navigation peut arriver avant le chargement asynchrone des droits et
+    // de la souscription. On reflète donc immédiatement l’URL dans le shell;
+    // les boutons de menu restent protégés par canAccessView et les API
+    // appliquent toujours leurs propres contrôles d’accès.
+    this.activeView.set(view);
     return view;
   }
 
@@ -133,9 +150,12 @@ export class InstituteWorkspaceService {
       'staff-detail': 'gestion_personnels_institut',
       teachers: 'gestion_enseignants_institut',
       'teacher-detail': 'gestion_enseignants_institut',
+      guardians: 'gestion_utilisateurs_acces_institut',
+      'guardian-detail': 'gestion_utilisateurs_acces_institut',
       spaces: 'gestion_salles_espaces_institut',
       'activity-log': 'tracabilite_activites_institut',
       campuses: 'gestion_campus_institut',
+      pointages: 'gestion_pointages_institut',
       subscription: 'gestion_souscriptions_institut',
       'subscription-invoices': 'gestion_factures_institut',
       settings: 'gestion_parametres_institut',

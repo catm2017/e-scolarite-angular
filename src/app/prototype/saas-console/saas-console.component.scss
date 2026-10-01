@@ -33,3 +33,27 @@
   color: #52627a;
   font-size: .875rem;
 }
+
+.saas-trace-filters {
+  margin: .75rem 0 1.25rem;
+  padding: 1.25rem 1.35rem;
+}
+.saas-trace-filters-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+.saas-trace-filters-heading h2 { margin:0 0 .3rem; color:#173b63; font-size:1.08rem; }
+.saas-trace-filters-heading p { margin:0; color:#6c8197; font-size:.86rem; }
+.saas-trace-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:.8rem; }
+.saas-trace-pagination { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin:1rem 0; padding:.7rem .95rem; border:1px solid #dbe8f3; border-radius:.75rem; color:#62778d; background:#fff; font-size:.84rem; }
+.saas-trace-pagination > div { display:flex; gap:.55rem; }
+.saas-trace-detail-modal { width:min(100%, 55rem); max-height:calc(100vh - 3rem); overflow:auto; padding:1.5rem; border-radius:1rem; background:#fff; box-shadow:0 1.5rem 4rem rgba(15,39,83,.28); }
+.saas-trace-detail-modal > header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding-bottom:1rem; border-bottom:1px solid #e2ebf4; }
+.saas-trace-detail-modal h2 { margin:.2rem 0 .35rem; color:#173b63; font-size:1.35rem; }
+.saas-trace-detail-modal header p { margin:0; color:#61758a; }
+.saas-detail-kicker { color:#2f80ed; font-size:.72rem; font-weight:800; letter-spacing:.1em; }
+.saas-trace-detail-modal .saas-detail-grid { margin:1rem 0; }
+.saas-trace-snapshots { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.saas-trace-snapshots section { min-width:0; }
+.saas-trace-snapshots h3 { margin:0 0 .45rem; color:#365a7b; font-size:.9rem; }
+.saas-trace-snapshots pre { max-height:14rem; overflow:auto; margin:0; padding:.85rem; border:1px solid #e0eaf3; border-radius:.65rem; color:#456078; background:#f7fbff; font: .76rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; word-break:break-word; }
+.saas-trace-detail-modal footer { display:flex; justify-content:flex-end; margin-top:1rem; }
+@media (max-width: 900px) { .saas-trace-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width: 620px) { .saas-trace-filters-heading { flex-direction:column; } .saas-trace-grid,.saas-trace-snapshots { grid-template-columns:1fr; } .saas-trace-pagination { align-items:flex-start; flex-direction:column; } }

@@ -27,7 +27,28 @@
       <div class="saas-shortcuts">
         <button class="card" (click)="setView('adhesions')"><mat-icon>domain_add</mat-icon><h2>Accompagner les nouveaux instituts</h2><p>Consultez les demandes et préparez leurs espaces.</p><span>Voir les adhésions <mat-icon>arrow_forward</mat-icon></span></button>
         <button class="card" (click)="setView('pricing')"><mat-icon>tune</mat-icon><h2>Construire vos offres</h2><p>Gérez les tarifs des fonctionnalités et vos packages.</p><span>Gérer la tarification <mat-icon>arrow_forward</mat-icon></span></button>
+        <button class="card" (click)="setView('activity-log')"><mat-icon>manage_history</mat-icon><h2>Suivre l’activité</h2><p>Consultez les connexions et opérations de toutes les instituts.</p><span>Ouvrir la traçabilité <mat-icon>arrow_forward</mat-icon></span></button>
       </div>
+    }
+
+    @if (activeView() === 'activity-log') {
+      <section class="card saas-trace-filters">
+        <div class="saas-trace-filters-heading"><div><h2>Journal global des instituts</h2><p>Suivez les connexions, actions métier, abonnements et événements de sécurité de toute la plateforme.</p></div><button mat-stroked-button type="button" (click)="reinitialiserFiltresTracabilite()"><mat-icon>restart_alt</mat-icon>Réinitialiser</button></div>
+        <div class="saas-form-grid saas-trace-grid">
+          <mat-form-field appearance="outline"><mat-label>Rechercher</mat-label><input matInput [ngModel]="traceRecherche()" (ngModelChange)="traceRecherche.set($event)" placeholder="Institut, utilisateur, action…" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Institut</mat-label><mat-select [ngModel]="traceInstitut()" (ngModelChange)="traceInstitut.set($event)"><mat-option value="">Toutes les instituts</mat-option>@for (institut of traceFiltres().instituts; track institut.id) {<mat-option [value]="institut.id">{{ institut.nom }}</mat-option>}</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Module</mat-label><mat-select [ngModel]="traceModule()" (ngModelChange)="traceModule.set($event)"><mat-option value="">Tous les modules</mat-option>@for (module of traceFiltres().modules; track module) {<mat-option [value]="module">{{ module }}</mat-option>}</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Action</mat-label><mat-select [ngModel]="traceAction()" (ngModelChange)="traceAction.set($event)"><mat-option value="">Toutes les actions</mat-option>@for (action of traceFiltres().actions; track action) {<mat-option [value]="action">{{ action }}</mat-option>}</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Source</mat-label><mat-select [ngModel]="traceSource()" (ngModelChange)="traceSource.set($event)"><mat-option value="">Toutes les sources</mat-option><mat-option value="saas">SaaS</mat-option><mat-option value="institut">Institut</mat-option><mat-option value="authentification">Authentification</mat-option><mat-option value="systeme">Système</mat-option></mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Résultat</mat-label><mat-select [ngModel]="traceStatut()" (ngModelChange)="traceStatut.set($event)"><mat-option value="">Tous les résultats</mat-option><mat-option value="reussi">Réussi</mat-option><mat-option value="echec">Échec</mat-option><mat-option value="en_attente">En attente</mat-option></mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Gravité</mat-label><mat-select [ngModel]="traceGravite()" (ngModelChange)="traceGravite.set($event)"><mat-option value="">Toutes les gravités</mat-option><mat-option value="normale">Normale</mat-option><mat-option value="importante">Importante</mat-option><mat-option value="critique">Critique</mat-option></mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Du</mat-label><input matInput type="date" [ngModel]="traceDateDebut()" (ngModelChange)="traceDateDebut.set($event)" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Au</mat-label><input matInput type="date" [ngModel]="traceDateFin()" (ngModelChange)="traceDateFin.set($event)" /></mat-form-field>
+        </div>
+        <div class="saas-form-actions"><button mat-flat-button color="primary" type="button" (click)="chargerTracabilite(1)" [disabled]="tracesChargement()"><mat-icon>search</mat-icon>Appliquer les filtres</button></div>
+      </section>
+      <app-master-table title="Événements de la plateforme" [dataSource]="tracesSource" [columnDefinitions]="tracesColumns" [isLoading]="tracesChargement()" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="true" [showContextMenu]="false" [showBulkDelete]="false" [pageSize]="25" (details)="ouvrirTrace($event)" (rowClick)="ouvrirTrace($event)" (refresh)="chargerTracabilite(1)" />
+      <div class="saas-trace-pagination"><span>{{ traceMeta().total }} événement(s) · page {{ traceMeta().page }} sur {{ traceMeta().dernier_page }}</span><div><button mat-stroked-button type="button" (click)="pageTracabilite(-1)" [disabled]="traceMeta().page <= 1 || tracesChargement()"><mat-icon>chevron_left</mat-icon>Précédent</button><button mat-stroked-button type="button" (click)="pageTracabilite(1)" [disabled]="traceMeta().page >= traceMeta().dernier_page || tracesChargement()">Suivant<mat-icon>chevron_right</mat-icon></button></div></div>
     }
 
     @if (activeView() === 'account-activations') {
@@ -199,6 +220,16 @@
         <mat-icon>payments</mat-icon><h2 id="confirm-payment-title">Confirmer le règlement ?</h2>
         <p>Confirmez-vous que la facture <strong>{{ facture.numero }}</strong> de {{ facture.montant_ttc | number }} F CFA a bien été réglée ? Cette action autorisera une nouvelle souscription pour l’institut.</p>
         <div><button mat-stroked-button type="button" (click)="factureARegler.set(null)" [disabled]="reglementFactureEnCours()">Annuler</button><button mat-flat-button color="primary" type="button" (click)="confirmerReglementFacture()" [disabled]="reglementFactureEnCours()"><mat-icon>{{ reglementFactureEnCours() ? 'progress_activity' : 'check_circle' }}</mat-icon>{{ reglementFactureEnCours() ? 'Confirmation…' : 'Confirmer le règlement' }}</button></div>
+      </section>
+    </div>
+  }
+  @if (traceDetail(); as trace) {
+    <div class="saas-confirm-backdrop" (click)="traceDetail.set(null)">
+      <section class="saas-trace-detail-modal" role="dialog" aria-modal="true" aria-labelledby="trace-detail-title" (click)="$event.stopPropagation()">
+        <header><div><span class="saas-detail-kicker">{{ trace.source | uppercase }}</span><h2 id="trace-detail-title">{{ trace.action }}</h2><p>{{ trace.description }}</p></div><button mat-icon-button type="button" aria-label="Fermer" (click)="traceDetail.set(null)"><mat-icon>close</mat-icon></button></header>
+        <dl class="saas-detail-grid"><div><dt>Institut</dt><dd>{{ trace.institut }}</dd></div><div><dt>Utilisateur</dt><dd>{{ trace.utilisateur }}</dd></div><div><dt>Module</dt><dd>{{ trace.module }}</dd></div><div><dt>Date</dt><dd>{{ trace.survenu_at | date:'dd/MM/yyyy HH:mm' }}</dd></div><div><dt>Adresse IP</dt><dd>{{ trace.adresse_ip || 'Non disponible' }}</dd></div><div><dt>Identifiant de requête</dt><dd>{{ trace.requete_id || trace.correlation_id || 'Non disponible' }}</dd></div></dl>
+        <div class="saas-trace-snapshots"><section><h3>Avant</h3><pre>{{ formaterDonneesTrace(trace.donnees_avant) }}</pre></section><section><h3>Après</h3><pre>{{ formaterDonneesTrace(trace.donnees_apres) }}</pre></section></div>
+        <footer><button mat-stroked-button type="button" (click)="traceDetail.set(null)">Fermer</button></footer>
       </section>
     </div>
   }

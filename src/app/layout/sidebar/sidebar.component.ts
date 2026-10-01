@@ -64,6 +64,8 @@ const INSTITUTE_ROUTES: RouteInfo[] = [
   { path: '', title: 'Vue d’ensemble', iconType: 'material-icons-outlined', icon: 'space_dashboard', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'overview' },
   { path: '', title: 'Établissements', iconType: 'material-icons-outlined', icon: 'account_balance', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'establishments' },
   { path: '', title: 'Campus', iconType: 'material-icons-outlined', icon: 'location_city', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'campuses' },
+  { path: '', title: 'Pointages', iconType: 'material-icons-outlined', icon: 'qr_code_scanner', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'pointages' },
+  { path: '/institut/mon-pointage', title: 'Mon pointage', iconType: 'material-icons-outlined', icon: 'qr_code_scanner', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'mon-pointage', pointageEligibleOnly: true },
   { path: '', title: 'Transferts d’élèves', iconType: 'material-icons-outlined', icon: 'swap_horiz', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'student-transfers' },
   { path: '', title: 'Admissions', iconType: 'material-icons-outlined', icon: 'how_to_reg', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'admissions' },
   { path: '', title: 'Utilisateurs & accès', iconType: 'material-icons-outlined', icon: 'manage_accounts', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'users' },
@@ -71,6 +73,7 @@ const INSTITUTE_ROUTES: RouteInfo[] = [
   { path: '', title: 'ÉQUIPE & RESSOURCES', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
   { path: '', title: 'Personnel institut', iconType: 'material-icons-outlined', icon: 'badge', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'staff' },
   { path: '', title: 'Enseignants', iconType: 'material-icons-outlined', icon: 'co_present', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'teachers' },
+  { path: '', title: 'Tuteurs', iconType: 'material-icons-outlined', icon: 'family_restroom', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'guardians' },
   { path: '', title: 'Salles & espaces', iconType: 'material-icons-outlined', icon: 'meeting_room', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'spaces' },
   { path: '', title: 'Traçabilité', iconType: 'material-icons-outlined', icon: 'manage_history', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'activity-log' },
   { path: '', title: 'INSTITUT', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
@@ -85,6 +88,7 @@ const TEACHER_ROUTES: Array<{ path: string; title: string; icon: string; group?:
   { path: '/enseignant/espaces', title: 'Mes espaces de travail', icon: 'domain', group: 'MON ESPACE', contextSelector: true },
   { path: '/enseignant/tableau-de-bord', title: 'Tableau de bord', icon: 'space_dashboard' },
   { path: '/enseignant/emploi-du-temps', title: 'Mon emploi du temps', icon: 'calendar_month' },
+  { path: '/institut/mon-pointage', title: 'Mon pointage', icon: 'qr_code_scanner' },
   { path: '/enseignant/classes', title: 'Classes & matières', icon: 'auto_stories', group: 'PÉDAGOGIE' },
   { path: '/enseignant/seances', title: 'Séances & cahier de texte', icon: 'fact_check' },
   { path: '/enseignant/evaluations', title: 'Évaluations', icon: 'edit_note' },
@@ -93,11 +97,24 @@ const TEACHER_ROUTES: Array<{ path: string; title: string; icon: string; group?:
 const TEACHER_DAARA_ROUTES: Array<{ path: string; title: string; icon: string; group?: string; contextSelector?: boolean }> = [
   { path: '/enseignant/espaces', title: 'Mes espaces de travail', icon: 'domain', group: 'MON ESPACE', contextSelector: true },
   { path: '/enseignant/tableau-de-bord', title: 'Tableau de bord', icon: 'space_dashboard' },
+  { path: '/institut/mon-pointage', title: 'Mon pointage', icon: 'qr_code_scanner' },
   { path: '/enseignant/eleves', title: 'Élèves de mes groupes', icon: 'groups', group: 'PÉDAGOGIE · DAARA' },
   { path: '/enseignant/quran-followup', title: 'Suivi du Coran', icon: 'menu_book' },
   { path: '/enseignant/quran-lesson-history', title: 'Leçons coraniques', icon: 'history_edu' },
   { path: '/enseignant/quran-mouradja', title: 'Révision coranique', icon: 'history' },
   { path: '/enseignant/dossier', title: 'Mon dossier', icon: 'badge', group: 'MON DOSSIER' },
+];
+const FAMILY_ROUTES: Array<{ path: string; title: string; icon: string; group?: string }> = [
+  { path: '/famille/accueil', title: 'Mes enfants', icon: 'family_restroom', group: 'MON ESPACE' },
+  { path: '/famille/tableau-de-bord', title: 'Tableau de bord', icon: 'space_dashboard' },
+  { path: '/famille/emploi-du-temps', title: 'Emploi du temps', icon: 'calendar_month', group: 'SCOLARITÉ' },
+  { path: '/famille/notes-bulletins', title: 'Notes et bulletins', icon: 'description' },
+  { path: '/famille/absences', title: 'Présences et absences', icon: 'event_available' },
+  { path: '/famille/paiements', title: 'Paiements et échéances', icon: 'payments' },
+  { path: '/famille/documents', title: 'Documents', icon: 'folder_shared' },
+  { path: '/famille/messages', title: 'Messages', icon: 'forum' },
+  { path: '/famille/suivi-coran', title: 'Suivi du Coran', icon: 'menu_book' },
+  { path: '/famille/profil', title: 'Mon profil', icon: 'person', group: 'COMPTE' },
 ];
 
 @Component({
@@ -152,7 +169,14 @@ export class SidebarComponent
   isInstituteWorkspace = false;
   isSaasWorkspace = false;
   isTeacherWorkspace = false;
+  isFamilyWorkspace = false;
   get teacherNavigation() { return this.centralApi.contexteEnseignant()?.type_code === 'daara' ? TEACHER_DAARA_ROUTES : TEACHER_ROUTES; }
+  readonly familyNavigation = FAMILY_ROUTES;
+  isPersonnelUser(): boolean { return this.centralApi.utilisateur()?.type === 'personnel'; }
+  isPointageEligibleUser(): boolean {
+    const type = this.centralApi.utilisateur()?.type;
+    return type === 'personnel' || type === 'enseignant';
+  }
   readonly saasNavigation = [
     { path: '/saas/tableau-de-bord', title: 'Vue d’ensemble', icon: 'space_dashboard' },
     { path: '/saas/etablissements', title: 'Instituts', icon: 'apartment' },
@@ -162,6 +186,7 @@ export class SidebarComponent
     { path: '/saas/factures-souscriptions', title: 'Factures de souscription', icon: 'receipt_long' },
     { path: '/saas/abonnements', title: 'Abonnements', icon: 'subscriptions' },
     { path: '/saas/annees-scolaires', title: 'Années scolaires', icon: 'calendar_month' },
+    { path: '/saas/tracabilite', title: 'Traçabilité globale', icon: 'manage_history' },
   ];
   constructor() {
     super();
@@ -172,7 +197,7 @@ export class SidebarComponent
         if (this.isInstituteWorkspace) {
           this.instituteWorkspace.synchronizeFromUrl(event.urlAfterRedirects);
         }
-        if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace) {
+        if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace || this.isFamilyWorkspace) {
           this.configureWorkspaceNavigation();
           this.actualiserProfilEspace();
         }
@@ -211,7 +236,7 @@ export class SidebarComponent
       this.instituteWorkspace.synchronizeFromUrl(this.router.url);
     }
 
-    if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace) {
+    if (this.isPrimaryWorkspace || this.isInstituteWorkspace || this.isSaasWorkspace || this.isTeacherWorkspace || this.isFamilyWorkspace) {
       this.configureWorkspaceNavigation();
       this.actualiserProfilEspace();
       window.addEventListener('escolarite-profil-modifie', this.profilModifie);
@@ -261,6 +286,8 @@ export class SidebarComponent
       ? 'Administration E-Scolarité'
       : this.isTeacherWorkspace
         ? 'Enseignant'
+        : this.isFamilyWorkspace
+          ? (this.centralApi.utilisateur()?.type === 'eleve' ? 'Élève' : 'Parent / Tuteur')
         : this.isInstituteWorkspace
           ? 'Administrateur institut'
           : 'Utilisateur établissement';
@@ -302,7 +329,8 @@ export class SidebarComponent
       (view === 'users' && activeView === 'user-detail') ||
       (view === 'roles' && activeView === 'role-detail') ||
       (view === 'staff' && activeView === 'staff-detail') ||
-      (view === 'teachers' && activeView === 'teacher-detail');
+      (view === 'teachers' && activeView === 'teacher-detail') ||
+      (view === 'guardians' && activeView === 'guardian-detail');
   }
 
   isPrimaryViewActive(view?: string): boolean {
@@ -334,6 +362,8 @@ export class SidebarComponent
   private configureWorkspaceNavigation(): void {
     this.sidebarItems = this.isPrimaryWorkspace
       ? PRIMARY_ROUTES
+      : this.isFamilyWorkspace
+        ? []
       : INSTITUTE_ROUTES.map((item) => {
         if (item.title === 'Campus') {
           const total = this.centralApi.campusInstitut().length;
@@ -351,6 +381,7 @@ export class SidebarComponent
     const path = url.split('?')[0].split('#')[0];
     this.isSaasWorkspace = path === '/saas' || path.startsWith('/saas/');
     this.isTeacherWorkspace = path === '/enseignant' || path.startsWith('/enseignant/');
+    this.isFamilyWorkspace = path === '/famille' || path.startsWith('/famille/');
     this.isPrimaryWorkspace = path.startsWith('/institut/etablissements/');
     this.isInstituteWorkspace = path.startsWith('/institut')
       && !this.isPrimaryWorkspace

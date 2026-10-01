@@ -204,6 +204,8 @@ export const PLATFORM_TRANSLATIONS: Record<string, Translations> = {
   'FINANCES': { wo: 'XAALIS', en: 'FINANCE', ar: 'المالية' },
   'CONFIGURATION': { wo: 'TËRALIN', en: 'CONFIGURATION', ar: 'الإعداد' },
   'Campus': { wo: 'Campus yi', en: 'Campuses', ar: 'الفروع' },
+  'Pointages': { wo: 'Bindu teewe', en: 'Time tracking', ar: 'تسجيل الحضور' },
+  'Mon pointage': { wo: 'Sama bindu teewe', en: 'My time tracking', ar: 'تسجيل حضوري' },
   'Utilisateurs & accès': { wo: 'Jëfandikukat ak dugg', en: 'Users & access', ar: 'المستخدمون والصلاحيات' },
   'Personnel institut': { wo: 'Liggéeykati institut', en: 'Institute staff', ar: 'موظفو المعهد' },
   'Enseignants': { wo: 'Jàngalekat yi', en: 'Teachers', ar: 'المعلمون' },

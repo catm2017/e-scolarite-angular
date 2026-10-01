@@ -594,7 +594,8 @@
                       <label><span>Lieu de naissance</span><input name="recordStudentBirthPlace" [(ngModel)]="studentForm.birthPlace" /></label>
                       <label><span>Nationalité</span><input name="recordStudentNationality" [(ngModel)]="studentForm.nationality" /></label>
                       <label><span>Téléphone de l’élève</span><input name="recordStudentPhone" [(ngModel)]="studentForm.studentPhone" type="tel" placeholder="Facultatif" /></label>
-                      <label><span>Groupe sanguin</span><input name="recordStudentBloodGroup" [(ngModel)]="studentForm.bloodGroup" /></label>
+                      <label><span>Adresse e-mail de l’élève</span><input name="recordStudentEmail" [(ngModel)]="studentForm.studentEmail" type="email" placeholder="eleve@exemple.sn" /></label>
+                      <label><span>Groupe sanguin</span><select name="recordStudentBloodGroup" [(ngModel)]="studentForm.bloodGroup"><option value="">Non renseigné</option><option value="A+">A+</option><option value="A-">A−</option><option value="B+">B+</option><option value="B-">B−</option><option value="AB+">AB+</option><option value="AB-">AB−</option><option value="O+">O+</option><option value="O-">O−</option></select></label>
                       <label class="wide"><span>Observation médicale</span><textarea name="recordStudentMedicalNotes" [(ngModel)]="studentForm.medicalNotes" rows="2"></textarea></label>
                     </div>
                   </article>

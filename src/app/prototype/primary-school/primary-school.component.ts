@@ -1964,7 +1964,8 @@ export class PrimarySchoolComponent {
       },
     },
     { def: 'birthDate', label: 'Date de naissance', type: 'text', visible: true },
-    { def: 'parentPhone', label: 'Téléphone tuteur', type: 'phone', visible: true },
+    { def: 'studentPhone', label: 'Téléphone', type: 'phone', visible: true },
+    { def: 'studentEmail', label: 'Adresse e-mail', type: 'email', visible: true },
     {
       def: 'status',
       label: 'Statut',

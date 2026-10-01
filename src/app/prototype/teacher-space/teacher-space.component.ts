@@ -88,6 +88,8 @@ export class TeacherSpaceComponent implements OnInit, OnDestroy {
   private pointageFlux: MediaStream | null = null;
   private pointageScanTimer: number | null = null;
   private sortieTimer: number | null = null;
+  /** Fichiers choisis dans le détail d'une évaluation, envoyés uniquement au clic sur Enregistrer. */
+  private readonly evaluationPendingFiles = new Map<string, File>();
 
   readonly menu: Array<{ id: VueEnseignant; label: string; icon: string }> = [
     { id: 'espaces', label: 'Mes espaces de travail', icon: 'domain' },
@@ -114,7 +116,8 @@ export class TeacherSpaceComponent implements OnInit, OnDestroy {
     { def: 'name', label: 'Prénom et nom', type: 'nameWithImage' },
     { def: 'gender', label: 'Sexe', type: 'status', statusBadgeMap: { F: 'badge badge-solid-purple', M: 'badge badge-solid-green' } },
     { def: 'birthDate', label: 'Date de naissance', type: 'text' },
-    { def: 'parentPhone', label: 'Téléphone tuteur', type: 'phone' },
+    { def: 'telephone', label: 'Téléphone', type: 'phone' },
+    { def: 'email', label: 'Adresse e-mail', type: 'email' },
     { def: 'status', label: 'Statut', type: 'status', statusBadgeMap: { Actif: 'badge badge-solid-green', 'En attente': 'badge badge-solid-orange' } },
   ];
   readonly eleveQuranColumns: ColumnDefinition[] = [
@@ -458,7 +461,18 @@ export class TeacherSpaceComponent implements OnInit, OnDestroy {
     this.chargementClasseMatiere.set(true);
     this.erreurClasseMatiere.set(null);
     this.api.classeMatiereEnseignant(classeMatiereId).subscribe({
-      next: ({ data }) => { this.classeMatiere.set(data); this.elevesClasseSource.data = data.eleves; },
+      next: ({ data }) => {
+        this.classeMatiere.set(data);
+        this.elevesClasseSource.data = data.eleves.map((eleve) => ({
+          ...eleve,
+          name: `${eleve.prenom} ${eleve.nom}`.trim(),
+          gender: eleve.sexe || '—',
+          birthDate: eleve.date_naissance || '—',
+          telephone: eleve.telephone || '—',
+          email: eleve.email || '—',
+          status: eleve.statut === 'actif' ? 'Actif' : 'En attente',
+        }));
+      },
       error: (response) => this.erreurClasseMatiere.set(response.error?.message ?? 'Cette classe ou matière est indisponible.'),
       complete: () => this.chargementClasseMatiere.set(false),
     });
@@ -486,6 +500,7 @@ export class TeacherSpaceComponent implements OnInit, OnDestroy {
     this.erreurEvaluationDetail.set(null);
     this.api.detailEvaluationEnseignant(evaluationId).subscribe({
       next: ({ data }) => {
+        this.evaluationPendingFiles.clear();
         this.evaluationDetail.set(data);
         this.evaluationResultsSource.data = data.resultats.map((resultat) => ({
           ...resultat,
@@ -502,29 +517,32 @@ export class TeacherSpaceComponent implements OnInit, OnDestroy {
     });
   }
   modifierParticipationEvaluation(event: { row: any; participated: boolean }): void {
-    this.evaluationResultsSource.data = this.evaluationResultsSource.data.map((ligne) => ligne.eleve_id === event.row.eleve_id
-      ? { ...ligne, participated: event.participated, score: event.participated ? ligne.score : null }
-      : ligne);
+    // Ne pas reconstruire le tableau à chaque clic : cela recréerait les
+    // cellules et ferait perdre le focus au champ actuellement édité.
+    event.row.participated = event.participated;
+    if (!event.participated) event.row.score = null;
   }
   modifierNoteEvaluation(event: { row: any; score: number | null }): void {
     const note = event.score === null ? null : Math.min(Math.max(event.score, 0), Number(event.row.bareme));
-    this.evaluationResultsSource.data = this.evaluationResultsSource.data.map((ligne) => ligne.eleve_id === event.row.eleve_id ? { ...ligne, score: note } : ligne);
+    // La ligne est conservée pour que le curseur reste dans l'input pendant
+    // la saisie progressive (ex. 1 puis 4 pour obtenir 14).
+    event.row.score = note;
   }
   modifierAppreciationEvaluation(event: { row: any; comment: string }): void {
-    this.evaluationResultsSource.data = this.evaluationResultsSource.data.map((ligne) => ligne.eleve_id === event.row.eleve_id ? { ...ligne, appreciation: event.comment } : ligne);
+    // Même principe pour l'appréciation : aucune réinitialisation du tableau
+    // pendant la frappe, donc aucun déplacement du focus.
+    event.row.appreciation = event.comment;
   }
   ajouterCopieEvaluation(event: { row: any; file: File }): void {
-    const detail = this.evaluationDetail();
-    if (!detail) return;
     if (event.file.type !== 'application/pdf' && !event.file.name.toLowerCase().endsWith('.pdf')) {
       this.erreurEvaluationDetail.set('Seuls les fichiers PDF sont acceptés pour une copie d’évaluation.');
       return;
     }
     this.erreurEvaluationDetail.set(null);
-    this.api.joindreCopieEvaluationEnseignant(detail.evaluation.id, event.row.eleve_id, event.file).subscribe({
-      next: () => this.chargerDetailEvaluation(detail.evaluation.id),
-      error: (response) => this.erreurEvaluationDetail.set(response.error?.message ?? 'La copie PDF n’a pas pu être ajoutée.'),
-    });
+    this.evaluationPendingFiles.set(event.row.eleve_id, event.file);
+    this.evaluationResultsSource.data = this.evaluationResultsSource.data.map((ligne) => ligne.eleve_id === event.row.eleve_id
+      ? { ...ligne, piece_jointe: { nom_original: event.file.name, en_attente: true } }
+      : ligne);
   }
   enregistrerResultatsEvaluation(): void {
     const detail = this.evaluationDetail();
@@ -537,10 +555,26 @@ export class TeacherSpaceComponent implements OnInit, OnDestroy {
     }));
     this.api.enregistrerResultatsEvaluationEnseignant(detail.evaluation.id, resultats).subscribe({
       next: ({ data }) => {
-        this.enregistrementResultats.set(false);
         this.evaluationDetail.set(data);
         this.evaluationResultsSource.data = data.resultats.map((resultat) => ({ ...resultat, nom_complet: `${resultat.prenom} ${resultat.nom}`.trim(), participated: Boolean(resultat.a_participe), score: resultat.note === null ? null : Number(resultat.note), bareme: Number(resultat.bareme), appreciation: resultat.appreciation ?? '', piece_jointe: resultat.piece_jointe }));
-        this.charger();
+        const fichiers = [...this.evaluationPendingFiles.entries()];
+        const terminer = (): void => {
+          this.evaluationPendingFiles.clear();
+          this.enregistrementResultats.set(false);
+          this.chargerDetailEvaluation(detail.evaluation.id);
+          this.charger();
+        };
+        if (!fichiers.length) {
+          terminer();
+          return;
+        }
+        forkJoin(fichiers.map(([eleveId, fichier]) => this.api.joindreCopieEvaluationEnseignant(detail.evaluation.id, eleveId, fichier))).subscribe({
+          next: () => terminer(),
+          error: (response) => {
+            this.enregistrementResultats.set(false);
+            this.erreurEvaluationDetail.set(response.error?.message ?? 'Les résultats ont été enregistrés, mais une ou plusieurs copies PDF n’ont pas pu être ajoutées.');
+          },
+        });
       },
       error: (response) => { this.enregistrementResultats.set(false); this.erreurEvaluationDetail.set(response.error?.message ?? 'Les résultats n’ont pas pu être enregistrés.'); },
     });

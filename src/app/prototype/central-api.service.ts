@@ -87,7 +87,7 @@ export interface ContexteEnseignant {
 export interface ClasseMatiereEnseignantApi {
   classe_matiere: { classe_matiere_id: string; annee_scolaire_id: string; classe_id: string; classe: string; matiere: string; coefficient: number | null };
   matiere: string;
-  eleves: Array<{ id: string; matricule: string; prenom: string; nom: string; sexe: string | null }>;
+  eleves: Array<{ id: string; matricule: string; prenom: string; nom: string; sexe: string | null; date_naissance?: string | null; telephone?: string | null; email?: string | null; statut?: string | null }>;
   programme: { id: string; libelle: string; description: string | null } | null;
   lecons: Array<{ id: string; ordre: number; libelle: string; objectifs: string | null; nombre_seances_estime: number; periode: string | null }>;
 }
@@ -990,8 +990,16 @@ export interface DossierEleveApi {
   echeances: Array<{ id: string; annee: string; date_echeance: string; periode: string | null; motif: string; montant_initial: number; montant_regle: number; statut: string }>;
   paiements: Array<{ id: string; annee: string; reference: string; motif: string | null; montant: number; mode_paiement: string; statut: string; date_paiement: string; observation: string | null }>;
   presences: Array<{ id: string; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; matiere: string | null; statut: string; motif: string | null }>;
-  evaluations: Array<{ id: string; annee_scolaire_id: string; titre: string; type: string; date_evaluation: string; matiere: string | null; note: number | null; bareme: number | null; appreciation: string | null }>;
+  evaluations: Array<{ id: string; annee_scolaire_id: string; titre: string; type: string; date_evaluation: string; periode?: string | null; domaine_evaluation?: string | null; composante_evaluation?: string | null; matiere: string | null; coefficient?: number | null; note: number | null; bareme: number | null; appreciation: string | null; piece_jointe?: { id: string; nom_original: string } | null }>;
+  bulletins: Array<{ id: string; annee_scolaire_id: string; annee?: string | null; periode?: string | null; moyenne_generale: number | null; rang: number | null; appreciation: string | null; statut: string | null; fichier_pdf?: string | null; genere_at?: string | null; lignes: Array<{ id: string; libelle: string; matiere: string | null; moyenne: number | null; bareme: number | null; coefficient: number | null; produit: number | null; appreciation: string | null }> }>;
+  seances: Array<{ id: string; reference: string | null; date_seance: string; heure_debut: string; heure_fin: string; statut: string; matiere_id: string | null; matiere: string | null; lecon_id: string | null; lecon: string | null; enseignant: string | null }>;
+  matieres_programmes: Array<{ classe_matiere_id: string; matiere_id: string; matiere: string; coefficient: number | null; bareme: number | null; programme_id: string | null; programme: string | null; lecon_id: string | null; lecon: string | null; lecon_ordre: number | null; progression: number }>;
   tuteurs: Array<{ id: string; prenom: string; nom: string; telephone: string | null; email: string | null; profession: string | null; adresse: string | null; statut_compte: string | null; lien_parente: string | null; est_responsable_financier: boolean; est_contact_urgence: boolean }>;
+  emploi_temps: Array<{ id: string; jour_semaine: number; est_pause: boolean; heure_debut: string; heure_fin: string; classe: string; matiere: string | null; salle: string | null }>;
+  suivi_coran: {
+    lecons: Array<{ id: string; start_ayah_id: string; end_ayah_id: string; debut?: string | null; fin?: string | null; juz?: number | null; hizb?: number | null; rub?: number | null; statut: string; assigned_at: string; completed_at: string | null; boppou_sourate_effectue?: boolean; affecte_par_prenom?: string | null; affecte_par_nom?: string | null; valide_par_prenom?: string | null; valide_par_nom?: string | null }>;
+    revisions: Array<{ id: string; start_ayah_id: string; end_ayah_id: string; debut?: string | null; fin?: string | null; juz?: number | null; hizb?: number | null; rub?: number | null; statut: string; assigned_at: string; completed_at: string | null; affecte_par_prenom?: string | null; affecte_par_nom?: string | null; valide_par_prenom?: string | null; valide_par_nom?: string | null }>;
+  };
 }
 
 export interface EnfantEspaceFamilleApi {
@@ -1002,6 +1010,7 @@ export interface EnfantEspaceFamilleApi {
   sexe: string | null;
   photo_url: string | null;
   annee_scolaire_id: string;
+  annee_scolaire_centrale_id: string | null;
   annee_scolaire: string;
   etablissement_id: string;
   type_code: string | null;
@@ -1010,6 +1019,15 @@ export interface EnfantEspaceFamilleApi {
   campus: string;
   classe_id: string | null;
   classe: string | null;
+}
+
+export interface DetailSeanceFamilleApi {
+  seance: { id: string; reference: string | null; date_seance: string; heure_debut: string; heure_fin: string; statut: string; matiere: string | null; enseignant: string | null };
+  cahier_texte: { contenu: string | null; travail_maison: string | null; lecon_id: string | null; renseigne_at: string | null } | null;
+  presence_eleve: { statut: 'present' | 'absent' | 'retard' | 'justifie' | null; motif: string | null } | null;
+  lecons: Array<{ id: string; libelle: string; ordre: number }>;
+  progression: { prevues: number; terminees: number; restantes: number; pourcentage: number };
+  pieces_jointes: Array<{ id: string; nom_original: string; mime_type: string | null; taille: number | null; created_at: string }>;
 }
 
 export interface EspaceFamilleApi {
@@ -1631,7 +1649,7 @@ export class CentralApiService {
   }
 
   creerComptesInstitut(candidats: Array<{ id: string; type: CompteCandidatInstitut['type'] }>) {
-    return this.http.post<{ message: string; data: Array<{ id: string; profil_id: string; type: string; telephone: string; identifiant: string }>; erreurs: Array<{ id: string; type: string; message: string }> }>(
+    return this.http.post<{ message: string; data: Array<{ id: string; profil_id: string; type: string; telephone: string; identifiant: string; notification_statut?: 'envoye' | 'echec' }>; erreurs: Array<{ id: string; type: string; message: string }> }>(
       `${this.baseUrl}/institut/utilisateurs/creer-comptes`, { candidats }, { headers: this.enteteAutorisation() },
     );
   }
@@ -2259,6 +2277,27 @@ export class CentralApiService {
     return this.http.get<{ data: DossierEleveApi }>(`${this.baseUrl}/institut/eleves/${eleveId}/dossier`, {
       params: { type_etablissement: typeEtablissement, campus_id: campusId },
       headers: this.enteteAutorisation(),
+    });
+  }
+
+  detailSeanceFamille(eleveId: string, seanceId: string, typeEtablissement: string, campusId: string) {
+    return this.http.get<{ data: DetailSeanceFamilleApi }>(`${this.baseUrl}/institut/famille/eleves/${eleveId}/seances/${seanceId}`, {
+      params: { type_etablissement: typeEtablissement, campus_id: campusId },
+      headers: this.enteteAutorisation(),
+    });
+  }
+
+  telechargerPieceSeanceFamille(eleveId: string, seanceId: string, pieceId: string, typeEtablissement: string, campusId: string) {
+    return this.http.get(`${this.baseUrl}/institut/famille/eleves/${eleveId}/seances/${seanceId}/pieces/${pieceId}`, {
+      params: { type_etablissement: typeEtablissement, campus_id: campusId },
+      headers: this.enteteAutorisation(), responseType: 'blob',
+    });
+  }
+
+  telechargerCopieEvaluationFamille(eleveId: string, evaluationId: string, typeEtablissement: string, campusId: string) {
+    return this.http.get(`${this.baseUrl}/institut/famille/eleves/${eleveId}/evaluations/${evaluationId}/copie`, {
+      params: { type_etablissement: typeEtablissement, campus_id: campusId },
+      headers: this.enteteAutorisation(), responseType: 'blob', observe: 'response',
     });
   }
 

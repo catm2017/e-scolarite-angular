@@ -442,6 +442,8 @@ export class InstituteConsoleComponent implements OnInit {
     { def: 'matricule', label: 'Référence', type: 'text', visible: true },
     { def: 'identifier', label: 'Identifiant', type: 'text', visible: true },
     { def: 'name', label: 'Utilisateur', type: 'nameWithImage', visible: true },
+    { def: 'phone', label: 'Téléphone', type: 'phone', visible: true },
+    { def: 'email', label: 'Adresse e-mail', type: 'email', visible: true },
     { def: 'type', label: 'Type', type: 'text', visible: true },
     { def: 'role', label: 'Rôle', type: 'text', visible: true },
     { def: 'scope', label: 'Périmètre', type: 'text', visible: true },
@@ -1481,6 +1483,8 @@ export class InstituteConsoleComponent implements OnInit {
     this.selectedAccountCandidates.set(rows.filter((row) => row.eligible));
   }
 
+  isAccountCandidateSelectionDisabled = (row: CompteCandidatRow): boolean => !row.eligible;
+
   createSelectedAccounts(): void {
     const rows = this.selectedAccountCandidates();
     if (!rows.length || this.userCreationSaving()) return;
@@ -1491,9 +1495,22 @@ export class InstituteConsoleComponent implements OnInit {
         this.closeUserAccountCreation();
         this.chargerUtilisateurs();
         this.toast.success(result.message);
+        const notificationsEnEchec = result.data.filter((item) => item.notification_statut === 'echec').length;
+        if (notificationsEnEchec) {
+          this.toast.error(`${notificationsEnEchec} message(s) n’ont pas pu être envoyé(s). Le compte a bien été créé et pourra être notifié à nouveau depuis sa fiche.`);
+        }
         if (result.erreurs.length) this.toast.error(result.erreurs[0].message);
       },
-      error: (error) => { this.userCreationSaving.set(false); this.toast.error(error?.error?.message ?? 'Les comptes n’ont pas pu être créés.'); },
+      error: (error) => {
+        this.userCreationSaving.set(false);
+        const details = Array.isArray(error?.error?.erreurs)
+          ? error.error.erreurs.map((item: { message?: string }) => item.message).filter(Boolean).join(' ')
+          : '';
+        const validations = error?.error?.errors && typeof error.error.errors === 'object'
+          ? Object.values(error.error.errors).flat().join(' ')
+          : '';
+        this.toast.error(details || validations || error?.error?.message || 'Les comptes n’ont pas pu être créés.');
+      },
     });
   }
 

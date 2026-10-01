@@ -108,7 +108,9 @@ const FAMILY_ROUTES: Array<{ path: string; title: string; icon: string; group?: 
   { path: '/famille/accueil', title: 'Mes enfants', icon: 'family_restroom', group: 'MON ESPACE' },
   { path: '/famille/tableau-de-bord', title: 'Tableau de bord', icon: 'space_dashboard' },
   { path: '/famille/emploi-du-temps', title: 'Emploi du temps', icon: 'calendar_month', group: 'SCOLARITÉ' },
-  { path: '/famille/notes-bulletins', title: 'Notes et bulletins', icon: 'description' },
+  { path: '/famille/seances', title: 'Séances', icon: 'fact_check' },
+  { path: '/famille/matieres-programmes', title: 'Matières & programmes', icon: 'auto_stories' },
+  { path: '/famille/notes-bulletins', title: 'Évaluations', icon: 'description' },
   { path: '/famille/absences', title: 'Présences et absences', icon: 'event_available' },
   { path: '/famille/paiements', title: 'Paiements et échéances', icon: 'payments' },
   { path: '/famille/documents', title: 'Documents', icon: 'folder_shared' },
@@ -171,7 +173,13 @@ export class SidebarComponent
   isTeacherWorkspace = false;
   isFamilyWorkspace = false;
   get teacherNavigation() { return this.centralApi.contexteEnseignant()?.type_code === 'daara' ? TEACHER_DAARA_ROUTES : TEACHER_ROUTES; }
-  readonly familyNavigation = FAMILY_ROUTES;
+  get familyNavigation() {
+    // Le compte élève est déjà positionné sur son propre dossier : il n’a
+    // donc pas besoin d’un menu de sélection « Mes enfants ».
+    return this.centralApi.utilisateur()?.type === 'eleve'
+      ? FAMILY_ROUTES.filter((item) => item.path !== '/famille/accueil')
+      : FAMILY_ROUTES;
+  }
   isPersonnelUser(): boolean { return this.centralApi.utilisateur()?.type === 'personnel'; }
   isPointageEligibleUser(): boolean {
     const type = this.centralApi.utilisateur()?.type;

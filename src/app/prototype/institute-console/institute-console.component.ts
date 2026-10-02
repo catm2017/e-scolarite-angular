@@ -597,6 +597,12 @@ export class InstituteConsoleComponent implements OnInit {
       next: (espace) => {
         this.instituteName.set(espace.institut.nom);
         this.connectedUserName.set(`${espace.user.prenom} ${espace.user.nom}`.trim());
+        if (espace.annee_scolaire_courante) {
+          this.primaryWorkspace.setCurrentAcademicYear(
+            espace.annee_scolaire_courante.id,
+            espace.annee_scolaire_courante.libelle,
+          );
+        }
         this.campuses.set(espace.campus.map((campus) => this.presenterCampus(campus)));
         this.establishmentsCatalogue.set(espace.etablissements.map((item) => this.presenterEtablissement(item)));
         this.chargerTableauBord();

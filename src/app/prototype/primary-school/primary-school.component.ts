@@ -849,9 +849,9 @@ export class PrimarySchoolComponent {
   );
   schoolYearSettings = {
     centralYearId: '',
-    label: '2026–2027',
-    startDate: '2026-10-05',
-    endDate: '2027-06-30',
+    label: '',
+    startDate: '',
+    endDate: '',
   };
   schoolLevelSettings: PrimaryLevelSetting[] = [
     { id: 1, code: 'CI', label: 'Cours d’initiation' },
@@ -916,8 +916,10 @@ export class PrimarySchoolComponent {
   get feeAcademicYears(): string[] {
     return this.workspace.academicYears();
   }
-  readonly currentFeeAcademicYear = '2026–2027';
-  readonly selectedFeeAcademicYear = signal(this.currentFeeAcademicYear);
+  get currentFeeAcademicYear(): string {
+    return this.workspace.selectedAcademicYear();
+  }
+  readonly selectedFeeAcademicYear = signal('');
   readonly selectedFeeClassId = signal('all');
   readonly selectedAdditionalFeeClassId = signal('');
   readonly feeEditorOpen = signal(false);
@@ -931,7 +933,7 @@ export class PrimarySchoolComponent {
     required: false,
   };
   paymentMonths = ['Oct', 'Nov', 'Déc', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'];
-  readonly selectedCollectionAcademicYear = signal(this.currentFeeAcademicYear);
+  readonly selectedCollectionAcademicYear = signal('');
   readonly selectedCollectionFeeId = signal('monthlyFee');
   readonly collectionUnpaidOnly = signal(false);
   readonly collectionSearch = signal('');
@@ -945,7 +947,7 @@ export class PrimarySchoolComponent {
   readonly expenseEditorOpen = signal(false);
   readonly selectedExpenseTypeId = signal('staff-salary');
   readonly selectedExpensePeriod = signal('2026-08');
-  readonly selectedExpenseAcademicYear = signal(this.currentFeeAcademicYear);
+  readonly selectedExpenseAcademicYear = signal('');
   readonly expenseUnpaidOnly = signal(false);
   readonly expenseTypes = signal<ExpenseType[]>([]);
   readonly expenseTypeEditorOpen = signal(false);
@@ -965,7 +967,7 @@ export class PrimarySchoolComponent {
     { id: 9, campusId: 'keur-massar', amount: 40000, reason: 'Mensualité', direction: 'Entrée', date: '2026-07-29', paymentMethod: 'Wave', thirdParty: 'Mariama Ba · CM1 A', reference: 'ENC-260729-112', status: 'Validée', source: 'Encaissements', notes: 'Mensualité juillet' },
     { id: 10, campusId: 'plateau', amount: 330000, reason: 'Salaires du personnel', direction: 'Sortie', date: '2026-08-20', paymentMethod: 'Virement', thirdParty: 'Mame Sow', reference: 'DEC-260820-009', status: 'Validée', source: 'Dépenses', notes: '' },
   ]);
-  readonly selectedFinanceAcademicYear = signal(this.currentFeeAcademicYear);
+  readonly selectedFinanceAcademicYear = signal('');
   readonly selectedFinancePeriod = signal('all');
   readonly selectedFinanceDirection = signal<'Tous' | FinanceDirection>('Tous');
   readonly selectedFinanceReason = signal('all');
@@ -6677,7 +6679,7 @@ export class PrimarySchoolComponent {
       next: () => {
         const academicYear = year.label;
         this.workspace.setConfigurationState(this.workspace.establishmentType(), true, true);
-        this.workspace.selectedAcademicYear.set(academicYear);
+        this.workspace.setCurrentAcademicYear(year.centralYearId, academicYear);
         this.selectedFeeAcademicYear.set(academicYear);
         this.selectedCollectionAcademicYear.set(academicYear);
         this.selectedExpenseAcademicYear.set(academicYear);
@@ -6698,8 +6700,12 @@ export class PrimarySchoolComponent {
     });
   }
 
-  selectSchoolYear(centralYearId: string): void {
-    const annee = this.anneesScolairesDisponibles().find((item) => item.id === centralYearId);
+  selectSchoolYear(_centralYearId: string): void {
+    // Les espaces métiers travaillent toujours sur l'année marquée courante
+    // dans le référentiel central, même si un ancien identifiant subsiste dans
+    // une URL, un cache navigateur ou un ancien état de formulaire.
+    const annee = this.anneesScolairesDisponibles().find((item) => item.est_courante)
+      ?? this.anneesScolairesDisponibles().find((item) => item.configuration?.est_courante);
     if (!annee) return;
 
     this.selectedCentralAcademicYearId.set(annee.id);
@@ -6709,7 +6715,11 @@ export class PrimarySchoolComponent {
       startDate: annee.configuration?.date_debut ?? '',
       endDate: annee.configuration?.date_fin ?? '',
     };
-    this.workspace.selectedAcademicYear.set(annee.libelle);
+    this.workspace.setCurrentAcademicYear(annee.id, annee.libelle);
+    this.selectedFeeAcademicYear.set(annee.libelle);
+    this.selectedCollectionAcademicYear.set(annee.libelle);
+    this.selectedExpenseAcademicYear.set(annee.libelle);
+    this.selectedFinanceAcademicYear.set(annee.libelle);
     this.chargerParametresScolarite(annee.id);
     if (this.configurationReady() && annee.configuration_complete) this.chargerClasses();
   }
@@ -6767,8 +6777,7 @@ export class PrimarySchoolComponent {
         this.anneesScolairesDisponibles.set(data);
         this.workspace.academicYears.set(data.map((annee) => annee.libelle));
         const annee = data.find((item) => item.est_courante)
-          ?? data.find((item) => item.configuration?.est_courante)
-          ?? data[0];
+          ?? data.find((item) => item.configuration?.est_courante);
         const typeEtablissement = this.workspace.establishmentType();
         this.workspace.setConfigurationState(typeEtablissement, true, Boolean(annee?.configuration_complete));
         if (annee) {

@@ -142,8 +142,14 @@ export class PrimaryWorkspaceService {
     try { localStorage.setItem('e-scolarite:campus-actif', campusId); } catch { /* stockage indisponible */ }
   });
   readonly establishmentType = signal<EstablishmentWorkspaceType>('primary');
-  readonly academicYears = signal(['2025–2026', '2026–2027', '2027–2028']);
-  readonly selectedAcademicYear = signal('2026–2027');
+  /**
+   * L'année active provient exclusivement du référentiel central. L'identifiant
+   * et le libellé sont conservés ensemble afin que le navtop et les appels API
+   * ne puissent jamais représenter deux années différentes.
+   */
+  readonly academicYears = signal<string[]>([]);
+  readonly currentAcademicYearId = signal('');
+  readonly selectedAcademicYear = signal('');
   readonly selectedPeriod = signal('Trimestre 1');
   readonly availablePeriods = computed<readonly string[]>(() =>
     this.establishmentType() === 'primary' || this.establishmentType() === 'prescolaire'
@@ -163,6 +169,11 @@ export class PrimaryWorkspaceService {
   });
   readonly configurationChecked = computed(() => this.configurationStates()[this.establishmentType()].checked);
   readonly configurationReady = computed(() => this.configurationStates()[this.establishmentType()].ready);
+
+  setCurrentAcademicYear(id: string, label: string): void {
+    this.currentAcademicYearId.set(id);
+    this.selectedAcademicYear.set(label);
+  }
 
   private campusInitial(): string {
     try { return localStorage.getItem('e-scolarite:campus-actif') ?? 'keur-massar'; } catch { return 'keur-massar'; }

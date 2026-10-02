@@ -50,15 +50,13 @@
           <label class="workspace-context-select academic-year-select">
             <small>Année scolaire</small>
             <select
-              aria-label="Année scolaire"
+              aria-label="Année scolaire en cours"
               [value]="primaryWorkspace.selectedAcademicYear()"
-              [disabled]="backendLoading.isLoading() && primaryWorkspace.academicYears().length === 0"
-              (change)="changeAcademicYear($event)">
-              @if (backendLoading.isLoading() && primaryWorkspace.academicYears().length === 0) {
-                <option value="" disabled>Chargement des années…</option>
-              }
-              @for (academicYear of primaryWorkspace.academicYears(); track academicYear) {
-                <option [value]="academicYear">{{ academicYear }}</option>
+              disabled>
+              @if (primaryWorkspace.selectedAcademicYear()) {
+                <option [value]="primaryWorkspace.selectedAcademicYear()">{{ primaryWorkspace.selectedAcademicYear() }}</option>
+              } @else {
+                <option value="">Chargement de l’année…</option>
               }
             </select>
           </label>
@@ -114,7 +112,7 @@
         </div>
         <div class="workspace-context-select institute-summary">
           <small>Année scolaire</small>
-          <strong>2026–2027</strong>
+          <strong>{{ primaryWorkspace.selectedAcademicYear() || 'Année non définie' }}</strong>
         </div>
       </div>
       }

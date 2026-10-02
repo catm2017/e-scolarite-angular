@@ -280,6 +280,11 @@ export interface EspaceInstitut {
   user: CentralUser & { type: string };
   etablissements: Array<Omit<TypeSouscription, 'fonctionnalites'>>;
   campus: CampusInstitut[];
+  annee_scolaire_courante: {
+    id: string;
+    libelle: string;
+    statut: string;
+  } | null;
 }
 
 export interface TableauBordInstitutApi {

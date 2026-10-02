@@ -340,12 +340,6 @@ export class HeaderComponent
     }
   }
 
-  changeAcademicYear(event: Event): void {
-    this.primaryWorkspace.selectedAcademicYear.set(
-      (event.target as HTMLSelectElement).value,
-    );
-  }
-
   changePeriod(event: Event): void {
     this.primaryWorkspace.selectedPeriod.set(
       (event.target as HTMLSelectElement).value,

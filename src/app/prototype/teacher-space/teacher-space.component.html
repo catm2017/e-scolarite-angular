@@ -8,7 +8,7 @@
       @switch (vue()) {
         @case ('espaces') {
           <section class="teacher-panel workspace-choice-panel">
-            <header><div><h2>Choisissez votre espace de travail</h2><p>Les données affichées dépendront du campus et du type d’établissement sélectionnés.</p></div></header>
+            <header><div><h2>Choisissez votre espace de travail</h2><p>Les données affichées dépendront du campus et du cycle sélectionné.</p></div></header>
             <div class="workspace-choice-grid">
               @for (rattachement of data.rattachements; track rattachement.etablissement_id + rattachement.campus_id) {
                 <button type="button" class="workspace-choice-card" [class.active]="contexteActif()?.etablissement_id === rattachement.etablissement_id && contexteActif()?.campus_id === rattachement.campus_id" (click)="choisirEspace(rattachement)">

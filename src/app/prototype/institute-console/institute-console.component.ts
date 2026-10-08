@@ -333,7 +333,7 @@ export class InstituteConsoleComponent implements OnInit {
   readonly guardianChildrenColumns: ColumnDefinition[] = [
     { def: 'name', label: 'Élève', type: 'nameWithImage', visible: true, sortable: true },
     { def: 'matricule', label: 'Matricule', type: 'text', visible: true, sortable: true },
-    { def: 'typeEtablissement', label: 'Établissement', type: 'text', visible: true, sortable: true },
+    { def: 'typeEtablissement', label: 'Cycle', type: 'text', visible: true, sortable: true },
     { def: 'classe', label: 'Classe', type: 'text', visible: true, sortable: true },
     { def: 'campus', label: 'Campus', type: 'text', visible: true, sortable: true },
     { def: 'anneeScolaire', label: 'Année scolaire', type: 'text', visible: true, sortable: true },
@@ -486,7 +486,7 @@ export class InstituteConsoleComponent implements OnInit {
     { def: 'select', label: 'Sélection', type: 'check', visible: true },
     { def: 'matricule', label: 'Matricule', type: 'text', visible: true },
     { def: 'name', label: 'Enseignant', type: 'nameWithImage', visible: true },
-    { def: 'establishment', label: 'Établissement / cycle', type: 'text', visible: true },
+    { def: 'establishment', label: 'Cycle', type: 'text', visible: true },
     { def: 'subject', label: 'Matière principale', type: 'text', visible: true },
     { def: 'phone', label: 'Téléphone', type: 'phone', visible: true },
     { def: 'campus', label: 'Campus', type: 'text', visible: true },
@@ -1330,7 +1330,7 @@ export class InstituteConsoleComponent implements OnInit {
       code: item.code,
       type: item.type,
       icon: presentation.icon,
-      description: item.active ? 'Établissement activé lors de votre adhésion.' : 'Type non retenu dans votre adhésion.',
+      description: item.active ? 'Cycle activé lors de votre adhésion.' : 'Cycle non retenu dans votre adhésion.',
       modules: item.fonctionnalites.map((fonctionnalite) => fonctionnalite.libelle),
       price: item.fonctionnalites.reduce((total, fonctionnalite) => total + fonctionnalite.prix_mensuel, 0),
       enabled: item.active,
@@ -2024,7 +2024,7 @@ export class InstituteConsoleComponent implements OnInit {
   breadcrumbActive(): string {
     const labels: Record<InstituteView, string> = {
       overview: 'Tableau de bord',
-      establishments: 'Établissements',
+      establishments: 'Cycles',
       campuses: 'Campus',
       pointages: 'Pointages',
       'mon-pointage': 'Mon pointage',

@@ -86,7 +86,7 @@ export class SiteEditorComponent implements OnInit, OnDestroy {
     { value: 'text', label: 'Texte libre', icon: 'article' },
     { value: 'stats', label: 'Chiffres clés', icon: 'query_stats' },
     { value: 'programs', label: 'Parcours scolaires', icon: 'school' },
-    { value: 'schools', label: 'Établissements', icon: 'apartment' },
+    { value: 'schools', label: 'Cycles', icon: 'apartment' },
     { value: 'about', label: 'Valeurs et atouts', icon: 'verified' },
     { value: 'news', label: 'Actualités', icon: 'newspaper' },
     { value: 'testimonials', label: 'Témoignages', icon: 'reviews' },
@@ -326,7 +326,7 @@ export class SiteEditorComponent implements OnInit, OnDestroy {
     ];
     if (type === 'schools') {
       const types = etablissements.map((item) => item.nom).filter(Boolean).join(' · ');
-      return campuses.length ? campuses.map((campus) => ({ id: `campus-${campus.id}`, title: campus.nom, subtitle: types || 'Établissement', content: campus.adresse || 'Campus de l’institut', icon: 'location_city', meta: campus.adresse || '' })) : [
+      return campuses.length ? campuses.map((campus) => ({ id: `campus-${campus.id}`, title: campus.nom, subtitle: types || 'Cycle', content: campus.adresse || 'Campus de l’institut', icon: 'location_city', meta: campus.adresse || '' })) : [
         { id: 'school-1', title: 'Campus Keur Massar', subtitle: 'Préscolaire · Primaire · Collège', content: 'Keur Massar, Dakar', icon: 'apartment' },
         { id: 'school-2', title: 'Campus Dakar Plateau', subtitle: 'Lycée · Formation professionnelle', content: 'Dakar Plateau', icon: 'domain' },
       ];
@@ -430,7 +430,7 @@ export class SiteEditorComponent implements OnInit, OnDestroy {
   synchroniserEtablissements(section: WebsiteSection): void {
     const appliquer = () => this.updateSection(section.id, { items: this.defaultSectionItems('schools') });
     if (this.api.espaceInstitutCharge()) { appliquer(); return; }
-    this.api.espaceInstitut().subscribe({ next: appliquer, error: () => this.message.set('Les établissements ne sont pas disponibles pour le moment.') });
+    this.api.espaceInstitut().subscribe({ next: appliquer, error: () => this.message.set('Les cycles ne sont pas disponibles pour le moment.') });
   }
 
   updateSectionStyle(section: WebsiteSection, key: string, value: string): void {

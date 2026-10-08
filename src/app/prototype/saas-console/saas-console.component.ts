@@ -134,7 +134,7 @@ export class SaasConsoleComponent implements OnInit {
     ['actif', 'Disponible', 'check'], ['actions', 'Actions', 'actionBtn'],
   ]);
   readonly packagesColumns = this.columns([
-    ['libelle', 'Package', 'text'], ['types_etablissements', 'Établissements', 'text'],
+    ['libelle', 'Package', 'text'], ['types_etablissements', 'Cycles', 'text'],
     ['duree_jours', 'Durée (jours)', 'number'], ['prix_unitaire_eleve', 'F CFA / élève', 'number'],
     ['prix_unitaire_personnel', 'F CFA / collaborateur', 'number'], ['actif', 'Actif', 'check'], ['actions', 'Actions', 'actionBtn'],
   ]);
@@ -353,7 +353,7 @@ export class SaasConsoleComponent implements OnInit {
     this.ajoutTypesInstitutEnCours.set(true);
     this.api.ajouterTypesInstitutSaas(detail.institut.id, this.typesInstitutSelectionnes()).subscribe({
       next: ({ types_etablissements }) => { this.institutEnDetail.update((value) => value ? { ...value, institut: { ...value.institut, types_etablissements } } : value); this.ajoutTypesInstitutEnCours.set(false); this.chargerDonnees(); },
-      error: (response) => { this.erreur.set(response.error?.message ?? 'Les types d’établissement n’ont pas pu être ajoutés.'); this.ajoutTypesInstitutEnCours.set(false); },
+      error: (response) => { this.erreur.set(response.error?.message ?? 'Les cycles n’ont pas pu être ajoutés.'); this.ajoutTypesInstitutEnCours.set(false); },
     });
   }
 

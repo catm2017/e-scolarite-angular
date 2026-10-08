@@ -22,7 +22,7 @@ export class DaaraStudentTransfersComponent implements OnChanges {
   readonly selectedRows = computed(() => this.rows().filter((row) => this.selectedIds().includes(row.id)));
   readonly columns: ColumnDefinition[] = [
     { def: 'select', label: 'Sélection', type: 'check', visible: true }, { def: 'matricule', label: 'Matricule', type: 'text', visible: true, sortable: true },
-    { def: 'name', label: 'Élève', type: 'nameWithImage', visible: true, sortable: true }, { def: 'source', label: 'Établissement d’origine', type: 'text', visible: true, sortable: true },
+    { def: 'name', label: 'Élève', type: 'nameWithImage', visible: true, sortable: true }, { def: 'source', label: 'Cycle d’origine', type: 'text', visible: true, sortable: true },
   ];
   ngOnChanges(): void { if (this.campusId && this.academicYearId) this.load(); }
   load(): void { this.loading.set(true); this.api.transfertsDaara(this.campusId, this.academicYearId).subscribe({ next: (result) => { this.loading.set(false); this.sources.set(result.sources); this.daaraClass.set(result.classe_daara.libelle); this.allRows.set(result.data.map((item, index) => ({ id: item.id, matricule: item.matricule, name: `${item.prenom} ${item.nom}`.trim(), sourceId: item.etablissement_source_id, source: item.etablissement_source, img: `assets/images/user/user${(index % 9) + 1}.jpg` }))); this.selectSource(this.selectedSourceId() || result.sources[0]?.id || ''); }, error: (error) => { this.loading.set(false); this.toast.error(error?.error?.message ?? 'Les apprenants disponibles n’ont pas pu être chargés.'); } }); }

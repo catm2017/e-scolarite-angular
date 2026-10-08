@@ -64,11 +64,11 @@ export class StudentTransfersComponent implements OnInit {
     return !!this.selectedYearId() && hasRoute && this.selectedStudentIds().length > 0 && !this.saving();
   });
   readonly destinationLabel = computed(() => this.transferMode() === 'etablissement'
-    ? `${this.selectedTargetEstablishment()?.type ?? 'Établissement'} · ${this.selectedTargetEstablishment()?.nom ?? 'Destination non définie'} · campus conservé`
-    : `${this.selectedTargetCampus()?.nom ?? 'Destination non définie'} · établissement conservé`);
+    ? `${this.selectedTargetEstablishment()?.type ?? 'Cycle'} · ${this.selectedTargetEstablishment()?.nom ?? 'Destination non définie'} · campus conservé`
+    : `${this.selectedTargetCampus()?.nom ?? 'Destination non définie'} · cycle conservé`);
   readonly modeDescription = computed(() => this.transferMode() === 'etablissement'
     ? 'L’élève change d’espace, mais reste dans son campus actuel.'
-    : 'L’élève change de campus, mais reste dans son type d’établissement actuel.');
+    : 'L’élève change de campus, mais reste dans son cycle actuel.');
 
   ngOnInit(): void { this.load(); }
   load(yearId = this.selectedYearId()): void {

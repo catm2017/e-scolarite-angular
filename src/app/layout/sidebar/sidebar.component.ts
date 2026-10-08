@@ -62,7 +62,7 @@ const PRIMARY_ROUTES: RouteInfo[] = [
 const INSTITUTE_ROUTES: RouteInfo[] = [
   { path: '', title: 'PILOTAGE', iconType: '', icon: '', class: '', groupTitle: true, badge: '', badgeClass: '', role: [], submenu: [] },
   { path: '', title: 'Vue d’ensemble', iconType: 'material-icons-outlined', icon: 'space_dashboard', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'overview' },
-  { path: '', title: 'Établissements', iconType: 'material-icons-outlined', icon: 'account_balance', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'establishments' },
+  { path: '', title: 'Cycles', iconType: 'material-icons-outlined', icon: 'account_balance', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'establishments' },
   { path: '', title: 'Campus', iconType: 'material-icons-outlined', icon: 'location_city', class: '', groupTitle: false, badge: '', badgeClass: 'badge bg-blue sidebar-badge', role: [], submenu: [], workspaceView: 'campuses' },
   { path: '', title: 'Pointages', iconType: 'material-icons-outlined', icon: 'qr_code_scanner', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'pointages' },
   { path: '/institut/mon-pointage', title: 'Mon pointage', iconType: 'material-icons-outlined', icon: 'qr_code_scanner', class: '', groupTitle: false, badge: '', badgeClass: '', role: [], submenu: [], workspaceView: 'mon-pointage', pointageEligibleOnly: true },
@@ -377,7 +377,7 @@ export class SidebarComponent
           const total = this.centralApi.campusInstitut().length;
           return { ...item, badge: total ? String(total) : '' };
         }
-        if (item.title === 'Établissements') {
+        if (item.title === 'Cycles') {
           const total = this.centralApi.etablissementsInstitut().filter((etablissement) => etablissement.active).length;
           return { ...item, badge: total ? String(total) : '' };
         }

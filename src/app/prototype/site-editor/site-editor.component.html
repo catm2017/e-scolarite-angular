@@ -114,7 +114,7 @@
               }
               @if (selectedSectionId() === section.id && supportsItems(section.type)) {
                 <div class="content-items-editor">
-                  <div class="items-editor-heading"><div><small>CONTENU STRUCTURÉ</small><strong>Éléments du composant</strong></div>@if (section.type === 'schools') { <button type="button" class="sync-content-button" (click)="synchroniserEtablissements(section)"><i>sync</i>Importer les établissements</button> }<button type="button" class="add-item-button" (click)="addSectionItem(section)"><i>add</i>Ajouter</button></div>
+                  <div class="items-editor-heading"><div><small>CONTENU STRUCTURÉ</small><strong>Éléments du composant</strong></div>@if (section.type === 'schools') { <button type="button" class="sync-content-button" (click)="synchroniserEtablissements(section)"><i>sync</i>Importer les cycles</button> }<button type="button" class="add-item-button" (click)="addSectionItem(section)"><i>add</i>Ajouter</button></div>
                   @for (item of sectionItems(section); track item.id) {
                     <div class="content-item-row">
                       <div class="content-item-row-head"><span>{{ item.icon || 'widgets' }}</span><strong>Élément {{ $index + 1 }}</strong><button type="button" class="icon-button danger" (click)="removeSectionItem(section, item.id)" title="Supprimer">delete</button></div>
@@ -336,7 +336,7 @@
                   <section class="preview-contact"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><article>@for (item of sectionItems(section); track item.id) {<p><span>{{ item.icon || 'info' }}</span>{{ item.content || item.title }}</p>}<button type="button">Demander une visite</button></article></section>
                 }
                 @case ('admission') {
-                  <section class="preview-section preview-admission"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="admission-preview-fields"><span>Type d’établissement</span><span>Campus</span><span>Classe souhaitée</span><button type="button">Envoyer ma demande</button></div></section>
+                  <section class="preview-section preview-admission"><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p class="lead">{{ section.content }}</p><div class="admission-preview-fields"><span>Cycle</span><span>Campus</span><span>Classe souhaitée</span><button type="button">Envoyer ma demande</button></div></section>
                 }
                 @case ('cta') {
                   <section class="preview-cta"><div><small>{{ section.eyebrow }}</small><h2>{{ section.title }}</h2><p>{{ section.content }}</p></div><button type="button">Déposer une demande</button></section>

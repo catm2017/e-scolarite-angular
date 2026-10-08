@@ -175,7 +175,7 @@ export class PrototypeDataService {
         isHome: false,
         sections: [
           { id: 'admission-hero', type: 'hero', eyebrow: 'RENTRÉE 2026–2027', title: 'Rejoignez notre établissement', content: 'Consultez la procédure et envoyez votre demande de préinscription.', visible: true },
-          { id: 'admission-content', type: 'admission', eyebrow: 'CANDIDATURE', title: 'Déposer une demande d’admission', content: 'Choisissez le type d’établissement, votre campus et la classe souhaitée.', visible: true },
+          { id: 'admission-content', type: 'admission', eyebrow: 'CANDIDATURE', title: 'Déposer une demande d’admission', content: 'Choisissez le cycle, votre campus et la classe souhaitée.', visible: true },
         ],
       },
       {

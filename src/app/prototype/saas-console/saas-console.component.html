@@ -86,8 +86,8 @@
       </nav>
       @if (pricingTab() === 'features') {
         <div class="card saas-filter-bar">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Type d’établissement</mat-label><mat-select [ngModel]="catalogueTypeActif()" (ngModelChange)="catalogueTypeActif.set($event)">@for (type of catalogueTypes(); track type.id) {<mat-option [value]="type.code">{{ type.libelle }}</mat-option>}</mat-select></mat-form-field>
-          <p>Un tarif par fonctionnalité, adapté à chaque type d’établissement. Tous les montants sont en F CFA.</p>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Cycle</mat-label><mat-select [ngModel]="catalogueTypeActif()" (ngModelChange)="catalogueTypeActif.set($event)">@for (type of catalogueTypes(); track type.id) {<mat-option [value]="type.code">{{ type.libelle }}</mat-option>}</mat-select></mat-form-field>
+          <p>Un tarif par fonctionnalité, adapté à chaque cycle. Tous les montants sont en F CFA.</p>
         </div>
         @if (tarifEnEdition(); as tarif) {
           <form class="card saas-editor" (ngSubmit)="enregistrerTarification(tarif)">
@@ -103,7 +103,7 @@
         }
         <app-master-table title="Tarifs des fonctionnalités" [dataSource]="tarifsSource" [columnDefinitions]="tarifsColumns" [showCheckbox]="false" [showAdd]="false" [showDelete]="false" [showContextMenu]="false" [showBulkDelete]="false" (edit)="modifierTarif($event)" (refresh)="chargerDonnees()" />
       } @else {
-        <div class="card saas-filter-bar"><div><h2>Des offres pour un ou plusieurs types d’établissement</h2><p>Choisissez les fonctionnalités incluses, la durée d’accès et le prix par élève et collaborateur.</p></div><button mat-flat-button color="primary" (click)="nouveauPackage()"><mat-icon>add</mat-icon>Nouveau package</button></div>
+        <div class="card saas-filter-bar"><div><h2>Des offres pour un ou plusieurs cycles</h2><p>Choisissez les fonctionnalités incluses, la durée d’accès et le prix par élève et collaborateur.</p></div><button mat-flat-button color="primary" (click)="nouveauPackage()"><mat-icon>add</mat-icon>Nouveau package</button></div>
         @if (packageEnEdition(); as package) {
           <form class="card saas-editor" (ngSubmit)="enregistrerPackage()">
             <h2>{{ package.id ? 'Modifier le package' : 'Nouveau package' }}</h2>
@@ -115,10 +115,10 @@
               <mat-form-field appearance="outline"><mat-label>Prix par enseignant / personnel</mat-label><input matInput name="prixPersonnel" type="number" min="0" required [(ngModel)]="package.prix_unitaire_personnel" /><span matTextSuffix>F CFA</span></mat-form-field>
               <mat-form-field appearance="outline"><mat-label>Description</mat-label><input matInput name="description" [(ngModel)]="package.description" /></mat-form-field>
             </div>
-            <fieldset class="saas-choices"><legend>Types d’établissement</legend><div>@for (type of catalogueTypes(); track type.id) {<mat-checkbox [checked]="package.type_etablissement_ids.includes(type.id)" (change)="basculerTypePackage(type.id)">{{ type.libelle }}</mat-checkbox>}</div></fieldset>
+            <fieldset class="saas-choices"><legend>Cycles</legend><div>@for (type of catalogueTypes(); track type.id) {<mat-checkbox [checked]="package.type_etablissement_ids.includes(type.id)" (change)="basculerTypePackage(type.id)">{{ type.libelle }}</mat-checkbox>}</div></fieldset>
             <fieldset class="saas-choices saas-feature-choices">
               <legend>Fonctionnalités incluses</legend>
-              <p class="saas-choice-help">Les fonctionnalités sont affichées selon les types d’établissement cochés. Une fonctionnalité commune est incluse dans chacun des types où elle est disponible.</p>
+              <p class="saas-choice-help">Les fonctionnalités sont affichées selon les cycles cochés. Une fonctionnalité commune est incluse dans chacun des types où elle est disponible.</p>
               <div class="saas-feature-groups">
                 @for (group of fonctionnalitesPackageParType(); track group.type.id) {
                   <section class="saas-feature-group">
@@ -136,12 +136,12 @@
                           @if (!feature.actif) {<small>Non commercialisée</small>}
                         </mat-checkbox>
                       } @empty {
-                        <p class="saas-empty-features">Aucune fonctionnalité développée pour ce type d’établissement.</p>
+                        <p class="saas-empty-features">Aucune fonctionnalité développée pour ce cycle.</p>
                       }
                     </div>
                   </section>
                 } @empty {
-                  <p class="saas-empty-features">Sélectionnez au moins un type d’établissement pour afficher ses fonctionnalités.</p>
+                  <p class="saas-empty-features">Sélectionnez au moins un cycle pour afficher ses fonctionnalités.</p>
                 }
               </div>
             </fieldset>
@@ -190,7 +190,7 @@
               <div class="saas-form-actions"><button mat-stroked-button type="button" (click)="annulerEditionDemande()">Annuler</button><button mat-flat-button color="primary" type="submit" [disabled]="demandeEditionSaving()"><mat-icon>save</mat-icon>{{ demandeEditionSaving() ? 'Enregistrement…' : 'Enregistrer les modifications' }}</button></div>
             </form>
           }
-          <dl class="saas-detail-grid"><div><dt>Prénom</dt><dd>{{ demande.prenom_responsable }}</dd></div><div><dt>Nom</dt><dd>{{ demande.nom_responsable }}</dd></div><div><dt>E-mail / identifiant</dt><dd>{{ demande.identifiant_responsable }}</dd></div><div><dt>Téléphone</dt><dd>{{ demande.telephone_responsable }}</dd></div><div><dt>Types d’établissement</dt><dd>{{ demande.types_etablissements?.join(', ') }}</dd></div><div><dt>Statut</dt><dd>{{ demande.statut }}</dd></div></dl>
+          <dl class="saas-detail-grid"><div><dt>Prénom</dt><dd>{{ demande.prenom_responsable }}</dd></div><div><dt>Nom</dt><dd>{{ demande.nom_responsable }}</dd></div><div><dt>E-mail / identifiant</dt><dd>{{ demande.identifiant_responsable }}</dd></div><div><dt>Téléphone</dt><dd>{{ demande.telephone_responsable }}</dd></div><div><dt>Cycles</dt><dd>{{ demande.types_etablissements?.join(', ') }}</dd></div><div><dt>Statut</dt><dd>{{ demande.statut }}</dd></div></dl>
           <div class="saas-form-actions"><button mat-stroked-button (click)="demandeEnDetail.set(null)">Fermer</button>@if (demande.statut === 'soumise') {<button mat-flat-button color="primary" [disabled]="!!traitementId()" (click)="approuver(demande)"><mat-icon>check</mat-icon>{{ traitementId() ? 'Provisionnement…' : 'Approuver la demande' }}</button>}</div>
         </article>
       }
@@ -202,7 +202,7 @@
         <article class="card saas-editor">
           <header class="saas-institute-detail-header"><div><h2>{{ detail.institut.nom }}</h2><p>Situation commerciale et historique des abonnements de l’institut.</p></div><label class="institute-logo-upload"><span>@if (detail.institut.logo_url) {<img [src]="detail.institut.logo_url" [alt]="'Logo ' + detail.institut.nom" />} @else {<mat-icon>apartment</mat-icon>}</span><input type="file" accept="image/png,image/jpeg,image/webp" (change)="choisirLogoInstitut($event)" [disabled]="logoInstitutSaving()" /><b>{{ logoInstitutSaving() ? 'Enregistrement…' : 'Ajouter le logo' }}</b><small>PNG, JPG ou WebP · 2 Mo maximum</small></label></header>
           <div class="saas-detail-grid"><div><dt>Responsable</dt><dd>{{ detail.institut.prenom_responsable }} {{ detail.institut.nom_responsable }}</dd></div><div><dt>Adresse e-mail</dt><dd>{{ detail.institut.email_responsable || 'Non renseignée' }}</dd></div><div><dt>Téléphone</dt><dd>{{ detail.institut.telephone_responsable || 'Non renseigné' }}</dd></div></div>
-          <section class="saas-editor-subsection"><h3>Types d’établissement de l’institut</h3><p>Ajoutez un espace métier supplémentaire, comme un Daara ou un préscolaire.</p><div class="saas-type-picker">@for (type of catalogueTypes(); track type.id) { @if (type.code !== 'institut_partage') { <button type="button" [class.selected]="typesInstitutSelectionnes().includes(type.id)" (click)="basculerTypeInstitut(type.id)"><mat-icon>{{ typesInstitutSelectionnes().includes(type.id) ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>{{ type.libelle }}</button> } }</div><button mat-flat-button color="primary" type="button" [disabled]="ajoutTypesInstitutEnCours() || !typesInstitutSelectionnes().length" (click)="enregistrerTypesInstitut()"><mat-icon>save</mat-icon>{{ ajoutTypesInstitutEnCours() ? 'Ajout en cours…' : 'Enregistrer les types' }}</button></section>
+          <section class="saas-editor-subsection"><h3>Cycles de l’institut</h3><p>Ajoutez un espace métier supplémentaire, comme un Daara ou un préscolaire.</p><div class="saas-type-picker">@for (type of catalogueTypes(); track type.id) { @if (type.code !== 'institut_partage') { <button type="button" [class.selected]="typesInstitutSelectionnes().includes(type.id)" (click)="basculerTypeInstitut(type.id)"><mat-icon>{{ typesInstitutSelectionnes().includes(type.id) ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>{{ type.libelle }}</button> } }</div><button mat-flat-button color="primary" type="button" [disabled]="ajoutTypesInstitutEnCours() || !typesInstitutSelectionnes().length" (click)="enregistrerTypesInstitut()"><mat-icon>save</mat-icon>{{ ajoutTypesInstitutEnCours() ? 'Ajout en cours…' : 'Enregistrer les types' }}</button></section>
           @if (detail.abonnement_actuel; as abonnement) {
             <div class="saas-detail-grid"><div><dt>Offre actuelle</dt><dd>{{ abonnement.offre }}</dd></div><div><dt>État</dt><dd>{{ abonnement.etat_abonnement }}</dd></div><div><dt>Paiement</dt><dd>{{ abonnement.etat_paiement }}</dd></div><div><dt>Période</dt><dd>{{ abonnement.date_debut | date }} · {{ abonnement.date_fin | date }}</dd></div></div>
             <app-master-table title="Historique de cet institut" [dataSource]="detailAbonnementsSource" [columnDefinitions]="abonnementsColumns" [showCheckbox]="false" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="false" [showContextMenu]="false" [showBulkDelete]="false" />

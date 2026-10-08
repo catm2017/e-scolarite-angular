@@ -42,7 +42,7 @@
           <span class="field-input"><i aria-hidden="true">location_on</i><input formControlName="adresse" placeholder="Quartier, rue ou repère" /></span>
         </label>
         <div class="types-group">
-          <div class="field-caption"><i aria-hidden="true">school</i> Types d’établissement concernés</div>
+          <div class="field-caption"><i aria-hidden="true">school</i> Cycles concernés</div>
           <div class="types">@for (type of types; track type) { <button type="button" [disabled]="typesIndisponibles.has(type)" [class.active]="typesSelectionnes().includes(type)" [class.unavailable]="typesIndisponibles.has(type)" (click)="basculerType(type)"><i aria-hidden="true">{{ typesIndisponibles.has(type) ? 'lock' : (typesSelectionnes().includes(type) ? 'check_circle' : 'add_circle_outline') }}</i>{{ type }}@if (typesIndisponibles.has(type)) {<small>Bientôt disponible</small>}</button> }</div>
         </div>
       </div>

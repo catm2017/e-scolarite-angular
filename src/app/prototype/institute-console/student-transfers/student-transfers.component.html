@@ -19,8 +19,8 @@
   </header>
 
   <div class="transfer-mode-tabs" role="tablist" aria-label="Type de transfert">
-    <button type="button" [class.active]="transferMode() === 'etablissement'" (click)="changeMode('etablissement')"><i>account_tree</i><span><b>Entre établissements</b><small>Campus conservé</small></span></button>
-    <button type="button" [class.active]="transferMode() === 'campus'" (click)="changeMode('campus')"><i>location_city</i><span><b>Entre campus</b><small>Établissement conservé</small></span></button>
+    <button type="button" [class.active]="transferMode() === 'etablissement'" (click)="changeMode('etablissement')"><i>account_tree</i><span><b>Entre cycles</b><small>Campus conservé</small></span></button>
+    <button type="button" [class.active]="transferMode() === 'campus'" (click)="changeMode('campus')"><i>location_city</i><span><b>Entre campus</b><small>Cycle conservé</small></span></button>
   </div>
 
   <div class="transfer-selectors" [class.two-selectors]="transferMode() === 'etablissement' || transferMode() === 'campus'">
@@ -28,9 +28,9 @@
     <i class="transfer-arrow">arrow_forward</i>
 
     @if (transferMode() === 'etablissement') {
-      <label><span>Établissement source <b>*</b></span><select [ngModel]="selectedSourceEstablishmentId()" (ngModelChange)="changeSourceEstablishment($event)" [disabled]="loading()">@for (item of sourceEstablishments(); track item.id) { <option [value]="item.id">{{ item.type }} · {{ item.nom }}</option> }</select></label>
+      <label><span>Cycle source <b>*</b></span><select [ngModel]="selectedSourceEstablishmentId()" (ngModelChange)="changeSourceEstablishment($event)" [disabled]="loading()">@for (item of sourceEstablishments(); track item.id) { <option [value]="item.id">{{ item.type }} · {{ item.nom }}</option> }</select></label>
       <i class="transfer-arrow">arrow_forward</i>
-      <label><span>Établissement de destination <b>*</b></span><select [ngModel]="selectedTargetEstablishmentId()" (ngModelChange)="changeTargetEstablishment($event)" [disabled]="loading() || !targetEstablishments().length">@for (item of targetEstablishments(); track item.id) { <option [value]="item.id">{{ item.type }} · {{ item.nom }}</option> }</select></label>
+      <label><span>Cycle de destination <b>*</b></span><select [ngModel]="selectedTargetEstablishmentId()" (ngModelChange)="changeTargetEstablishment($event)" [disabled]="loading() || !targetEstablishments().length">@for (item of targetEstablishments(); track item.id) { <option [value]="item.id">{{ item.type }} · {{ item.nom }}</option> }</select></label>
     } @else {
       <label><span>Campus source <b>*</b></span><select [ngModel]="selectedSourceCampusId()" (ngModelChange)="changeSourceCampus($event)" [disabled]="loading()">@for (campus of campuses(); track campus.id) { <option [value]="campus.id">{{ campus.nom }}</option> }</select></label>
       <i class="transfer-arrow">arrow_forward</i>

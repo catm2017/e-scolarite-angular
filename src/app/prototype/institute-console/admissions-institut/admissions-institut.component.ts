@@ -27,7 +27,7 @@ export class AdmissionsInstitutComponent implements OnInit {
     { def: 'responsable', label: 'Responsable', type: 'text', visible: true, sortable: true },
     { def: 'parcours', label: 'Parcours demandé', type: 'text', visible: true, sortable: true },
     { def: 'soumise_at', label: 'Soumise le', type: 'dateCard', visible: true, sortable: true },
-    { def: 'status', label: 'État', type: 'status', visible: true, sortable: true, statusBadgeMap: { 'À traiter': 'badge badge-solid-orange', Acceptée: 'badge badge-solid-green' } },
+    { def: 'status', label: 'État', type: 'status', visible: true, sortable: true, statusBadgeMap: { 'À traiter': 'badge badge-solid-orange', 'À finaliser': 'badge badge-solid-orange', Acceptée: 'badge badge-solid-green' } },
     { def: 'actions', label: 'Actions', type: 'actionBtn', visible: true },
   ];
   readonly dataSource = new MatTableDataSource<AdmissionTableRow>([]);
@@ -48,14 +48,17 @@ export class AdmissionsInstitutComponent implements OnInit {
       eleve: `${demande.prenom} ${demande.nom}`.trim(),
       responsable: `${demande.prenom_tuteur ?? ''} ${demande.nom_tuteur ?? ''}`.trim() || 'Non renseigné',
       parcours: [demande.type_etablissement_libelle || demande.type_etablissement_code, demande.campus_nom, demande.classe_libelle].filter(Boolean).join(' · '),
-      status: demande.statut === 'acceptee' ? 'Acceptée' : 'À traiter',
-      canToggleStatus: demande.statut === 'soumise',
+      status: demande.statut === 'acceptee' ? (demande.eleve_id && demande.tuteur_id && demande.inscription_id ? 'Acceptée' : 'À finaliser') : 'À traiter',
+      canToggleStatus: demande.statut === 'soumise' || (demande.statut === 'acceptee' && (!demande.eleve_id || !demande.tuteur_id || !demande.inscription_id)),
+      statusToggleTooltip: demande.statut === 'acceptee' ? 'Créer les dossiers manquants' : 'Accepter et inscrire l’élève',
+      statusToggleAriaLabel: demande.statut === 'acceptee' ? 'Finaliser cette admission' : 'Accepter cette admission',
+      statusToggleIcon: demande.statut === 'acceptee' ? 'person_add' : 'check_circle',
     }));
   }
 
   ngOnInit(): void { this.charger(); }
   charger(force = false): void { this.chargement.set(true); this.erreur.set(null); this.api.admissionsInstitut(force).subscribe({ next: ({ data }) => { this.demandes.set(data ?? []); this.actualiserTableau(); this.chargement.set(false); }, error: () => { this.erreur.set('Les demandes d’admission sont momentanément indisponibles.'); this.chargement.set(false); } }); }
-  accepter(demande: AdmissionInstitutApi): void { if (demande.statut !== 'soumise') return; this.api.accepterAdmissionInstitut(demande.id).subscribe({ next: ({ message }) => { this.toast.success(message); this.demandes.update((items) => items.map((item) => item.id === demande.id ? { ...item, statut: 'acceptee', traitee_at: new Date().toISOString() } : item)); this.actualiserTableau(); }, error: (error) => this.toast.error(error?.error?.message ?? 'La demande n’a pas pu être acceptée.') }); }
+  accepter(demande: AdmissionInstitutApi): void { if (demande.statut !== 'soumise' && !(demande.statut === 'acceptee' && (!demande.eleve_id || !demande.tuteur_id || !demande.inscription_id))) return; this.api.accepterAdmissionInstitut(demande.id).subscribe({ next: ({ message }) => { this.toast.success(message); this.charger(true); }, error: (error) => this.toast.error(error?.error?.message ?? 'La demande n’a pas pu être acceptée.') }); }
   accepterDepuisTable(row: AdmissionTableRow): void { this.accepter(row); }
   confirmerSuppression(demande: AdmissionInstitutApi): void { this.demandeASupprimer.set(demande); }
   annulerSuppression(): void { this.demandeASupprimer.set(null); }

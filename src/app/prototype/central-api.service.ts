@@ -173,6 +173,9 @@ export interface AdmissionClasseApi { id: string; libelle: string; code: string;
 export interface AdmissionOptionsApi { types: AdmissionTypeApi[]; campuses: AdmissionCampusApi[]; classes: AdmissionClasseApi[]; }
 export interface AdmissionInstitutApi {
   id: string;
+  eleve_id?: string | null;
+  tuteur_id?: string | null;
+  inscription_id?: string | null;
   prenom: string;
   nom: string;
   telephone_eleve?: string | null;
@@ -1570,7 +1573,7 @@ export class CentralApiService {
   }
 
   accepterAdmissionInstitut(id: string) {
-    this.invaliderCache('institut:admissions');
+    this.invaliderCache('institut:');
     return this.http.post<{ message: string }>(`${this.baseUrl}/institut/admissions/${id}/accepter`, {}, { headers: this.enteteAutorisation() });
   }
 

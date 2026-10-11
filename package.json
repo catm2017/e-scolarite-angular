@@ -47,6 +47,7 @@
     "echarts": "~6.0.0",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
+    "jsqr": "^1.4.0",
     "ng-apexcharts": "^2.0.1",
     "ng2-charts": "^8.0.0",
     "ngx-dropzone-wrapper": "^17.0.0",

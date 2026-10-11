@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { CentralApiService, EspaceInstitut, PointageInstitutApi } from '../central-api.service';
+import { lireQrPointage } from '../pointage-qr-reader';
 
 @Component({
   selector: 'app-my-pointage',
@@ -26,6 +27,7 @@ export class MyPointageComponent implements OnInit, OnDestroy {
   readonly sortieDisponibleDansSecondes = signal(0);
   @ViewChild('pointageVideo') private pointageVideo?: ElementRef<HTMLVideoElement>;
   private flux: MediaStream | null = null;
+  private readonly scanCanvas = document.createElement('canvas');
   private scanTimer: number | null = null;
   private sortieTimer: number | null = null;
 
@@ -81,29 +83,27 @@ export class MyPointageComponent implements OnInit, OnDestroy {
 
   demarrerScanner(): void {
     this.scannerErreur.set(null);
-    const BarcodeDetectorCtor = (window as unknown as { BarcodeDetector?: new (options?: { formats: string[] }) => { detect(video: HTMLVideoElement): Promise<Array<{ rawValue?: string }>> } }).BarcodeDetector;
-    if (!BarcodeDetectorCtor || !navigator.mediaDevices?.getUserMedia) {
-      this.scannerErreur.set('La lecture QR automatique n’est pas prise en charge par ce navigateur. Utilisez un appareil ou un navigateur compatible.');
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this.scannerErreur.set('La caméra est indisponible dans ce navigateur. Ouvrez l’application avec une connexion HTTPS et autorisez la caméra.');
       return;
     }
     this.scannerActif.set(true);
     setTimeout(() => {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then((flux) => {
+        if (!this.scannerActif()) { flux.getTracks().forEach((track) => track.stop()); return; }
         this.flux = flux;
         const video = this.pointageVideo?.nativeElement;
-        if (!video) return;
+        if (!video) { this.arreterScanner(); return; }
         video.srcObject = flux;
-        void video.play();
-        const detector = new BarcodeDetectorCtor({ formats: ['qr_code'] });
         const lire = (): void => {
           if (!this.scannerActif() || !this.pointageVideo?.nativeElement) return;
-          detector.detect(this.pointageVideo.nativeElement).then((codes) => {
-            const valeur = codes[0]?.rawValue?.trim();
+          try {
+            const valeur = lireQrPointage(this.pointageVideo.nativeElement, this.scanCanvas);
             if (valeur) { this.jeton.set(valeur); this.arreterScanner(); this.enregistrer(); return; }
             this.scanTimer = window.setTimeout(lire, 250);
-          }).catch(() => { this.scanTimer = window.setTimeout(lire, 500); });
+          } catch { this.scanTimer = window.setTimeout(lire, 500); }
         };
-        lire();
+        void video.play().then(lire).catch(() => { this.arreterScanner(); this.scannerErreur.set('La caméra n’a pas pu démarrer. Vérifiez son autorisation dans le navigateur.'); });
       }).catch(() => { this.scannerActif.set(false); this.scannerErreur.set('La caméra n’a pas pu être ouverte. Vérifiez son autorisation dans le navigateur.'); });
     });
   }

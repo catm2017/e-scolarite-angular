@@ -8,6 +8,7 @@ import { CentralApiService, ClasseMatiereEnseignantApi, ContexteEnseignant, Espa
 import { ColumnDefinition, MasterTableComponent } from '../../shared/components/master-table/master-table.component';
 import { QuranFollowupComponent } from '../daara/quran-followup.component';
 import { QuranLessonsComponent } from '../daara/quran-lessons.component';
+import { lireQrPointage } from '../pointage-qr-reader';
 
 type VueEnseignant = 'espaces' | 'tableau-de-bord' | 'emploi-du-temps' | 'pointage' | 'eleves' | 'eleve-dossier' | 'classes' | 'classe-matiere' | 'programmes' | 'seances' | 'seance-detail' | 'evaluations' | 'evaluation-detail' | 'quran-followup' | 'quran-lesson-history' | 'quran-mouradja' | 'dossier';
 type OngletDossier = 'profil' | 'enseignements' | 'emploi-temps' | 'remuneration';
@@ -86,6 +87,7 @@ export class TeacherSpaceComponent implements OnInit, OnDestroy {
   readonly sortieDisponibleDansSecondes = signal(0);
   @ViewChild('pointageVideo') private pointageVideo?: ElementRef<HTMLVideoElement>;
   private pointageFlux: MediaStream | null = null;
+  private readonly pointageScanCanvas = document.createElement('canvas');
   private pointageScanTimer: number | null = null;
   private sortieTimer: number | null = null;
   /** Fichiers choisis dans le détail d'une évaluation, envoyés uniquement au clic sur Enregistrer. */
@@ -283,29 +285,27 @@ export class TeacherSpaceComponent implements OnInit, OnDestroy {
   }
   demarrerScanner(): void {
     this.pointageScannerErreur.set(null);
-    const BarcodeDetectorCtor = (window as unknown as { BarcodeDetector?: new (options?: { formats: string[] }) => { detect(video: HTMLVideoElement): Promise<Array<{ rawValue?: string }>> } }).BarcodeDetector;
-    if (!BarcodeDetectorCtor || !navigator.mediaDevices?.getUserMedia) {
-      this.pointageScannerErreur.set('La lecture QR automatique n’est pas prise en charge par ce navigateur. Utilisez un appareil ou un navigateur compatible.');
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this.pointageScannerErreur.set('La caméra est indisponible dans ce navigateur. Ouvrez l’application avec une connexion HTTPS et autorisez la caméra.');
       return;
     }
     this.pointageScannerActif.set(true);
     setTimeout(() => {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then((flux) => {
+        if (!this.pointageScannerActif()) { flux.getTracks().forEach((track) => track.stop()); return; }
         this.pointageFlux = flux;
         const video = this.pointageVideo?.nativeElement;
-        if (!video) return;
+        if (!video) { this.arreterScanner(); return; }
         video.srcObject = flux;
-        void video.play();
-        const detector = new BarcodeDetectorCtor({ formats: ['qr_code'] });
         const lire = (): void => {
           if (!this.pointageScannerActif() || !this.pointageVideo?.nativeElement) return;
-          detector.detect(this.pointageVideo.nativeElement).then((codes) => {
-            const valeur = codes[0]?.rawValue?.trim();
+          try {
+            const valeur = lireQrPointage(this.pointageVideo.nativeElement, this.pointageScanCanvas);
             if (valeur) { this.pointageJeton.set(valeur); this.arreterScanner(); this.enregistrerPointage(); return; }
             this.pointageScanTimer = window.setTimeout(lire, 250);
-          }).catch(() => { this.pointageScanTimer = window.setTimeout(lire, 500); });
+          } catch { this.pointageScanTimer = window.setTimeout(lire, 500); }
         };
-        lire();
+        void video.play().then(lire).catch(() => { this.arreterScanner(); this.pointageScannerErreur.set('La caméra n’a pas pu démarrer. Vérifiez son autorisation dans le navigateur.'); });
       }).catch(() => { this.pointageScannerActif.set(false); this.pointageScannerErreur.set('La caméra n’a pas pu être ouverte. Vérifiez l’autorisation du navigateur.'); });
     });
   }

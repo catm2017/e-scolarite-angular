@@ -3589,10 +3589,6 @@ export class PrimarySchoolComponent {
       this.snackBar.error('Sélectionnez une classe avant d’enregistrer l’emploi du temps.');
       return;
     }
-    if (!this.isCollege() && !salleId) {
-      this.snackBar.error('Ajoutez puis sélectionnez une salle disponible pour ce campus.');
-      return;
-    }
     const jours: Record<TimetableDay, number> = {
       monday: 1,
       tuesday: 2,
@@ -3613,14 +3609,6 @@ export class PrimarySchoolComponent {
       .filter((subject) => !this.timetableTeacherId(subject.name));
     if (matieresSansEnseignant.length) {
       this.snackBar.error('Affectez un enseignant à chaque matière utilisée dans l’emploi du temps.');
-      return;
-    }
-    const celluleSansSalle = this.isCollege() && this.timetableDraftRows.some((row) => this.timetableDays.some((day) => {
-      const cellule = row.cells[day.key];
-      return Boolean(cellule.subject && cellule.subject !== 'Pause' && !cellule.roomId);
-    }));
-    if (celluleSansSalle) {
-      this.snackBar.error('Choisissez une salle pour chaque créneau de cours du collège.');
       return;
     }
     const creneaux = this.timetableDraftRows.map((row) => ({

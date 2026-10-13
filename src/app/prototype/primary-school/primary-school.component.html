@@ -1572,9 +1572,10 @@
             </select>
           </label>
           @if (!isCollege()) {<label>
-            <span>Salle</span>
+            <span>Salle <em>(facultatif)</em></span>
             <select [ngModel]="selectedRoomId()" (ngModelChange)="selectRoom($event)">
-              @if (roomsLoading()) {<option value="">Chargement des salles…</option>} @else if (!campusRooms().length) {<option value="">Aucune salle disponible</option>} @else {@for (room of campusRooms(); track room.id) {
+              <option value="">Aucune salle</option>
+              @if (roomsLoading()) {<option value="" disabled>Chargement des salles…</option>} @else {@for (room of campusRooms(); track room.id) {
                 <option [value]="room.id">{{ room.name }}</option>
               }}
             </select>
@@ -1582,7 +1583,7 @@
           <strong><i>event_repeat</i>Applicable à toute l’année scolaire {{ selectedAcademicYear() }}</strong>
         </div>
         @if (!roomsLoading() && !campusRooms().length) {
-          <section class="panel timetable-room-warning"><i>meeting_room</i><span><strong>Aucune salle disponible pour ce campus</strong><small>Ajoutez d’abord une salle dans l’espace Institut, puis revenez ici pour enregistrer l’emploi du temps.</small></span></section>
+          <section class="panel timetable-room-warning"><i>meeting_room</i><span><strong>Aucune salle configurée pour ce campus</strong><small>Vous pouvez enregistrer le planning sans salle, puis en ajouter une ultérieurement si nécessaire.</small></span></section>
         }
 
         <form id="timetable-builder-form" class="panel timetable-builder" (ngSubmit)="saveTimetable()">
@@ -1633,7 +1634,7 @@
                   </select>
                   @if (isCollege() && row.cells[day.key].subject && row.cells[day.key].subject !== 'Pause') {
                     <select class="timetable-cell-room" [ngModel]="row.cells[day.key].roomId" (ngModelChange)="row.cells[day.key].roomId = $event" [name]="'room-' + row.id + '-' + day.key" [attr.aria-label]="'Salle du ' + day.label">
-                      <option [ngValue]="null">Choisir une salle</option>
+                      <option [ngValue]="null">Aucune salle</option>
                       @for (room of campusRooms(); track room.id) {<option [ngValue]="room.id">{{ room.name }}</option>}
                     </select>
                   }

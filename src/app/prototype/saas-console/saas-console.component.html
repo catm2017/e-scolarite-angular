@@ -228,7 +228,18 @@
       <section class="saas-trace-detail-modal" role="dialog" aria-modal="true" aria-labelledby="trace-detail-title" (click)="$event.stopPropagation()">
         <header><div><span class="saas-detail-kicker">{{ trace.source | uppercase }}</span><h2 id="trace-detail-title">{{ trace.action }}</h2><p>{{ trace.description }}</p></div><button mat-icon-button type="button" aria-label="Fermer" (click)="traceDetail.set(null)"><mat-icon>close</mat-icon></button></header>
         <dl class="saas-detail-grid"><div><dt>Institut</dt><dd>{{ trace.institut }}</dd></div><div><dt>Utilisateur</dt><dd>{{ trace.utilisateur }}</dd></div><div><dt>Module</dt><dd>{{ trace.module }}</dd></div><div><dt>Date</dt><dd>{{ trace.survenu_at | date:'dd/MM/yyyy HH:mm' }}</dd></div><div><dt>Adresse IP</dt><dd>{{ trace.adresse_ip || 'Non disponible' }}</dd></div><div><dt>Identifiant de requête</dt><dd>{{ trace.requete_id || trace.correlation_id || 'Non disponible' }}</dd></div></dl>
-        <div class="saas-trace-snapshots"><section><h3>Avant</h3><pre>{{ formaterDonneesTrace(trace.donnees_avant) }}</pre></section><section><h3>Après</h3><pre>{{ formaterDonneesTrace(trace.donnees_apres) }}</pre></section></div>
+        @if (erreurTrace(trace); as erreur) {
+          <section class="saas-trace-error" [class.saas-trace-error--technical]="erreur.technique">
+            <div class="saas-trace-error-heading"><mat-icon>{{ erreur.technique ? 'error_outline' : 'info_outline' }}</mat-icon><div><h3>{{ erreur.technique ? 'Détails de l’erreur serveur' : 'Motif de l’échec' }}</h3><p>HTTP {{ erreur.statut_http || 0 }} · {{ erreur.message || 'La requête n’a pas pu être traitée.' }}</p></div></div>
+            @if (erreur.technique) {
+              <dl class="saas-trace-error-meta"><div><dt>Exception</dt><dd>{{ erreur.type || 'Non disponible' }}</dd></div><div><dt>Emplacement</dt><dd>{{ erreur.fichier || 'Non disponible' }}@if (erreur.ligne) { :{{ erreur.ligne }} }</dd></div></dl>
+              @if (erreur.apercu_trace) { <pre>{{ erreur.apercu_trace }}</pre> }
+            } @else if (erreur.champs) {
+              <div class="saas-trace-error-fields"><strong>Champs concernés</strong><pre>{{ formaterDonneesTrace(erreur.champs) }}</pre></div>
+            }
+          </section>
+        }
+        <div class="saas-trace-snapshots"><section><h3>Avant</h3><pre>{{ formaterDonneesTrace(trace.donnees_avant) }}</pre></section><section><h3>Après</h3><pre>{{ formaterDonneesTrace(donneesApresMetier(trace)) }}</pre></section></div>
         <footer><button mat-stroked-button type="button" (click)="traceDetail.set(null)">Fermer</button></footer>
       </section>
     </div>

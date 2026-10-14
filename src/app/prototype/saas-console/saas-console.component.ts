@@ -28,6 +28,17 @@ import {
 
 type DemandeAdhesionForm = Pick<DemandeAdhesion, 'nom_institut' | 'ville' | 'adresse' | 'prenom_responsable' | 'nom_responsable' | 'identifiant_responsable' | 'telephone_responsable' | 'effectif_estime' | 'message'> & { types_etablissements: string[] };
 
+type ErreurTrace = {
+  technique: boolean;
+  statut_http?: number;
+  type?: string;
+  message?: string;
+  fichier?: string;
+  ligne?: number;
+  apercu_trace?: string;
+  champs?: Record<string, string[]>;
+};
+
 @Component({
   selector: 'app-saas-console',
   imports: [RouterLink, DecimalPipe, DatePipe, UpperCasePipe, FormsModule, MasterTableComponent, MatButtonModule, MatIconModule, MatInputModule, MatSelectModule, MatCheckboxModule],
@@ -307,6 +318,21 @@ export class SaasConsoleComponent implements OnInit {
   formaterDonneesTrace(valeur: unknown): string {
     if (valeur === null || valeur === undefined) return 'Aucune donnée';
     try { return JSON.stringify(valeur, null, 2); } catch { return String(valeur); }
+  }
+
+  erreurTrace(trace: TraceSaas): ErreurTrace | null {
+    const donnees = trace.donnees_apres;
+    if (!donnees || typeof donnees !== 'object' || Array.isArray(donnees)) return null;
+    const erreur = donnees['erreur'];
+    if (!erreur || typeof erreur !== 'object' || Array.isArray(erreur)) return null;
+    return erreur as ErreurTrace;
+  }
+
+  donneesApresMetier(trace: TraceSaas): Record<string, unknown> | null {
+    if (!trace.donnees_apres) return null;
+    const donnees = { ...trace.donnees_apres };
+    delete donnees['erreur'];
+    return Object.keys(donnees).length ? donnees : null;
   }
 
   reglerFactureSouscription(facture: FactureSouscriptionSaas): void {

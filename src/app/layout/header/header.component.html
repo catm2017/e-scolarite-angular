@@ -137,3 +137,22 @@
     </div>
   </div>
 </nav>
+
+@if (choixCampusOuvert()) {
+  <div class="campus-choice-backdrop" role="presentation">
+    <section class="campus-choice-modal" role="dialog" aria-modal="true" aria-labelledby="campus-choice-title">
+      <span class="campus-choice-icon"><i class="material-icons-outlined">location_city</i></span>
+      <p>VOTRE ENVIRONNEMENT DE TRAVAIL</p>
+      <h2 id="campus-choice-title">Choisissez votre campus</h2>
+      <span>Sélectionnez le campus sur lequel vous souhaitez travailler pour cette session.</span>
+      <div class="campus-choice-list">
+        @for (campus of centralApi.campusInstitut(); track campus.id) {
+          <button type="button" [class.selected]="campusChoisiAuDemarrage() === campus.id" (click)="selectionnerCampusAuDemarrage(campus.id)">
+            <i class="material-icons-outlined">apartment</i><strong>{{ campus.nom }}</strong><em class="material-icons-outlined">{{ campusChoisiAuDemarrage() === campus.id ? 'check_circle' : 'radio_button_unchecked' }}</em>
+          </button>
+        }
+      </div>
+      <button type="button" class="campus-choice-confirm" [disabled]="!campusChoisiAuDemarrage()" (click)="confirmerCampusAuDemarrage()">Continuer <i class="material-icons-outlined">arrow_forward</i></button>
+    </section>
+  </div>
+}

@@ -6,6 +6,91 @@
   object-fit: contain;
 }
 
+.campus-choice-backdrop {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(18, 37, 66, .56);
+  backdrop-filter: blur(3px);
+}
+
+.campus-choice-modal {
+  width: min(100%, 510px);
+  max-height: min(710px, calc(100vh - 40px));
+  overflow: auto;
+  padding: 30px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 28px 65px rgba(14, 30, 56, .3);
+  color: #263d58;
+
+  > p { margin: 16px 0 5px; color: #2f80ed; font-size: 10px; font-weight: 850; letter-spacing: .1em; }
+  > h2 { margin: 0; font-size: 24px; font-weight: 800; }
+  > span:not(.campus-choice-icon) { display: block; margin-top: 8px; color: #71839a; font-size: 13px; line-height: 1.5; }
+}
+
+.campus-choice-icon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: #e9f4ff;
+  color: #2f80ed;
+
+  i { font-size: 26px; }
+}
+
+.campus-choice-list { display: grid; gap: 9px; margin: 22px 0; }
+.campus-choice-list button {
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 13px;
+  border: 1px solid #dce7f0;
+  border-radius: 11px;
+  display: grid;
+  grid-template-columns: 30px 1fr 22px;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  color: #36516e;
+  text-align: left;
+  cursor: pointer;
+
+  > i:first-child { color: #2f80ed; font-size: 21px; }
+  strong { font-size: 14px; }
+  em { color: #a3b0bd; font-size: 19px; font-style: normal; }
+  &.selected { border-color: #2f80ed; background: #f2f8ff; }
+  &.selected em { color: #2f80ed; }
+}
+
+.campus-choice-confirm {
+  width: 100%;
+  min-height: 45px;
+  border: 0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #2f80ed;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+
+  &:disabled { opacity: .45; cursor: not-allowed; }
+  i { font-size: 19px; }
+}
+
+@media (max-width: 560px) {
+  .campus-choice-modal { padding: 23px 19px; border-radius: 15px; }
+  .campus-choice-modal > h2 { font-size: 21px; }
+}
+
 .search-bar-list-item {
   display: flex;
   align-items: center;

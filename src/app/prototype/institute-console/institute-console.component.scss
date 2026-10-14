@@ -1,4 +1,9 @@
 /* Styles mutualisés : src/styles/prototype/_institute-console.scss. */
+.establishment-card.clickable { cursor: pointer; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+.establishment-card.clickable:hover,
+.establishment-card.clickable:focus-visible { border-color: #8cc7f3; box-shadow: 0 12px 26px rgba(47, 128, 237, .13); outline: 0; transform: translateY(-2px); }
+.establishment-card footer .open-workspace { margin-left: auto; color: #2f80ed; font-size: 10px; font-weight: 800; }
+.establishment-card footer .open-workspace i { font-family: 'Material Icons'; font-style: normal; font-size: 14px; vertical-align: middle; }
 /* Pointage QR : une présentation compacte et lisible sur desktop comme mobile. */
 .pointage-metrics { margin-bottom: 18px; }
 .pointage-metrics article,

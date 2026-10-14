@@ -176,7 +176,13 @@ export class PrimaryWorkspaceService {
   }
 
   private campusInitial(): string {
-    try { return localStorage.getItem('e-scolarite:campus-actif') ?? 'keur-massar'; } catch { return 'keur-massar'; }
+    try { return localStorage.getItem('e-scolarite:campus-actif') ?? ''; } catch { return ''; }
+  }
+
+  /** Une nouvelle connexion ne doit jamais hériter du campus d'un autre compte. */
+  reinitialiserChoixCampus(): void {
+    this.selectedCampusId.set('');
+    try { localStorage.removeItem('e-scolarite:campus-actif'); } catch { /* stockage indisponible */ }
   }
 
   /**

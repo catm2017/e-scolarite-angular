@@ -1,6 +1,6 @@
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { NgClass, CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, Renderer2, DOCUMENT, inject, HostListener, ChangeDetectionStrategy, ChangeDetectorRef, effect } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2, DOCUMENT, inject, HostListener, ChangeDetectionStrategy, ChangeDetectorRef, effect, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { ConfigService } from '@config';
 import {
@@ -65,10 +65,25 @@ export class HeaderComponent
   readonly primaryWorkspace = inject(PrimaryWorkspaceService);
   readonly centralApi = inject(CentralApiService);
   readonly backendLoading = inject(BackendLoadingService);
+  readonly choixCampusOuvert = signal(false);
+  readonly campusChoisiAuDemarrage = signal('');
   private readonly campusContextEffect = effect(() => {
     const campus = this.centralApi.campusInstitut();
-    if (campus.length > 0 && !campus.some((item) => item.id === this.primaryWorkspace.selectedCampusId())) {
-      this.primaryWorkspace.selectedCampusId.set(campus[0].id);
+    const campusActif = this.primaryWorkspace.selectedCampusId();
+    if (!campus.length) {
+      this.choixCampusOuvert.set(false);
+      return;
+    }
+
+    if (campus.length === 1) {
+      if (campusActif !== campus[0].id) this.primaryWorkspace.selectedCampusId.set(campus[0].id);
+      this.choixCampusOuvert.set(false);
+      return;
+    }
+
+    if (!campus.some((item) => item.id === campusActif)) {
+      this.campusChoisiAuDemarrage.set('');
+      this.choixCampusOuvert.set(true);
     }
   });
   private localStorageService = inject(LocalStorageService);
@@ -317,6 +332,18 @@ export class HeaderComponent
       this.primaryWorkspace.selectedCampusId.set(campusId);
       try { localStorage.setItem('e-scolarite:campus-actif', campusId); } catch { /* stockage indisponible */ }
     }
+  }
+
+  selectionnerCampusAuDemarrage(campusId: string): void {
+    this.campusChoisiAuDemarrage.set(campusId);
+  }
+
+  confirmerCampusAuDemarrage(): void {
+    const campusId = this.campusChoisiAuDemarrage();
+    if (!campusId) return;
+    this.primaryWorkspace.selectedCampusId.set(campusId);
+    try { localStorage.setItem('e-scolarite:campus-actif', campusId); } catch { /* stockage indisponible */ }
+    this.choixCampusOuvert.set(false);
   }
 
   selectedCampusName(): string {

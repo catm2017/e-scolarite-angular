@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { ReactiveFormsModule, Validators, NonNullableFormBuilder } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CentralApiService, InstitutConnexion, SitePublicInstitut } from '../central-api.service';
+import { PrimaryWorkspaceService } from '../primary-school/primary-workspace.service';
 import { PlatformLanguageSwitcherComponent } from '../../shared/components/platform-language-switcher/platform-language-switcher.component';
 import { estDomainePlateforme } from '../../core/config/platform-domains';
 
@@ -17,6 +18,7 @@ export class CentralAuthComponent implements OnInit {
   private readonly api = inject(CentralApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly primaryWorkspace = inject(PrimaryWorkspaceService);
 
   readonly chargement = signal(false);
   readonly passwordVisible = signal(false);
@@ -82,17 +84,22 @@ export class CentralAuthComponent implements OnInit {
     this.chargement.set(true);
     const { identifiant, password, institut_id } = this.connexion.getRawValue();
     this.api.connexion(identifiant, password, institut_id || undefined, this.institutDuDomaine() ? window.location.hostname : undefined).subscribe({
-      next: (result) => this.router.navigateByUrl(
+      next: (result) => {
+        // Le campus est un contexte propre à la session : on laisse le modal
+        // proposer le choix après l'authentification lorsqu'il y en a plusieurs.
+        if (result.espace === 'institut') this.primaryWorkspace.reinitialiserChoixCampus();
+        void this.router.navigateByUrl(
           result.espace === 'centrale'
-          ? '/saas'
-          : result.user.type === 'enseignant'
-            ? '/enseignant'
-          : result.user.type === 'tuteur' || result.user.type === 'eleve'
-            ? '/famille/accueil'
-          : !result.souscription_validee
-            ? '/institut?vue=souscription'
-            : '/institut',
-      ),
+            ? '/saas'
+            : result.user.type === 'enseignant'
+              ? '/enseignant'
+              : result.user.type === 'tuteur' || result.user.type === 'eleve'
+                ? '/famille/accueil'
+                : !result.souscription_validee
+                  ? '/institut?vue=souscription'
+                  : '/institut',
+        );
+      },
       error: (error) => {
         this.erreur.set(error?.error?.message ?? 'Les informations de connexion sont incorrectes. Vérifiez votre e-mail ou identifiant, votre mot de passe et, si nécessaire, l’établissement sélectionné, puis réessayez.');
         this.chargement.set(false);

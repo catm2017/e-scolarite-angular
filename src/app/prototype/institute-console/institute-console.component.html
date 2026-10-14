@@ -99,7 +99,7 @@
         <div class="scope-note"><i>account_tree</i><p><strong>Principe de fonctionnement</strong>Un cycle peut être présent sur plusieurs campus. Son espace métier, ses rôles et ses fonctionnalités restent indépendants.</p></div>
         <section class="establishment-cards">
           @for (item of activeEstablishments(); track item.type) {
-            <article class="panel establishment-card" [class.disabled]="!canOpenEstablishment(item)">
+            <article class="panel establishment-card" [class.disabled]="!canOpenEstablishment(item)" [class.clickable]="canOpenEstablishment(item)" [attr.tabindex]="canOpenEstablishment(item) ? 0 : null" [attr.role]="canOpenEstablishment(item) ? 'button' : null" (click)="openEstablishmentSpace(item.type)" (keydown.enter)="openEstablishmentSpace(item.type)" (keydown.space)="$event.preventDefault(); openEstablishmentSpace(item.type)">
               <header>
                 <span class="establishment-icon" [style.background]="item.color"><i>{{ item.icon }}</i></span>
                 <em [class.pending]="item.status !== 'Actif'">{{ item.status }}</em>
@@ -112,8 +112,7 @@
                 <div><dt>Implantations</dt><dd>{{ item.campuses }} campus</dd></div>
               </dl>
               <footer>
-                <button (click)="setView('subscription')">Configurer</button>
-                <button class="open-workspace" [disabled]="!canOpenEstablishment(item)" (click)="openEstablishmentSpace(item.type)">{{ establishmentActionLabel(item) }} <i>{{ campusCount() === 0 && item.active ? 'location_off' : 'arrow_forward' }}</i></button>
+                <span class="open-workspace">{{ establishmentActionLabel(item) }} <i>{{ campusCount() === 0 && item.active ? 'location_off' : 'arrow_forward' }}</i></span>
               </footer>
             </article>
           }

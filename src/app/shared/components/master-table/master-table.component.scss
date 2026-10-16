@@ -110,6 +110,13 @@
 .evaluation-download-control { display: inline-flex; max-width: 180px; align-items: center; gap: 5px; padding: 6px 8px; border: 1px solid #cfe1f2; border-radius: 6px; color: #1768b8; background: #edf7ff; cursor: pointer; font: inherit; font-size: 11px; font-weight: 750; }
 .evaluation-download-control i { font-size: 16px; }.evaluation-download-control span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.evaluation-no-file { color: #94a4b1; font-size: 11px; }
 
+// Les références restent visibles sans prendre l'espace destiné à l'identité.
+// La colonne nom peut ainsi afficher prénom et nom complets dans les listes d'élèves.
+:host ::ng-deep .mat-column-matricule {
+  flex: 0 0 118px;
+  max-width: 118px;
+}
+
 :host-context(.dark) .table-boolean-status {
   background: #343b49;
   color: #aeb8c8;

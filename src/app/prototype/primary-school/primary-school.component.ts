@@ -1948,13 +1948,13 @@ export class PrimarySchoolComponent {
 
   readonly studentColumns: ColumnDefinition[] = [
     { def: 'select', label: 'Sélection', type: 'check', visible: true },
-    { def: 'matricule', label: 'Matricule', type: 'text', visible: true },
     {
       def: 'name',
       label: 'Prénom et nom',
       type: 'nameWithImage',
       visible: true,
     },
+    { def: 'matricule', label: 'Matricule', type: 'text', visible: true },
     {
       def: 'gender',
       label: 'Sexe',
@@ -1967,7 +1967,6 @@ export class PrimarySchoolComponent {
     },
     { def: 'birthDate', label: 'Date de naissance', type: 'text', visible: true },
     { def: 'studentPhone', label: 'Téléphone', type: 'phone', visible: true },
-    { def: 'studentEmail', label: 'Adresse e-mail', type: 'email', visible: true },
     {
       def: 'status',
       label: 'Statut',

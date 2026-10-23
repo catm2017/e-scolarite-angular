@@ -265,6 +265,7 @@ interface PrimaryClass {
   registrationFee: string;
   monthlyFee: string;
   seriesId?: string | null;
+  meetingUrl?: string | null;
 }
 
 interface ClassFormModel {
@@ -274,6 +275,7 @@ interface ClassFormModel {
   registrationFee: string;
   monthlyFee: string;
   seriesId: string;
+  meetingUrl: string;
 }
 
 interface ClassProposal {
@@ -285,6 +287,7 @@ interface ClassProposal {
   registrationFee: string;
   monthlyFee: string;
   seriesId: string;
+  meetingUrl: string;
 }
 
 interface HighSchoolSeries {
@@ -1072,6 +1075,7 @@ export class PrimarySchoolComponent {
   excludedSessionDate = '';
   sessionDescriptionDraft = '';
   sessionLessonDraft = '';
+  sessionTeacherReassignmentId = '';
   attendanceNotes: Record<number, string> = {};
   sessionGenerationForm: SessionGenerationForm = {
     startDate: '2026-10-05',
@@ -1954,7 +1958,6 @@ export class PrimarySchoolComponent {
       type: 'nameWithImage',
       visible: true,
     },
-    { def: 'matricule', label: 'Matricule', type: 'text', visible: true },
     {
       def: 'gender',
       label: 'Sexe',
@@ -3370,6 +3373,7 @@ export class PrimarySchoolComponent {
     this.sessionGeneratorOpen.set(false);
     this.sessionDescriptionDraft = session.description;
     this.sessionLessonDraft = session.lessonTitle;
+    this.sessionTeacherReassignmentId = this.teachers().find((teacher) => teacher.id === session.teacherId)?.teachingBackendId ?? '';
     const savedAttendance = this.sessionAttendance()[session.id];
     const initialAttendance = Object.fromEntries(
       this.students()
@@ -3406,6 +3410,76 @@ export class PrimarySchoolComponent {
       error: (response) => {
         this.sessionsLoading.set(false);
         this.snackBar.error(response.error?.message ?? 'La séance n’a pas pu être validée.');
+      },
+    });
+  }
+
+  enseignantsReaffectables(): Teacher[] {
+    return this.teachers().filter((teacher) =>
+      teacher.status === 'Actif'
+      && teacher.campusId === this.selectedCampusId()
+      && Boolean(teacher.teachingBackendId),
+    );
+  }
+
+  reaffecterEnseignantSeance(): void {
+    const session = this.selectedSession();
+    const context = this.pedagogyContext();
+    const enseignant = this.enseignantsReaffectables().find((teacher) => teacher.teachingBackendId === this.sessionTeacherReassignmentId);
+    if (!session || !context || !this.sessionEstPlanifiee(session) || this.sessionsLoading()) return;
+    if (!enseignant?.teachingBackendId) {
+      this.snackBar.error('Sélectionnez un enseignant actif pour cette séance.');
+      return;
+    }
+
+    this.sessionsLoading.set(true);
+    this.centralApi.reaffecterEnseignantSeanceEtablissement(session.id, {
+      ...context,
+      classe_id: session.classId,
+      enseignant_id: enseignant.teachingBackendId,
+    }).subscribe({
+      next: ({ message }) => {
+        this.sessions.update((sessions) => sessions.map((item) => item.id === session.id ? {
+          ...item,
+          teacherId: enseignant.id,
+          teacherName: enseignant.name,
+        } : item));
+        this.sessionsLoading.set(false);
+        this.snackBar.success(message);
+      },
+      error: (response) => {
+        this.sessionsLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'La séance n’a pas pu être réaffectée.');
+      },
+    });
+  }
+
+  demanderSuppressionSeance(): void {
+    const session = this.selectedSession();
+    if (!session || !this.sessionEstPlanifiee(session) || this.sessionsLoading()) return;
+    this.requestConfirmation({
+      title: 'Supprimer cette séance ?',
+      message: 'Cette suppression est définitive. La séance planifiée et toutes ses données associées seront retirées.',
+      confirmLabel: 'Supprimer définitivement',
+      icon: 'delete_outline',
+    }, () => this.supprimerSeance());
+  }
+
+  private supprimerSeance(): void {
+    const session = this.selectedSession();
+    const context = this.pedagogyContext();
+    if (!session || !context || !this.sessionEstPlanifiee(session) || this.sessionsLoading()) return;
+    this.sessionsLoading.set(true);
+    this.centralApi.supprimerSeanceEtablissement(session.id, { ...context, classe_id: session.classId }).subscribe({
+      next: ({ message }) => {
+        this.sessions.update((sessions) => sessions.filter((item) => item.id !== session.id));
+        this.selectedSessionId.set(null);
+        this.sessionsLoading.set(false);
+        this.snackBar.success(message);
+      },
+      error: (response) => {
+        this.sessionsLoading.set(false);
+        this.snackBar.error(response.error?.message ?? 'La séance n’a pas pu être supprimée.');
       },
     });
   }
@@ -4330,6 +4404,7 @@ export class PrimarySchoolComponent {
       registrationFee: classroom.registrationFee,
       monthlyFee: classroom.monthlyFee,
       seriesId: classroom.seriesId ?? '',
+      meetingUrl: classroom.meetingUrl ?? '',
     };
     this.classCurriculumOpen.set(false);
     this.classEditorOpen.set(true);
@@ -4352,6 +4427,7 @@ export class PrimarySchoolComponent {
       frais_inscription: Number(form.registrationFee),
       mensualite: Number(form.monthlyFee),
       serie: this.isHighSchool() ? form.seriesId : null,
+      lien_reunion: form.meetingUrl.trim() || null,
     };
     this.sauvegarderClassesBackend([payload], form.id ? 'La classe a été mise à jour.' : 'La classe a été créée.', () => {
       this.classEditorOpen.set(false);
@@ -4390,6 +4466,7 @@ export class PrimarySchoolComponent {
           registrationFee: existante?.registrationFee ?? definition.registrationFee,
           monthlyFee: existante?.monthlyFee ?? definition.monthlyFee,
           seriesId: existante?.seriesId ?? definition.seriesId,
+          meetingUrl: existante?.meetingUrl ?? '',
         };
       }),
     );
@@ -4399,7 +4476,7 @@ export class PrimarySchoolComponent {
 
   updateClassProposal(
     key: string,
-    field: 'enabled' | 'level' | 'name' | 'registrationFee' | 'monthlyFee' | 'seriesId',
+    field: 'enabled' | 'level' | 'name' | 'registrationFee' | 'monthlyFee' | 'seriesId' | 'meetingUrl',
     value: string | boolean,
   ): void {
     this.classProposals.update((proposals) =>
@@ -4458,6 +4535,7 @@ export class PrimarySchoolComponent {
       frais_inscription: Number(proposal.registrationFee),
       mensualite: Number(proposal.monthlyFee),
       serie: this.isHighSchool() ? proposal.seriesId : null,
+      lien_reunion: proposal.meetingUrl.trim() || null,
     }));
     this.sauvegarderClassesBackend(
       payload,
@@ -4737,6 +4815,7 @@ export class PrimarySchoolComponent {
       registrationFee: String(classe.frais_inscription),
       monthlyFee: String(classe.mensualite),
       seriesId: classe.serie,
+      meetingUrl: classe.lien_reunion ?? '',
     }));
     this.classes.set([...autresCampus, ...classesCampus]);
     this.classProposalsSaved.set(classesCampus.length > 0);
@@ -4752,7 +4831,7 @@ export class PrimarySchoolComponent {
     const levels = this.availableClassLevels();
 
     if (this.isDaara()) {
-      return [{ level: 'DAARA', name: 'Daara', registrationFee: '20000', monthlyFee: '15000', seriesId: '' }];
+      return [{ level: 'DAARA', name: 'Daara', registrationFee: '20000', monthlyFee: '15000', seriesId: '', meetingUrl: '' }];
     }
 
     if (this.isHighSchool()) {
@@ -4772,6 +4851,7 @@ export class PrimarySchoolComponent {
         registrationFee: String(preschool ? 20000 : (college ? 35000 : 25000) + palier * (college ? 5000 : 2500)),
         monthlyFee: String(preschool ? 15000 : (college ? 25000 : 18000) + palier * (college ? 3000 : 2000)),
         seriesId: '',
+        meetingUrl: '',
       };
     });
   }
@@ -6560,6 +6640,7 @@ export class PrimarySchoolComponent {
       name: '',
       registrationFee: selected?.registrationFee ?? '25000',
       monthlyFee: selected?.monthlyFee ?? '18000',
+      meetingUrl: selected?.meetingUrl ?? '',
       seriesId: this.isHighSchool()
         ? selected?.seriesId ?? this.highSchoolSeries().find((series) => series.active)?.id ?? ''
         : '',

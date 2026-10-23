@@ -670,6 +670,7 @@ export interface ClasseEtablissementApi {
   effectif: number;
   frais_inscription: number;
   mensualite: number;
+  lien_reunion: string | null;
 }
 
 export interface ClasseEtablissementPayload {
@@ -679,6 +680,7 @@ export interface ClasseEtablissementPayload {
   serie?: string | null;
   frais_inscription: number;
   mensualite: number;
+  lien_reunion?: string | null;
 }
 
 export interface SerieLyceeEtablissementApi {
@@ -994,7 +996,7 @@ export interface DossiersEtablissementApi {
 
 export interface DossierEleveApi {
   eleve: Record<string, unknown>;
-  inscriptions: Array<{ id: string; annee: string; campus: string | null; classe: string | null; type: string; statut: string; date_inscription: string }>; 
+  inscriptions: Array<{ id: string; annee: string; campus: string | null; classe: string | null; lien_reunion?: string | null; type: string; statut: string; date_inscription: string }>;
   echeances: Array<{ id: string; annee: string; date_echeance: string; periode: string | null; motif: string; montant_initial: number; montant_regle: number; statut: string }>;
   paiements: Array<{ id: string; annee: string; reference: string; motif: string | null; montant: number; mode_paiement: string; statut: string; date_paiement: string; observation: string | null }>;
   presences: Array<{ id: string; annee_scolaire_id: string; date_seance: string; heure_debut: string; heure_fin: string; matiere: string | null; statut: string; motif: string | null }>;
@@ -1027,6 +1029,7 @@ export interface EnfantEspaceFamilleApi {
   campus: string;
   classe_id: string | null;
   classe: string | null;
+  lien_reunion?: string | null;
 }
 
 export interface DetailSeanceFamilleApi {
@@ -2128,6 +2131,21 @@ export class CentralApiService {
     this.invaliderCache('institut:seances:');
     this.invaliderCache('enseignant:espace');
     return this.http.put<{ message: string }>(`${this.baseUrl}/institut/seances/${seanceId}/statut`, donnees, { headers: this.enteteAutorisation() });
+  }
+
+  reaffecterEnseignantSeanceEtablissement(seanceId: string, donnees: Record<string, unknown>) {
+    this.invaliderCache('institut:seances:');
+    this.invaliderCache('enseignant:espace');
+    return this.http.put<{ message: string }>(`${this.baseUrl}/institut/seances/${seanceId}/enseignant`, donnees, { headers: this.enteteAutorisation() });
+  }
+
+  supprimerSeanceEtablissement(seanceId: string, donnees: Record<string, string>) {
+    this.invaliderCache('institut:seances:');
+    this.invaliderCache('enseignant:espace');
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/institut/seances/${seanceId}`, {
+      params: donnees,
+      headers: this.enteteAutorisation(),
+    });
   }
 
   evaluationsEtablissement(typeEtablissement: string, campusId: string, anneeCentraleId: string, classeId: string) {

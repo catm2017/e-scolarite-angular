@@ -954,6 +954,7 @@
                     <mat-form-field appearance="outline" [hideRequiredMarker]="true"><mat-label>Série <span class="required-marker">*</span></mat-label><mat-select name="classSeries" [(ngModel)]="classForm.seriesId" required>@for (series of highSchoolSeries(); track series.id) {@if (series.active || series.id === classForm.seriesId) {<mat-option [value]="series.id">{{ series.code }} · {{ series.label }}</mat-option>}}</mat-select></mat-form-field>
                   }
                   <mat-form-field appearance="outline" [hideRequiredMarker]="true"><mat-label>Nom de la classe <span class="required-marker">*</span></mat-label><input matInput name="className" [(ngModel)]="classForm.name" [placeholder]="isHighSchool() ? 'Ex. Terminale S A' : 'Ex. CM1 A'" required /></mat-form-field>
+                  <mat-form-field appearance="outline" [hideRequiredMarker]="true"><mat-label>Lien de la classe en ligne</mat-label><input matInput type="url" name="classMeetingUrl" [(ngModel)]="classForm.meetingUrl" placeholder="https://meet.google.com/..." /><mat-hint>Google Meet, Zoom, Teams…</mat-hint></mat-form-field>
                 </div>
               </section>
             </article>
@@ -1813,7 +1814,7 @@
         } @else if (selectedSession(); as session) {
           <div class="page-title session-detail-title">
             <div><small>FICHE DE SÉANCE · {{ session.reference || 'Référence en cours' }}</small><h1>{{ session.subject }} · {{ sessionClassName(session) }}</h1><p>{{ formatSessionDate(session.date) }} · {{ session.startTime }}–{{ session.endTime }}</p><em class="session-status-badge" [class.planifiee]="session.status === 'Planifiée'" [class.completee]="session.status === 'Effectuée'" [class.validee]="session.status === 'Validée'" [class.ratee]="session.status === 'Ratée'">{{ session.status }}</em></div>
-            <div class="title-actions"><button type="button" (click)="backToSessionList()"><i>arrow_back</i>Retour aux séances</button><button type="button" (click)="markSessionMissed()" [hidden]="!sessionEstPlanifiee(session)" [disabled]="sessionsLoading()"><i>event_busy</i>Marquer comme ratée</button><button class="primary-action" type="button" (click)="validerSeance()" [disabled]="sessionsLoading() || session.status !== 'Effectuée'"><i>done_all</i>{{ session.status === 'Validée' ? 'Séance validée' : 'Valider la séance' }}</button></div>
+            <div class="title-actions"><button type="button" (click)="backToSessionList()"><i>arrow_back</i>Retour aux séances</button><button type="button" class="session-delete-action" (click)="demanderSuppressionSeance()" [hidden]="!sessionEstPlanifiee(session)" [disabled]="sessionsLoading()"><i>delete_outline</i>Supprimer</button><button type="button" (click)="markSessionMissed()" [hidden]="!sessionEstPlanifiee(session)" [disabled]="sessionsLoading()"><i>event_busy</i>Marquer comme ratée</button><button class="primary-action" type="button" (click)="validerSeance()" [disabled]="sessionsLoading() || session.status !== 'Effectuée'"><i>done_all</i>{{ session.status === 'Validée' ? 'Séance validée' : 'Valider la séance' }}</button></div>
           </div>
 
           <section class="session-metadata-grid">
@@ -1825,6 +1826,14 @@
             <article><i>tag</i><span><small>Référence</small><strong>{{ session.reference || '—' }}</strong></span></article>
             <article><i>meeting_room</i><span><small>Salle</small><strong>{{ sessionRoomName(session) }}</strong></span></article>
           </section>
+
+          @if (sessionEstPlanifiee(session)) {
+            <section class="panel session-reassignment-card">
+              <div><i>co_present</i><span><small>AFFECTATION DE LA SÉANCE</small><strong>Réaffecter l’enseignant</strong><p>La séance n’a pas encore été effectuée : vous pouvez modifier son enseignant.</p></span></div>
+              <label><span>Nouvel enseignant</span><select [(ngModel)]="sessionTeacherReassignmentId"><option value="">Sélectionner un enseignant</option>@for (teacher of enseignantsReaffectables(); track teacher.teachingBackendId) {<option [value]="teacher.teachingBackendId">{{ teacher.name }} · {{ teacher.matricule }}</option>}</select></label>
+              <button class="primary-action" type="button" (click)="reaffecterEnseignantSeance()" [disabled]="sessionsLoading() || !sessionTeacherReassignmentId"><i>co_present</i>Réaffecter</button>
+            </section>
+          }
 
           <div class="session-detail-layout">
             <section class="panel session-textbook-card session-textbook-main">

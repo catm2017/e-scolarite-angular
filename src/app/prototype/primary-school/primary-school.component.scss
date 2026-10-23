@@ -13,3 +13,16 @@
  .session-files-list span { flex:1; font-size:12px; font-weight:750; }
  .session-files-list small { color:#7a91a3; font-size:10px; }
  .session-files-list > p { color:#8094a5; font-size:11px; }
+ .session-delete-action { color:#b93c4a !important; border-color:#f0c9cf !important; background:#fff7f8 !important; }
+ .session-delete-action:hover { color:#a22f3d !important; border-color:#e7aab4 !important; background:#ffeff1 !important; }
+ .session-reassignment-card { display:grid; grid-template-columns:minmax(260px,1fr) minmax(240px,.8fr) auto; align-items:end; gap:18px; margin:16px 0; padding:18px 20px; border:1px solid #dceafb; background:linear-gradient(135deg,#f8fbff,#edf6ff); }
+ .session-reassignment-card > div { display:flex; align-items:flex-start; gap:12px; }
+ .session-reassignment-card > div > i { display:grid; place-items:center; width:38px; height:38px; border-radius:11px; color:#1d73d4; background:#dceeff; font-family:'Material Icons Outlined', 'Material Icons' !important; font-style:normal; }
+ .session-reassignment-card > div span { display:grid; gap:3px; }
+ .session-reassignment-card small { color:#3577ba; font-size:10px; font-weight:800; letter-spacing:.06em; }
+ .session-reassignment-card strong { color:#183c68; font-size:15px; }
+ .session-reassignment-card p { margin:0; color:#6b8199; font-size:12px; line-height:1.35; }
+ .session-reassignment-card label { display:grid; gap:6px; color:#476984; font-size:12px; font-weight:750; }
+ .session-reassignment-card select { min-height:40px; padding:0 10px; border:1px solid #bfd8f2; border-radius:8px; color:#183c68; background:#fff; font:inherit; }
+ .session-reassignment-card .primary-action { min-height:40px; white-space:nowrap; }
+ @media (max-width: 900px) { .session-reassignment-card { grid-template-columns:1fr; align-items:stretch; }.session-reassignment-card .primary-action { justify-content:center; } }

@@ -6150,12 +6150,7 @@ export class PrimarySchoolComponent {
       confirmLabel: 'Supprimer le dossier',
       icon: 'delete_outline',
     }, () => {
-      this.teachers.update((items) => items.filter((item) => item.id !== teacher.id));
-      this.snackBar.open('Le dossier enseignant a été supprimé.', 'Fermer', {
-        duration: 2500,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'center',
-      });
+      this.supprimerEnseignantsBackend([teacher]);
     });
   }
 
@@ -6167,13 +6162,45 @@ export class PrimarySchoolComponent {
       confirmLabel: `Supprimer les ${teachers.length} dossiers`,
       icon: 'delete_outline',
     }, () => {
-      const ids = new Set(teachers.map((teacher) => teacher.id));
-      this.teachers.update((items) => items.filter((item) => !ids.has(item.id)));
-      this.snackBar.open(`${teachers.length} dossiers enseignants supprimés.`, 'Fermer', {
-        duration: 2500,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'center',
+      this.supprimerEnseignantsBackend(teachers);
+    });
+  }
+
+  private supprimerEnseignantsBackend(teachers: Teacher[]): void {
+    if (this.dossierSaving()) return;
+    const personnelIds = teachers.map((teacher) => teacher.backendId).filter((id): id is string => Boolean(id));
+    if (personnelIds.length !== teachers.length) {
+      this.snackBar.open('Impossible de supprimer un enseignant dont le dossier n’est pas encore enregistré.', 'Fermer', {
+        duration: 4000, verticalPosition: 'bottom', horizontalPosition: 'center',
       });
+      return;
+    }
+    const context = this.pedagogyContext();
+    if (!context) return;
+
+    this.dossierSaving.set(true);
+    this.centralApi.supprimerEnseignantsEtablissement({
+      ...context,
+      personnel_ids: personnelIds,
+    }).subscribe({
+      next: (resultat) => {
+        this.dossierSaving.set(false);
+        this.appliquerDossiersApi(resultat, this.selectedCampusId());
+        const ids = new Set(teachers.map((teacher) => teacher.id));
+        if (this.selectedTeacherId() !== null && ids.has(this.selectedTeacherId()!)) {
+          this.selectedTeacherId.set(null);
+          this.activeView.set('teachers');
+        }
+        this.snackBar.open(resultat.message, 'Fermer', {
+          duration: 3000, verticalPosition: 'bottom', horizontalPosition: 'center',
+        });
+      },
+      error: (response) => {
+        this.dossierSaving.set(false);
+        this.snackBar.open(response.error?.message ?? 'La suppression des enseignants a échoué.', 'Fermer', {
+          duration: 4000, verticalPosition: 'bottom', horizontalPosition: 'center',
+        });
+      },
     });
   }
 

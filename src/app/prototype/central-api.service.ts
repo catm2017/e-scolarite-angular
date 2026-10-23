@@ -2375,6 +2375,14 @@ export class CentralApiService {
     );
   }
 
+  supprimerEnseignantsEtablissement(donnees: Record<string, unknown>) {
+    this.invaliderCache('institut:');
+    return this.http.delete<DossiersEtablissementApi & { message: string }>(
+      `${this.baseUrl}/institut/enseignants`,
+      { body: donnees, headers: this.enteteAutorisation() },
+    );
+  }
+
   importerEnseignantsEtablissement(donnees: Record<string, unknown>) {
     this.invaliderCache('institut:');
     return this.http.post<DossiersEtablissementApi & { message: string; importes: number; crees: number; reutilises: number }>(

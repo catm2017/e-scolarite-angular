@@ -105,22 +105,30 @@ export class InstituteWorkspaceService {
   }
 
   canAccessView(view?: string): boolean {
-    if (!view || view === 'overview' || view === 'establishments') return true;
     // La traçabilité est conservée pour une prochaine activation, mais son
     // entrée reste désactivée dans l’espace institut pour le moment.
     if (view === 'activity-log') return false;
-    // L’administrateur de l’institut dispose de tous les accès, y compris
-    // lorsque la souscription n’est pas encore configurée.
-    if (this.isAdministrateur()) return true;
+
+    const abonnementValide = this.subscriptionValidated() || this.api.souscriptionValidee();
     const fonctionnalite = this.fonctionnalitePourVue(view);
-    if (!fonctionnalite) return this.subscriptionValidated();
-    const autorise = this.api.permissionUtilisateurAutorisee(fonctionnalite, 'institut');
-    if (view === 'campuses') return autorise;
+    const autorise = this.isAdministrateur()
+      || !fonctionnalite
+      || this.api.permissionUtilisateurAutorisee(fonctionnalite, 'institut');
+
     // La souscription et les factures restent consultables pour permettre au
     // compte autorisé de régulariser ou renouveler son accès.
-    if (view === 'subscription' || view === 'subscription-invoices') return autorise;
-    const abonnementValide = this.subscriptionValidated() || this.api.souscriptionValidee();
-    return abonnementValide && this.hasFeature(fonctionnalite) && autorise;
+    if (view === 'subscription' || view === 'subscription-invoices') {
+      return autorise;
+    }
+
+    // Une expiration suspend aussi les vues administratives et les accès de
+    // l'administrateur : seul le parcours de régularisation demeure ouvert.
+    if (!abonnementValide) return false;
+
+    if (!view || view === 'overview' || view === 'establishments') return true;
+    if (this.isAdministrateur()) return true;
+    if (!fonctionnalite) return true;
+    return this.hasFeature(fonctionnalite) && autorise;
   }
 
   canAccessPath(path?: string): boolean {

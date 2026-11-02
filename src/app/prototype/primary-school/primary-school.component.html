@@ -2409,12 +2409,19 @@
         </button>
         <span class="confirmation-modal-icon"><i>{{ dialog.icon }}</i></span>
         <div class="confirmation-modal-copy">
-          <small>CONFIRMATION REQUISE</small>
+          <small>{{ dialog.kicker ?? 'CONFIRMATION REQUISE' }}</small>
           <h2 id="confirmation-modal-title">{{ dialog.title }}</h2>
           <p id="confirmation-modal-message">{{ dialog.message }}</p>
+          @if (dialog.details?.length) {
+            <ul class="confirmation-modal-details">
+              @for (ligne of dialog.details; track $index) {
+                <li>{{ ligne }}</li>
+              }
+            </ul>
+          }
         </div>
         <footer>
-          <button type="button" (click)="closeConfirmation()">Retour</button>
+          <button type="button" (click)="closeConfirmation()">{{ dialog.cancelLabel ?? 'Retour' }}</button>
           <button type="button" class="confirmation-modal-submit" (click)="confirmPendingAction()">
             <i>{{ dialog.icon }}</i>{{ dialog.confirmLabel }}
           </button>

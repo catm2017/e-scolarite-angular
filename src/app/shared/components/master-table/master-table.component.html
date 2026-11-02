@@ -438,7 +438,7 @@
               </button>
               }
               @if (showDelete()) {
-              <button mat-icon-button color="accent" (click)="$event.stopPropagation()" (click)="onDelete(row)"
+              <button type="button" mat-icon-button color="accent" (click)="onDelete($event, row)"
                 class="tbl-action-btn">
                 <app-feather-icons [icon]="'trash-2'" [class]="'tbl-fav-delete'"></app-feather-icons>
               </button>
@@ -478,7 +478,7 @@
           </button>
           }
           @if (showDelete()) {
-          <button mat-menu-item (click)="onDelete(item)">
+          <button type="button" mat-menu-item (click)="onDelete($event, item)">
             <mat-icon>delete</mat-icon>
             <span>Delete Record</span>
           </button>

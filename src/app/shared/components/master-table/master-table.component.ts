@@ -216,7 +216,9 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
     this.edit.emit(row);
   }
 
-  onDelete(row: any) {
+  onDelete(event: Event, row: any) {
+    event.preventDefault();
+    event.stopPropagation();
     this.delete.emit(row);
   }
 

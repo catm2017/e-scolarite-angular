@@ -1230,6 +1230,10 @@
   .subscription-confirmation-modal h2 { margin: 0; color: #304d64; font-size: 20px; }
   .subscription-confirmation-modal p { margin: 9px 0 23px; color: #718697; font-size: 14px; line-height: 1.55; }
   .subscription-modal-actions { display: flex; justify-content: center; gap: 10px; }
+  .teacher-deletion-modal.blocked { width: min(100%, 520px); }
+  .teacher-deletion-slots { max-height: 220px; margin: -8px 0 22px; padding: 10px 14px; overflow-y: auto; list-style: none; border: 1px solid #f0e2c8; border-radius: 8px; background: #fdf8ef; text-align: left; }
+  .teacher-deletion-slots li { padding: 5px 0; color: #5b4a2c; font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+  .teacher-deletion-slots li + li { border-top: 1px dashed #ecdcbd; }
   .subscription-modal-actions button { min-height: 40px; padding: 0 13px; border: 1px solid #d7e3eb; border-radius: 8px; background: #fff; color: #536e83; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
   .subscription-modal-actions button.danger { border-color: #c95b5b; background: #c85656; color: #fff; }
   .subscription-modal-actions i { margin-right: 5px; vertical-align: middle; font-size: 17px; }

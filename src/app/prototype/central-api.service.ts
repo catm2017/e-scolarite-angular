@@ -1056,6 +1056,53 @@ export interface DossierEnseignantEtablissementApi {
   pointages: Array<{ id: string; date_pointage: string; heure_entree_at: string | null; heure_sortie_at: string | null; statut: string; observation: string | null }>;
 }
 
+export interface CreneauBloquantEnseignantApi {
+  etablissement?: string;
+  campus?: string;
+  classe_id: string;
+  classe: string;
+  jour: string;
+  heure_debut: string;
+  heure_fin: string;
+  matiere: string | null;
+}
+
+export interface BlocageSuppressionEnseignantApi {
+  personnel_id: string;
+  nom: string;
+  creneaux: CreneauBloquantEnseignantApi[];
+}
+
+export interface BlocageSuppressionTuteurApi {
+  tuteur_id: string;
+  nom: string;
+  enfants: { id: string; matricule: string; nom: string }[];
+}
+
+export interface VerificationSuppressionTuteursApi {
+  suppression_possible: boolean;
+  blocages: BlocageSuppressionTuteurApi[];
+}
+
+export interface UtilisationSalleApi {
+  classe: string;
+  jour: string;
+  heure_debut: string;
+  heure_fin: string;
+  matiere: string | null;
+}
+
+export interface VerificationSuppressionSalleApi {
+  suppression_possible: boolean;
+  utilisations: UtilisationSalleApi[];
+  seances_a_venir: number;
+}
+
+export interface VerificationSuppressionEnseignantsApi {
+  suppression_possible: boolean;
+  blocages: BlocageSuppressionEnseignantApi[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class CentralApiService {
   private readonly http = inject(HttpClient);
@@ -1790,10 +1837,15 @@ export class CentralApiService {
     });
   }
 
+  verifierSuppressionSalleInstitut(salleId: string) {
+    return this.http.get<VerificationSuppressionSalleApi>(`${this.baseUrl}/institut/salles/${salleId}/verifier-suppression`, {
+      headers: this.enteteAutorisation(),
+    });
+  }
+
   supprimerSalleInstitut(salleId: string) {
-    this.invaliderCache('institut:salles:');
-    this.invaliderCache('institut:espace');
-    this.invaliderCache('institut:campus');
+    // Une salle supprimée disparaît aussi des emplois du temps et des séances en cache.
+    this.invaliderCache('institut:');
     return this.http.delete<{ message: string }>(`${this.baseUrl}/institut/salles/${salleId}`, {
       headers: this.enteteAutorisation(),
     });
@@ -1828,8 +1880,12 @@ export class CentralApiService {
     return this.http.get<{ data: PointageInstitutApi[] }>(`${this.baseUrl}/institut/pointages/mes-pointages`, { headers: this.enteteAutorisation() });
   }
 
-  souscriptionInstitut() {
-    return this.lireAvecCache('institut:souscription', () =>
+  souscriptionInstitut(forceRefresh = false) {
+    const cle = 'institut:souscription';
+    // L'état de souscription est un contrôle d'accès : ne jamais conserver un
+    // état périmé lorsqu'on initialise ou réactualise l'espace institut.
+    if (forceRefresh) this.invaliderCache(cle);
+    return this.lireAvecCache(cle, () =>
       this.http.get<SouscriptionInstitut>(`${this.baseUrl}/institut/souscription`, { headers: this.enteteAutorisation() }),
     );
   }
@@ -2375,11 +2431,84 @@ export class CentralApiService {
     );
   }
 
+  supprimerElevesEtablissement(donnees: Record<string, unknown>) {
+    this.invaliderCache('institut:');
+    return this.http.post<DossiersEtablissementApi & { message: string }>(
+      `${this.baseUrl}/institut/eleves/supprimer`,
+      donnees,
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
+  /** Back-office institut : vérification sur tous les établissements et campus. */
+  verifierSuppressionEnseignantsInstitut(personnelIds: string[]) {
+    return this.http.post<VerificationSuppressionEnseignantsApi>(
+      `${this.baseUrl}/institut/equipe/enseignants/verifier-suppression`,
+      { personnel_ids: personnelIds },
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
+  verifierSuppressionTuteurs(tuteurIds: string[]) {
+    return this.http.post<VerificationSuppressionTuteursApi>(
+      `${this.baseUrl}/institut/tuteurs/verifier-suppression`,
+      { tuteur_ids: tuteurIds },
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
+  supprimerTuteurs(tuteurIds: string[]) {
+    this.invaliderCache('institut:');
+    return this.http.post<{ message: string }>(
+      `${this.baseUrl}/institut/tuteurs/supprimer`,
+      { tuteur_ids: tuteurIds },
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
+  /** Back-office institut : retire le personnel de tous les établissements et campus. */
+  supprimerPersonnelsInstitut(personnelIds: string[]) {
+    this.invaliderCache('institut:');
+    return this.http.post<{ message: string }>(
+      `${this.baseUrl}/institut/equipe/personnels/supprimer`,
+      { personnel_ids: personnelIds },
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
+  supprimerPersonnelsEtablissement(donnees: Record<string, unknown>) {
+    this.invaliderCache('institut:');
+    return this.http.post<DossiersEtablissementApi & { message: string }>(
+      `${this.baseUrl}/institut/personnels/supprimer`,
+      donnees,
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
+  /** Back-office institut : retire les enseignants de tout l'institut. */
+  supprimerEnseignantsInstitut(personnelIds: string[]) {
+    this.invaliderCache('institut:');
+    return this.http.post<{ message: string }>(
+      `${this.baseUrl}/institut/equipe/enseignants/supprimer`,
+      { personnel_ids: personnelIds },
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
+  verifierSuppressionEnseignants(donnees: Record<string, unknown>) {
+    return this.http.post<VerificationSuppressionEnseignantsApi>(
+      `${this.baseUrl}/institut/enseignants/verifier-suppression`,
+      donnees,
+      { headers: this.enteteAutorisation() },
+    );
+  }
+
   supprimerEnseignantsEtablissement(donnees: Record<string, unknown>) {
     this.invaliderCache('institut:');
-    return this.http.delete<DossiersEtablissementApi & { message: string }>(
-      `${this.baseUrl}/institut/enseignants`,
-      { body: donnees, headers: this.enteteAutorisation() },
+    return this.http.post<DossiersEtablissementApi & { message: string }>(
+      `${this.baseUrl}/institut/enseignants/supprimer`,
+      donnees,
+      { headers: this.enteteAutorisation() },
     );
   }
 

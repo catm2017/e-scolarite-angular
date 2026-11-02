@@ -41,6 +41,7 @@ import {
   SerieLyceeEtablissementApi,
   TableauBordEtablissementApi,
   SuiviCoranDaaraApi,
+  BlocageSuppressionEnseignantApi,
 } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
 import { QuranFollowupComponent } from '../daara/quran-followup.component';
@@ -401,6 +402,11 @@ interface ConfirmationDialogState {
   confirmLabel: string;
   icon: string;
   tone: 'danger' | 'warning';
+  /** Petit libellé au-dessus du titre (« CONFIRMATION REQUISE » par défaut). */
+  kicker?: string;
+  /** Lignes affichées sous le message, par exemple des créneaux bloquants. */
+  details?: string[];
+  cancelLabel?: string;
 }
 
 interface FinanceEntryForm {
@@ -3459,8 +3465,8 @@ export class PrimarySchoolComponent {
     if (!session || !this.sessionEstPlanifiee(session) || this.sessionsLoading()) return;
     this.requestConfirmation({
       title: 'Supprimer cette séance ?',
-      message: 'Cette suppression est définitive. La séance planifiée et toutes ses données associées seront retirées.',
-      confirmLabel: 'Supprimer définitivement',
+      message: 'La séance planifiée sera retirée du planning de la classe et de l’enseignant. Elle ne sera pas recréée si vous générez à nouveau les séances.',
+      confirmLabel: 'Supprimer la séance',
       icon: 'delete_outline',
     }, () => this.supprimerSeance());
   }
@@ -3977,12 +3983,7 @@ export class PrimarySchoolComponent {
       confirmLabel: 'Supprimer le dossier',
       icon: 'delete_outline',
     }, () => {
-      this.students.update((items) => items.filter((item) => item.id !== student.id));
-      this.snackBar.open('Le dossier élève a été supprimé.', 'Fermer', {
-        duration: 2500,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'center',
-      });
+      this.supprimerElevesBackend([student]);
     });
   }
 
@@ -3994,13 +3995,46 @@ export class PrimarySchoolComponent {
       confirmLabel: `Supprimer les ${students.length} dossiers`,
       icon: 'delete_outline',
     }, () => {
-      const ids = new Set(students.map((student) => student.id));
-      this.students.update((items) => items.filter((item) => !ids.has(item.id)));
-      this.snackBar.open(`${students.length} dossiers élèves supprimés.`, 'Fermer', {
-        duration: 2500,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'center',
+      this.supprimerElevesBackend(students);
+    });
+  }
+
+  /** Supprime côté serveur puis recharge la liste renvoyée par l'API. */
+  private supprimerElevesBackend(students: Student[]): void {
+    if (this.dossierSaving()) return;
+    const eleveIds = students.map((student) => student.backendId).filter((id): id is string => Boolean(id));
+    if (eleveIds.length !== students.length) {
+      this.snackBar.open('Impossible de supprimer un élève dont le dossier n’est pas encore enregistré.', 'Fermer', {
+        duration: 4000, verticalPosition: 'bottom', horizontalPosition: 'center',
       });
+      return;
+    }
+    const context = this.pedagogyContext();
+    if (!context) return;
+
+    this.dossierSaving.set(true);
+    this.centralApi.supprimerElevesEtablissement({
+      ...context,
+      eleve_ids: eleveIds,
+    }).subscribe({
+      next: (resultat) => {
+        this.dossierSaving.set(false);
+        this.appliquerDossiersApi(resultat, this.selectedCampusId());
+        const ids = new Set(students.map((student) => student.id));
+        if (this.selectedStudentId() !== null && ids.has(this.selectedStudentId()!)) {
+          this.selectedStudentId.set(null);
+          this.activeView.set('students');
+        }
+        this.snackBar.open(resultat.message, 'Fermer', {
+          duration: 3000, verticalPosition: 'bottom', horizontalPosition: 'center',
+        });
+      },
+      error: (response) => {
+        this.dossierSaving.set(false);
+        this.snackBar.open(response.error?.message ?? 'La suppression des élèves a échoué.', 'Fermer', {
+          duration: 4000, verticalPosition: 'bottom', horizontalPosition: 'center',
+        });
+      },
     });
   }
 
@@ -6144,39 +6178,104 @@ export class PrimarySchoolComponent {
   }
 
   deleteTeacher(teacher: Teacher): void {
-    this.requestConfirmation({
-      title: 'Supprimer ce dossier enseignant ?',
-      message: `Le dossier enseignant de ${teacher.name} sera définitivement supprimé.`,
-      confirmLabel: 'Supprimer le dossier',
-      icon: 'delete_outline',
-    }, () => {
-      this.supprimerEnseignantsBackend([teacher]);
-    });
+    this.preparerSuppressionEnseignants([teacher]);
   }
 
   deleteTeachers(teachers: Teacher[]): void {
     if (!teachers.length) return;
-    this.requestConfirmation({
-      title: 'Supprimer les enseignants sélectionnés ?',
-      message: `${teachers.length} dossiers enseignants seront définitivement supprimés.`,
-      confirmLabel: `Supprimer les ${teachers.length} dossiers`,
-      icon: 'delete_outline',
-    }, () => {
-      this.supprimerEnseignantsBackend(teachers);
+    this.preparerSuppressionEnseignants(teachers);
+  }
+
+  /**
+   * Vérifie d'abord côté serveur que les enseignants ne tiennent plus aucun
+   * créneau d'emploi du temps, puis affiche soit la confirmation de
+   * suppression, soit la liste des créneaux à libérer.
+   */
+  private preparerSuppressionEnseignants(teachers: Teacher[]): void {
+    if (this.dossierSaving()) return;
+    const personnelIds = this.personnelIdsEnseignants(teachers);
+    const context = this.pedagogyContext();
+    if (!personnelIds || !context) return;
+
+    this.dossierSaving.set(true);
+    this.centralApi.verifierSuppressionEnseignants({ ...context, personnel_ids: personnelIds }).subscribe({
+      next: (verification) => {
+        this.dossierSaving.set(false);
+        if (!verification.suppression_possible) {
+          this.afficherBlocageEmploiTemps(verification.blocages);
+          return;
+        }
+        const unSeul = teachers.length === 1;
+        this.requestConfirmation({
+          title: unSeul ? 'Supprimer ce dossier enseignant ?' : 'Supprimer les enseignants sélectionnés ?',
+          message: unSeul
+            ? `Le dossier de ${teachers[0].name} sera retiré de cet espace. Ses séances passées et ses notes restent dans l’historique.`
+            : `${teachers.length} dossiers enseignants seront retirés de cet espace. Leurs séances passées et leurs notes restent dans l’historique.`,
+          confirmLabel: unSeul ? 'Supprimer le dossier' : `Supprimer les ${teachers.length} dossiers`,
+          icon: 'delete_outline',
+        }, () => {
+          this.supprimerEnseignantsBackend(teachers);
+        });
+      },
+      error: (response) => {
+        this.dossierSaving.set(false);
+        this.snackBar.open(response.error?.message ?? 'Impossible de vérifier si ces enseignants peuvent être supprimés.', 'Fermer', {
+          duration: 4000, verticalPosition: 'bottom', horizontalPosition: 'center',
+        });
+      },
     });
   }
 
-  private supprimerEnseignantsBackend(teachers: Teacher[]): void {
-    if (this.dossierSaving()) return;
+  /** Explique pourquoi la suppression est refusée et propose d'ouvrir l'emploi du temps concerné. */
+  private afficherBlocageEmploiTemps(blocages: BlocageSuppressionEnseignantApi[]): void {
+    if (!blocages.length) return;
+    const unSeul = blocages.length === 1;
+    const lignes = blocages.flatMap((blocage) => blocage.creneaux.map((creneau) => {
+      const matiere = creneau.matiere ? ` · ${creneau.matiere}` : '';
+      const prefixe = unSeul ? '' : `${blocage.nom} — `;
+      return `${prefixe}${creneau.classe} · ${creneau.jour} ${creneau.heure_debut}–${creneau.heure_fin}${matiere}`;
+    }));
+    const maximum = 8;
+    const details = lignes.length > maximum
+      ? [...lignes.slice(0, maximum), `… et ${lignes.length - maximum} autre(s) créneau(x)`]
+      : lignes;
+    const premiereClasseId = blocages[0].creneaux[0]?.classe_id;
+
+    this.requestConfirmation({
+      kicker: 'SUPPRESSION IMPOSSIBLE',
+      title: unSeul
+        ? `${blocages[0].nom} est encore dans l’emploi du temps`
+        : 'Des enseignants sont encore dans l’emploi du temps',
+      message: unSeul
+        ? 'Retirez-le d’abord des créneaux ci-dessous, enregistrez l’emploi du temps, puis relancez la suppression.'
+        : 'Retirez-les d’abord des créneaux ci-dessous, enregistrez les emplois du temps, puis relancez la suppression.',
+      details,
+      confirmLabel: 'Ouvrir l’emploi du temps',
+      cancelLabel: 'Fermer',
+      icon: 'event_busy',
+      tone: 'warning',
+    }, () => {
+      if (premiereClasseId) this.selectClass(premiereClasseId);
+      this.setView('timetable');
+    });
+  }
+
+  private personnelIdsEnseignants(teachers: Teacher[]): string[] | null {
     const personnelIds = teachers.map((teacher) => teacher.backendId).filter((id): id is string => Boolean(id));
     if (personnelIds.length !== teachers.length) {
       this.snackBar.open('Impossible de supprimer un enseignant dont le dossier n’est pas encore enregistré.', 'Fermer', {
         duration: 4000, verticalPosition: 'bottom', horizontalPosition: 'center',
       });
-      return;
+      return null;
     }
+    return personnelIds;
+  }
+
+  private supprimerEnseignantsBackend(teachers: Teacher[]): void {
+    if (this.dossierSaving()) return;
+    const personnelIds = this.personnelIdsEnseignants(teachers);
     const context = this.pedagogyContext();
-    if (!context) return;
+    if (!personnelIds || !context) return;
 
     this.dossierSaving.set(true);
     this.centralApi.supprimerEnseignantsEtablissement({
@@ -6197,6 +6296,11 @@ export class PrimarySchoolComponent {
       },
       error: (response) => {
         this.dossierSaving.set(false);
+        // L'emploi du temps a pu changer entre la vérification et la confirmation.
+        if (response.status === 409 && Array.isArray(response.error?.blocages)) {
+          this.afficherBlocageEmploiTemps(response.error.blocages);
+          return;
+        }
         this.snackBar.open(response.error?.message ?? 'La suppression des enseignants a échoué.', 'Fermer', {
           duration: 4000, verticalPosition: 'bottom', horizontalPosition: 'center',
         });
@@ -6412,16 +6516,11 @@ export class PrimarySchoolComponent {
   deleteStaff(person: SchoolStaff): void {
     this.requestConfirmation({
       title: 'Supprimer ce dossier du personnel ?',
-      message: `Le dossier de ${person.name} sera définitivement supprimé.`,
+      message: `${person.name} sera retiré de cet espace. Ses pointages et paies passés restent dans l’historique.`,
       confirmLabel: 'Supprimer le dossier',
       icon: 'delete_outline',
     }, () => {
-      this.schoolStaff.update((items) => items.filter((item) => item.id !== person.id));
-      this.snackBar.open('Le dossier du personnel a été supprimé.', 'Fermer', {
-        duration: 2500,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'center',
-      });
+      this.supprimerPersonnelsBackend([person]);
     });
   }
 
@@ -6429,17 +6528,47 @@ export class PrimarySchoolComponent {
     if (!personnel.length) return;
     this.requestConfirmation({
       title: 'Supprimer les dossiers sélectionnés ?',
-      message: `${personnel.length} dossiers du personnel seront définitivement supprimés.`,
+      message: `${personnel.length} membres du personnel seront retirés de cet espace. Leurs pointages et paies passés restent dans l’historique.`,
       confirmLabel: `Supprimer les ${personnel.length} dossiers`,
       icon: 'delete_outline',
     }, () => {
-      const ids = new Set(personnel.map((person) => person.id));
-      this.schoolStaff.update((items) => items.filter((item) => !ids.has(item.id)));
-      this.snackBar.open(`${personnel.length} dossiers du personnel supprimés.`, 'Fermer', {
-        duration: 2500,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'center',
+      this.supprimerPersonnelsBackend(personnel);
+    });
+  }
+
+  /** Supprime côté serveur puis recharge les dossiers renvoyés par l'API. */
+  private supprimerPersonnelsBackend(personnel: SchoolStaff[]): void {
+    if (this.dossierSaving()) return;
+    const personnelIds = personnel.map((person) => person.backendId).filter((id): id is string => Boolean(id));
+    if (personnelIds.length !== personnel.length) {
+      this.snackBar.open('Impossible de supprimer un membre du personnel dont le dossier n’est pas encore enregistré.', 'Fermer', {
+        duration: 4000, verticalPosition: 'bottom', horizontalPosition: 'center',
       });
+      return;
+    }
+    const context = this.pedagogyContext();
+    if (!context) return;
+
+    this.dossierSaving.set(true);
+    this.centralApi.supprimerPersonnelsEtablissement({ ...context, personnel_ids: personnelIds }).subscribe({
+      next: (resultat) => {
+        this.dossierSaving.set(false);
+        this.appliquerDossiersApi(resultat, this.selectedCampusId());
+        const ids = new Set(personnel.map((person) => person.id));
+        if (this.selectedStaffId() !== null && ids.has(this.selectedStaffId()!)) {
+          this.selectedStaffId.set(null);
+          this.activeView.set('staff');
+        }
+        this.snackBar.open(resultat.message, 'Fermer', {
+          duration: 3000, verticalPosition: 'bottom', horizontalPosition: 'center',
+        });
+      },
+      error: (response) => {
+        this.dossierSaving.set(false);
+        this.snackBar.open(response.error?.message ?? 'La suppression du personnel a échoué.', 'Fermer', {
+          duration: 4000, verticalPosition: 'bottom', horizontalPosition: 'center',
+        });
+      },
     });
   }
 

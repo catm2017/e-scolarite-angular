@@ -3,9 +3,9 @@
 
 export const environment = {
   production: false,
-  // En développement, l'API passe par le proxy Angular. Cela évite le délai
-  // macOS lié à la résolution des domaines en `.local` à chaque requête.
-  apiUrl: '/api',
+  // Le front appelle directement le backend, comme en production.
+  // Laravel doit autoriser http://localhost:4200 dans CORS_ALLOWED_ORIGINS.
+  apiUrl: 'http://e-scolarite.local/api',
   publicUrl: 'http://e-scolarite.local',
 };
 

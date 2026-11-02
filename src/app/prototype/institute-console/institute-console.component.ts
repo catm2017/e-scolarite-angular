@@ -11,7 +11,7 @@ import {
   InstituteWorkspaceService,
 } from './institute-workspace.service';
 import { PrimaryWorkspaceService } from '../primary-school/primary-workspace.service';
-import { BornePointageInstitutApi, CampusInstitut, CentralApiService, CompteCandidatInstitut, DossierTuteurInstitutApi, EnfantDossierTuteurInstitutApi, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, PointageInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TableauBordInstitutApi, TuteurEtablissementApi, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
+import { UtilisationSalleApi, BlocageSuppressionEnseignantApi, BlocageSuppressionTuteurApi, BornePointageInstitutApi, CampusInstitut, CentralApiService, CompteCandidatInstitut, DossierTuteurInstitutApi, EnfantDossierTuteurInstitutApi, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, PointageInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TableauBordInstitutApi, TuteurEtablissementApi, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
 import { TemplateMultiselectDirective } from '@shared/directives/template-multiselect.directive';
 import { StudentTransfersComponent } from './student-transfers/student-transfers.component';
@@ -374,6 +374,24 @@ export class InstituteConsoleComponent implements OnInit {
   readonly userEstablishmentAccessIds = signal<string[]>([]);
   readonly passwordResetSent = signal(false);
   readonly passwordResetModalOpen = signal(false);
+  /** Modal de suppression d'un enseignant : confirmation, ou créneaux à libérer d'abord. */
+  readonly teacherDeletion = signal<{
+    record: InstituteDirectoryRow;
+    type: 'enseignant' | 'personnel' | 'tuteur';
+    etape: 'confirmation' | 'blocage';
+    creneaux: string[];
+    enCours: boolean;
+  } | null>(null);
+  /** Modal de suppression d'une salle : confirmation, ou créneaux à libérer d'abord. */
+  readonly spaceDeletion = signal<{
+    space: InstituteSpaceRow;
+    etape: 'confirmation' | 'blocage';
+    utilisations: string[];
+    seancesAVenir: number;
+    enCours: boolean;
+  } | null>(null);
+  /** Évite d'ouvrir deux vérifications si l'on clique plusieurs fois. */
+  readonly teacherDeletionChecking = signal(false);
   readonly accountStatusModalOpen = signal(false);
   readonly pendingAccountStatus = signal<'actif' | 'suspendu' | null>(null);
   readonly userAssignedRoles = signal<string[]>([]);
@@ -605,15 +623,10 @@ export class InstituteConsoleComponent implements OnInit {
         }
         this.campuses.set(espace.campus.map((campus) => this.presenterCampus(campus)));
         this.establishmentsCatalogue.set(espace.etablissements.map((item) => this.presenterEtablissement(item)));
-        this.chargerTableauBord();
-        this.chargerPointages();
-        this.chargerSalles();
-        this.chargerEquipe();
-        this.chargerTuteurs();
-        this.chargerUtilisateurs();
-        this.chargerRolesPermissions();
-        this.chargerSouscription();
-        this.chargerParametresInstitut();
+        // La souscription est vérifiée avant tout appel métier. Ainsi, une
+        // souscription expirée n'entraîne ni chargement partiel, ni cascade
+        // d'erreurs 403 dans l'interface.
+        this.chargerSouscription(() => this.chargerDonneesProtegees());
       },
       error: (erreur: HttpErrorResponse) => {
         if (erreur.status === 401 || erreur.status === 419) {
@@ -1129,8 +1142,19 @@ export class InstituteConsoleComponent implements OnInit {
     };
   }
 
-  private chargerSouscription(): void {
-    this.api.souscriptionInstitut().subscribe({
+  private chargerDonneesProtegees(): void {
+    this.chargerTableauBord();
+    this.chargerPointages();
+    this.chargerSalles();
+    this.chargerEquipe();
+    this.chargerTuteurs();
+    this.chargerUtilisateurs();
+    this.chargerRolesPermissions();
+    this.chargerParametresInstitut();
+  }
+
+  private chargerSouscription(apresVerification?: () => void): void {
+    this.api.souscriptionInstitut(Boolean(apresVerification)).subscribe({
       next: (souscription) => {
         const types = souscription.types.map((item) => this.presenterSouscription(item));
         this.subscriptionTypes.set(types);
@@ -1148,9 +1172,17 @@ export class InstituteConsoleComponent implements OnInit {
         this.rafraichirTableFonctionnalites();
         this.workspace.configureSubscriptionAccess(souscription.validee, souscription.fonctionnalites_actives);
         this.chargerFacturesSouscription();
-        if (!souscription.validee && this.activeView() !== 'subscription') {
-          void this.router.navigateByUrl(this.workspace.cheminVue('subscription'), { replaceUrl: true });
+        if (!souscription.validee) {
+          const vueRegularisation = this.activeView() === 'subscription'
+            || this.activeView() === 'subscription-invoices';
+          if (!vueRegularisation) {
+            void this.router.navigateByUrl(this.workspace.cheminVue('subscription'), { replaceUrl: true });
+          }
+          this.subscriptionLoading.set(false);
+          if (this.backendRefreshing()) this.backendRefreshing.set(false);
+          return;
         }
+        apresVerification?.();
         this.subscriptionLoading.set(false);
         if (this.backendRefreshing()) {
           this.backendRefreshing.set(false);
@@ -1824,18 +1856,66 @@ export class InstituteConsoleComponent implements OnInit {
   }
 
   deleteSpace(space: InstituteSpaceRow): void {
-    if (!window.confirm(`Supprimer « ${space.name} » ? Cette action retirera la salle des futures configurations d’emploi du temps.`)) {
-      return;
-    }
-    this.api.supprimerSalleInstitut(space.id).subscribe({
+    if (this.teacherDeletionChecking()) return;
+    this.teacherDeletionChecking.set(true);
+    this.api.verifierSuppressionSalleInstitut(space.id).subscribe({
+      next: (verification) => {
+        this.teacherDeletionChecking.set(false);
+        this.spaceDeletion.set({
+          space,
+          etape: verification.suppression_possible ? 'confirmation' : 'blocage',
+          utilisations: this.lignesUtilisationsSalle(verification.utilisations),
+          seancesAVenir: verification.seances_a_venir,
+          enCours: false,
+        });
+      },
+      error: (erreur: HttpErrorResponse) => {
+        this.teacherDeletionChecking.set(false);
+        this.toast.error(erreur?.error?.message ?? 'Impossible de vérifier si cette salle peut être supprimée.');
+      },
+    });
+  }
+
+  fermerSuppressionSalle(): void {
+    if (this.spaceDeletion()?.enCours) return;
+    this.spaceDeletion.set(null);
+  }
+
+  confirmerSuppressionSalle(): void {
+    const etat = this.spaceDeletion();
+    if (!etat || etat.etape !== 'confirmation' || etat.enCours) return;
+    this.spaceDeletion.set({ ...etat, enCours: true });
+    this.api.supprimerSalleInstitut(etat.space.id).subscribe({
       next: (resultat) => {
-        this.spaceRows.update((items) => items.filter((item) => item.id !== space.id));
+        this.spaceDeletion.set(null);
+        this.spaceRows.update((items) => items.filter((item) => item.id !== etat.space.id));
         this.appliquerFiltreSalles();
         this.chargerEspace();
         this.toast.success(resultat.message);
       },
-      error: (erreur) => this.toast.error(erreur?.error?.message ?? 'La salle n’a pas pu être supprimée.'),
+      error: (erreur: HttpErrorResponse) => {
+        if (erreur.status === 409 && Array.isArray(erreur.error?.utilisations)) {
+          this.spaceDeletion.set({
+            ...etat,
+            etape: 'blocage',
+            utilisations: this.lignesUtilisationsSalle(erreur.error.utilisations),
+            enCours: false,
+          });
+          return;
+        }
+        this.spaceDeletion.set({ ...etat, enCours: false });
+        this.toast.error(erreur?.error?.message ?? 'La salle n’a pas pu être supprimée.');
+      },
     });
+  }
+
+  private lignesUtilisationsSalle(utilisations: UtilisationSalleApi[]): string[] {
+    const lignes = utilisations.map((ligne) =>
+      `${ligne.classe} · ${ligne.jour} ${ligne.heure_debut}–${ligne.heure_fin}${ligne.matiere ? ' · ' + ligne.matiere : ''}`);
+    const maximum = 8;
+    return lignes.length > maximum
+      ? [...lignes.slice(0, maximum), `… et ${lignes.length - maximum} autre(s) créneau(x)`]
+      : lignes;
   }
 
   private appliquerFiltreSalles(): void {
@@ -1904,11 +1984,40 @@ export class InstituteConsoleComponent implements OnInit {
     this.setView('staff-detail');
   }
 
+  /** Un tuteur ne peut être supprimé que s'il n'est plus responsable d'aucun élève actif. */
+  removeGuardian(record: InstituteDirectoryRow): void {
+    if (this.teacherDeletionChecking()) return;
+    if (!record.id) return;
+    this.teacherDeletionChecking.set(true);
+    this.api.verifierSuppressionTuteurs([record.id]).subscribe({
+      next: (verification) => {
+        this.teacherDeletionChecking.set(false);
+        this.teacherDeletion.set({
+          record,
+          type: 'tuteur',
+          etape: verification.suppression_possible ? 'confirmation' : 'blocage',
+          creneaux: this.lignesEnfantsBloquants(verification.blocages),
+          enCours: false,
+        });
+      },
+      error: (error: HttpErrorResponse) => {
+        this.teacherDeletionChecking.set(false);
+        this.toast.error(error?.error?.message ?? 'Impossible de vérifier si ce tuteur peut être supprimé.');
+      },
+    });
+  }
+
+  private lignesEnfantsBloquants(blocages: BlocageSuppressionTuteurApi[]): string[] {
+    return blocages.flatMap((blocage) => blocage.enfants.map((enfant) => `${enfant.nom} · ${enfant.matricule}`));
+  }
+
+  /** Le personnel n'a pas d'emploi du temps : la confirmation suffit. */
   removeStaff(record: InstituteDirectoryRow): void {
-    const index = this.staffRows.indexOf(record);
-    if (index >= 0) this.staffRows.splice(index, 1);
-    this.staffDataSource.data = [...this.staffRows];
-    if (this.selectedStaffRecord() === record) this.selectedStaffRecord.set(null);
+    if (!record.id) {
+      this.toast.error('Ce dossier n’est pas encore enregistré.');
+      return;
+    }
+    this.teacherDeletion.set({ record, type: 'personnel', etape: 'confirmation', creneaux: [], enCours: false });
   }
 
   saveStaffAssignments(record: InstituteDirectoryRow): void {
@@ -1934,11 +2043,101 @@ export class InstituteConsoleComponent implements OnInit {
     this.setView('teacher-detail');
   }
 
+  /**
+   * Vérifie d'abord côté serveur que l'enseignant ne tient plus aucun créneau
+   * d'emploi du temps dans l'institut, puis ouvre le modal adapté.
+   */
   removeTeacher(record: InstituteDirectoryRow): void {
-    const index = this.teacherRows.indexOf(record);
-    if (index >= 0) this.teacherRows.splice(index, 1);
-    this.teacherDataSource.data = [...this.teacherRows];
-    if (this.selectedTeacherRecord() === record) this.selectedTeacherRecord.set(null);
+    if (this.teacherDeletionChecking()) return;
+    if (!record.id) {
+      this.toast.error('Ce dossier enseignant n’est pas encore enregistré.');
+      return;
+    }
+    this.teacherDeletionChecking.set(true);
+    this.api.verifierSuppressionEnseignantsInstitut([record.id]).subscribe({
+      next: (verification) => {
+        this.teacherDeletionChecking.set(false);
+        this.teacherDeletion.set({
+          record,
+          type: 'enseignant',
+          etape: verification.suppression_possible ? 'confirmation' : 'blocage',
+          creneaux: this.lignesCreneauxBloquants(verification.blocages),
+          enCours: false,
+        });
+      },
+      error: (error: HttpErrorResponse) => {
+        this.teacherDeletionChecking.set(false);
+        this.toast.error(error?.error?.message ?? 'Impossible de vérifier si cet enseignant peut être supprimé.');
+      },
+    });
+  }
+
+  fermerSuppressionEnseignant(): void {
+    if (this.teacherDeletion()?.enCours) return;
+    this.teacherDeletion.set(null);
+  }
+
+  confirmerSuppressionEnseignant(): void {
+    const etat = this.teacherDeletion();
+    if (!etat || etat.etape !== 'confirmation' || etat.enCours || !etat.record.id) return;
+    this.teacherDeletion.set({ ...etat, enCours: true });
+    const requete = etat.type === 'personnel'
+      ? this.api.supprimerPersonnelsInstitut([etat.record.id])
+      : etat.type === 'tuteur'
+        ? this.api.supprimerTuteurs([etat.record.id])
+        : this.api.supprimerEnseignantsInstitut([etat.record.id]);
+    requete.subscribe({
+      next: (resultat) => {
+        this.teacherDeletion.set(null);
+        if (etat.type === 'enseignant' && this.selectedTeacherRecord()?.id === etat.record.id) {
+          this.selectedTeacherRecord.set(null);
+          this.setView('teachers');
+        }
+        if (etat.type === 'personnel' && this.selectedStaffRecord()?.id === etat.record.id) {
+          this.selectedStaffRecord.set(null);
+          this.setView('staff');
+        }
+        if (etat.type === 'tuteur') {
+          if (this.selectedGuardian()?.id === etat.record.id) this.setView('guardians');
+          this.chargerTuteurs(true);
+        }
+        this.chargerEquipe();
+        this.chargerUtilisateurs();
+        this.toast.success(resultat.message);
+      },
+      error: (error: HttpErrorResponse) => {
+        // L'emploi du temps a pu changer entre la vérification et la confirmation.
+        if (error.status === 409 && Array.isArray(error.error?.blocages)) {
+          this.teacherDeletion.set({
+            ...etat,
+            etape: 'blocage',
+            creneaux: etat.type === 'tuteur'
+              ? this.lignesEnfantsBloquants(error.error.blocages)
+              : this.lignesCreneauxBloquants(error.error.blocages),
+            enCours: false,
+          });
+          return;
+        }
+        this.teacherDeletion.set({ ...etat, enCours: false });
+        this.toast.error(error?.error?.message ?? (etat.type === 'personnel'
+          ? 'La suppression du membre du personnel a échoué.'
+          : etat.type === 'tuteur'
+            ? 'La suppression du tuteur a échoué.'
+            : 'La suppression de l’enseignant a échoué.'));
+      },
+    });
+  }
+
+  private lignesCreneauxBloquants(blocages: BlocageSuppressionEnseignantApi[]): string[] {
+    const lignes = blocages.flatMap((blocage) => blocage.creneaux.map((creneau) => {
+      const lieu = [creneau.etablissement, creneau.campus].filter(Boolean).join(' · ');
+      const matiere = creneau.matiere ? ` · ${creneau.matiere}` : '';
+      return `${lieu ? lieu + ' — ' : ''}${creneau.classe} · ${creneau.jour} ${creneau.heure_debut}–${creneau.heure_fin}${matiere}`;
+    }));
+    const maximum = 8;
+    return lignes.length > maximum
+      ? [...lignes.slice(0, maximum), `… et ${lignes.length - maximum} autre(s) créneau(x)`]
+      : lignes;
   }
 
   saveTeacherAssignments(record: InstituteDirectoryRow): void {

@@ -273,7 +273,10 @@ body.dark {
 .confirmation-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2200;
+  // Les panneaux d'import et de paramètres du template utilisent déjà des
+  // couches élevées. La confirmation doit toujours les recouvrir, sinon elle
+  // est bien ouverte mais reste invisible à l'utilisateur.
+  z-index: 100001;
   padding: 24px;
   display: grid;
   place-items: center;
@@ -337,6 +340,27 @@ body.dark {
 }
 
 .confirmation-modal.warning .confirmation-modal-copy small { color: #a97529; }
+
+.confirmation-modal-details {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid #f0e2c8;
+  border-radius: 8px;
+  background: #fdf8ef;
+
+  li {
+    padding: 5px 0;
+    color: #5b4a2c;
+    font-size: 12.5px;
+    font-weight: 650;
+    line-height: 1.4;
+  }
+
+  li + li { border-top: 1px dashed #ecdcbd; }
+}
 
 .confirmation-modal > footer {
   margin-top: 23px;

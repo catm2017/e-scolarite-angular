@@ -398,7 +398,7 @@
           <button type="button" class="primary-action" (click)="chargerTuteurs(true)" [disabled]="guardiansLoading()"><i>{{ guardiansLoading() ? 'sync' : 'refresh' }}</i>{{ guardiansLoading() ? 'Actualisation…' : 'Actualiser' }}</button>
         </div>
         @if (guardiansError()) {<div class="subscription-feedback error"><i>error_outline</i>{{ guardiansError() }}</div>}
-        <app-master-table title="Tuteurs de l’institut" [columnDefinitions]="guardianColumns" [dataSource]="guardianDataSource" [isLoading]="guardiansLoading()" exportFileName="tuteurs_institut" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showDetails]="true" [showBulkDelete]="false" [showCheckbox]="false" [disableRowClickToEdit]="true" (details)="viewGuardian($event)" (rowClick)="viewGuardian($event)" (refresh)="chargerTuteurs(true)"></app-master-table>
+        <app-master-table title="Tuteurs de l’institut" [columnDefinitions]="guardianColumns" [dataSource]="guardianDataSource" [isLoading]="guardiansLoading()" exportFileName="tuteurs_institut" [showAdd]="false" [showEdit]="false" [showDelete]="true" [showDetails]="true" [showBulkDelete]="false" [showCheckbox]="false" [disableRowClickToEdit]="true" (details)="viewGuardian($event)" (rowClick)="viewGuardian($event)" (delete)="removeGuardian($event)" (refresh)="chargerTuteurs(true)"></app-master-table>
       }
 
       @if (activeView() === 'guardian-detail') {
@@ -625,6 +625,79 @@
             <button type="button" (click)="annulerRegenerationQrPointage()">Annuler</button>
             <button type="button" class="danger" (click)="confirmerRegenerationQrPointage()"><i>sync</i>Oui, régénérer et imprimer</button>
           </div>
+        </section>
+      </div>
+    }
+
+    @if (spaceDeletion(); as suppressionSalle) {
+      <div class="subscription-modal-backdrop" role="presentation" (click)="fermerSuppressionSalle()">
+        <section class="subscription-confirmation-modal teacher-deletion-modal" [class.blocked]="suppressionSalle.etape === 'blocage'" role="alertdialog" aria-modal="true" aria-labelledby="space-deletion-title" (click)="$event.stopPropagation()">
+          @if (suppressionSalle.etape === 'confirmation') {
+            <span class="subscription-modal-icon"><i>delete_outline</i></span>
+            <h2 id="space-deletion-title">Supprimer « {{ suppressionSalle.space.name }} » ?</h2>
+            <p>
+              La salle ne sera plus proposée dans les emplois du temps.
+              @if (suppressionSalle.seancesAVenir > 0) {
+                Elle sera retirée de {{ suppressionSalle.seancesAVenir }} séance(s) planifiée(s) à venir, qui resteront sans salle.
+              }
+              Les séances passées gardent la salle où elles ont eu lieu.
+            </p>
+            <div class="subscription-modal-actions">
+              <button type="button" (click)="fermerSuppressionSalle()" [disabled]="suppressionSalle.enCours">Annuler</button>
+              <button type="button" class="danger" (click)="confirmerSuppressionSalle()" [disabled]="suppressionSalle.enCours"><i>{{ suppressionSalle.enCours ? 'progress_activity' : 'delete_outline' }}</i>{{ suppressionSalle.enCours ? 'Suppression…' : 'Supprimer la salle' }}</button>
+            </div>
+          } @else {
+            <span class="subscription-modal-icon"><i>event_busy</i></span>
+            <h2 id="space-deletion-title">« {{ suppressionSalle.space.name }} » est encore dans un emploi du temps</h2>
+            <p>Choisissez une autre salle pour ces créneaux dans l’emploi du temps de chaque classe, enregistrez, puis relancez la suppression.</p>
+            <ul class="teacher-deletion-slots">
+              @for (ligne of suppressionSalle.utilisations; track $index) {
+                <li>{{ ligne }}</li>
+              }
+            </ul>
+            <div class="subscription-modal-actions">
+              <button type="button" (click)="fermerSuppressionSalle()">Fermer</button>
+            </div>
+          }
+        </section>
+      </div>
+    }
+
+    @if (teacherDeletion(); as suppression) {
+      <div class="subscription-modal-backdrop" role="presentation" (click)="fermerSuppressionEnseignant()">
+        <section class="subscription-confirmation-modal teacher-deletion-modal" [class.blocked]="suppression.etape === 'blocage'" role="alertdialog" aria-modal="true" aria-labelledby="teacher-deletion-title" (click)="$event.stopPropagation()">
+          @if (suppression.etape === 'confirmation') {
+            <span class="subscription-modal-icon"><i>delete_outline</i></span>
+            <h2 id="teacher-deletion-title">Supprimer {{ suppression.record.name }} ?</h2>
+            @if (suppression.type === 'tuteur') {
+              <p>Le tuteur ne sera plus responsable d’aucun élève et son compte famille sera fermé. Les paiements qu’il a effectués restent dans l’historique.</p>
+            } @else if (suppression.type === 'personnel') {
+              <p>Ce membre du personnel sera retiré de tous les établissements et campus de l’institut, et son accès sera fermé s’il n’est pas aussi enseignant. Ses pointages et paies passés restent dans l’historique.</p>
+            } @else {
+              <p>L’enseignant sera retiré de tous les établissements et campus de l’institut, et son accès sera fermé s’il n’a plus d’autre rôle. Ses séances passées et ses notes restent dans l’historique.</p>
+            }
+            <div class="subscription-modal-actions">
+              <button type="button" (click)="fermerSuppressionEnseignant()" [disabled]="suppression.enCours">Annuler</button>
+              <button type="button" class="danger" (click)="confirmerSuppressionEnseignant()" [disabled]="suppression.enCours"><i>{{ suppression.enCours ? 'progress_activity' : 'delete_outline' }}</i>{{ suppression.enCours ? 'Suppression…' : (suppression.type === 'enseignant' ? 'Supprimer l’enseignant' : (suppression.type === 'tuteur' ? 'Supprimer le tuteur' : 'Supprimer le dossier')) }}</button>
+            </div>
+          } @else {
+            <span class="subscription-modal-icon"><i>{{ suppression.type === 'tuteur' ? 'family_restroom' : 'event_busy' }}</i></span>
+            @if (suppression.type === 'tuteur') {
+              <h2 id="teacher-deletion-title">{{ suppression.record.name }} est encore responsable d’élèves</h2>
+              <p>Rattachez d’abord ces élèves à un autre tuteur, ou supprimez leurs dossiers, puis relancez la suppression.</p>
+            } @else {
+              <h2 id="teacher-deletion-title">{{ suppression.record.name }} est encore dans l’emploi du temps</h2>
+              <p>Retirez-le d’abord des créneaux ci-dessous dans l’emploi du temps de chaque classe, enregistrez, puis relancez la suppression.</p>
+            }
+            <ul class="teacher-deletion-slots">
+              @for (ligne of suppression.creneaux; track $index) {
+                <li>{{ ligne }}</li>
+              }
+            </ul>
+            <div class="subscription-modal-actions">
+              <button type="button" (click)="fermerSuppressionEnseignant()">Fermer</button>
+            </div>
+          }
         </section>
       </div>
     }

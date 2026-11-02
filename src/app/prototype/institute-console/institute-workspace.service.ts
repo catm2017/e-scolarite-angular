@@ -105,10 +105,6 @@ export class InstituteWorkspaceService {
   }
 
   canAccessView(view?: string): boolean {
-    // La traçabilité est conservée pour une prochaine activation, mais son
-    // entrée reste désactivée dans l’espace institut pour le moment.
-    if (view === 'activity-log') return false;
-
     const abonnementValide = this.subscriptionValidated() || this.api.souscriptionValidee();
     const fonctionnalite = this.fonctionnalitePourVue(view);
     const autorise = this.isAdministrateur()

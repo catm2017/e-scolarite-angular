@@ -590,6 +590,45 @@
   .trace-summary-grid strong { margin: 4px 0; color: #29465f; font-size: 25px; }
   .trace-summary-grid em { color: #7e92a2; font-size: 11px; font-style: normal; }
 
+  .trace-filter-card { margin-bottom: 16px; overflow: hidden; }
+  .trace-filter-card > header { padding: 18px 20px; border-bottom: 1px solid #e4edf3; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .trace-filter-card h2 { margin: 0 0 4px; color: #2c4961; font-size: 18px; }
+  .trace-filter-card header p { margin: 0; color: #71879a; font-size: 13px; }
+  .trace-filter-card header button,.trace-pagination button { border: 1px solid #d8e5ed; border-radius: 7px; background: #fff; color: #386783; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+  .trace-filter-card header button { min-height: 38px; padding: 0 12px; }
+  .trace-filter-card button i,.trace-pagination button i { font-family: 'Material Icons'; font-style: normal; font-size: 17px; vertical-align: -4px; }
+  .trace-filter-grid { padding: 18px 20px 5px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+  .trace-filter-grid label { display: grid; gap: 6px; color: #47657b; font-size: 12px; font-weight: 750; }
+  .trace-filter-grid input,.trace-filter-grid select { min-width: 0; height: 40px; padding: 0 11px; border: 1px solid #d8e5ed; border-radius: 7px; background: #fff; color: #304d64; font: inherit; font-size: 13px; outline: none; }
+  .trace-filter-grid input:focus,.trace-filter-grid select:focus { border-color: #4e82e9; box-shadow: 0 0 0 3px rgba(78,130,233,.12); }
+  .trace-filter-card > footer { padding: 12px 20px 18px; display: flex; justify-content: flex-end; }
+  .trace-refresh-action { min-height: 42px; padding: 0 16px; border: 0; border-radius: 9px; display: inline-flex; align-items: center; gap: 8px; background: #5278e8; color: #fff; box-shadow: 0 8px 18px rgba(82,120,232,.2); font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; }
+  .trace-refresh-action:hover:not(:disabled) { background: #4168d7; transform: translateY(-1px); }
+  .trace-refresh-action:disabled { cursor: wait; opacity: .7; }
+  .trace-refresh-action i { font-family: 'Material Icons'; font-style: normal; font-size: 18px; }
+  .trace-pagination { margin: 13px 0 5px; display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #657f92; font-size: 13px; }
+  .trace-pagination > div { display: flex; gap: 8px; }
+  .trace-pagination button { min-height: 36px; padding: 0 10px; }
+  .trace-pagination button:disabled,.trace-filter-card button:disabled { cursor: not-allowed; opacity: .55; }
+
+  .trace-detail-modal { width: min(100%, 1080px); max-height: min(820px, calc(100vh - 40px)); padding: 0; overflow: auto; text-align: left; }
+  .trace-detail-modal > header { padding: 22px 24px 17px; display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid #e6eef4; }
+  .trace-detail-modal header small { color: #3577d3; font-size: 11px; font-weight: 850; letter-spacing: .08em; }
+  .trace-detail-modal h2 { margin: 5px 0; color: #29465f; font-size: 21px; }
+  .trace-detail-modal header p { margin: 0; color: #6d8496; font-size: 13px; line-height: 1.5; }
+  .trace-detail-modal header > button { width: 34px; height: 34px; flex: 0 0 auto; border: 0; border-radius: 50%; background: #f0f5f8; color: #48657a; cursor: pointer; }
+  .trace-detail-modal header > button i { font-family: 'Material Icons'; font-style: normal; font-size: 20px; }
+  .trace-detail-modal dl { margin: 0; padding: 18px 24px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+  .trace-detail-modal dl div { min-width: 0; }
+  .trace-detail-modal dt { margin-bottom: 4px; color: #8093a2; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+  .trace-detail-modal dd { margin: 0; overflow-wrap: anywhere; color: #38556a; font-size: 13px; font-weight: 650; }
+  .trace-detail-data { padding: 0 24px 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+  .trace-detail-data section { overflow: hidden; border: 1px solid #e3ebf1; border-radius: 8px; }
+  .trace-detail-data h3 { margin: 0; padding: 10px 12px; background: #f6f9fb; color: #4a6477; font-size: 13px; }
+  .trace-detail-data pre { min-height: 100px; margin: 0; padding: 12px; overflow: auto; white-space: pre-wrap; color: #405d73; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .trace-detail-modal > footer { padding: 15px 24px; display: flex; justify-content: flex-end; border-top: 1px solid #e6eef4; }
+  .trace-detail-modal > footer button { min-height: 38px; padding: 0 14px; border: 1px solid #d7e3eb; border-radius: 7px; background: #fff; color: #526e82; font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; }
+
   .trace-log-card,.trace-settings-card { overflow: hidden; }
   .trace-log-card > header,.trace-settings-card > header { padding: 20px 22px; border-bottom: 1px solid #e4edf3; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
   .trace-log-card h2,.trace-settings-card h2 { margin: 0 0 5px; color: #2c4961; font-size: 18px; }
@@ -1075,6 +1114,8 @@
     .permission-grid,
     .access-choice-grid,
     .trace-summary-grid { grid-template-columns: 1fr; }
+    .trace-filter-grid { grid-template-columns: 1fr; }
+    .trace-detail-modal dl,.trace-detail-data { grid-template-columns: 1fr; }
 
     .role-card-grid,
     .role-detail-layout { grid-template-columns: 1fr; }

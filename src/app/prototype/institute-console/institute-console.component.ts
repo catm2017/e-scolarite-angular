@@ -11,7 +11,7 @@ import {
   InstituteWorkspaceService,
 } from './institute-workspace.service';
 import { PrimaryWorkspaceService } from '../primary-school/primary-workspace.service';
-import { UtilisationSalleApi, BlocageSuppressionEnseignantApi, BlocageSuppressionTuteurApi, BornePointageInstitutApi, CampusInstitut, CentralApiService, CompteCandidatInstitut, DossierTuteurInstitutApi, EnfantDossierTuteurInstitutApi, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, PointageInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TableauBordInstitutApi, TuteurEtablissementApi, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
+import { UtilisationSalleApi, BlocageSuppressionEnseignantApi, BlocageSuppressionTuteurApi, BornePointageInstitutApi, CampusInstitut, CentralApiService, CompteCandidatInstitut, DossierTuteurInstitutApi, EnfantDossierTuteurInstitutApi, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, PointageInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TableauBordInstitutApi, TuteurEtablissementApi, TraceInstitut, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
 import { AppToastService } from '@core/service/app-toast.service';
 import { TemplateMultiselectDirective } from '@shared/directives/template-multiselect.directive';
 import { StudentTransfersComponent } from './student-transfers/student-transfers.component';
@@ -426,6 +426,30 @@ export class InstituteConsoleComponent implements OnInit {
   ]);
   readonly traceActionsEnabledCount = computed(() => this.traceSettings().filter((setting) => setting.actions).length);
   readonly traceAuthEnabledCount = computed(() => this.traceSettings().filter((setting) => setting.authentications).length);
+  readonly tracesInstitut = signal<TraceInstitut[]>([]);
+  readonly tracesInstitutSource = new MatTableDataSource<TraceInstitut>();
+  readonly traceInstitutLoading = signal(false);
+  readonly traceInstitutMeta = signal({ page: 1, par_page: 25, total: 0, dernier_page: 1 });
+  readonly traceInstitutResume = signal({ actions: 0, connexions: 0, echecs: 0 });
+  readonly traceInstitutFiltres = signal<{ modules: string[]; actions: Array<{ code: string; libelle: string }>; types_utilisateurs: Array<{ code: string; libelle: string }> }>({ modules: [], actions: [], types_utilisateurs: [] });
+  readonly traceInstitutRecherche = signal('');
+  readonly traceInstitutTypeUtilisateur = signal('');
+  readonly traceInstitutModule = signal('');
+  readonly traceInstitutAction = signal('');
+  readonly traceInstitutSourceFiltre = signal('');
+  readonly traceInstitutStatut = signal('');
+  readonly traceInstitutDateDebut = signal('');
+  readonly traceInstitutDateFin = signal('');
+  readonly traceInstitutDetail = signal<TraceInstitut | null>(null);
+  readonly tracesInstitutColumns: ColumnDefinition[] = [
+    { def: 'survenu_at', label: 'Date', type: 'date', visible: true, sortable: true },
+    { def: 'utilisateur', label: 'Utilisateur', type: 'text', visible: true, sortable: true },
+    { def: 'type_utilisateur', label: 'Type', type: 'text', visible: true, sortable: true },
+    { def: 'module', label: 'Module', type: 'text', visible: true, sortable: true },
+    { def: 'action', label: 'Action', type: 'text', visible: true, sortable: true },
+    { def: 'statut', label: 'Résultat', type: 'status', visible: true, sortable: true, statusBadgeMap: { reussi: 'badge badge-solid-green', echec: 'badge badge-solid-red' } },
+    { def: 'actions', label: 'Détails', type: 'actionBtn', visible: true, sortable: false },
+  ];
   readonly activityEntries: ActivityEntry[] = [
     { date: '28 août 2026 · 10:42', actor: 'Aminata Ndiaye', action: 'Modification des autorisations', description: 'Ajout de la permission « Gérer les inscriptions »', scope: 'École primaire · Keur Massar', status: 'Réussie' },
     { date: '28 août 2026 · 09:18', actor: 'Mamadou Ngom', action: 'Connexion au compte', description: 'Authentification réussie depuis le réseau mobile', scope: 'Lycée · Rufisque', status: 'Réussie' },
@@ -1151,6 +1175,7 @@ export class InstituteConsoleComponent implements OnInit {
     this.chargerUtilisateurs();
     this.chargerRolesPermissions();
     this.chargerParametresInstitut();
+    if (this.activeView() === 'activity-log') this.chargerTracabiliteInstitut();
   }
 
   private chargerSouscription(apresVerification?: () => void): void {
@@ -1417,6 +1442,9 @@ export class InstituteConsoleComponent implements OnInit {
       this.guardianChildrenDataSource.data = [];
     }
     this.workspace.selectView(view);
+    if (view === 'activity-log' && this.workspace.canAccessView(view)) {
+      this.chargerTracabiliteInstitut();
+    }
   }
 
   openCampusForm(campus?: Campus): void {
@@ -1757,6 +1785,67 @@ export class InstituteConsoleComponent implements OnInit {
     this.traceSettings.update((settings) => settings.map((setting) => setting.type === type
       ? { ...setting, [field]: value, updatedAt: '28 août 2026 · maintenant' }
       : setting));
+  }
+
+  chargerTracabiliteInstitut(page = this.traceInstitutMeta().page): void {
+    if (this.traceInstitutLoading()) return;
+    this.traceInstitutLoading.set(true);
+    this.api.invaliderCache('institut:tracabilite:');
+    this.api.tracabiliteInstitut({
+      q: this.traceInstitutRecherche(),
+      type_utilisateur: this.traceInstitutTypeUtilisateur(),
+      module: this.traceInstitutModule(),
+      action: this.traceInstitutAction(),
+      source: this.traceInstitutSourceFiltre(),
+      statut: this.traceInstitutStatut(),
+      date_debut: this.traceInstitutDateDebut(),
+      date_fin: this.traceInstitutDateFin(),
+      page,
+      par_page: this.traceInstitutMeta().par_page,
+    }).subscribe({
+      next: (reponse) => {
+        this.tracesInstitut.set(reponse.data);
+        this.tracesInstitutSource.data = reponse.data;
+        this.traceInstitutMeta.set(reponse.meta);
+        this.traceInstitutResume.set(reponse.resume);
+        this.traceInstitutFiltres.set(reponse.filtres);
+        this.traceInstitutLoading.set(false);
+      },
+      error: (erreur: HttpErrorResponse) => {
+        this.traceInstitutLoading.set(false);
+        this.toast.error(erreur.error?.message ?? 'Le journal des activités est indisponible pour le moment.');
+      },
+    });
+  }
+
+  reinitialiserFiltresTracabiliteInstitut(): void {
+    this.traceInstitutRecherche.set('');
+    this.traceInstitutTypeUtilisateur.set('');
+    this.traceInstitutModule.set('');
+    this.traceInstitutAction.set('');
+    this.traceInstitutSourceFiltre.set('');
+    this.traceInstitutStatut.set('');
+    this.traceInstitutDateDebut.set('');
+    this.traceInstitutDateFin.set('');
+    this.chargerTracabiliteInstitut(1);
+  }
+
+  pageTracabiliteInstitut(delta: number): void {
+    const meta = this.traceInstitutMeta();
+    const page = Math.max(1, Math.min(meta.dernier_page, meta.page + delta));
+    if (page !== meta.page) this.chargerTracabiliteInstitut(page);
+  }
+
+  ouvrirTraceInstitut(trace: TraceInstitut): void {
+    this.api.detailTracabiliteInstitut(trace.id, trace.source).subscribe({
+      next: ({ data }) => this.traceInstitutDetail.set(data),
+      error: () => this.traceInstitutDetail.set(trace),
+    });
+  }
+
+  formaterDonneesTraceInstitut(valeur: unknown): string {
+    if (valeur === null || valeur === undefined) return 'Aucune donnée';
+    try { return JSON.stringify(valeur, null, 2); } catch { return String(valeur); }
   }
 
   selectTeacherEstablishment(establishment: string): void {

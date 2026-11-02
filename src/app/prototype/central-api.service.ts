@@ -555,6 +555,40 @@ export interface TracesSaasResponse {
   filtres?: { instituts: Array<{ id: string; nom: string }>; modules: string[]; actions: string[] };
 }
 
+/** Journal limité à l'institut de la session courante. */
+export interface TraceInstitut {
+  id: string;
+  source: 'institut' | 'authentification' | string;
+  utilisateur: string;
+  type_utilisateur_code: 'administrateur' | 'personnel' | 'enseignant' | 'tuteur' | 'eleve' | string;
+  type_utilisateur: string;
+  action: string;
+  action_code: string;
+  module: string;
+  description: string;
+  perimetre: string;
+  statut: string;
+  gravite: string;
+  donnees_avant: Record<string, unknown> | null;
+  donnees_apres: Record<string, unknown> | null;
+  adresse_ip: string | null;
+  agent_utilisateur: string | null;
+  requete_id: string | null;
+  correlation_id: string | null;
+  survenu_at: string;
+}
+
+export interface TracesInstitutResponse {
+  data: TraceInstitut[];
+  meta: { page: number; par_page: number; total: number; dernier_page: number };
+  resume: { actions: number; connexions: number; echecs: number };
+  filtres: {
+    modules: string[];
+    actions: Array<{ code: string; libelle: string }>;
+    types_utilisateurs: Array<{ code: string; libelle: string }>;
+  };
+}
+
 export interface PackageSouscription {
   version_id: string;
   type_etablissement_ids: string[];
@@ -1435,6 +1469,23 @@ export class CentralApiService {
 
   detailTracabiliteSaas(id: string, source: string) {
     return this.http.get<{ data: TraceSaas }>(`${this.baseUrl}/centrale/tracabilite/${id}`, {
+      headers: this.enteteAutorisation(), params: { source },
+    });
+  }
+
+  tracabiliteInstitut(params: Record<string, string | number | null | undefined> = {}) {
+    const propres = Object.entries(params).reduce((acc, [cle, valeur]) => {
+      if (valeur !== null && valeur !== undefined && valeur !== '') acc[cle] = String(valeur);
+      return acc;
+    }, {} as Record<string, string>);
+    const cle = `institut:tracabilite:${JSON.stringify(propres)}`;
+    return this.lireAvecCache(cle, () => this.http.get<TracesInstitutResponse>(`${this.baseUrl}/institut/tracabilite`, {
+      headers: this.enteteAutorisation(), params: propres,
+    }), 30_000);
+  }
+
+  detailTracabiliteInstitut(id: string, source: string) {
+    return this.http.get<{ data: TraceInstitut }>(`${this.baseUrl}/institut/tracabilite/${id}`, {
       headers: this.enteteAutorisation(), params: { source },
     });
   }

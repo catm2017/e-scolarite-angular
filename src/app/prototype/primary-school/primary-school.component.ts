@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -43,6 +43,11 @@ import {
   SuiviCoranDaaraApi,
   BlocageSuppressionEnseignantApi,
 } from '../central-api.service';
+import {
+  FILTRES_SEANCES_ENSEIGNANT, FiltreSeancesEnseignant, SeanceEnseignantApi,
+  categorieSeance, colonnesSeancesEnseignant, compterSeances, filtrerSeances, formaterDuree,
+  lignesSeances, sourceTableauSeances,
+} from '../teacher-sessions';
 import { AppToastService } from '@core/service/app-toast.service';
 import { QuranFollowupComponent } from '../daara/quran-followup.component';
 import { DaaraStudentTransfersComponent } from '../daara/daara-student-transfers.component';
@@ -56,7 +61,7 @@ type GradeWeightKind = 'homeworkWeight' | 'compositionWeight';
 type GuardianMode = 'existing' | 'new';
 type PortalAccountStatus = 'Actif' | 'Invitation envoyée' | 'Non créé' | 'Désactivé';
 type StudentRecordTab = 'identity' | 'schooling' | 'quran' | 'payments' | 'attendance';
-type TeacherRecordTab = 'profile' | 'teaching' | 'timetable' | 'salaries';
+type TeacherRecordTab = 'profile' | 'teaching' | 'timetable' | 'sessions' | 'salaries';
 type GuardianRecordTab = 'identity' | 'children';
 type TeacherSalaryMode = 'Mensuel' | 'Horaire';
 type WorkforceImportKind = 'teacher' | 'staff';
@@ -1065,6 +1070,16 @@ export class PrimarySchoolComponent {
   readonly studentRecordTab = signal<StudentRecordTab>('identity');
   readonly guardianRecordTab = signal<GuardianRecordTab>('identity');
   readonly teacherRecordTab = signal<TeacherRecordTab>('profile');
+  readonly filtresSeancesEnseignant = FILTRES_SEANCES_ENSEIGNANT;
+  readonly teacherSessionFilter = signal<FiltreSeancesEnseignant>('toutes');
+  readonly teacherSessionRows = computed(() =>
+    filtrerSeances(this.teacherDossier()?.seances ?? [], this.teacherSessionFilter()));
+  readonly teacherSessionColumns = colonnesSeancesEnseignant(false);
+  readonly teacherSessionDataSource = sourceTableauSeances();
+  private readonly synchroniserTableauSeances = effect(() => {
+    this.teacherSessionDataSource.data = lignesSeances(this.teacherSessionRows());
+  });
+  protected readonly formaterDuree = formaterDuree;
   readonly selectedSessionId = signal<string | null>(null);
   readonly selectedAssessmentId = signal<string | null>(null);
   readonly sessionGeneratorOpen = signal(false);
@@ -2506,6 +2521,20 @@ export class PrimarySchoolComponent {
       }
     });
 
+    // Ouverture d'une séance demandée par l'URL. Le chargement des classes
+    // resélectionne la première classe : la demande est donc réappliquée à
+    // chaque mise à jour de la liste des classes, jusqu'à son aboutissement.
+    effect(() => {
+      const demande = this.workspace.seanceAOuvrir();
+      this.classes();
+      if (!demande) return;
+      untracked(() => {
+        if (this.selectedClassId() !== demande.classeId) this.selectClass(demande.classeId);
+        // Laisse d'abord passer la remise à zéro liée à l'entrée dans la vue Séances.
+        setTimeout(() => this.ouvrirSeanceDemandee(), 0);
+      });
+    });
+
     effect(() => {
       this.workspace.sessionListRequest();
       this.selectedSessionId.set(null);
@@ -3398,6 +3427,28 @@ export class PrimarySchoolComponent {
     this.chargerDetailSeance(session);
   }
 
+  /**
+   * Ouvre la séance demandée par l'URL dès qu'elle figure dans la liste de sa
+   * classe. Après un chargement infructueux, la demande est abandonnée avec un
+   * message : la séance appartient alors à une autre année scolaire.
+   */
+  private ouvrirSeanceDemandee(apresChargement = false): void {
+    const demande = this.workspace.seanceAOuvrir();
+    if (!demande || this.selectedClassId() !== demande.classeId) return;
+    const seance = this.sessions().find((item) => item.id === demande.seanceId && item.classId === demande.classeId);
+    if (seance) {
+      this.workspace.seanceAOuvrir.set(null);
+      this.openSession(seance);
+      return;
+    }
+    if (apresChargement) {
+      this.workspace.seanceAOuvrir.set(null);
+      this.snackBar.error('Cette séance n’apparaît pas dans l’année scolaire sélectionnée. Changez d’année pour la consulter.');
+      return;
+    }
+    if (!this.sessionsLoading() && this.pedagogyContext()) this.chargerSeances(true);
+  }
+
   backToSessionList(): void {
     this.selectedSessionId.set(null);
   }
@@ -3891,11 +3942,38 @@ export class PrimarySchoolComponent {
   }
 
   seancesEnseignantRealisees(): number {
-    return this.teacherDossier()?.seances.filter((seance) => seance.statut === 'realisee').length ?? 0;
+    return this.teacherDossier()?.synthese_seances?.tenues
+      ?? this.teacherDossier()?.seances.filter((seance) => categorieSeance(seance) === 'tenues').length
+      ?? 0;
   }
 
   seancesEnseignantARenseigner(): number {
-    return this.teacherDossier()?.seances.filter((seance) => seance.statut !== 'realisee').length ?? 0;
+    return this.teacherDossier()?.synthese_seances?.a_renseigner
+      ?? this.teacherDossier()?.seances.filter((seance) => categorieSeance(seance) === 'a_renseigner').length
+      ?? 0;
+  }
+
+  compterSeancesEnseignant(filtre: FiltreSeancesEnseignant): number {
+    return compterSeances(this.teacherDossier()?.seances ?? [], filtre);
+  }
+
+  /** Recharge le dossier de l'enseignant pour voir l'état à jour de ses séances. */
+  rafraichirSeancesEnseignant(): void {
+    const teacher = this.selectedTeacher();
+    if (!teacher) return;
+    this.centralApi.invaliderCache('institut:dossier-enseignant:');
+    this.teacherDossierRequestKey = '';
+    this.chargerDossierEnseignant(teacher);
+  }
+
+  /** Ouvre le détail de la séance dans la vue Séances de son cycle. */
+  ouvrirSeanceEnseignant(seance: SeanceEnseignantApi): void {
+    const chemin = this.workspace.cheminSeance(seance.type_etablissement, seance.campus_id, seance.classe_id, seance.id);
+    if (!chemin) {
+      this.snackBar.error('Le détail de cette séance n’est pas disponible dans ce cycle.');
+      return;
+    }
+    void this.router.navigateByUrl(chemin);
   }
 
   changeGuardianMode(mode: GuardianMode): void {
@@ -4786,6 +4864,11 @@ export class PrimarySchoolComponent {
   }
 
   private appliquerSeancesBackend(seances: SeanceEtablissementApi[]): void {
+    this.afficherSeancesBackend(seances);
+    if (this.workspace.seanceAOuvrir()) this.ouvrirSeanceDemandee(true);
+  }
+
+  private afficherSeancesBackend(seances: SeanceEtablissementApi[]): void {
     this.sessions.set(seances.map((seance): SchoolSession => {
       const subject = seance.matiere_libelle ?? 'Matière non définie';
       return {

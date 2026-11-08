@@ -1288,6 +1288,7 @@
                 <button [class.active]="teacherRecordTab() === 'profile'" (click)="setTeacherRecordTab('profile')"><i>person</i>Profil</button>
                 <button [class.active]="teacherRecordTab() === 'teaching'" (click)="setTeacherRecordTab('teaching')"><i>menu_book</i>Enseignements</button>
                 <button [class.active]="teacherRecordTab() === 'timetable'" (click)="setTeacherRecordTab('timetable')"><i>calendar_month</i>Emploi du temps</button>
+                <button [class.active]="teacherRecordTab() === 'sessions'" (click)="setTeacherRecordTab('sessions')"><i>event_note</i>Séances</button>
                 <button [class.active]="teacherRecordTab() === 'salaries'" (click)="setTeacherRecordTab('salaries')"><i>payments</i>Salaires</button>
               </nav>
 
@@ -1368,6 +1369,45 @@
                     </div>
                   </div>
                 </article>
+              }
+
+              @if (teacherRecordTab() === 'sessions') {
+                @if (teacherDossierLoading()) { <section class="panel subject-loading-state"><span></span><strong>Chargement des séances…</strong></section> }
+                @else if (teacherDossier(); as dossier) {
+                  <section class="record-metrics">
+                    <article><i class="green">schedule</i><span><small>Heures effectuées</small><strong>{{ formaterDuree(dossier.synthese_seances.minutes_effectuees) }}</strong><em>{{ dossier.synthese_seances.tenues }} séance(s) effectuée(s) ou validée(s)</em></span></article>
+                    <article><i class="blue">event</i><span><small>Séances affectées</small><strong>{{ dossier.synthese_seances.total }}</strong><em>Dans ce cycle et ce campus</em></span></article>
+                    <article><i class="orange">pending_actions</i><span><small>À renseigner</small><strong>{{ dossier.synthese_seances.a_renseigner }}</strong><em>Date passée, encore planifiées</em></span></article>
+                    <article><i class="violet">upcoming</i><span><small>À venir</small><strong>{{ dossier.synthese_seances.a_venir }}</strong><em>Planifiées à partir d’aujourd’hui</em></span></article>
+                  </section>
+                  <nav class="teacher-sessions-filters panel" aria-label="Filtrer les séances">
+                    @for (filtre of filtresSeancesEnseignant; track filtre.code) {
+                      <button type="button" [class.active]="teacherSessionFilter() === filtre.code" (click)="teacherSessionFilter.set(filtre.code)">{{ filtre.libelle }} <b>{{ compterSeancesEnseignant(filtre.code) }}</b></button>
+                    }
+                  </nav>
+                  <app-master-table
+                    title="Séances affectées"
+                    [columnDefinitions]="teacherSessionColumns"
+                    [dataSource]="teacherSessionDataSource"
+                    [isLoading]="teacherDossierLoading()"
+                    [exportFileName]="'seances_' + teacher.name"
+                    [showAdd]="false"
+                    [showEdit]="false"
+                    [showDelete]="false"
+                    [showDetails]="true"
+                    detailsTooltip="Voir la séance"
+                    [showBulkDelete]="false"
+                    [showCheckbox]="false"
+                    [showContextMenu]="false"
+                    [disableRowClickToEdit]="true"
+                    (details)="ouvrirSeanceEnseignant($event)"
+                    (rowClick)="ouvrirSeanceEnseignant($event)"
+                    (refresh)="rafraichirSeancesEnseignant()">
+                  </app-master-table>
+                  @if (dossier.synthese_seances.total > dossier.synthese_seances.affichees) {
+                    <p class="teacher-sessions-note">Les {{ dossier.synthese_seances.affichees }} séances les plus récentes sont listées ; les compteurs portent sur les {{ dossier.synthese_seances.total }} séances.</p>
+                  }
+                } @else { <section class="panel subject-loading-state"><strong>Les séances seront disponibles après le chargement du dossier.</strong></section> }
               }
 
               @if (teacherRecordTab() === 'salaries') {

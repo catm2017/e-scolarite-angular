@@ -1,3 +1,4 @@
+import { SeanceEnseignantApi, SyntheseSeancesEnseignantApi } from './teacher-sessions';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
@@ -1081,10 +1082,16 @@ export interface EspaceFamilleApi {
   enfants: EnfantEspaceFamilleApi[];
 }
 
+export interface SeancesEnseignantInstitutApi {
+  seances: SeanceEnseignantApi[];
+  synthese: SyntheseSeancesEnseignantApi;
+}
+
 export interface DossierEnseignantEtablissementApi {
   affectations: Array<{ id: string; classe_id: string; classe: string; matiere: string; bareme: number | null; coefficient: number | null }>;
   emploi_temps: Array<{ id: string; jour_semaine: number; est_pause: boolean; heure_debut: string; heure_fin: string; classe: string; matiere: string | null; salle: string | null }>;
-  seances: Array<{ id: string; date_seance: string; heure_debut: string; heure_fin: string; statut: string; classe: string; matiere: string | null }>;
+  seances: SeanceEnseignantApi[];
+  synthese_seances: SyntheseSeancesEnseignantApi;
   heures_mensuelles: Array<{ mois: string; seances: number; minutes: number; heures: number }>;
   salaires: Array<{ id: string; periode: string; date_debut: string; date_fin: string; nombre_heures: number | null; taux_horaire: number | null; montant: number; montant_paye: number; statut: string }>;
   pointages: Array<{ id: string; date_pointage: string; heure_entree_at: string | null; heure_sortie_at: string | null; statut: string; observation: string | null }>;
@@ -2431,6 +2438,13 @@ export class CentralApiService {
     return this.http.get(`${this.baseUrl}/institut/famille/eleves/${eleveId}/evaluations/${evaluationId}/copie`, {
       params: { type_etablissement: typeEtablissement, campus_id: campusId },
       headers: this.enteteAutorisation(), responseType: 'blob', observe: 'response',
+    });
+  }
+
+  /** Console de l'institut : séances de l'enseignant dans tout son périmètre visible. */
+  seancesEnseignantInstitut(personnelId: string) {
+    return this.http.get<{ data: SeancesEnseignantInstitutApi }>(`${this.baseUrl}/institut/equipe/${personnelId}/seances`, {
+      headers: this.enteteAutorisation(),
     });
   }
 

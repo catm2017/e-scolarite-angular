@@ -11,7 +11,11 @@ import {
   InstituteWorkspaceService,
 } from './institute-workspace.service';
 import { PrimaryWorkspaceService } from '../primary-school/primary-workspace.service';
-import { UtilisationSalleApi, BlocageSuppressionEnseignantApi, BlocageSuppressionTuteurApi, BornePointageInstitutApi, CampusInstitut, CentralApiService, CompteCandidatInstitut, DossierTuteurInstitutApi, EnfantDossierTuteurInstitutApi, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, PointageInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TableauBordInstitutApi, TuteurEtablissementApi, TraceInstitut, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
+import { UtilisationSalleApi, SeancesEnseignantInstitutApi, BlocageSuppressionEnseignantApi, BlocageSuppressionTuteurApi, BornePointageInstitutApi, CampusInstitut, CentralApiService, CompteCandidatInstitut, DossierTuteurInstitutApi, EnfantDossierTuteurInstitutApi, FactureSouscriptionInstitut, FonctionnaliteSouscription, MembreEquipeInstitut, PackageSouscription, ParametresInstitut, PermissionInstitutApi, PointageInstitutApi, RoleInstitutApi, SalleInstitut, SouscriptionInstitut, TableauBordInstitutApi, TuteurEtablissementApi, TraceInstitut, TypeSouscription, UtilisateurInstitutApi } from '../central-api.service';
+import {
+  FILTRES_SEANCES_ENSEIGNANT, FiltreSeancesEnseignant, SeanceEnseignantApi,
+  colonnesSeancesEnseignant, compterSeances, filtrerSeances, formaterDuree, lignesSeances, sourceTableauSeances,
+} from '../teacher-sessions';
 import { AppToastService } from '@core/service/app-toast.service';
 import { TemplateMultiselectDirective } from '@shared/directives/template-multiselect.directive';
 import { StudentTransfersComponent } from './student-transfers/student-transfers.component';
@@ -127,7 +131,7 @@ interface InstituteSpaceForm {
 }
 
 type StaffRecordTab = 'identity' | 'assignment' | 'access';
-type TeacherRecordTab = 'identity' | 'teaching' | 'access';
+type TeacherRecordTab = 'identity' | 'teaching' | 'sessions' | 'access';
 type UserRecordTab = 'roles' | 'scope' | 'security' | 'activity';
 
 interface TraceSetting {
@@ -136,15 +140,6 @@ interface TraceSetting {
   actions: boolean;
   authentications: boolean;
   updatedAt: string;
-}
-
-interface ActivityEntry {
-  date: string;
-  actor: string;
-  action: string;
-  description: string;
-  scope: string;
-  status: 'Réussie' | 'Refusée';
 }
 
 interface PermissionDefinition {
@@ -366,6 +361,21 @@ export class InstituteConsoleComponent implements OnInit {
   readonly selectedTeacherRecord = signal<InstituteDirectoryRow | null>(null);
   readonly staffRecordTab = signal<StaffRecordTab>('identity');
   readonly teacherRecordTab = signal<TeacherRecordTab>('identity');
+  /** Séances de l'enseignant ouvert, tous cycles et campus visibles confondus. */
+  readonly teacherSessions = signal<SeancesEnseignantInstitutApi | null>(null);
+  readonly teacherSessionsLoading = signal(false);
+  readonly teacherSessionsError = signal<string | null>(null);
+  readonly teacherSessionFilter = signal<FiltreSeancesEnseignant>('toutes');
+  readonly teacherSessionRows = computed(() =>
+    filtrerSeances(this.teacherSessions()?.seances ?? [], this.teacherSessionFilter()));
+  readonly filtresSeancesEnseignant = FILTRES_SEANCES_ENSEIGNANT;
+  readonly teacherSessionColumns = colonnesSeancesEnseignant(true);
+  readonly teacherSessionDataSource = sourceTableauSeances();
+  private readonly synchroniserTableauSeances = effect(() => {
+    this.teacherSessionDataSource.data = lignesSeances(this.teacherSessionRows());
+  });
+  protected readonly formaterDuree = formaterDuree;
+  private seancesEnseignantDemande = '';
   readonly selectedUserRecord = signal<InstituteDirectoryRow | null>(null);
   readonly userRecordTab = signal<UserRecordTab>('roles');
   readonly userRole = signal('Gestionnaire d’établissement');
@@ -441,6 +451,15 @@ export class InstituteConsoleComponent implements OnInit {
   readonly traceInstitutDateDebut = signal('');
   readonly traceInstitutDateFin = signal('');
   readonly traceInstitutDetail = signal<TraceInstitut | null>(null);
+  /** Onglet Activité du dossier utilisateur : journal de l'institut filtré sur ce compte. */
+  readonly userActivitySource = new MatTableDataSource<TraceInstitut>();
+  readonly userActivityLoading = signal(false);
+  readonly userActivityError = signal<string | null>(null);
+  readonly userActivityLoaded = signal(false);
+  readonly userActivityTotals = signal({ total: 0, actions: 0, connexions: 0, echecs: 0 });
+  private userActivityDemande = '';
+  /** Nombre maximal d'événements affichés dans le dossier (le plus récent d'abord). */
+  readonly userActivityLimite = 100;
   readonly tracesInstitutColumns: ColumnDefinition[] = [
     { def: 'survenu_at', label: 'Date', type: 'date', visible: true, sortable: true },
     { def: 'utilisateur', label: 'Utilisateur', type: 'text', visible: true, sortable: true },
@@ -450,25 +469,6 @@ export class InstituteConsoleComponent implements OnInit {
     { def: 'statut', label: 'Résultat', type: 'status', visible: true, sortable: true, statusBadgeMap: { reussi: 'badge badge-solid-green', echec: 'badge badge-solid-red' } },
     { def: 'actions', label: 'Détails', type: 'actionBtn', visible: true, sortable: false },
   ];
-  readonly activityEntries: ActivityEntry[] = [
-    { date: '28 août 2026 · 10:42', actor: 'Aminata Ndiaye', action: 'Modification des autorisations', description: 'Ajout de la permission « Gérer les inscriptions »', scope: 'École primaire · Keur Massar', status: 'Réussie' },
-    { date: '28 août 2026 · 09:18', actor: 'Mamadou Ngom', action: 'Connexion au compte', description: 'Authentification réussie depuis le réseau mobile', scope: 'Lycée · Rufisque', status: 'Réussie' },
-    { date: '27 août 2026 · 16:05', actor: 'Ousmane Ba', action: 'Export financier', description: 'Export du registre des encaissements', scope: 'Institut · Dakar Plateau', status: 'Réussie' },
-    { date: '27 août 2026 · 14:22', actor: 'Cheikh Seck', action: 'Tentative de connexion', description: 'Mot de passe incorrect', scope: 'Portail famille', status: 'Refusée' },
-  ];
-  readonly selectedUserActivityEntries = computed<ActivityEntry[]>(() => {
-    const user = this.selectedUserRecord();
-    if (!user) return [];
-    const matches = this.activityEntries.filter((entry) => entry.actor === user.name);
-    return matches.length ? matches : [{
-      date: '26 août 2026 · 11:06',
-      actor: user.name,
-      action: 'Consultation du compte',
-      description: 'Accès au portail selon le périmètre autorisé',
-      scope: user.scope || 'Plateforme E-Scolarité',
-      status: 'Réussie',
-    }];
-  });
   staffForm: InstituteDirectoryRow = this.emptyStaffForm();
   teacherForm: InstituteDirectoryRow = this.emptyTeacherForm();
   readonly teacherInterventionTabs = computed(() =>
@@ -1593,6 +1593,10 @@ export class InstituteConsoleComponent implements OnInit {
   viewUser(record: InstituteDirectoryRow): void {
     this.selectedUserRecord.set(record);
     this.userRecordTab.set('roles');
+    this.userActivitySource.data = [];
+    this.userActivityLoaded.set(false);
+    this.userActivityError.set(null);
+    this.userActivityDemande = '';
     this.passwordResetSent.set(false);
     this.passwordResetModalOpen.set(false);
     this.accountStatusModalOpen.set(false);
@@ -1622,6 +1626,43 @@ export class InstituteConsoleComponent implements OnInit {
 
   setUserRecordTab(tab: UserRecordTab): void {
     this.userRecordTab.set(tab);
+    if (tab === 'activity') this.chargerActiviteUtilisateur();
+  }
+
+  /** Colonnes du journal sans l'utilisateur, déjà connu dans son dossier. */
+  readonly userActivityColumns: ColumnDefinition[] = this.tracesInstitutColumns
+    .filter((colonne) => colonne.def !== 'utilisateur' && colonne.def !== 'type_utilisateur');
+
+  chargerActiviteUtilisateur(forcer = false): void {
+    const userId = this.selectedUserRecord()?.id;
+    if (!userId) return;
+    if (!forcer && this.userActivityLoaded() && this.userActivityDemande === userId) return;
+    this.userActivityDemande = userId;
+    this.userActivityLoading.set(true);
+    this.userActivityError.set(null);
+    this.api.invaliderCache('institut:tracabilite:');
+    this.api.tracabiliteInstitut({ utilisateur_id: userId, page: 1, par_page: this.userActivityLimite }).subscribe({
+      next: (reponse) => {
+        // Ignore la réponse si un autre dossier a été ouvert entre-temps.
+        if (this.userActivityDemande !== userId) return;
+        this.userActivitySource.data = reponse.data;
+        this.userActivityTotals.set({ total: reponse.meta.total, ...reponse.resume });
+        this.userActivityLoaded.set(true);
+        this.userActivityLoading.set(false);
+      },
+      error: (erreur: HttpErrorResponse) => {
+        if (this.userActivityDemande !== userId) return;
+        this.userActivityLoading.set(false);
+        this.userActivityError.set(erreur.error?.message ?? 'Le journal d’activité de ce compte est indisponible pour le moment.');
+      },
+    });
+  }
+
+  /** Ouvre le journal complet de l'institut, pré-filtré sur le nom de l'utilisateur. */
+  ouvrirJournalCompletUtilisateur(): void {
+    const user = this.selectedUserRecord();
+    if (user) this.traceInstitutRecherche.set(user.name);
+    this.setView('activity-log');
   }
 
   assignRoleToUser(): void {
@@ -2129,6 +2170,9 @@ export class InstituteConsoleComponent implements OnInit {
     this.teacherEditorOpen.set(false);
     this.selectedTeacherRecord.set(record);
     this.teacherRecordTab.set('identity');
+    this.teacherSessions.set(null);
+    this.teacherSessionsError.set(null);
+    this.teacherSessionFilter.set('toutes');
     this.setView('teacher-detail');
   }
 
@@ -2249,6 +2293,43 @@ export class InstituteConsoleComponent implements OnInit {
 
   setTeacherRecordTab(tab: TeacherRecordTab): void {
     this.teacherRecordTab.set(tab);
+    if (tab === 'sessions') this.chargerSeancesEnseignant();
+  }
+
+  chargerSeancesEnseignant(forcer = false): void {
+    const personnelId = this.selectedTeacherRecord()?.id;
+    if (!personnelId) return;
+    if (!forcer && this.teacherSessions() && this.seancesEnseignantDemande === personnelId) return;
+    this.seancesEnseignantDemande = personnelId;
+    this.teacherSessionsLoading.set(true);
+    this.teacherSessionsError.set(null);
+    this.api.seancesEnseignantInstitut(personnelId).subscribe({
+      next: ({ data }) => {
+        // Ignore la réponse si un autre dossier a été ouvert entre-temps.
+        if (this.seancesEnseignantDemande !== personnelId) return;
+        this.teacherSessions.set(data);
+        this.teacherSessionsLoading.set(false);
+      },
+      error: (erreur: HttpErrorResponse) => {
+        if (this.seancesEnseignantDemande !== personnelId) return;
+        this.teacherSessionsLoading.set(false);
+        this.teacherSessionsError.set(erreur?.error?.message ?? 'Les séances de cet enseignant n’ont pas pu être chargées.');
+      },
+    });
+  }
+
+  compterSeancesEnseignant(filtre: FiltreSeancesEnseignant): number {
+    return compterSeances(this.teacherSessions()?.seances ?? [], filtre);
+  }
+
+  /** Ouvre le détail de la séance dans la vue Séances de l'espace de son cycle. */
+  ouvrirSeanceEnseignant(seance: SeanceEnseignantApi): void {
+    const chemin = this.primaryWorkspace.cheminSeance(seance.type_etablissement, seance.campus_id, seance.classe_id, seance.id);
+    if (!chemin) {
+      this.toast.error('Le détail de cette séance n’est pas disponible pour ce cycle.');
+      return;
+    }
+    void this.router.navigateByUrl(chemin);
   }
 
   private emptyStaffForm(): InstituteDirectoryRow {

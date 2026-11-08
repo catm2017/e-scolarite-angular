@@ -158,6 +158,11 @@ export class PrimaryWorkspaceService {
   );
   readonly locale = this.language.locale;
   readonly sessionListRequest = signal(0);
+  /**
+   * Séance à ouvrir dès que la vue Séances aura chargé sa classe, demandée par
+   * l'URL (?classe=…&seance=…), par exemple depuis le dossier d'un enseignant.
+   */
+  readonly seanceAOuvrir = signal<{ classeId: string; seanceId: string } | null>(null);
   readonly classListRequest = signal(0);
   readonly assessmentListRequest = signal(0);
   private readonly configurationStates = signal<Record<EstablishmentWorkspaceType, { checked: boolean; ready: boolean }>>({
@@ -210,10 +215,17 @@ export class PrimaryWorkspaceService {
   synchronizeFromUrl(url: string): EstablishmentWorkspaceType | null {
     const path = url.split('?')[0].split('#')[0];
     const query = url.includes('?') ? url.slice(url.indexOf('?') + 1).split('#')[0] : '';
-    const campusId = new URLSearchParams(query).get('campus');
+    const parametres = new URLSearchParams(query);
+    const campusId = parametres.get('campus');
     if (campusId) {
       this.selectedCampusId.set(campusId);
       try { localStorage.setItem('e-scolarite:campus-actif', campusId); } catch { /* stockage indisponible */ }
+    }
+    const classeId = parametres.get('classe');
+    const seanceId = parametres.get('seance');
+    const demandeEnCours = this.seanceAOuvrir();
+    if (classeId && seanceId && demandeEnCours?.seanceId !== seanceId) {
+      this.seanceAOuvrir.set({ classeId, seanceId });
     }
     let type: EstablishmentWorkspaceType | null = null;
 
@@ -239,6 +251,19 @@ export class PrimaryWorkspaceService {
     }
 
     return type;
+  }
+
+  /**
+   * Lien vers le détail d'une séance dans l'espace de son cycle. Le code est
+   * celui renvoyé par l'API (primaire, college, lycee…) ; null si ce cycle ne
+   * gère pas de séances.
+   */
+  cheminSeance(codeEtablissement: string | null | undefined, campusId: string, classeId: string, seanceId: string): string | null {
+    const types: Record<string, EstablishmentWorkspaceType> = { primaire: 'primary', college: 'college', lycee: 'lycee' };
+    const type = codeEtablissement ? types[codeEtablissement] : undefined;
+    if (!type) return null;
+    const parametres = new URLSearchParams({ campus: campusId, classe: classeId, seance: seanceId });
+    return `${ESTABLISHMENT_BASE_PATHS[type]}/${PRIMARY_VIEW_PATHS.attendance}?${parametres.toString()}`;
   }
 
   cheminVue(view: PrimaryView): string {

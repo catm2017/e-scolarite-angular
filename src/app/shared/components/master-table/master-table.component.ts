@@ -106,6 +106,8 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   readonly showEdit = input<boolean>(true);
   readonly showDelete = input<boolean>(true);
   readonly showDetails = input<boolean>(false);
+  /** Infobulle du bouton de détail (par défaut, un dossier). */
+  readonly detailsTooltip = input<string>('Voir le dossier');
   readonly showView = input<boolean>(false);
   readonly showSchedule = input<boolean>(false);
   readonly showStatusToggle = input<boolean>(false);

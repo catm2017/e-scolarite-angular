@@ -414,7 +414,7 @@
               }
               @if (showDetails()) {
               <button mat-icon-button color="primary" (click)="$event.stopPropagation()" (click)="onDetails(row)"
-                class="tbl-action-btn" matTooltip="Voir le dossier">
+                class="tbl-action-btn" [matTooltip]="detailsTooltip()">
                 <app-feather-icons [icon]="'info'" [class]="'tbl-fav-details'"></app-feather-icons>
               </button>
               }
